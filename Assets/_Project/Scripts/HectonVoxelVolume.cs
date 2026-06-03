@@ -336,6 +336,7 @@ namespace Hecton8.Caves
         private const int PublishedSonarMaxGridDimension = 129;
         private const int PublishedSonarMaxPointCount = PublishedSonarMaxGridDimension * PublishedSonarMaxGridDimension * PublishedSonarMaxGridDimension;
         private const int PublishedSonarVaultPayloadCapacity = PublishedSonarMaxPointCount;
+        private const int PublishedSonarEncodeWaitWatchdogFrames = 240;
         internal const ulong PublishedSonarPayloadReadGuardMask =
             (1UL << ((int)BufferID.VoxelSdfPayloadDescriptor & 31)) |
             (1UL << ((int)BufferID.VoxelSdfTexture3D & 31)) |
@@ -1579,23 +1580,10 @@ namespace Hecton8.Caves
 
             for (int i = 0; i < clampedCount; i++)
             {
-                if (_colliderChunkColliders[i] == null)
-                {
-                    GameObject childObject = new GameObject(ColliderChunkRuntimeName);
-                    childObject.layer = HectonLayerMasks.VoxelCave;
-                    Transform child = childObject.transform;
-                    child.SetParent(_colliderChunkRoot, false);
-                    child.localPosition = Vector3.zero;
-                    child.localRotation = Quaternion.identity;
-                    child.localScale = Vector3.one;
-
-                    MeshCollider collider = childObject.AddComponent<MeshCollider>();
-                    collider.enabled = false;
-                    _colliderChunkColliders[i] = collider;
-                }
-                else
+                if (_colliderChunkColliders[i] != null)
                 {
                     _colliderChunkColliders[i].gameObject.layer = HectonLayerMasks.VoxelCave;
+                    _colliderChunkColliders[i].enabled = false;
                 }
 
                 if (_colliderChunkBakeProxies[i] == null)
@@ -1644,12 +1632,17 @@ namespace Hecton8.Caves
 
             for (int i = 0; i < clampedCount; i++)
             {
-                MeshCollider collider = _colliderChunkColliders[i];
                 BoxCollider proxy = _colliderChunkBakeProxies[i];
-                if (collider == null || proxy == null)
+                if (proxy == null)
                     return false;
 
-                collider.gameObject.layer = HectonLayerMasks.VoxelCave;
+                MeshCollider collider = _colliderChunkColliders[i];
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                    collider.gameObject.layer = HectonLayerMasks.VoxelCave;
+                }
+
                 proxy.gameObject.layer = HectonLayerMasks.VoxelProxy;
             }
 
@@ -1671,7 +1664,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Enables a primitive floor proxy while the chunk mesh is being baked by PhysX off-thread.
+        /// Enables the primitive runtime collision proxy for one distributed collision chunk.
         /// </summary>
         internal void ConfigureColliderChunkBakeProxy(int index, Vector3 center, Vector3 size)
         {
@@ -1691,7 +1684,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Returns the isolated primitive bake proxy for deferred collider publication.
+        /// Returns the isolated primitive collision proxy for one distributed collision chunk.
         /// </summary>
         internal BoxCollider GetColliderChunkBakeProxy(int index)
         {
@@ -1702,44 +1695,25 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Returns true only when the late-frame collider publication has both a target collider and staged baked mesh.
+        /// Returns true only for stale staged mesh cleanup in the legacy deferred upload queue.
         /// </summary>
         internal bool IsDeferredColliderChunkUploadReady(int index)
         {
-            if (index < 0 ||
-                index >= _colliderChunkColliders.Length ||
-                index >= _colliderChunkBakeMeshes.Length)
-            {
-                return false;
-            }
-
-            return _colliderChunkColliders[index] != null &&
-                   _colliderChunkBakeMeshes[index] != null;
+            return false;
         }
 
         internal Mesh GetColliderChunkBakeMesh(int index)
         {
-            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
-                return null;
-
-            return _colliderChunkBakeMeshes[index];
+            return null;
         }
 
         internal bool AssignColliderChunkBakeMesh(int index, Mesh mesh)
         {
-            if (mesh == null || index < 0 || index >= _colliderChunkBakeMeshes.Length)
-                return false;
-
-            Mesh existingMesh = _colliderChunkBakeMeshes[index];
-            if (existingMesh != null)
-                return ReferenceEquals(existingMesh, mesh);
-
-            _colliderChunkBakeMeshes[index] = mesh;
-            return true;
+            return false;
         }
 
         /// <summary>
-        /// Disables the temporary PhysX bake proxy for one collider chunk.
+        /// Disables the primitive runtime collision proxy for one collider chunk.
         /// </summary>
         internal void DisableColliderChunkBakeProxy(int index)
         {
@@ -1752,7 +1726,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Disables all temporary PhysX bake proxies owned by this volume.
+        /// Disables all primitive runtime collision proxies owned by this volume.
         /// </summary>
         internal void DisableColliderChunkBakeProxies()
         {
@@ -1788,117 +1762,80 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Returns a reusable mesh instance for the requested collider chunk, creating it on first use only.
+        /// Runtime collider mesh allocation is disabled; primitive proxies own voxel collision.
         /// </summary>
         public Mesh GetOrCreateColliderChunkMesh(int index)
         {
-            if (index < 0 || index >= _colliderChunkMeshes.Length)
-                return null;
-
-            Mesh mesh = _colliderChunkMeshes[index];
-            if (mesh != null)
-                return mesh;
-
-            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh();
-            if (mesh == null)
-                return null;
-
-            _colliderChunkMeshes[index] = mesh;
-            return mesh;
+            return null;
         }
 
         /// <summary>
-        /// Returns a reusable staging mesh for the requested collider chunk.
-        /// The staged mesh is never the currently published collider mesh.
+        /// Runtime collider mesh staging is disabled; primitive proxies own voxel collision.
         /// </summary>
         internal Mesh GetOrCreateColliderChunkBakeMesh(int index)
         {
-            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
-                return null;
-
-            Mesh mesh = _colliderChunkBakeMeshes[index];
-            if (mesh != null)
-                return mesh;
-
-            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh();
-            if (mesh == null)
-                return null;
-
-            _colliderChunkBakeMeshes[index] = mesh;
-            return mesh;
+            return null;
         }
 
         /// <summary>
-        /// Queues a staged collider mesh handoff for the requested chunk. Runtime PhysX mesh publication is fail-closed.
+        /// Enables the primitive runtime collision proxy for the requested chunk. Runtime PhysX mesh publication is disabled.
         /// </summary>
-        internal bool PublishColliderChunkMesh(int index)
+        internal bool EnableColliderChunkProxy(int index)
         {
             if (index < 0 ||
-                index >= _colliderChunkColliders.Length ||
-                index >= _colliderChunkMeshes.Length ||
-                index >= _colliderChunkBakeMeshes.Length)
+                index >= _colliderChunkBakeProxies.Length)
             {
                 return false;
             }
 
-            MeshCollider collider = _colliderChunkColliders[index];
-            Mesh stagedMesh = _colliderChunkBakeMeshes[index];
-            if (collider == null || stagedMesh == null)
+            BoxCollider proxy = _colliderChunkBakeProxies[index];
+            if (proxy == null)
                 return false;
 
-            bool enqueued = global::HectonVoxelEngine.EnqueueDeferredVoxelColliderUpload(this, index);
-            if (!enqueued)
-                DisableColliderChunkBakeProxy(index);
+            if (index < _colliderChunkColliders.Length)
+            {
+                MeshCollider collider = _colliderChunkColliders[index];
+                if (collider != null)
+                    collider.enabled = false;
+            }
 
-            return enqueued;
+            if (!proxy.gameObject.activeSelf)
+                proxy.gameObject.SetActive(true);
+
+            proxy.enabled = true;
+            return true;
         }
 
         /// <summary>
-        /// Publishes a staged collider mesh from the late-frame upload queue.
+        /// Releases staged collider mesh data without publishing it to PhysX.
         /// </summary>
         internal bool CommitDeferredColliderChunkUpload(int index)
         {
             if (index < 0 ||
                 index >= _colliderChunkColliders.Length ||
-                index >= _colliderChunkMeshes.Length ||
                 index >= _colliderChunkBakeMeshes.Length)
             {
                 return false;
             }
 
-            MeshCollider collider = _colliderChunkColliders[index];
             Mesh stagedMesh = _colliderChunkBakeMeshes[index];
-            if (collider == null || stagedMesh == null)
+            _colliderChunkBakeMeshes[index] = null;
+            if (stagedMesh != null)
+                stagedMesh.Clear(false);
+
+            MeshCollider collider = _colliderChunkColliders[index];
+            if (collider != null)
             {
-                DisableColliderChunkBakeProxy(index);
-                return false;
+                collider.enabled = false;
+                if (!collider.gameObject.activeSelf)
+                    collider.gameObject.SetActive(true);
             }
 
-            Mesh previousLiveMesh = _colliderChunkMeshes[index];
-            collider.enabled = false;
-            if (!ReferenceEquals(collider.sharedMesh, stagedMesh))
-            {
-                collider.sharedMesh = null;
-                collider.sharedMesh = stagedMesh;
-            }
+            BoxCollider proxy = index < _colliderChunkBakeProxies.Length ? _colliderChunkBakeProxies[index] : null;
+            if (proxy != null)
+                proxy.enabled = true;
 
-            _colliderChunkMeshes[index] = stagedMesh;
-            if (ReferenceEquals(previousLiveMesh, stagedMesh))
-            {
-                _colliderChunkBakeMeshes[index] = null;
-            }
-            else
-            {
-                if (previousLiveMesh != null)
-                    previousLiveMesh.Clear(false);
-                _colliderChunkBakeMeshes[index] = previousLiveMesh;
-            }
-
-            if (!collider.gameObject.activeSelf)
-                collider.gameObject.SetActive(true);
-            DisableColliderChunkBakeProxy(index);
-            RefreshBakePresentation();
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -1915,7 +1852,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Releases ownership of a staged collider bake mesh after its PhysX bake has been handed to deferred teardown.
+        /// Releases ownership of a staged collider mesh after fail-closed proxy activation.
         /// </summary>
         /// <param name="index">Collider chunk index.</param>
         internal void DetachColliderChunkBakeMesh(int index)
@@ -1932,7 +1869,7 @@ namespace Hecton8.Caves
                 }
             }
 
-            DisableColliderChunkBakeProxy(index);
+            EnableColliderChunkProxy(index);
             _colliderChunkBakeMeshes[index] = null;
         }
 
@@ -1951,7 +1888,7 @@ namespace Hecton8.Caves
                     collider.enabled = false;
             }
 
-            DisableColliderChunkBakeProxy(index);
+            EnableColliderChunkProxy(index);
             Mesh bakeMesh = _colliderChunkBakeMeshes[index];
             _colliderChunkBakeMeshes[index] = null;
             if (bakeMesh == null)
@@ -2026,16 +1963,23 @@ namespace Hecton8.Caves
         /// </summary>
         public void SetActiveColliderChunkCount(int activeCount)
         {
-            int clampedActive = Mathf.Clamp(activeCount, 0, _colliderChunkColliders.Length);
-            for (int i = 0; i < _colliderChunkColliders.Length; i++)
+            int clampedActive = Mathf.Clamp(activeCount, 0, _colliderChunkBakeProxies.Length);
+            for (int i = 0; i < _colliderChunkBakeProxies.Length; i++)
             {
-                MeshCollider collider = _colliderChunkColliders[i];
-                if (collider == null)
+                BoxCollider proxy = _colliderChunkBakeProxies[i];
+                if (proxy == null)
                     continue;
 
                 bool shouldBeActive = i < clampedActive;
-                if (collider.gameObject.activeSelf != shouldBeActive)
-                    collider.gameObject.SetActive(shouldBeActive);
+                if (proxy.gameObject.activeSelf != shouldBeActive)
+                    proxy.gameObject.SetActive(shouldBeActive);
+
+                if (i < _colliderChunkColliders.Length)
+                {
+                    MeshCollider collider = _colliderChunkColliders[i];
+                    if (collider != null)
+                        collider.enabled = false;
+                }
             }
 
             if (_colliderChunkRoot != null)
@@ -2297,18 +2241,40 @@ namespace Hecton8.Caves
                 encodeScheduled = true;
 
                 bool encodeCancellationRequested = false;
+                bool encodeTimedOut = false;
+                int encodeWaitFrames = 0;
                 while (!encodeHandle.IsCompleted)
                 {
-                    encodeCancellationRequested |= cancellationToken.IsCancellationRequested;
+                    if (cancellationToken.IsCancellationRequested ||
+                        Volatile.Read(ref _publishedSonarPublishAbortRequested) != 0)
+                    {
+                        encodeCancellationRequested = true;
+                        break;
+                    }
+
+                    if (encodeWaitFrames++ >= PublishedSonarEncodeWaitWatchdogFrames)
+                    {
+                        encodeTimedOut = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Hecton8.Core.H8Debug.LogError("[HectonVoxelVolume] Published sonar SDF encode watchdog elapsed; forcing completion and dropping descriptor publish.");
+#endif
+                        break;
+                    }
+
                     await AwaitableDebtMonitor.NextFrameAsync();
                 }
 
-                DispatcherJobFence.TryFinalizeCompleted(ref encodeHandle);
+                if (encodeHandle.IsCompleted)
+                    DispatcherJobFence.TryFinalizeCompleted(ref encodeHandle);
+                else
+                    DispatcherJobFence.TryComplete(ref encodeHandle, forceComplete: true);
+
                 encodeScheduled = false;
 
                 uint sdfGeneration = sdfHandle.Generation;
                 uint audioMaterialGeneration = audioMaterialHandle.Generation;
                 if (encodeCancellationRequested ||
+                    encodeTimedOut ||
                     cancellationToken.IsCancellationRequested ||
                     sdfGeneration == 0u ||
                     audioMaterialGeneration == 0u ||

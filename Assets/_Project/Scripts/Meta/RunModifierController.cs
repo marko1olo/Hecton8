@@ -122,6 +122,15 @@ namespace Hecton8.Meta
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                    UnregisterFromUpdateDispatcher();
+                else
+                    TryRegisterWithUpdateDispatcher();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
@@ -341,7 +350,7 @@ namespace Hecton8.Meta
 
         private void TryRegisterWithUpdateDispatcher()
         {
-            if (_registeredToUpdate || !Application.isPlaying)
+            if (_registeredToUpdate || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)

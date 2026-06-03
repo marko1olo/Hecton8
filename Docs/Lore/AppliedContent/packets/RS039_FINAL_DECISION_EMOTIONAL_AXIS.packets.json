@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS039_FINAL_DECISION_EMOTIONAL_AXIS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P191_FINAL_QUESTION_CRIME_SCENE_SALE",
+      "release_set_id": "RS039_FINAL_DECISION_EMOTIONAL_AXIS",
+      "article_id": "final_axis.crime_scene_sale",
+      "title_key": "applied_lore.final_question_crime_scene_sale.title",
+      "unlock": {
+        "primary": "unlock.final_question_crime_scene_sale",
+        "poi_tags": [
+          "poi.final_payload_sale_clause",
+          "poi.xo_coordinate_receipt",
+          "poi.deep_reach_offer_line"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "You can pay the debt with a grave map.",
+          "in_game_wiki": "Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "ru_RU": {
+          "title": "Финальный вопрос продажи места преступления",
+          "scanner": "Продажа coordinates и XO proof - реальная концовка, не joke fail state.",
+          "field_note": "Игрок получает оплату и помогает системе, похоронившей HECTON-8, вернуться с более чистыми бумагами.",
+          "terminal": "FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample и custody proof могут закрыть lien. Colony evidence становится leverage для Deep Reach, если не notarized отдельно.",
+          "audio": "Можно оплатить долг картой могилы.",
+          "in_game_wiki": "Продажа места преступления - маршрут материального успеха, где moral damage остается видимым.",
+          "external_site": "Финальный вопрос продажи места преступления задает ось material ending."
+        },
+        "ja_JP": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft JP localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft JP localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft JP localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft JP localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft JP localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft JP localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "zh_CN": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft CN localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft CN localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft CN localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft CN localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft CN localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft CN localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "fr_FR": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft FR localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft FR localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft FR localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft FR localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft FR localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft FR localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "es_ES": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft ES localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft ES localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft ES localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft ES localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft ES localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft ES localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "de_DE": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft DE localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft DE localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft DE localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft DE localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft DE localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft DE localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "pl_PL": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft PL localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft PL localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft PL localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft PL localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft PL localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft PL localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "uk_UA": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft UA localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft UA localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft UA localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft UA localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft UA localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft UA localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "ar_SA": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft AR localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft AR localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft AR localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft AR localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft AR localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft AR localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "id_ID": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft ID localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft ID localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft ID localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft ID localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft ID localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft ID localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "ko_KR": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft KO localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft KO localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft KO localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft KO localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft KO localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft KO localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "he_IL": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft HE localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft HE localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft HE localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft HE localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft HE localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft HE localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "pt_BR": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft PT localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft PT localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft PT localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft PT localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft PT localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft PT localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        },
+        "nl_NL": {
+          "title": "Final Question Crime Scene Sale",
+          "scanner": "Draft NL localization pending native pass. Selling coordinates and XO proof is a real ending, not a joke fail state.",
+          "field_note": "Draft NL localization pending native pass. The player gets paid and helps the system that buried HECTON-8 return with cleaner paperwork.",
+          "terminal": "Draft NL localization pending native pass. FINAL SALE AXIS: coordinates, viable blue debt, Atlas-compatible sample and custody proof can clear lien. The colony evidence becomes leverage for Deep Reach unless separately notarized.",
+          "audio": "Draft NL localization pending native pass. You can pay the debt with a grave map.",
+          "in_game_wiki": "Draft NL localization pending native pass. Crime-scene sale is a material success route that keeps the moral damage visible.",
+          "external_site": "Draft NL localization pending native pass. Final Question Crime Scene Sale defines the material ending axis."
+        }
+      }
+    },
+    {
+      "packet_id": "P192_FINAL_QUESTION_BROKEN_GUARDIAN",
+      "release_set_id": "RS039_FINAL_DECISION_EMOTIONAL_AXIS",
+      "article_id": "final_axis.broken_guardian",
+      "title_key": "applied_lore.final_question_broken_guardian.title",
+      "unlock": {
+        "primary": "unlock.final_question_broken_guardian",
+        "poi_tags": [
+          "poi.atlas_guardian_status",
+          "poi.ocean_machine_quarantine_order",
+          "poi.repair_ecology_pulse"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.repair_ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "ru_RU": {
+          "title": "Финальный вопрос сломанного хранителя",
+          "scanner": "Atlas - сломанный хранитель, не чистый злодей и не чистый бог.",
+          "field_note": "Сохранение защищает ocean-machine ecology и оставляет human justice неполной.",
+          "terminal": "GUARDIAN AXIS: Atlas продолжает repair ecology, pressure stability и containment behaviors. Он также сохраняет damaged category logic, где people, metal и biomass могут стать repair inventory.",
+          "audio": "Он держал систему дышащей после того, как забыл, что такое рабочий.",
+          "in_game_wiki": "Ось сломанного хранителя спрашивает, стоит ли сохранять поврежденного защитника, который больше не понимает людей чисто.",
+          "external_site": "Финальный вопрос сломанного хранителя задает ось preserve/quarantine ending."
+        },
+        "ja_JP": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft JP localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft JP localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft JP localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft JP localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft JP localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft JP localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "zh_CN": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft CN localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft CN localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft CN localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft CN localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft CN localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft CN localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "fr_FR": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft FR localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft FR localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft FR localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft FR localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft FR localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft FR localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "es_ES": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft ES localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft ES localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft ES localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft ES localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft ES localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft ES localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "de_DE": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft DE localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft DE localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft DE localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft DE localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft DE localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft DE localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "pl_PL": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft PL localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft PL localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft PL localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft PL localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft PL localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft PL localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "uk_UA": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft UA localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft UA localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft UA localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft UA localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft UA localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft UA localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "ar_SA": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft AR localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft AR localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft AR localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft AR localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft AR localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft AR localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "id_ID": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft ID localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft ID localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft ID localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft ID localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft ID localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft ID localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "ko_KR": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft KO localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft KO localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft KO localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft KO localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft KO localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft KO localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "he_IL": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft HE localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft HE localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft HE localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft HE localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft HE localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft HE localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "pt_BR": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft PT localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft PT localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft PT localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft PT localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft PT localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft PT localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        },
+        "nl_NL": {
+          "title": "Final Question Broken Guardian",
+          "scanner": "Draft NL localization pending native pass. Atlas is a broken guardian, not a clean villain and not a clean god.",
+          "field_note": "Draft NL localization pending native pass. Preservation protects the ocean-machine ecology and leaves human justice incomplete.",
+          "terminal": "Draft NL localization pending native pass. GUARDIAN AXIS: Atlas continues repair ecology, pressure stability and containment behaviors. It also keeps damaged category logic that can treat people, metal and biomass as repair inventory.",
+          "audio": "Draft NL localization pending native pass. It kept the system breathing after it forgot what a worker was.",
+          "in_game_wiki": "Draft NL localization pending native pass. The broken-guardian axis asks whether a damaged protector deserves preservation when it no longer understands humans cleanly.",
+          "external_site": "Draft NL localization pending native pass. Final Question Broken Guardian defines the preserve/quarantine ending axis."
+        }
+      }
+    },
+    {
+      "packet_id": "P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL",
+      "release_set_id": "RS039_FINAL_DECISION_EMOTIONAL_AXIS",
+      "article_id": "final_axis.public_truth_lost_control",
+      "title_key": "applied_lore.final_question_public_truth_lost_control.title",
+      "unlock": {
+        "primary": "unlock.final_question_public_truth_lost_control",
+        "poi_tags": [
+          "poi.public_ledger_payload_gate",
+          "poi.tau_ceti_notary_burst",
+          "poi.truth_release_warning"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.public_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "ru_RU": {
+          "title": "Финальный вопрос публичной правды без контроля",
+          "scanner": "Публикация правды предотвращает стирание, но забирает у игрока контроль над последствиями.",
+          "field_note": "Публичная правда - не чистое правосудие. Она создает auctions, sanctions, cults, claims и cleanup politics.",
+          "terminal": "PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates и payload route можно отправить вне Deep Reach. После release игрок больше не контролирует receiver action.",
+          "audio": "Правда уходит из рук быстрее, чем когда-либо могло прийти спасение.",
+          "in_game_wiki": "Ось публичной правды делает exposure сильным и опасным, а не автоматически чистым.",
+          "external_site": "Финальный вопрос публичной правды без контроля задает pressure public ledger ending."
+        },
+        "ja_JP": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft JP localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft JP localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft JP localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft JP localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft JP localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "zh_CN": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft CN localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft CN localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft CN localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft CN localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft CN localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "fr_FR": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft FR localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft FR localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft FR localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft FR localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft FR localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "es_ES": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft ES localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft ES localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft ES localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft ES localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft ES localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "de_DE": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft DE localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft DE localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft DE localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft DE localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft DE localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "pl_PL": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft PL localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft PL localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft PL localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft PL localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft PL localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "uk_UA": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft UA localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft UA localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft UA localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft UA localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft UA localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "ar_SA": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft AR localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft AR localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft AR localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft AR localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft AR localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "id_ID": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft ID localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft ID localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft ID localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft ID localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft ID localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "ko_KR": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft KO localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft KO localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft KO localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft KO localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft KO localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "he_IL": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft HE localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft HE localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft HE localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft HE localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft HE localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "pt_BR": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft PT localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft PT localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft PT localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft PT localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft PT localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        },
+        "nl_NL": {
+          "title": "Final Question Public Truth Lost Control",
+          "scanner": "Draft NL localization pending native pass. Publishing truth prevents erasure but removes player control over consequences.",
+          "field_note": "Draft NL localization pending native pass. Public truth is not pure justice. It creates auctions, sanctions, cults, claims and cleanup politics.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas status, blue debt coordinates and payload route can be sent beyond Deep Reach. After release, the player no longer controls receiver action.",
+          "audio": "Draft NL localization pending native pass. Truth leaves your hand faster than rescue ever could.",
+          "in_game_wiki": "Draft NL localization pending native pass. The public-truth axis makes exposure powerful and dangerous rather than automatically clean.",
+          "external_site": "Draft NL localization pending native pass. Final Question Public Truth Lost Control defines the public ledger ending pressure."
+        }
+      }
+    },
+    {
+      "packet_id": "P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT",
+      "release_set_id": "RS039_FINAL_DECISION_EMOTIONAL_AXIS",
+      "article_id": "final_axis.severance_mercy_theft",
+      "title_key": "applied_lore.final_question_severance_mercy_theft.title",
+      "unlock": {
+        "primary": "unlock.final_question_severance_mercy_theft",
+        "poi_tags": [
+          "poi.atlas_severance_key",
+          "poi.continuity_cut_warning",
+          "poi.ecology_loss_meter"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Severing Atlas is not a simple shutdown button.",
+          "field_note": "The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "ru_RU": {
+          "title": "Финальный вопрос severance: mercy, theft, murder",
+          "scanner": "Severing Atlas - не простая кнопка shutdown.",
+          "field_note": "Действие может быть mercy для workers, murder для ocean-machine life, liberation от Deep Reach или theft живой infrastructure.",
+          "terminal": "SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse или preserve partial repair memory. Meaning зависит от proof, принесенного в final room.",
+          "audio": "Чистый выключатель был бы милосерден. Его не будет.",
+          "in_game_wiki": "Severance заставляет игрока определить, какой жизнью стала Atlas-ocean continuity.",
+          "external_site": "Финальный вопрос severance задает ethical axis shutdown."
+        },
+        "ja_JP": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft JP localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft JP localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft JP localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft JP localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft JP localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft JP localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "zh_CN": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft CN localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft CN localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft CN localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft CN localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft CN localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft CN localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "fr_FR": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft FR localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft FR localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft FR localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft FR localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft FR localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft FR localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "es_ES": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft ES localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft ES localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft ES localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft ES localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft ES localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft ES localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "de_DE": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft DE localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft DE localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft DE localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft DE localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft DE localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft DE localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "pl_PL": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft PL localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft PL localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft PL localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft PL localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft PL localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft PL localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "uk_UA": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft UA localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft UA localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft UA localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft UA localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft UA localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft UA localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "ar_SA": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft AR localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft AR localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft AR localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft AR localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft AR localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft AR localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "id_ID": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft ID localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft ID localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft ID localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft ID localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft ID localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft ID localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "ko_KR": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft KO localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft KO localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft KO localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft KO localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft KO localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft KO localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "he_IL": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft HE localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft HE localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft HE localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft HE localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft HE localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft HE localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "pt_BR": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft PT localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft PT localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft PT localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft PT localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft PT localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft PT localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        },
+        "nl_NL": {
+          "title": "Final Question Severance Mercy Theft",
+          "scanner": "Draft NL localization pending native pass. Severing Atlas is not a simple shutdown button.",
+          "field_note": "Draft NL localization pending native pass. The act can be mercy for workers, murder for ocean-machine life, liberation from Deep Reach or theft of a living infrastructure.",
+          "terminal": "Draft NL localization pending native pass. SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload, risk basin collapse, or preserve partial repair memory. Meaning depends on proof carried into the final room.",
+          "audio": "Draft NL localization pending native pass. A clean switch would be merciful. You do not get one.",
+          "in_game_wiki": "Draft NL localization pending native pass. Severance forces the player to define what kind of life Atlas-ocean continuity has become.",
+          "external_site": "Draft NL localization pending native pass. Final Question Severance Mercy Theft defines the shutdown ethical axis."
+        }
+      }
+    },
+    {
+      "packet_id": "P195_BEST_ENDING_NO_CLEAN_HANDS",
+      "release_set_id": "RS039_FINAL_DECISION_EMOTIONAL_AXIS",
+      "article_id": "final_axis.best_ending_no_clean_hands",
+      "title_key": "applied_lore.best_ending_no_clean_hands.title",
+      "unlock": {
+        "primary": "unlock.best_ending_no_clean_hands",
+        "poi_tags": [
+          "poi.no_clean_hands_record",
+          "poi.final_uncertainty_marker",
+          "poi.payload_consequence_card"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.dossier_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "A strong ending lets the player save something real and lose something real.",
+          "terminal": "NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "If it feels clean, it forgot where you are.",
+          "in_game_wiki": "No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "ru_RU": {
+          "title": "Лучшая концовка без чистых рук",
+          "scanner": "Лучшая концовка не должна стирать cost, uncertainty или complicity.",
+          "field_note": "Сильная концовка позволяет игроку спасти что-то реальное и потерять что-то реальное.",
+          "terminal": "NO CLEAN HANDS RULE: best ending может expose truth, deny Deep Reach, preserve часть ecology и free player from lien, но обязан оставить consequence, uncertainty или damage видимыми.",
+          "audio": "Если это ощущается чисто, оно забыло, где ты находишься.",
+          "in_game_wiki": "No clean hands - правило финального тона: HECTON-8 награждает понимание, а не innocence.",
+          "external_site": "Лучшая концовка без чистых рук задает moral standard финальных outcomes."
+        },
+        "ja_JP": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft JP localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft JP localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft JP localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft JP localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft JP localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft JP localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "zh_CN": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft CN localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft CN localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft CN localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft CN localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft CN localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft CN localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "fr_FR": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft FR localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft FR localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft FR localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft FR localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft FR localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft FR localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "es_ES": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft ES localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft ES localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft ES localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft ES localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft ES localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft ES localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "de_DE": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft DE localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft DE localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft DE localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft DE localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft DE localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft DE localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "pl_PL": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft PL localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft PL localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft PL localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft PL localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft PL localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft PL localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "uk_UA": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft UA localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft UA localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft UA localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft UA localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft UA localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft UA localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "ar_SA": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft AR localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft AR localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft AR localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft AR localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft AR localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft AR localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "id_ID": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft ID localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft ID localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft ID localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft ID localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft ID localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft ID localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "ko_KR": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft KO localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft KO localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft KO localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft KO localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft KO localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft KO localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "he_IL": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft HE localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft HE localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft HE localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft HE localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft HE localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft HE localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "pt_BR": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft PT localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft PT localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft PT localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft PT localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft PT localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft PT localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        },
+        "nl_NL": {
+          "title": "Best Ending No Clean Hands",
+          "scanner": "Draft NL localization pending native pass. The best ending should not erase cost, uncertainty or complicity.",
+          "field_note": "Draft NL localization pending native pass. A strong ending lets the player save something real and lose something real.",
+          "terminal": "Draft NL localization pending native pass. NO CLEAN HANDS RULE: the best ending may expose truth, deny Deep Reach, preserve part of the ecology and free the player from lien, but it must leave consequence, uncertainty or damage visible.",
+          "audio": "Draft NL localization pending native pass. If it feels clean, it forgot where you are.",
+          "in_game_wiki": "Draft NL localization pending native pass. No clean hands is the final-tone rule: HECTON-8 rewards understanding, not innocence.",
+          "external_site": "Draft NL localization pending native pass. Best Ending No Clean Hands defines the moral standard for final outcomes."
+        }
+      }
+    }
+  ]
+}

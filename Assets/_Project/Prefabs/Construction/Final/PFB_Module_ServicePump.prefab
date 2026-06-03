@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8feb1a3b87c7bee43b0a4296f492c53e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Construction.ModuleMarker
   buildableData: {fileID: 0}
 --- !u!65 &3292419164074040128
@@ -79,7 +79,6 @@ GameObject:
   - component: {fileID: 3298504888689704354}
   - component: {fileID: 6023422643143092113}
   - component: {fileID: 1760098624534011613}
-  - component: {fileID: 1218802051125557918}
   m_Layer: 0
   m_Name: __Visual
   m_TagString: Untagged
@@ -123,7 +122,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
-  m_LightProbeUsage: 0
+  m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
@@ -159,43 +158,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &1218802051125557918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4794280514311313673}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c67cc21e3ed74e0409eecc155c308112, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.ScannableFragment
-  scanTime: 3
-  canBeScanned: 1
-  unlockId: unknown_tech
-  researchData: {fileID: 0}
-  appliedLoreQuarterPacketHash: 0
-  appliedLoreHalfPacketHash: 0
-  appliedLoreFinalPacketHash: 2808888646
-  fragmentRenderer: {fileID: 0}
-  scanGlowColor: {r: 0.3, g: 0.8, b: 1, a: 1}
-  completeParticles: {fileID: 0}
-  vibrationAmplitude: 0.02
-  vibrationFrequency: 5
-  scanningSound: {fileID: 0}
-  completeSound: {fileID: 0}
-  scanVolume: 0.6
-  interactText: Scan Fragment
-  OnProgressChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  OnScanComplete:
-    m_PersistentCalls:
-      m_Calls: []
-  OnScanStarted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnScanStopped:
-    m_PersistentCalls:
-      m_Calls: []

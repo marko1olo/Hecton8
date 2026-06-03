@@ -680,63 +680,6 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct GenerateMockBuilderGhostValidationJob : IJobParallelFor
-    {
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;
-        public double3 RuntimeOriginAup;
-        public float GridSizeMeters;
-        public uint BasePrefabHash;
-        public uint Frame;
-
-        public void Execute(int index)
-        {
-            if (!States.IsCreated || (uint)index >= (uint)States.Length)
-                return;
-
-            int x = index % 100;
-            int z = index / 100;
-            double3 aup = new double3(x * GridSizeMeters, -40.0d, z * GridSizeMeters);
-            double3 runtimeDouble = aup - RuntimeOriginAup;
-            bool runtimeValid = TryCastLocalDelta(runtimeDouble, out float3 runtime);
-            float terrainFake = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((x * 0.173f) + (z * 0.097f));
-            uint flags = BuilderGhostValidationFlags.Active |
-                         BuilderGhostValidationFlags.PresentationOnly |
-                         BuilderGhostValidationFlags.RollbackExcluded |
-                         BuilderGhostValidationFlags.GridSnapped;
-            if (!runtimeValid)
-                flags |= BuilderGhostValidationFlags.NonFinite;
-            else if (terrainFake < -0.72f)
-                flags |= BuilderGhostValidationFlags.SdfBlocked;
-            else
-                flags |= BuilderGhostValidationFlags.Valid;
-
-            BuilderGhostStateDTO state = default;
-            state.LocalToWorld = runtimeValid
-                ? float4x4.TRS(runtime, quaternion.identity, new float3(4f, 3f, 4f))
-                : float4x4.TRS(float3.zero, quaternion.identity, new float3(0.001f));
-            state.AUP_TargetPosition = aup;
-            state.PrefabHashID = BasePrefabHash + (uint)index;
-            state.ValidationFlags = flags;
-            state.AnimationPhase = math.frac((Frame * 0.013f) + (index * 0.001f));
-            state.ValidationStateHash = ShinobuSocketConstructionRuntime.MakeResultHash(state.PrefabHashID, flags, (uint)index, Frame);
-            States[index] = state;
-        }
-
-        private static bool TryCastLocalDelta(double3 localDelta, out float3 runtime)
-        {
-            runtime = default;
-            if (!math.all(math.isfinite(localDelta)) ||
-                math.any(math.abs(localDelta) > (double)float.MaxValue))
-            {
-                return false;
-            }
-
-            runtime = new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
-            return math.all(math.isfinite(runtime));
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct BuildPipeBlueprintPreviewJob : IJob
     {
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;

@@ -1,10 +1,17 @@
 ---
 packet_id: P103_PELLET_FUSION_FREIGHT
+release_set_id: RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY
 article_id: human_space.pellet_fusion_freight
+unlock_id: unlock.first_pellet_fusion_freight
+poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
+biome_tags: biome.carrier_link;biome.relay_shadow
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Pellet-fusion грузовые рейсы

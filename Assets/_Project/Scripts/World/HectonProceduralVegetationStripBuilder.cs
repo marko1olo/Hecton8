@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -17,17 +18,17 @@ namespace Hecton8.World
             int vertexCount = rowCount * 2;
             int indexCount = clampedSegments * 6;
 
-            // COLD ALLOC: Vector3[vertexCount] - runtime strip mesh vertex positions - owner: HectonProceduralVegetationStripBuilder
+            // EDITOR ALLOC: Vector3[vertexCount] - strip mesh vertex positions - owner: HectonProceduralVegetationStripBuilder
             Vector3[] vertices = new Vector3[vertexCount];
-            // COLD ALLOC: Vector3[vertexCount] - runtime strip mesh normals - owner: HectonProceduralVegetationStripBuilder
+            // EDITOR ALLOC: Vector3[vertexCount] - strip mesh normals - owner: HectonProceduralVegetationStripBuilder
             Vector3[] normals = new Vector3[vertexCount];
-            // COLD ALLOC: Vector4[vertexCount] - runtime strip mesh tangents - owner: HectonProceduralVegetationStripBuilder
+            // EDITOR ALLOC: Vector4[vertexCount] - strip mesh tangents - owner: HectonProceduralVegetationStripBuilder
             Vector4[] tangents = new Vector4[vertexCount];
-            // COLD ALLOC: Vector2[vertexCount] - runtime strip mesh uvs - owner: HectonProceduralVegetationStripBuilder
+            // EDITOR ALLOC: Vector2[vertexCount] - strip mesh uvs - owner: HectonProceduralVegetationStripBuilder
             Vector2[] uvs = new Vector2[vertexCount];
-            // COLD ALLOC: Color32[vertexCount] - runtime strip mesh vertex colors - owner: HectonProceduralVegetationStripBuilder
+            // EDITOR ALLOC: Color32[vertexCount] - strip mesh vertex colors - owner: HectonProceduralVegetationStripBuilder
             Color32[] colors = new Color32[vertexCount];
-            // COLD ALLOC: int[indexCount] - runtime strip mesh triangle indices - owner: HectonProceduralVegetationStripBuilder
+            // EDITOR ALLOC: int[indexCount] - strip mesh triangle indices - owner: HectonProceduralVegetationStripBuilder
             int[] indices = new int[indexCount];
 
             float safeHeight = Mathf.Max(0.05f, height);
@@ -43,7 +44,10 @@ namespace Hecton8.World
                 float sweep = (4f * t * (1f - t)) * safeHeight * 0.045f;
                 int leftIndex = row * 2;
                 int rightIndex = leftIndex + 1;
-                byte tipMask = (byte)Mathf.RoundToInt(t * 255f);
+                byte swayMask = (byte)Mathf.RoundToInt(t * 255f);
+                byte biolumMask = (byte)Mathf.RoundToInt(Mathf.Clamp01((t - 0.72f) * 3.5714285f) * 128f);
+                byte aoVisibility = (byte)Mathf.RoundToInt(Mathf.Lerp(176f, 255f, t));
+                byte wearMask = (byte)Mathf.RoundToInt(Mathf.Lerp(12f, 96f, t * t));
 
                 vertices[leftIndex] = new Vector3(-halfWidth, y, sweep);
                 vertices[rightIndex] = new Vector3(halfWidth, y, sweep);
@@ -57,8 +61,8 @@ namespace Hecton8.World
                 uvs[leftIndex] = new Vector2(0f, t);
                 uvs[rightIndex] = new Vector2(1f, t);
 
-                colors[leftIndex] = new Color32(tipMask, 255, 255, 255);
-                colors[rightIndex] = new Color32(tipMask, 255, 255, 255);
+                colors[leftIndex] = new Color32(swayMask, biolumMask, aoVisibility, wearMask);
+                colors[rightIndex] = new Color32(swayMask, biolumMask, aoVisibility, wearMask);
             }
 
             int indexCursor = 0;
@@ -94,3 +98,4 @@ namespace Hecton8.World
         }
     }
 }
+#endif

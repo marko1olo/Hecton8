@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P356_PRESSURE_BUNK_SHIFT_ROUTINE",
+    "P357_CANTEEN_WATER_LEDGER",
+    "P358_TOOL_CERTIFICATION_RITUALS",
+    "P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE",
+    "P360_LAST_NORMAL_DAY_EVIDENCE_SET"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS.packets.json"
+  ]
+}

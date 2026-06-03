@@ -10,6 +10,19 @@ Date: 2026-06-02
 - `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` from pass 1
 - `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`
 - `Assets/_Project/Scripts/Core/GlobalRegistry.cs`
+- `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`
+- `Assets/_Project/Scripts/Core/SceneRuntimeService.cs`
+- `Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs`
+- `Assets/_Project/Scripts/Core/PlayerSensoryManager.cs`
+- `Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistry.cs`
+- `Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs`
+- `Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs`
+- `Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs`
+- `Assets/_Project/Scripts/Core/UIStateStore.cs`
+- `Assets/_Project/Scripts/Core/FrameTimeWatchdog.cs`
+- `Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs`
+- `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs`
+- `Assets/_Project/Scripts/Core/BurstCallback.cs`
 - `Assets/_Project/Scripts/World/BiomeBoundarySdfRuntime.cs`
 - `Assets/_Project/Scripts/World/GPUScatterDirector.cs`
 - `Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs`
@@ -69,3 +82,58 @@ Date: 2026-06-02
 - `H8Memory.CompleteAllOwnerJobs()` contains an explicit shutdown-only blocking sync comment; it is not a defect if no gameplay tick calls it.
 - `H8Memory.EnsureTrackingCapacity()` reallocates persistent tracking arrays when allocation record capacity is exhausted. That is legal only if capacity is prewarmed or runtime counters prove no gameplay growth.
 - Static memory-owner code remains yellow, not green, until DataVault/H8Memory growth counters are captured during real gameplay stress.
+
+## Pass 8 Addendum - Owner Lifecycle Still Needs Runtime Counters
+
+- Pass 8 found more owner-shaped cold routes: vegetation chunk build arrays, MapMagic chunk payload arrays, HUD material/hierarchy bootstrap, voxel obstacle snapshot pools, and VFX mesh/material/RT fallbacks. These are not automatically hot-path defects, but none are closed by comments like `COLD ALLOC`.
+- Runtime architecture acceptance now needs a single 300-frame owner-lifecycle proof packet that records post-bootstrap object creation count, material/mesh/RT creation count, native allocation/growth counters, and forced job completion counters under normal gameplay stress.
+
+## Pass 11 Addendum - Scatter, Biome SDF, Resource Storage, Ocean, And Gas
+
+- `GPUScatterDirector` owns compute, indirect, visibility, and cache buffers, but capacity helpers can release/recreate buffers when required capacity grows. Release proof must show capacities are prewarmed or growth is excluded from healthy gameplay.
+- `GPUScatterDirector.TryRefreshBiomeHeatmapTextureHot()` writes heatmap data through `SetPixelData()` and `Apply(false, false)` when the Data Monolith heatmap payload length or checksum changes. This is acceptable only as a dirty-data route, not recurring per-frame upload.
+- `GPUScatterDirector` uses `AsyncGPUReadback.RequestIntoNativeArray()` for visible counts, but `CompletePendingVisibleCountReadbackForRelease()` calls `WaitForCompletion()`. The method name suggests teardown/release; callsite proof must show no healthy gameplay blocking wait.
+- `BiomeBoundarySdfRuntime` uses persistent owner scratch for sample results and temporary byte payloads only for black-box snapshot export. This is greenish only with fault-injection proof that healthy gameplay does not enter the dump path.
+- `ResourceDistributionDirector` has a no-growth pool intent for metamorphism workspaces: hot capacity checks refuse growth while a job is active or a workspace is leased, while cold capacity routes handle sizing. This does not close runtime resource proxy art fallback blockers.
+- `ShinobuOceanSurfaceAtmosphereRuntime` uses triple-buffered async wave-height readback and defers disposal while pending. GPU proof is still required for compact/high waterline readability and bounded readback latency.
+- `GasDynamicsSolver` schedules in fixed cadence and completes in owner phases with persistent telemetry scratch. Stress proof must show room/base pressure cases do not create job completion spikes.
+
+## Pass 12 Addendum - TBDR Mock Storage And Diagnostic Runtime Assets
+
+- `TBDRPipelineSurgeonRuntime` uses DataVault handles for mock visible instances, sort scratch, quality signal, camera, and budget buffers when possible, but persistent fallback native arrays are created if that route fails. This cannot be accepted as production rendering readiness without DataVault boot proof.
+- `TBDRPipelineSurgeonTypes` also has fallback `NativeArray` storage for budget counters, warnings, overdraw counters, telemetry, and texture slice tracking when DataVault is unavailable. The fallback language is explicit, but release proof still needs build/boot policy.
+- `ArchitectEyeVisualizer` registers into slow/render lanes and creates diagnostic quad mesh/material/GPU buffers at runtime. This can be a valid diagnostic feature only if release inclusion, debug flags, and resource counts are documented and measured.
+
+## Pass 13 Addendum - DataVault, H8Memory, And Content Authority Growth
+
+- `GlobalDataVault.Initialize()` owns central UnsafeHashMaps, NativeLists, H8Memory arrays, macro payload cache maps, and a raw arena. This is the correct owner route for cross-domain native state, but it is not green until runtime growth counters are flat.
+- `GlobalDataVault.EnsureGenerationHandle()` can route into arena growth when required bytes exceed current arena size. `TryGrowArenaForBytes()` / `TryGrowArena()` can relocate the arena after lock/pinned-view checks, and deferred growth can be processed later. This must never be triggered by hot `Get*`, `TryGet*`, `Resolve*`, or `Read*` accessors.
+- `GlobalDataVault.TryReserveMacroDatabaseCache()` can increase macro payload cache/list capacities; `TryStoreMacroDatabasePayload()` allocates raw persistent payload memory. Macro payload growth needs boot/import/streaming-window proof, not general gameplay proof by comment.
+- `H8Memory.EnsureTrackingCapacity()` doubles tracking records and hash maps when allocation record capacity is exhausted. H8Memory remains `YELLOW_CORE_NATIVE_GROWTH_COUNTER_PROOF_REQUIRED` until scene capacity is prewarmed or soak captures prove no tracking resize.
+- `ContentAuthorityRuntime` fixed ledgers and DataVault buffers are good structure; release proof still needs Addressables ledger counts, pending release drains, resident VFX handle counts, and black-box/fault path proof.
+
+## Pass 15 Addendum - Core Boundary And Lazy First-Use Init
+
+- `H8Debug` is a release-stripped diagnostic facade. Calls through `H8Debug.*` should not be counted as release-player log cost after build-symbol proof. Direct `Debug.Log*` callsites are separate and remain covered by RB-113.
+- `GameBootstrapper.Update()` only advances bootstrap recovery while `_isBootstrapComplete` is false. This is not a normal gameplay scheduler, but boot trace proof must show it becomes inert after completion.
+- `SceneRuntimeService` uses async scene activation gates and cold transition overlay construction, but it creates transition UI roots/materials and scans scene cameras during activation. This remains `YELLOW_SCENE_TRANSITION_COLD_UI_MATERIAL_LIFECYCLE_PROOF_REQUIRED`.
+- `PlayerRuntimeContextService` and `PlayerSensoryManager` keep hierarchy scans in cold/rebind routes. The steady-state paths read cached runtime context, but rebind counts and `GetComponentsInChildren` counts must be captured so hot gameplay does not hide repeated hierarchy scans.
+- `GlobalTelemetryBus`, `UIStateStore`, `ThreadSafeCommandQueue`, `SignalBusRuntime`, `FrameTimeWatchdog`, and `BurstCallbackQueue` use fixed persistent native storage after initialization. The unresolved risk is lazy first-use allocation: if boot does not prewarm them, the first telemetry/UI/signal/command event can allocate during gameplay. Current classification: `YELLOW_CORE_LAZY_FIRST_USE_NATIVE_INIT_PROOF_REQUIRED`.
+- `CoreLowLevelUtilities.TryComplete(...)` and `TryFinalizeCompleted(...)` are greenish helpers: they avoid blocking unless the handle is complete or the caller explicitly forces completion. Closure is callsite-based, not helper-based.
+
+## Pass 16 Addendum - Runtime Auto-Bootstrap And Thermal Owner Boundaries
+
+- `ShinobuStormPropagationRuntime` uses `RuntimeInitializeOnLoadMethod(AfterSceneLoad)` to create `H8_ShinobuStormPropagationRuntime` if no claimed instance exists. This is recovery/boot safety, not authored release scene proof. Runtime architecture acceptance needs a boot manifest or scene prefab proof that this fallback does not execute in normal release scenes.
+- `AsyncBuoyancyReadbackRuntime`, `ShinobuStormPropagationRuntime`, `AbyssalThermodynamicsSolver`, and `ThermodynamicsHazardGridRuntime` all allocate/create owner resources during enable/first readiness windows. These are legal only if boot prewarm counters show they occur before player interaction and never as first-use gameplay spikes.
+- Storm telemetry dump currently stages into managed scratch and `TryWriteTelemetryDumpSnapshotCold(...)` only validates the scratch payload shape. Crash-reporting acceptance needs a real artifact or an explicitly documented bridge to the project black-box dump writer.
+- Thermodynamics hazard/reactor routes use DataVault/H8Memory owners and fault dumps. They are not hot accessor violations by shape, but they remain tied to RB-101/RB-120/RB-130 until arena/tracking growth and dump artifacts are proven.
+
+## Line-Level Classification Addendum
+
+- All 275 runtime architecture/data/bootstrap/telemetry static suspect lines are now classified in `LINE_LEVEL_CLASSIFICATION.md`: 124 editor/dev guarded, 151 cold/setup/fault/owner-lifetime, 0 false positives, and 0 new runtime violations.
+- `H8Debug.*` and the `H8Debug.cs` direct Unity log calls are classified as release-stripped diagnostic code. Direct `Debug.Log*` calls in `GlobalRegistry`, `BootstrapStatus`, and `GameBootstrapper` remain covered by `RB-113` because they are fatal/bootstrap/fault shaped, not automatically release-proven.
+- `GameBootstrapper.Update()` is classified as cold bootstrap recovery. It still requires a boot trace proving it becomes inert after `_isBootstrapComplete`.
+- `SceneRuntimeService` transition overlay material assignment, player context/sensory hierarchy scans, prefab renderer scans, lore root `TryGetComponent`, and URP camera guard scans are cold/setup/rebind shaped. They remain proof-gated by activation and rebind counters.
+- `CoreLowLevelUtilities` job completion helpers are classified as helper/callsite-bound, not standalone violations. Forced completion must still be proven teardown/fault/owner-window only.
+- `GlobalTelemetryBus`, `UIStateStore`, `ThreadSafeCommandQueue`, `SignalBusRuntime`, `FrameTimeWatchdog`, and `BurstCallbackQueue` remain under `RB-129`: fixed storage shape after init is good, but first-use initialization must be prewarmed before gameplay.
+- `GlobalDataVault` and `H8Memory` remain under `RB-101` and `RB-120`: central ownership is the intended architecture, but arena/macro/tracking growth must be flat in gameplay stress.

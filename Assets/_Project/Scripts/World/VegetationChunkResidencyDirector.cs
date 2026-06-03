@@ -398,42 +398,89 @@ namespace Hecton8.World
         private bool ScheduleChunkBuild(TileRuntimeState state, ChunkKey key, long tileKey, byte grassLodTier)
         {
             if (state == null ||
-                !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out NativeArray<ushort> heightSamples) ||
                 state.AlphamapResolution <= 0 ||
                 state.HeightmapResolution <= 1)
             {
                 return false;
             }
 
-            TouchTileCacheState(state);
-            if (!TryCopyChunkTileCacheForJob(
-                    sandMask,
-                    rockMask,
-                    heightSamples,
+            NativeArray<TerrainHoleRecord> terrainHoles = default;
+            int terrainHoleCountForJob = 0;
+            NativeArray<ArtificialStructureRecord> artificialStructures = default;
+            int artificialStructureCountForJob = 0;
+            IDataVault chunkBuildReadPinVault = null;
+            uint chunkBuildReadPinMask = 0u;
+            BufferID tileSandMaskBufferId = 0;
+            BufferID tileRockMaskBufferId = 0;
+            BufferID tileHeightSamplesBufferId = 0;
+            if (!TryPinActiveTileCacheForJob(
+                    state,
+                    ref chunkBuildReadPinVault,
+                    ref chunkBuildReadPinMask,
                     out NativeArray<byte> sandMaskForJob,
                     out NativeArray<byte> rockMaskForJob,
-                    out NativeArray<ushort> heightSamplesForJob))
+                    out NativeArray<ushort> heightSamplesForJob,
+                    out tileSandMaskBufferId,
+                    out tileRockMaskBufferId,
+                    out tileHeightSamplesBufferId))
             {
                 return false;
             }
 
+            TouchTileCacheState(state);
             if (_terrainHoleCount > 0 && _nativeMemory.TerrainHoleRecordsHandle.BufferID == 0u)
                 SyncTerrainHoleNativeCache();
-            if (!TryCreateTerrainHoleJobSnapshot(out NativeArray<TerrainHoleRecord> terrainHoles))
+
+            int terrainHoleCount = _terrainHoleCount > 0 ? _terrainHoleCount : 0;
+            if (terrainHoleCount > 0)
             {
-                H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                return false;
+                if (!TryPinChunkBuildReadBuffer(
+                        BufferID.VegetationTerrainHoleRecords,
+                        ChunkBuildPinTerrainHoles,
+                        ref chunkBuildReadPinVault,
+                        ref chunkBuildReadPinMask) ||
+                    !TryReadVegetationMemoryBuffer(
+                        in _nativeMemory.TerrainHoleRecordsHandle,
+                        BufferID.VegetationTerrainHoleRecords,
+                        terrainHoleCount,
+                        out terrainHoles))
+                {
+                    ReleaseChunkBuildReadPins(
+                        chunkBuildReadPinVault,
+                        chunkBuildReadPinMask,
+                        tileSandMaskBufferId,
+                        tileRockMaskBufferId,
+                        tileHeightSamplesBufferId);
+                    return false;
+                }
+
+                terrainHoleCountForJob = math.min(terrainHoleCount, terrainHoles.Length);
             }
-            int terrainHoleCountForJob = terrainHoles.IsCreated ? terrainHoles.Length : 0;
-            if (!TryPrepareArtificialStructureJobSnapshot(out NativeArray<ArtificialStructureRecord> artificialStructures))
+
+            int artificialStructureCount = _artificialStructureCount > 0 ? _artificialStructureCount : 0;
+            if (artificialStructureCount > 0)
             {
-                H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                return false;
+                if (!TryPinChunkBuildReadBuffer(
+                        BufferID.VegetationArtificialStructureRecords,
+                        ChunkBuildPinArtificialStructures,
+                        ref chunkBuildReadPinVault,
+                        ref chunkBuildReadPinMask) ||
+                    !TryReadVegetationMemoryBuffer(
+                        in _nativeMemory.ArtificialStructureRecordsHandle,
+                        BufferID.VegetationArtificialStructureRecords,
+                        artificialStructureCount,
+                        out artificialStructures))
+                {
+                    ReleaseChunkBuildReadPins(
+                        chunkBuildReadPinVault,
+                        chunkBuildReadPinMask,
+                        tileSandMaskBufferId,
+                        tileRockMaskBufferId,
+                        tileHeightSamplesBufferId);
+                    return false;
+                }
+
+                artificialStructureCountForJob = math.min(artificialStructureCount, artificialStructures.Length);
             }
 
             ChunkPayload payloadHeader = CreateChunkPayloadHeader(state, key.ChunkX, key.ChunkZ);
@@ -462,38 +509,52 @@ namespace Hecton8.World
                 PayloadHeader = payloadHeader
             };
 
-            NativeArray<JobInstanceRecord> grassRecords = AllocateJobRecordArray(grassCountX * grassCountZ);
-            NativeArray<JobInstanceRecord> floatingRecords = AllocateJobRecordArray(floatingCountX * floatingCountZ);
-            NativeArray<JobInstanceRecord> kelpRecords = AllocateJobRecordArray(kelpCountX * kelpCountZ);
+            NativeArray<JobInstanceRecord> grassRecords = default;
+            NativeArray<JobInstanceRecord> floatingRecords = default;
+            NativeArray<JobInstanceRecord> kelpRecords = default;
 
             float3 terrainPosition = new float3(state.TerrainPosition.x, state.TerrainPosition.y, state.TerrainPosition.z);
             float3 terrainSize = new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z);
             NativeArray<byte> threatEchoFlags = default;
             if (!_threatPropagationScheduled &&
                 _ecosystemThreatGridCellCount > 0 &&
-                TryReadVegetationMemoryBuffer(
-                    in _nativeMemory.EcosystemThreatEchoHandle,
+                TryPinChunkBuildReadBuffer(
                     BufferID.VegetationEcosystemThreatEcho,
-                    _ecosystemThreatGridCellCount,
-                    out NativeArray<byte> echoFlags))
+                    ChunkBuildPinThreatEcho,
+                    ref chunkBuildReadPinVault,
+                    ref chunkBuildReadPinMask))
             {
-                threatEchoFlags = H8Memory.Allocate<byte>(
-                    _ecosystemThreatGridCellCount,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                if (threatEchoFlags.IsCreated && threatEchoFlags.Length >= _ecosystemThreatGridCellCount)
-                    NativeArray<byte>.Copy(echoFlags, threatEchoFlags, _ecosystemThreatGridCellCount);
-                else
-                    H8Memory.Release(ref threatEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (!TryReadVegetationMemoryBuffer(
+                        in _nativeMemory.EcosystemThreatEchoHandle,
+                        BufferID.VegetationEcosystemThreatEcho,
+                        _ecosystemThreatGridCellCount,
+                        out threatEchoFlags))
+                {
+                    ReleaseChunkBuildReadPins(chunkBuildReadPinVault, ChunkBuildPinThreatEcho);
+                    chunkBuildReadPinMask &= ~ChunkBuildPinThreatEcho;
+                    if (chunkBuildReadPinMask == 0u)
+                        chunkBuildReadPinVault = null;
+                    threatEchoFlags = default;
+                }
             }
             bool hasBuiltAnyChunkSlice = false;
             bool scheduled = false;
             int jobSlot = -1;
             try
             {
-                if (!IsJobStateCurrent(jobState) || !TryAcquireChunkBuildJobSlot(out jobSlot))
+                if (!IsJobStateCurrent(jobState) ||
+                    !TryAcquireChunkBuildJobSlot(out jobSlot) ||
+                    !TryAcquireChunkBuildRecordArrays(
+                        jobSlot,
+                        grassCountX * grassCountZ,
+                        floatingCountX * floatingCountZ,
+                        kelpCountX * kelpCountZ,
+                        out grassRecords,
+                        out floatingRecords,
+                        out kelpRecords))
+                {
                     return false;
+                }
 
                 JobHandle buildHandle = default;
                 if (grassRecords.IsCreated && grassRecords.Length > 0)
@@ -508,6 +569,7 @@ namespace Hecton8.World
                         ArtificialStructures = artificialStructures,
                         ArtificialStructureHash = default,
                         TerrainHoleCount = terrainHoleCountForJob,
+                        ArtificialStructureCount = artificialStructureCountForJob,
                         Output = grassRecords,
                         TerrainPosition = terrainPosition,
                         TerrainSize = terrainSize,
@@ -593,6 +655,7 @@ namespace Hecton8.World
                         ArtificialStructures = artificialStructures,
                         ArtificialStructureHash = default,
                         TerrainHoleCount = terrainHoleCountForJob,
+                        ArtificialStructureCount = artificialStructureCountForJob,
                         Output = kelpRecords,
                         TerrainPosition = terrainPosition,
                         TerrainSize = terrainSize,
@@ -740,6 +803,11 @@ namespace Hecton8.World
                     TerrainHoles = terrainHoles,
                     ArtificialStructures = artificialStructures,
                     ThreatEchoFlags = threatEchoFlags,
+                    ReadPinVault = chunkBuildReadPinVault,
+                    ReadPinMask = chunkBuildReadPinMask,
+                    TileSandMaskBufferId = tileSandMaskBufferId,
+                    TileRockMaskBufferId = tileRockMaskBufferId,
+                    TileHeightSamplesBufferId = tileHeightSamplesBufferId,
                     Handle = buildHandle
                 };
                 scheduled = true;
@@ -749,72 +817,129 @@ namespace Hecton8.World
             {
                 if (!scheduled)
                 {
-                    ReleaseJobRecordArray(ref grassRecords);
-                    ReleaseJobRecordArray(ref floatingRecords);
-                    ReleaseJobRecordArray(ref kelpRecords);
-                    H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    H8Memory.Release(ref threatEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    H8Memory.Release(ref artificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    ReleaseChunkBuildReadPins(
+                        chunkBuildReadPinVault,
+                        chunkBuildReadPinMask,
+                        tileSandMaskBufferId,
+                        tileRockMaskBufferId,
+                        tileHeightSamplesBufferId);
                 }
             }
         }
 
-        private static bool TryCopyChunkTileCacheForJob(
-            NativeArray<byte> sandMask,
-            NativeArray<byte> rockMask,
-            NativeArray<ushort> heightSamples,
+        private bool TryPinChunkBuildReadBuffer(
+            BufferID bufferId,
+            uint pinBit,
+            ref IDataVault readPinVault,
+            ref uint readPinMask)
+        {
+            if ((readPinMask & pinBit) != 0u)
+                return true;
+
+            IDataVault vault = _vegetationMemoryVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                (readPinVault != null && !ReferenceEquals(readPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, VegetationMemorySovereigntyConstants.OwnerSystemId))
+            {
+                return false;
+            }
+
+            readPinVault = vault;
+            readPinMask |= pinBit;
+            return true;
+        }
+
+        private bool TryPinActiveTileCacheForJob(
+            TileRuntimeState state,
+            ref IDataVault readPinVault,
+            ref uint readPinMask,
             out NativeArray<byte> sandMaskForJob,
             out NativeArray<byte> rockMaskForJob,
-            out NativeArray<ushort> heightSamplesForJob)
+            out NativeArray<ushort> heightSamplesForJob,
+            out BufferID sandMaskBufferId,
+            out BufferID rockMaskBufferId,
+            out BufferID heightSamplesBufferId)
         {
             sandMaskForJob = default;
             rockMaskForJob = default;
             heightSamplesForJob = default;
-            if (!sandMask.IsCreated ||
-                !rockMask.IsCreated ||
-                !heightSamples.IsCreated ||
-                sandMask.Length <= 0 ||
-                rockMask.Length <= 0 ||
-                heightSamples.Length <= 0)
+            sandMaskBufferId = 0;
+            rockMaskBufferId = 0;
+            heightSamplesBufferId = 0;
+
+            if (state == null ||
+                state.TileCacheDisposalDeferred ||
+                state.TileNativeCacheSlot < 0)
             {
                 return false;
             }
 
-            sandMaskForJob = H8Memory.Allocate<byte>(
-                sandMask.Length,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            rockMaskForJob = H8Memory.Allocate<byte>(
-                rockMask.Length,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            heightSamplesForJob = H8Memory.Allocate<ushort>(
-                heightSamples.Length,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
+            TileNativeCacheBuffer buffer = state.ActiveCacheBufferIndex == 0
+                ? state.PrimaryCacheBuffer
+                : state.SecondaryCacheBuffer;
 
-            if (!sandMaskForJob.IsCreated ||
-                sandMaskForJob.Length < sandMask.Length ||
-                !rockMaskForJob.IsCreated ||
-                rockMaskForJob.Length < rockMask.Length ||
-                !heightSamplesForJob.IsCreated ||
-                heightSamplesForJob.Length < heightSamples.Length)
+            if (buffer.SampleCount <= 0 ||
+                buffer.HeightSampleCount <= 0 ||
+                buffer.SandMaskHandle.BufferID == 0u ||
+                buffer.RockMaskHandle.BufferID == 0u ||
+                buffer.HeightSamplesHandle.BufferID == 0u)
             {
-                H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 return false;
             }
 
-            NativeArray<byte>.Copy(sandMask, sandMaskForJob, sandMask.Length);
-            NativeArray<byte>.Copy(rockMask, rockMaskForJob, rockMask.Length);
-            NativeArray<ushort>.Copy(heightSamples, heightSamplesForJob, heightSamples.Length);
+            sandMaskBufferId = unchecked((BufferID)(int)buffer.SandMaskHandle.BufferID);
+            rockMaskBufferId = unchecked((BufferID)(int)buffer.RockMaskHandle.BufferID);
+            heightSamplesBufferId = unchecked((BufferID)(int)buffer.HeightSamplesHandle.BufferID);
+
+            if (!TryPinChunkBuildReadBuffer(
+                    sandMaskBufferId,
+                    ChunkBuildPinTileSandMask,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryPinChunkBuildReadBuffer(
+                    rockMaskBufferId,
+                    ChunkBuildPinTileRockMask,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryPinChunkBuildReadBuffer(
+                    heightSamplesBufferId,
+                    ChunkBuildPinTileHeightSamples,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryReadVegetationMemoryBuffer(
+                    in buffer.SandMaskHandle,
+                    sandMaskBufferId,
+                    buffer.SampleCount,
+                    out sandMaskForJob) ||
+                !TryReadVegetationMemoryBuffer(
+                    in buffer.RockMaskHandle,
+                    rockMaskBufferId,
+                    buffer.SampleCount,
+                    out rockMaskForJob) ||
+                !TryReadVegetationMemoryBuffer(
+                    in buffer.HeightSamplesHandle,
+                    heightSamplesBufferId,
+                    buffer.HeightSampleCount,
+                    out heightSamplesForJob))
+            {
+                ReleaseChunkBuildReadPins(
+                    readPinVault,
+                    readPinMask,
+                    sandMaskBufferId,
+                    rockMaskBufferId,
+                    heightSamplesBufferId);
+                readPinVault = null;
+                readPinMask = 0u;
+                sandMaskForJob = default;
+                rockMaskForJob = default;
+                heightSamplesForJob = default;
+                sandMaskBufferId = 0;
+                rockMaskBufferId = 0;
+                heightSamplesBufferId = 0;
+                return false;
+            }
+
             return true;
         }
 

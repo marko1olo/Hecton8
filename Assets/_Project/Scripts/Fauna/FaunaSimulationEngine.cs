@@ -410,109 +410,253 @@ namespace Hecton8.AI
     /// </summary>
     internal struct FaunaSimulationMemory : IDisposable
     {
+        private const ulong FaunaSimulationMutationGuardMask =
+            (1UL << ((int)BufferID.FaunaSimulationPoolSlots & 31)) |
+            (1UL << ((int)BufferID.FaunaSimulationLinearVelocities & 31)) |
+            (1UL << ((int)BufferID.FaunaSimulationFlags & 31)) |
+            (1UL << ((int)BufferID.FaunaSimulationFreeSlots & 31));
+
         private IDataVault _vault;
         private VaultGenerationHandle<PoolSlotData> _poolSlotsHandle;
         private VaultGenerationHandle<float3> _linearVelocitiesHandle;
         private VaultGenerationHandle<byte> _simulationFlagsHandle;
+        private IDataVault _mutationGuardVault;
+        private bool _mutationGuardHeld;
+        private bool _scheduledDataOnlyLodGuardHeld;
 
         public FaunaSimulationFreeSlotStack FreeSlots;
         public int Capacity;
 
         public bool IsCreated =>
             HasResidentBuffers &&
-            FreeSlots.IsCreated;
+            HasFreeSlots;
 
-        public bool HasResidentBuffers =>
-            TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) &&
-            TryResolveLinearVelocities(out NativeArray<float3> linearVelocities) &&
-            TryResolveSimulationFlags(out NativeArray<byte> simulationFlags) &&
-            poolSlots.IsCreated &&
-            linearVelocities.IsCreated &&
-            simulationFlags.IsCreated;
+        public bool HasResidentBuffers
+        {
+            get
+            {
+                if (!TryEnterMutationGuard(out _, out bool acquiredGuard, allowScheduledOwner: true))
+                    return false;
+
+                try
+                {
+                    return TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) &&
+                           TryResolveLinearVelocities(out NativeArray<float3> linearVelocities) &&
+                           TryResolveSimulationFlags(out NativeArray<byte> simulationFlags) &&
+                           poolSlots.IsCreated &&
+                           linearVelocities.IsCreated &&
+                           simulationFlags.IsCreated;
+                }
+                finally
+                {
+                    ReleaseMutationGuard(acquiredGuard);
+                }
+            }
+        }
+
+        public bool HasFreeSlots
+        {
+            get
+            {
+                if (!TryEnterMutationGuard(out _, out bool acquiredGuard, allowScheduledOwner: true))
+                    return false;
+
+                try
+                {
+                    return FreeSlots.IsCreated;
+                }
+                finally
+                {
+                    ReleaseMutationGuard(acquiredGuard);
+                }
+            }
+        }
 
         public bool HasPoolSlot(int index)
         {
-            return TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) &&
-                   (uint)index < (uint)poolSlots.Length;
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard, allowScheduledOwner: true))
+                return false;
+
+            try
+            {
+                return TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) &&
+                       (uint)index < (uint)poolSlots.Length;
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryReadPoolSlot(int index, out PoolSlotData slotData)
         {
             slotData = default;
-            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
-            if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
                 return false;
 
-            slotData = poolSlots[index];
-            return true;
+            try
+            {
+                NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+                if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
+                    return false;
+
+                slotData = poolSlots[index];
+                return true;
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryWritePoolSlot(int index, in PoolSlotData slotData)
         {
-            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
-            if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
                 return false;
 
-            poolSlots[index] = slotData;
-            return true;
+            try
+            {
+                NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+                if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
+                    return false;
+
+                poolSlots[index] = slotData;
+                return true;
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryReadLinearVelocity(int index, out float3 velocity)
         {
             velocity = default;
-            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
-            if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
                 return false;
 
-            velocity = linearVelocities[index];
-            return true;
+            try
+            {
+                NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+                if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
+                    return false;
+
+                velocity = linearVelocities[index];
+                return true;
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryWriteLinearVelocity(int index, float3 velocity)
         {
-            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
-            if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
                 return false;
 
-            linearVelocities[index] = velocity;
-            return true;
+            try
+            {
+                NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+                if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
+                    return false;
+
+                linearVelocities[index] = velocity;
+                return true;
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryWriteSimulationFlag(int index, byte flag)
         {
-            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
-            if (!simulationFlags.IsCreated || (uint)index >= (uint)simulationFlags.Length)
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
                 return false;
 
-            simulationFlags[index] = flag;
-            return true;
+            try
+            {
+                NativeArray<byte> simulationFlags = ResolveSimulationFlags();
+                if (!simulationFlags.IsCreated || (uint)index >= (uint)simulationFlags.Length)
+                    return false;
+
+                simulationFlags[index] = flag;
+                return true;
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryClearSlot(int index)
         {
-            bool wroteAny = false;
-            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
-            if (poolSlots.IsCreated && (uint)index < (uint)poolSlots.Length)
-            {
-                poolSlots[index] = default;
-                wroteAny = true;
-            }
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
+                return false;
 
-            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
-            if (linearVelocities.IsCreated && (uint)index < (uint)linearVelocities.Length)
+            try
             {
-                linearVelocities[index] = default;
-                wroteAny = true;
-            }
+                bool wroteAny = false;
+                NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+                if (poolSlots.IsCreated && (uint)index < (uint)poolSlots.Length)
+                {
+                    poolSlots[index] = default;
+                    wroteAny = true;
+                }
 
-            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
-            if (simulationFlags.IsCreated && (uint)index < (uint)simulationFlags.Length)
+                NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+                if (linearVelocities.IsCreated && (uint)index < (uint)linearVelocities.Length)
+                {
+                    linearVelocities[index] = default;
+                    wroteAny = true;
+                }
+
+                NativeArray<byte> simulationFlags = ResolveSimulationFlags();
+                if (simulationFlags.IsCreated && (uint)index < (uint)simulationFlags.Length)
+                {
+                    simulationFlags[index] = 0;
+                    wroteAny = true;
+                }
+
+                return wroteAny;
+            }
+            finally
             {
-                simulationFlags[index] = 0;
-                wroteAny = true;
+                ReleaseMutationGuard(acquiredGuard);
             }
+        }
 
-            return wroteAny;
+        public bool TryDequeueFreeSlot(out int slotIndex)
+        {
+            slotIndex = -1;
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
+                return false;
+
+            try
+            {
+                return FreeSlots.IsCreated && FreeSlots.TryDequeue(out slotIndex);
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
+        }
+
+        public void EnqueueFreeSlot(int slotIndex)
+        {
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
+                return;
+
+            try
+            {
+                if (FreeSlots.IsCreated)
+                    FreeSlots.Enqueue(slotIndex);
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public bool TryScheduleResidentDataOnlyLod(
@@ -526,25 +670,43 @@ namespace Hecton8.AI
             out JobHandle handle)
         {
             handle = default;
-            if (engine == null ||
-                !TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) ||
-                !TryResolveLinearVelocities(out NativeArray<float3> linearVelocities) ||
-                !TryResolveSimulationFlags(out NativeArray<byte> simulationFlags))
+            if (engine == null || _scheduledDataOnlyLodGuardHeld)
+                return false;
+
+            if (!TryAcquireRetainedMutationGuard())
             {
                 return false;
             }
 
-            handle = engine.ScheduleResidentDataOnlyLod(
-                poolSlots,
-                linearVelocities,
-                simulationFlags,
-                in playerAup,
-                deltaTime,
-                dehydrationDistanceSq,
-                hibernationDistanceSq,
-                residentSimulationFlag,
-                dehydratedSimulationFlag);
-            return true;
+            bool retainGuard = false;
+            try
+            {
+                if (!TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) ||
+                    !TryResolveLinearVelocities(out NativeArray<float3> linearVelocities) ||
+                    !TryResolveSimulationFlags(out NativeArray<byte> simulationFlags))
+                {
+                    return false;
+                }
+
+                handle = engine.ScheduleResidentDataOnlyLod(
+                    poolSlots,
+                    linearVelocities,
+                    simulationFlags,
+                    in playerAup,
+                    deltaTime,
+                    dehydrationDistanceSq,
+                    hibernationDistanceSq,
+                    residentSimulationFlag,
+                    dehydratedSimulationFlag);
+                _scheduledDataOnlyLodGuardHeld = true;
+                retainGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!retainGuard)
+                    ReleaseRetainedMutationGuard();
+            }
         }
 
         public void Allocate(int capacity)
@@ -562,56 +724,80 @@ namespace Hecton8.AI
             }
 
             _vault = vault;
-            _poolSlotsHandle = OpenOrAcquireVaultBuffer(
-                vault,
-                BufferID.FaunaSimulationPoolSlots,
-                Capacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory,
-                out NativeArray<PoolSlotData> poolSlots);
-            _linearVelocitiesHandle = OpenOrAcquireVaultBuffer(
-                vault,
-                BufferID.FaunaSimulationLinearVelocities,
-                Capacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory,
-                out NativeArray<float3> linearVelocities);
-            _simulationFlagsHandle = OpenOrAcquireVaultBuffer(
-                vault,
-                BufferID.FaunaSimulationFlags,
-                Capacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory,
-                out NativeArray<byte> simulationFlags);
-
-            if (!poolSlots.IsCreated ||
-                !linearVelocities.IsCreated ||
-                !simulationFlags.IsCreated ||
-                poolSlots.Length < Capacity ||
-                linearVelocities.Length < Capacity ||
-                simulationFlags.Length < Capacity)
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
             {
-                ReleaseVaultAliases();
+                _vault = null;
+                Capacity = 0;
                 return;
             }
 
-            ClearArrays(poolSlots, linearVelocities, simulationFlags);
-            FreeSlots.Allocate(
-                vault,
-                Capacity,
-                BufferID.FaunaSimulationFreeSlots,
-                SystemID.AICognition);
-            if (!FreeSlots.IsCreated)
-                ReleaseVaultAliases();
+            try
+            {
+                _poolSlotsHandle = OpenOrAcquireVaultBuffer(
+                    vault,
+                    BufferID.FaunaSimulationPoolSlots,
+                    Capacity,
+                    SystemID.AICognition,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<PoolSlotData> poolSlots);
+                _linearVelocitiesHandle = OpenOrAcquireVaultBuffer(
+                    vault,
+                    BufferID.FaunaSimulationLinearVelocities,
+                    Capacity,
+                    SystemID.AICognition,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<float3> linearVelocities);
+                _simulationFlagsHandle = OpenOrAcquireVaultBuffer(
+                    vault,
+                    BufferID.FaunaSimulationFlags,
+                    Capacity,
+                    SystemID.AICognition,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> simulationFlags);
+
+                if (!poolSlots.IsCreated ||
+                    !linearVelocities.IsCreated ||
+                    !simulationFlags.IsCreated ||
+                    poolSlots.Length < Capacity ||
+                    linearVelocities.Length < Capacity ||
+                    simulationFlags.Length < Capacity)
+                {
+                    ReleaseVaultAliases();
+                    return;
+                }
+
+                ClearArrays(poolSlots, linearVelocities, simulationFlags);
+                FreeSlots.Allocate(
+                    vault,
+                    Capacity,
+                    BufferID.FaunaSimulationFreeSlots,
+                    SystemID.AICognition);
+                if (!FreeSlots.IsCreated)
+                    ReleaseVaultAliases();
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public void Reset()
         {
-            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
-            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
-            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
-            ClearArrays(poolSlots, linearVelocities, simulationFlags);
-            FreeSlots.Reset();
+            if (!TryEnterMutationGuard(out _, out bool acquiredGuard))
+                return;
+
+            try
+            {
+                NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+                NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+                NativeArray<byte> simulationFlags = ResolveSimulationFlags();
+                ClearArrays(poolSlots, linearVelocities, simulationFlags);
+                FreeSlots.Reset();
+            }
+            finally
+            {
+                ReleaseMutationGuard(acquiredGuard);
+            }
         }
 
         public void Dispose()
@@ -625,15 +811,85 @@ namespace Hecton8.AI
             ReleaseVaultAliases();
         }
 
+        public void ReleaseScheduledDataOnlyLodGuard()
+        {
+            _scheduledDataOnlyLodGuardHeld = false;
+            ReleaseRetainedMutationGuard();
+        }
+
         private void ReleaseVaultAliases()
         {
+            if (!_mutationGuardHeld && !_scheduledDataOnlyLodGuardHeld)
+                TryEnterMutationGuard(out _, out _);
+
             IDataVault vault = _vault;
-            ReleaseVaultBuffer(vault, ref _poolSlotsHandle, BufferID.FaunaSimulationPoolSlots, SystemID.AICognition);
-            ReleaseVaultBuffer(vault, ref _linearVelocitiesHandle, BufferID.FaunaSimulationLinearVelocities, SystemID.AICognition);
-            ReleaseVaultBuffer(vault, ref _simulationFlagsHandle, BufferID.FaunaSimulationFlags, SystemID.AICognition);
-            FreeSlots.Dispose();
-            _vault = null;
-            Capacity = 0;
+            _scheduledDataOnlyLodGuardHeld = false;
+            try
+            {
+                ReleaseVaultBuffer(vault, ref _poolSlotsHandle, BufferID.FaunaSimulationPoolSlots, SystemID.AICognition);
+                ReleaseVaultBuffer(vault, ref _linearVelocitiesHandle, BufferID.FaunaSimulationLinearVelocities, SystemID.AICognition);
+                ReleaseVaultBuffer(vault, ref _simulationFlagsHandle, BufferID.FaunaSimulationFlags, SystemID.AICognition);
+                FreeSlots.Dispose();
+            }
+            finally
+            {
+                _vault = null;
+                Capacity = 0;
+                ReleaseRetainedMutationGuard();
+            }
+        }
+
+        private bool TryEnterMutationGuard(out IDataVault vault, out bool acquired, bool allowScheduledOwner = false)
+        {
+            acquired = false;
+            vault = _vault;
+            if (vault == null || (_scheduledDataOnlyLodGuardHeld && !allowScheduledOwner))
+                return false;
+
+            if (_mutationGuardHeld)
+                return true;
+
+            if (!vault.TryAcquireMutationGuard(FaunaSimulationMutationGuardMask))
+            {
+                vault = null;
+                return false;
+            }
+
+            _mutationGuardVault = vault;
+            _mutationGuardHeld = true;
+            acquired = true;
+            return true;
+        }
+
+        private bool TryAcquireRetainedMutationGuard()
+        {
+            IDataVault vault = _vault;
+            if (vault == null || _mutationGuardHeld || _scheduledDataOnlyLodGuardHeld)
+                return false;
+
+            if (!vault.TryAcquireMutationGuard(FaunaSimulationMutationGuardMask))
+                return false;
+
+            _mutationGuardVault = vault;
+            _mutationGuardHeld = true;
+            return true;
+        }
+
+        private void ReleaseMutationGuard(bool acquired)
+        {
+            if (acquired)
+                ReleaseRetainedMutationGuard();
+        }
+
+        private void ReleaseRetainedMutationGuard()
+        {
+            if (!_mutationGuardHeld)
+                return;
+
+            IDataVault vault = _mutationGuardVault;
+            _mutationGuardHeld = false;
+            _mutationGuardVault = null;
+            vault?.ReleaseMutationGuard(FaunaSimulationMutationGuardMask);
         }
 
         private static VaultGenerationHandle<T> OpenOrAcquireVaultBuffer<T>(

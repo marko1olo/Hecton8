@@ -1,10 +1,17 @@
 ---
 packet_id: P069_PAVEL_SORN_PROCEDURE_HOLD
+release_set_id: RS014_COLONY_RETURN_WINDOWS
 article_id: hecton8.pavel_sorn_procedure_hold
+unlock_id: unlock.first_pavel_sorn_procedure_hold
+poi_tags: poi.contract_officer_desk;poi.procedure_hold
+biome_tags: biome.admin_deck;biome.drowned_office
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Процедурная задержка Павла Сорна

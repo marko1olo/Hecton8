@@ -421,6 +421,10 @@ namespace Hecton8.Meta
                     _survivalSystem = _playerRuntimeContext != null ? _playerRuntimeContext.SurvivalSystem : null;
                     RefreshSurvivalSignalBinding();
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegisterWithTickManager();
+                    TryRegisterWithUpdateDispatcher();
+                    break;
             }
         }
 
@@ -479,7 +483,7 @@ namespace Hecton8.Meta
 
         private void TryRegisterWithUpdateDispatcher()
         {
-            if (_registeredToUpdate || !Application.isPlaying)
+            if (_registeredToUpdate || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredToUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);

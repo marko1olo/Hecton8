@@ -754,6 +754,7 @@ namespace Hecton8.Audio.Virtualization
         public const float AbyssLowPassHertz = 800f;
         public const float MaximumDepthLowPassMeters = 6000f;
         public const float MaximumUnderwaterItdSeconds = 0.00018f;
+        public const float InverseByteMax = 0.0039215686f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ComputeStableKey(uint eventID, uint clipHash, uint sourceEntityID, int stationaryCacheKey, in AcousticAup sourceAup)
@@ -921,7 +922,15 @@ namespace Hecton8.Audio.Virtualization
         public static float FastLength(float3 value)
         {
             float lengthSq = math.lengthsq(value);
-            return lengthSq > 0.000001f ? lengthSq * math.rsqrt(lengthSq) : 0f;
+            return FastLengthFromSq(lengthSq);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            float sanitized = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float estimate = sanitized * math.rsqrt(math.max(sanitized, 0.000001f));
+            return math.select(0f, estimate, sanitized > 0f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

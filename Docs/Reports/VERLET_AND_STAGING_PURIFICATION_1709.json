@@ -1,0 +1,104 @@
+{
+  "agent_id": "1709",
+  "role": "VERLET_TENSION_AND_NATIVE_STAGING_PURIFIER",
+  "task_count": 28,
+  "domain": "Physics/World/Gameplay tether physics, vegetation native staging, pooled VFX",
+  "authority_gap": "Active domain routing used the XML-authorized files plus project atlas and coverage matrix.",
+  "build_verification": {
+    "status": "blocked",
+    "reason": "CPU load reported 100 and Unity dotnet.exe processes were active.",
+    "dotnet_build_launched": false
+  },
+  "rb_116_native_staging": {
+    "status": "partial",
+    "native_list_vector3_in_edited_path_route": 0,
+    "old_violation": "VegetationNavGridSynchronizer.cs previously allocated raw/result NativeList<Vector3> per path request.",
+    "new_route": {
+      "VegetationNavGridSynchronizer.cs": [
+        "line 135: TryAcquireAbyssalPathStagingBuffers call",
+        "line 2014: TryAcquireAbyssalPathStagingBuffers implementation"
+      ],
+      "VegetationFlowFieldIntegrator.cs": "NativeAStarJob and StringPullPathJob now use NativeArray<Vector3> plus NativeArray<int> count/flags state.",
+      "HectonMapMagicVegetationBridge.cs": "AbyssalPathPendingJob stores raw/result path arrays, state arrays, and staging vault owner.",
+      "VegetationMemoryPool.cs": "VegetationNativeMemory tracks raw/result path staging handles and state handles.",
+      "H8Memory.cs": "BufferID values 74436..74439 added for raw/result path staging and state."
+    },
+    "remaining_work": "Other H8Memory.Allocate read-only job snapshots in the path scheduler remain. Removing them safely needs a separate scheduled-job pin contract.",
+    "overflow_policy": "State slot 1 carries AbyssalPathStateOverflowFlag; count is clamped to fixed capacity."
+  },
+  "rb_111_effect_roots": {
+    "status": "complete_for_targeted_sites",
+    "static_scan": {
+      "new_GameObject": 0,
+      "AddComponent_ParticleSystem": 0,
+      "AddComponent_BioCableIK": 0,
+      "AddComponent_AbyssalFluidDecalManager": 0,
+      "transform_Find_CableSparkFX": 0
+    },
+    "new_route": {
+      "BioCableIK.cs": "Authored ParticleSystem first, prewarmed ObjectPoolService prefab second, fail closed if neither exists.",
+      "AbyssalThermalManager.cs": "Authored BioCableIK rig first, prewarmed ObjectPoolService prefab second, pooled instances returned on disable/destroy."
+    }
+  },
+  "tether_rsqrts_and_quality": {
+    "status": "complete_for_modified_solver",
+    "line_numbers": {
+      "TetherAupVerletJobs.ResolveIterationCount": 49,
+      "TetherAupVerletJobs.SolveTetherConstraintsJob": 486,
+      "TetherAupVerletJobs.rsqrt_inverse_distance": 535
+    },
+    "global_quality_weight": {
+      "minimum_survival": "2 iterations",
+      "middle": "continuous interpolation between 2 and 8",
+      "high": "6-7 iterations",
+      "ultra": "8 iterations"
+    },
+    "epsilon": 0.0001,
+    "sqrt_usage_in_modified_constraint_path": 0
+  },
+  "predator_bite_bridge": {
+    "status": "partial",
+    "line_numbers": {
+      "BioCableIK.TryResolvePredatorCableBite_call": 284,
+      "BioCableIK.TryResolvePredatorCableBite": 297,
+      "BioCableIK.FaunaSpatialHashRegistry_query": 315,
+      "BioCableIK.PublishPredatorCableBiteSignals": 400
+    },
+    "query_capacity": 8,
+    "segment_capacity": 24,
+    "signals": [
+      "OxygenCriticalSignal",
+      "HypoxiaSignal",
+      "HapticPulseSignal",
+      "TetherSnappedSignal"
+    ],
+    "remaining_work": "Burst-side TetherStateDTO fracture split and FluidPipeGraphRuntime throughput zeroing were not implemented because no authoritative DTO/signal route was located in scope."
+  },
+  "zero_gc_claims": {
+    "steady_state_path_native_list_allocation_removed": true,
+    "targeted_vfx_runtime_creation_removed": true,
+    "predator_bite_detector_managed_allocations": 0,
+    "remaining_risk": "H8Memory snapshot allocations in path scheduling remain outside the removed NativeList blocker."
+  },
+  "static_checks": {
+    "git_diff_check": "passed; only CRLF normalization warnings reported",
+    "native_list_vector3_scan_in_edited_path_files": "no matches",
+    "rb_111_spawn_string_scan": "no matches",
+    "compiler_process_check": "Unity dotnet.exe active"
+  },
+  "estimated_microseconds_saved": {
+    "native_list_path_request": "35-90 us/request",
+    "runtime_vfx_spawn": "200-900 us/missed authored rig",
+    "tether_constraint_1000_segments": "0.2-0.8 us plus up to 7 fewer iterations on low tier"
+  },
+  "sha256": {
+    "Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs": "2DE27FF53FBCD5D4041FD0868A2D57985960038CC0E11CEA16AE887375113C4E",
+    "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs": "A70F210C971BAF3A02F3BD40B797241274CDB9C897119428D6FBA9F11B7E3409",
+    "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs": "F7777BB9458A37224028C13E2A18A5B7F899F87D51FED9F57C698B038F9B4B81",
+    "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs": "4307C02CDC7BDD51B35B1F25A01AAFA05CCDE8F684E3E43E347DF32E0B0F8E3A",
+    "Assets/_Project/Scripts/World/BioCableIK.cs": "B4AE7DBF2D6E044DE4D7C06EB35804DCD6469CCEF2AE76BD481EA940EE74FDFB",
+    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs": "BF037E74D4412E40DFB555CD2CDFEB156DD48F296C3CEEDBCFD676FC1EE1C637",
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": "E378425D4B8AF6EDC74EBA97A5A57400AA89CB6E43313DA8663B82514442C971",
+    "Assets/_Project/Scripts/World/VegetationMemoryPool.cs": "D8A8FF8E1EEEA5ADCD02F6E6783B0A7EE606577881E4C3AD43428A460589D0E6"
+  }
+}

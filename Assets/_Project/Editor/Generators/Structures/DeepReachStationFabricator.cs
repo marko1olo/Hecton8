@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -687,9 +688,15 @@ namespace Hecton8.Editor.Structures
                     StaticEditorFlags.OccludeeStatic |
                     StaticEditorFlags.ContributeGI);
 
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                    throw new InvalidOperationException("Collider topology rejected before station prefab save. path=" + prefabPath + " reason=" + colliderFailure);
+
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath, out bool success);
                 if (!success)
                     throw new InvalidOperationException($"PrefabUtility failed to save {prefabPath}.");
+
+                if (!ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    throw new InvalidOperationException("Collider topology rejected after station prefab save. path=" + prefabPath + " reason=" + colliderFailure);
             }
             finally
             {
@@ -728,26 +735,28 @@ namespace Hecton8.Editor.Structures
             return new[] { ResolveFallbackStationMaterial(outputFolder) };
         }
 
+        private const string AuthoredStationMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_Module_Foundation.mat";
+
         private static Material ResolveFallbackStationMaterial(string outputFolder)
         {
             string materialPath = $"{outputFolder}/MAT_Station_BakedGrime.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            bool ownsOutputMaterial = material != null;
             if (material == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-                if (shader == null)
-                    shader = Shader.Find("Standard");
-                if (shader == null)
-                    throw new InvalidOperationException("Unable to resolve fallback station shader.");
-
-                material = new Material(shader) { name = "MAT_Station_BakedGrime", enableInstancing = true };
-                AssetDatabase.CreateAsset(material, materialPath);
+                material = AssetDatabase.LoadAssetAtPath<Material>(AuthoredStationMaterialPath);
+                if (material == null)
+                    throw new InvalidOperationException("Missing authored station material: " + AuthoredStationMaterialPath);
             }
 
-            TrySetColor(material, "_BaseColor", new Color(0.44f, 0.48f, 0.46f, 1f));
-            TrySetFloat(material, "_Smoothness", 0.22f);
-            TrySetFloat(material, "_Metallic", 0.58f);
-            material.enableInstancing = true;
+            if (ownsOutputMaterial)
+            {
+                TrySetColor(material, "_BaseColor", new Color(0.44f, 0.48f, 0.46f, 1f));
+                TrySetFloat(material, "_Smoothness", 0.22f);
+                TrySetFloat(material, "_Metallic", 0.58f);
+                material.enableInstancing = true;
+            }
+
             return material;
         }
 

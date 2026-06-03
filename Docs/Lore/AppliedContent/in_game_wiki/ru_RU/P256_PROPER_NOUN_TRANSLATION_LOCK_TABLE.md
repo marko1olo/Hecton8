@@ -1,0 +1,37 @@
+---
+packet_id: P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE
+release_set_id: RS052_LOCALIZATION_GLOSSARY_AUDIO_STYLE
+article_id: applied_lore.proper_noun_translation_lock_table
+unlock_id: unlock.proper_noun_translation_lock_table
+poi_tags: poi.localization_glossary_card;poi.name_lock_sheet
+biome_tags: biome.publication;biome.localization
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Таблица фиксации собственных имён
+
+Внутриигровая вики: Proper Noun Translation Lock Table protects setting identity, save references and dossier continuity across languages.
+
+## Scanner
+
+Сканер: A name lock is not flavor. It is save identity protection.
+
+## Terminal
+
+Терминал: LOCALIZATION LOCK: proper nouns stable; descriptive subtitles may localize.
+
+## Audio
+
+Аудио: A translated name can become a different witness.
+
+## Field Note
+
+Полевая заметка: Do not translate HECTON-8, Aegir, Atlas-6, Deep Reach, Black Keel, blue debt or packet IDs into new proper nouns.
+
+<!-- In-Game Wiki; generated from P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE/ru_RU. -->

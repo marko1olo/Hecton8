@@ -83,7 +83,7 @@ namespace Hecton8.Equipment.Auxiliary
 
             deployment.AUP_Position = aup;
             deployment.PrefabHashID = prefabHash;
-            deployment.RemainingLifetime = baseLifetime * math.lerp(0.45f, 1f, ((index * 37) & 255) * (1f / 255f));
+            deployment.RemainingLifetime = baseLifetime * math.lerp(0.45f, 1f, ((index * 37) & 255) * AuxiliaryEquipmentMath.InverseByteMax);
 
             state.BaseLifetime = baseLifetime;
             state.Scalar0 = ResolveMockScalar(prefabHash, in Tuning);
@@ -100,7 +100,7 @@ namespace Hecton8.Equipment.Auxiliary
             }
 
             active.ToolHashID = prefabHash;
-            active.CurrentBattery = math.saturate(deployment.RemainingLifetime / math.max(0.01f, baseLifetime));
+            active.CurrentBattery = math.saturate(deployment.RemainingLifetime * math.rcp(math.max(0.01f, baseLifetime)));
             active.ThermalLoad = state.Scalar0;
             active.StateFlags = AuxiliaryEquipmentFlags.Active;
             active.PowerDrawRate = 0f;
@@ -239,7 +239,7 @@ namespace Hecton8.Equipment.Auxiliary
 
         private void RouteFlare(int index, in DeployedAuxiliaryDTO deployment, float baseLifetime, ref AuxiliaryRouteCounterDTO counter)
         {
-            float life01 = math.saturate(deployment.RemainingLifetime / math.max(0.01f, baseLifetime));
+            float life01 = math.saturate(deployment.RemainingLifetime * math.rcp(math.max(0.01f, baseLifetime)));
             float noise = AuxiliaryEquipmentMath.DeterministicNoise01(deployment.AUP_Position, FrameIndex, (uint)index);
             float flicker = math.lerp(0.82f, 1.12f, noise);
             float intensity = AuxiliaryEquipmentMath.SanitizeNonNegative(Tuning.FlareIntensity, 0f) *
@@ -276,7 +276,7 @@ namespace Hecton8.Equipment.Auxiliary
             float quality = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);
             float rate = math.lerp(lifetimeRate * 0.65f, math.max(lifetimeRate, baseRate), math.smoothstep(0f, 1f, quality));
             float radius = math.min(maxRadius, elapsed * rate);
-            float intensity = math.saturate(1f - (radius / math.max(1f, maxRadius)));
+            float intensity = math.saturate(1f - (radius * math.rcp(math.max(1f, maxRadius))));
             AuxiliarySonarRequestSignal signal = default;
             signal.AUP_Position = deployment.AUP_Position;
             signal.CurrentRadius = radius;
@@ -321,7 +321,8 @@ namespace Hecton8.Equipment.Auxiliary
             }
 
             float maxLength = AuxiliaryEquipmentMath.SanitizePositive(Tuning.TetherMaxDistance, 60f);
-            float restLength = math.min(maxLength, (float)math.sqrt(math.max(0.0, distanceSq)));
+            double cappedDistanceSq = math.min(math.max(0.0, distanceSq), (double)maxLength * maxLength);
+            float restLength = AuxiliaryEquipmentMath.FastLengthFromSq((float)cappedDistanceSq);
             if (!math.isfinite(restLength))
             {
                 counter.FaultFlags = AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.NonFiniteRecovered;
@@ -382,7 +383,7 @@ namespace Hecton8.Equipment.Auxiliary
             uint kindFlags)
         {
             active.ToolHashID = prefabHash;
-            active.CurrentBattery = math.saturate(remainingLifetime / math.max(0.01f, baseLifetime));
+            active.CurrentBattery = math.saturate(remainingLifetime * math.rcp(math.max(0.01f, baseLifetime)));
             active.ThermalLoad = scalar0;
             active.StateFlags = AuxiliaryEquipmentFlags.Active | kindFlags;
             active.PowerDrawRate = 0f;

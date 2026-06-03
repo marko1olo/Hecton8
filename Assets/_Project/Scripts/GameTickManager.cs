@@ -174,8 +174,14 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (!TryClaimActiveRuntimeAfterReloadCold())
+                return;
+
             _runtimeGameplayBootstrapGateActive = Application.isPlaying;
             EnsureInitialized();
+            RefreshServiceRegistrationAfterReloadCold();
+            if (Application.isPlaying)
+                InitializeService();
             ResetSlowTickState();
 
             TryRegisterHotSwapListener();
@@ -302,9 +308,27 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
+            if (!TryClaimActiveRuntimeAfterReloadCold())
+                return;
+
             EnsureInitialized();
 
-            if (!_serviceRegistered)
+            GameTickManager registeredTickManager = GlobalRegistry.TickManager;
+            if (registeredTickManager != null && !ReferenceEquals(registeredTickManager, this))
+            {
+                _serviceRegistered = false;
+                return;
+            }
+
+            if (_serviceRegistered && ReferenceEquals(registeredTickManager, this))
+            {
+                TryRegisterHotSwapListener();
+                TryRegisterDispatcherLanes();
+                return;
+            }
+
+            _serviceRegistered = false;
+            if (registeredTickManager == null)
             {
                 GlobalRegistry.RegisterTickManager(this);
                 _serviceRegistered = ReferenceEquals(GlobalRegistry.TickManager, this);
@@ -312,6 +336,29 @@ namespace Hecton8.Core
 
             TryRegisterHotSwapListener();
             TryRegisterDispatcherLanes();
+        }
+
+        private void RefreshServiceRegistrationAfterReloadCold()
+        {
+            if (_serviceRegistered && !ReferenceEquals(GlobalRegistry.TickManager, this))
+                _serviceRegistered = false;
+        }
+
+        private bool TryClaimActiveRuntimeAfterReloadCold()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return true;
+
+            if (ActiveRuntimeInstance == null)
+            {
+                ActiveRuntimeInstance = this;
+                return true;
+            }
+
+            _serviceRegistered = false;
+            _registeredToDispatcher = false;
+            enabled = false;
+            return false;
         }
 
         private void OnApplicationQuit()

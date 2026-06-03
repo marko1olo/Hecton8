@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT",
+      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+      "article_id": "applied_lore.blue_debt_custody_grade_receipt",
+      "title_key": "applied_lore.blue_debt_custody_grade_receipt.title",
+      "unlock": {
+        "primary": "unlock.blue_debt_custody_grade_receipt",
+        "poi_tags": [
+          "poi.blue_debt_receipt",
+          "poi.custody_grade_tag",
+          "poi.pressure_history_stamp"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blue Debt Custody Grade Receipt",
+          "scanner": "Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "ru_RU": {
+          "title": "Квитанция custody-grade Blue Debt",
+          "scanner": "Resource artifact: blue debt оценивается custody chain, pressure history и contamination, а не только массой.",
+          "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag и claimant signature определяют grade.",
+          "audio": "Дорогая часть - не минерал. Дорогая часть - доказать, где он был.",
+          "in_game_wiki": "Blue debt работает как salvage slang для Xenon-Omega-bearing pressure substrate, но payout зависит от custody proof.",
+          "external_site": "Ресурсы HECTON-8 - не generic loot. Их ценность зависит от pressure history, containment и legal receiver.",
+          "field_note": "Для scanner receipt, contract payout tease и resource wiki."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft JA localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft JA localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft JA localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft JA localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft JA localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft ZH localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft ZH localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft ZH localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft ZH localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft FR localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft FR localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft FR localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft FR localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft ES localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft ES localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft ES localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft ES localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft DE localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft DE localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft DE localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft DE localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft PL localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft PL localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft PL localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft PL localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft UK localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft UK localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft UK localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft UK localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft UK localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft AR localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft AR localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft AR localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft AR localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft ID localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft ID localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft ID localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft ID localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft KO localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft KO localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft KO localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft KO localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft KO localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft HE localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft HE localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft HE localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft HE localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft PT localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft PT localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft PT localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft PT localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft PT localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Blue Debt Custody Grade Receipt",
+          "scanner": "Draft NL localization pending native pass. Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+          "terminal": "Draft NL localization pending native pass. SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+          "audio": "Draft NL localization pending native pass. The expensive part is not the mineral. It is proving where it has been.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+          "field_note": "Draft NL localization pending native pass. Use for scanner receipt, contract payout tease and resource wiki."
+        }
+      }
+    },
+    {
+      "packet_id": "P427_PRESSURE_GLASS_FIELD_CERTIFICATE",
+      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+      "article_id": "applied_lore.pressure_glass_field_certificate",
+      "title_key": "applied_lore.pressure_glass_field_certificate.title",
+      "unlock": {
+        "primary": "unlock.pressure_glass_field_certificate",
+        "poi_tags": [
+          "poi.pressure_glass_certificate",
+          "poi.sealant_feedstock_tag",
+          "poi.clamp_ring_test_card"
+        ],
+        "biome_tags": [
+          "biome.drowned_crust",
+          "biome.vent_forge"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Glass Field Certificate",
+          "scanner": "Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "ru_RU": {
+          "title": "Полевой сертификат pressure glass",
+          "scanner": "Field certificate: pressure glass может быть salvage, sealant feedstock или escape-chain proof в зависимости от fracture state.",
+          "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark и clamp-ring compatibility решают, полезна деталь или только продаваема.",
+          "audio": "Чистый осколок стоит меньше, чем осколок, доказавший что держал.",
+          "in_game_wiki": "Pressure glass - одновременно ресурс и инженерная память затопленных pressure boundaries колонии.",
+          "external_site": "Ремонтные материалы HECTON-8 несут историю: один shard может продать claim или починить ascent seal.",
+          "field_note": "Для scanner, fabrication UI copy и fieldguide article."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft JA localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft JA localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft JA localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft JA localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft JA localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft JA localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft ZH localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft ZH localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft ZH localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft ZH localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft ZH localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft FR localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft FR localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft FR localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft FR localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft FR localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft ES localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft ES localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft ES localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft ES localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft ES localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft DE localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft DE localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft DE localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft DE localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft DE localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft PL localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft PL localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft PL localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft PL localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft PL localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft UK localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft UK localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft UK localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft UK localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft UK localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft UK localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft AR localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft AR localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft AR localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft AR localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft AR localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft ID localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft ID localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft ID localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft ID localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft ID localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft KO localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft KO localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft KO localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft KO localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft KO localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft HE localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft HE localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft HE localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft HE localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft HE localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft PT localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft PT localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft PT localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft PT localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft PT localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft PT localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Pressure Glass Field Certificate",
+          "scanner": "Draft NL localization pending native pass. Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+          "terminal": "Draft NL localization pending native pass. CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+          "audio": "Draft NL localization pending native pass. A clean shard is worth less than a shard that proves it held.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+          "external_site": "Draft NL localization pending native pass. Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+          "field_note": "Draft NL localization pending native pass. Use for scanner, fabrication UI copy and fieldguide article."
+        }
+      }
+    },
+    {
+      "packet_id": "P428_BRINE_SALT_PROCESS_LOT_CARD",
+      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+      "article_id": "applied_lore.brine_salt_process_lot_card",
+      "title_key": "applied_lore.brine_salt_process_lot_card.title",
+      "unlock": {
+        "primary": "unlock.brine_salt_process_lot_card",
+        "poi_tags": [
+          "poi.brine_lot_card",
+          "poi.density_ladder_sample",
+          "poi.pump_cycle_stamp"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.process_chemistry"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Brine Salt Process Lot Card",
+          "scanner": "Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Use for brine canyon scanner cards and resource article."
+        },
+        "ru_RU": {
+          "title": "Процессная lot-карта brine salt",
+          "scanner": "Process lot: brine salts несут density-ladder origin, vent exposure и filtration risk.",
+          "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload и Atlas-filter contact логируются до recipe use.",
+          "audio": "Соль - запись маршрута. Пробуешь на вкус - читаешь неправильно.",
+          "in_game_wiki": "Brine materials связывают geology, survival chemistry и colony process infrastructure.",
+          "external_site": "Brine canyons - не декорация; это движущиеся process layers, меняющие навигацию и ценность материалов.",
+          "field_note": "Для brine canyon scanner cards и resource article."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft JA localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft JA localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft JA localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft JA localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft JA localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft JA localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft ZH localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft ZH localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft ZH localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft ZH localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft ZH localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft FR localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft FR localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft FR localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft FR localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft FR localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft FR localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft ES localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft ES localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft ES localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft ES localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft ES localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft ES localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft DE localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft DE localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft DE localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft DE localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft DE localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft DE localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft PL localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft PL localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft PL localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft PL localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft PL localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft PL localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft UK localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft UK localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft UK localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft UK localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft UK localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft UK localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft AR localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft AR localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft AR localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft AR localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft AR localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft AR localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft ID localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft ID localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft ID localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft ID localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft ID localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft ID localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft KO localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft KO localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft KO localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft KO localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft KO localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft KO localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft HE localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft HE localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft HE localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft HE localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft HE localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft HE localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft PT localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft PT localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft PT localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft PT localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft PT localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft PT localization pending native pass. Use for brine canyon scanner cards and resource article."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Brine Salt Process Lot Card",
+          "scanner": "Draft NL localization pending native pass. Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+          "terminal": "Draft NL localization pending native pass. LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+          "audio": "Draft NL localization pending native pass. The salt is a route record. Taste it and you are reading the wrong way.",
+          "in_game_wiki": "Draft NL localization pending native pass. Brine materials connect geology, survival chemistry and colony process infrastructure.",
+          "external_site": "Draft NL localization pending native pass. Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+          "field_note": "Draft NL localization pending native pass. Use for brine canyon scanner cards and resource article."
+        }
+      }
+    },
+    {
+      "packet_id": "P429_ATLAS_LATTICE_CONTAMINATION_TAG",
+      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+      "article_id": "applied_lore.atlas_lattice_contamination_tag",
+      "title_key": "applied_lore.atlas_lattice_contamination_tag.title",
+      "unlock": {
+        "primary": "unlock.atlas_lattice_contamination_tag",
+        "poi_tags": [
+          "poi.atlas_lattice_tag",
+          "poi.contaminated_sample_case",
+          "poi.false_clean_receipt"
+        ],
+        "biome_tags": [
+          "biome.atlas_repair_network",
+          "biome.deep_ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Lattice Contamination Tag",
+          "scanner": "Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "ru_RU": {
+          "title": "Тэг загрязнения Atlas lattice",
+          "scanner": "Contamination tag: Atlas-repair lattice меняет custody, ecology risk и interpretation концовок.",
+          "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant и false-clean sample states - не один grade.",
+          "audio": "Если Atlas этого касался, квитанция - еще и warning label.",
+          "in_game_wiki": "Atlas contamination не делает материал магическим. Она помечает sample как часть сломанной repair network.",
+          "external_site": "Глубинная экономика становится нестабильной, потому что repaired life, metal и evidence уже нельзя чисто разделить.",
+          "field_note": "Для contaminated sample scanner, ecology wiki и ending payload flags."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft JA localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft JA localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft JA localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft JA localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft JA localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft JA localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft ZH localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft ZH localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft ZH localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft ZH localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft ZH localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft FR localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft FR localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft FR localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft FR localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft FR localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft ES localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft ES localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft ES localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft ES localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft ES localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft DE localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft DE localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft DE localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft DE localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft DE localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft PL localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft PL localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft PL localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft PL localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft PL localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft UK localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft UK localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft UK localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft UK localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft UK localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft AR localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft AR localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft AR localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft AR localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft AR localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft ID localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft ID localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft ID localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft ID localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft ID localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft KO localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft KO localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft KO localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft KO localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft KO localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft HE localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft HE localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft HE localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft HE localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft HE localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft PT localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft PT localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft PT localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft PT localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft PT localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Atlas Lattice Contamination Tag",
+          "scanner": "Draft NL localization pending native pass. Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+          "terminal": "Draft NL localization pending native pass. TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+          "audio": "Draft NL localization pending native pass. If Atlas touched it, the receipt is also a warning label.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+          "external_site": "Draft NL localization pending native pass. The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+          "field_note": "Draft NL localization pending native pass. Use for contaminated sample scanner, ecology wiki and ending payload flags."
+        }
+      }
+    },
+    {
+      "packet_id": "P430_BLACK_KEEL_PAYOUT_MASS_LEDGER",
+      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+      "article_id": "applied_lore.black_keel_payout_mass_ledger",
+      "title_key": "applied_lore.black_keel_payout_mass_ledger.title",
+      "unlock": {
+        "primary": "unlock.black_keel_payout_mass_ledger",
+        "poi_tags": [
+          "poi.black_keel_mass_ledger",
+          "poi.payout_conversion_note",
+          "poi.material_exit_receipt"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Payout Mass Ledger",
+          "scanner": "Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "The ledger can pay you and still steal the story.",
+          "in_game_wiki": "The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "ru_RU": {
+          "title": "Mass-ledger выплат Black Keel",
+          "scanner": "Payout ledger: Black Keel отдельно считает mass, custody, receiver risk и evidence suppression.",
+          "terminal": "LEDGER: recoverable mass не равна payout. Transfer window, contamination, legal receiver и player debt превращают mass в consequence.",
+          "audio": "Ledger может заплатить тебе и все равно украсть историю.",
+          "in_game_wiki": "Payout mass ledger - мост к material endings: выгодные выходы могут сохранить debt logic и потерять truth authority.",
+          "external_site": "Salvage-экономика HECTON-8 разделяет получение выплаты и понимание того, что именно ты продал.",
+          "field_note": "Для contract board, false exit records и spoiler-gated ending pages."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft JA localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft JA localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft JA localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft JA localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft JA localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft ZH localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft ZH localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft ZH localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft ZH localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft FR localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft FR localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft FR localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft FR localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft FR localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft ES localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft ES localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft ES localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft ES localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft ES localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft DE localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft DE localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft DE localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft DE localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft DE localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft PL localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft PL localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft PL localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft PL localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft PL localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft UK localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft UK localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft UK localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft UK localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft UK localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft AR localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft AR localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft AR localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft AR localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft AR localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft ID localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft ID localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft ID localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft ID localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft ID localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft KO localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft KO localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft KO localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft KO localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft KO localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft HE localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft HE localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft HE localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft HE localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft HE localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft PT localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft PT localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft PT localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft PT localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft PT localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Black Keel Payout Mass Ledger",
+          "scanner": "Draft NL localization pending native pass. Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+          "terminal": "Draft NL localization pending native pass. LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+          "audio": "Draft NL localization pending native pass. The ledger can pay you and still steal the story.",
+          "in_game_wiki": "Draft NL localization pending native pass. The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+          "field_note": "Draft NL localization pending native pass. Use for contract board, false exit records and spoiler-gated ending pages."
+        }
+      }
+    }
+  ]
+}

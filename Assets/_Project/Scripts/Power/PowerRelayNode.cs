@@ -11,7 +11,7 @@ namespace Hecton8.Power
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Power/Power Relay Node")]
-    public sealed class PowerRelayNode : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class PowerRelayNode : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IPowerActivationTarget
     {
         private const float PositionRefreshEpsilonSqr = 0.0004f;
 
@@ -51,6 +51,7 @@ namespace Hecton8.Power
         private bool _hasPower = true;
         private bool _cableVisualRefreshPending;
         private bool _cableVisualClearPending;
+        private float _runtimeActivation01 = 1f;
         private float _currentPassiveLoss;
         private Vector3 _lastPosition;
         private int _lastVisualPointCount = -1;
@@ -61,7 +62,7 @@ namespace Hecton8.Power
         private readonly List<long> _scratchLinkIds = new List<long>(8);
 
         /// <summary>Dynamic passive drain authored by this relay.</summary>
-        public float PowerRating => -_currentPassiveLoss;
+        public float PowerRating => -_currentPassiveLoss * _runtimeActivation01;
 
         /// <summary>Power deficit shedding priority. Lower values stay online longer.</summary>
         public int PowerPriority => powerPriority;
@@ -74,6 +75,19 @@ namespace Hecton8.Power
             _hasPower = hasPower;
             _debugHasPower = hasPower;
             RefreshRelayLinks(true);
+        }
+
+        public bool SetRuntimeActivation01(float activation01)
+        {
+            float sanitized = math.saturate(math.select(1f, activation01, math.isfinite(activation01)));
+            if (math.abs(_runtimeActivation01 - sanitized) <= 0.0001f)
+                return false;
+
+            _runtimeActivation01 = sanitized;
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            grid?.MarkDirty();
+            RefreshRelayLinks(true);
+            return true;
         }
 
         private void Awake()
@@ -112,6 +126,7 @@ namespace Hecton8.Power
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
+            _runtimeActivation01 = 1f;
             _currentPassiveLoss = 0f;
             _debugPassiveLoss = 0f;
             _debugCableLengthMeters = 0f;

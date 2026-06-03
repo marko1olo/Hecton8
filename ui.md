@@ -25,7 +25,7 @@ If a task asks an agent to create or improve UI, menus, HUD, cockpit panels, ter
 
 - Main menu, pause, settings, save/load, death/retry, boot screens, and modal screens: `UI_MENU_SCREEN_STANDARDS.md`
 - Suit HUD, visor, cockpit, terminal, construction, map, scanner, diegetic dashboard, and world-space panels: `UI_DIEGETIC_HUD_STANDARDS.md`
-- General project taste and rejection language: `taste.md`
+- General project taste and rejection language: `TASTE.md`
 - UI performance mandates: `.agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt`
 - Physical diegetic interface mandates: `.agents-skills/UI_Diegetic_Physical_Interfaces.txt`
 - Localization and font safety: `.agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt`

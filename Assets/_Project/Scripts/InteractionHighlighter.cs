@@ -306,7 +306,7 @@ namespace Hecton8.Interaction
                 _currentValue = _fadeToColor;
                 QueueVisualApply(_currentValue);
 
-                // Hot Tick only parks. Physical unregister stays in lifecycle/non-Tick paths.
+                // Park until VISUAL_SYNC applies the final color, then unregister outside Tick.
                 _tickDormant = true;
             }
             else
@@ -396,6 +396,8 @@ namespace Hecton8.Interaction
             }
 
             StopLateFrameTicking();
+            if (_tickDormant && !_pendingVisualApply)
+                StopTicking();
         }
 
         private void QueueVisualApply(Color value)

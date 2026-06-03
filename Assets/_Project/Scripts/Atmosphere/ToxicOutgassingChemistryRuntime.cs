@@ -329,7 +329,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float invCell = 1f / math.max(_cellSizeMeters, NaNEpsilon);
+            float invCell = math.rcp(math.max(_cellSizeMeters, NaNEpsilon));
             float3 cells = shift * invCell;
             _pendingRebaseCells += new int3((int)math.round(cells.x), (int)math.round(cells.y), (int)math.round(cells.z));
             _gridOriginAup += new double3(shift.x, shift.y, shift.z);
@@ -1706,6 +1706,13 @@ namespace Hecton8.Atmosphere
             return t * t * (3f - 2f * t);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            float sanitized = math.isfinite(lengthSq) ? math.max(0f, lengthSq) : 0f;
+            return sanitized * math.rsqrt(math.max(sanitized, NaNEpsilon));
+        }
+
         private static int FindSourceIndex(NativeArray<uint> sourceIds, uint sourceId, int count)
         {
             for (int i = 0; i < count; i++)
@@ -1735,7 +1742,7 @@ namespace Hecton8.Atmosphere
         private static float SampleDensityTrilinear(NativeArray<float> density, int resolution, double3 gridOriginAup, float cellSizeMeters, double3 aup)
         {
             float3 local = AupPrecisionMath.LocalDeltaFloat3(aup, gridOriginAup, float3.zero);
-            float invCell = 1f / math.max(cellSizeMeters, NaNEpsilon);
+            float invCell = math.rcp(math.max(cellSizeMeters, NaNEpsilon));
             float3 cell = local * invCell + (resolution * 0.5f);
             float3 baseCell = math.floor(cell);
             int3 c0 = new int3((int)baseCell.x, (int)baseCell.y, (int)baseCell.z);
@@ -1764,7 +1771,7 @@ namespace Hecton8.Atmosphere
         private static float SampleDensityNearest(NativeArray<float> density, int resolution, double3 gridOriginAup, float cellSizeMeters, double3 aup)
         {
             float3 local = AupPrecisionMath.LocalDeltaFloat3(aup, gridOriginAup, float3.zero);
-            float invCell = 1f / math.max(cellSizeMeters, NaNEpsilon);
+            float invCell = math.rcp(math.max(cellSizeMeters, NaNEpsilon));
             int3 c = (int3)math.round(local * invCell + resolution * 0.5f);
             c = math.clamp(c, int3.zero, new int3(resolution - 1));
             return density[Flatten(c.x, c.y, c.z, resolution)];
@@ -1873,7 +1880,7 @@ namespace Hecton8.Atmosphere
                 float3 local = (new float3(x, y, z) - (Resolution * 0.5f)) * CellSizeMeters;
                 float quality = math.saturate(GlobalQualityWeight);
                 float detailBlend = Smooth01((quality - 0.18f) * 1.45f);
-                float caveShell = math.length(new float2(local.x, local.z)) - (Resolution * CellSizeMeters * 0.42f);
+                float caveShell = FastLengthFromSq((local.x * local.x) + (local.z * local.z)) - (Resolution * CellSizeMeters * 0.42f);
                 float ceiling = math.abs(local.y) - (Resolution * CellSizeMeters * 0.18f);
                 float rib = 0f;
                 float flora = 0f;
@@ -1883,7 +1890,7 @@ namespace Hecton8.Atmosphere
                     float3 p = AupPrecisionMath.DowncastProceduralPhase(phase, local * 0.017f);
                     rib = MathLodApproximation.ApproxSinBhaskara(p.x * 1.7f + p.z * 0.9f) * math.lerp(2f, 8f, quality) * detailBlend;
                     float kelpWave = MathLodApproximation.ApproxSinBhaskara(p.x * 2.1f) * MathLodApproximation.ApproxCosBhaskara(p.z * 1.3f);
-                    flora = math.saturate((kelpWave - 0.35f) * 2.2f) * math.saturate((local.y + CellSizeMeters * 8f) / math.max(CellSizeMeters * 16f, NaNEpsilon)) * detailBlend;
+                    flora = math.saturate((kelpWave - 0.35f) * 2.2f) * math.saturate((local.y + CellSizeMeters * 8f) * math.rcp(math.max(CellSizeMeters * 16f, NaNEpsilon))) * detailBlend;
                 }
 
                 float sdf = math.max(caveShell + rib, ceiling - rib * 0.25f);
@@ -1986,7 +1993,7 @@ namespace Hecton8.Atmosphere
                         advected = flow.Direction.z >= 0f ? Neighbor(x, y, z - 1, center) : Neighbor(x, y, z + 1, center);
                     }
 
-                    float advection01 = math.saturate(flow.Speed * Constants.CurrentAdvectionMultiplier * dt / math.max(CellSizeMeters, NaNEpsilon));
+                    float advection01 = math.saturate(flow.Speed * Constants.CurrentAdvectionMultiplier * dt * math.rcp(math.max(CellSizeMeters, NaNEpsilon)));
                     flowBias = advection01;
                     float diffusionCandidate = center + diffusion + source - center * decay;
                     diffusionCandidate = math.lerp(diffusionCandidate, advected + source - advected * decay, advection01);
@@ -2135,7 +2142,7 @@ namespace Hecton8.Atmosphere
                         sample = math.lerp(nearest, trilinear, sampleBlend);
                     }
 
-                    float exposure = math.saturate(sample / math.max(Constants.MaxDensity, NaNEpsilon));
+                    float exposure = math.saturate(sample * math.rcp(math.max(Constants.MaxDensity, NaNEpsilon)));
                     if (!math.isfinite(exposure))
                     {
                         continue;
@@ -2199,7 +2206,7 @@ namespace Hecton8.Atmosphere
             private static float SampleNearest(NativeArray<float> density, int resolution, double3 gridOriginAup, float cellSizeMeters, double3 aup)
             {
                 float3 local = AupPrecisionMath.LocalDeltaFloat3(aup, gridOriginAup, float3.zero);
-                float invCell = 1f / math.max(cellSizeMeters, NaNEpsilon);
+                float invCell = math.rcp(math.max(cellSizeMeters, NaNEpsilon));
                 int3 c = (int3)math.round(local * invCell + resolution * 0.5f);
                 c = math.clamp(c, int3.zero, new int3(resolution - 1));
                 return density[Flatten(c.x, c.y, c.z, resolution)];
@@ -2250,7 +2257,7 @@ namespace Hecton8.Atmosphere
                     BiolumSignals[signalIndex] = new ToxicBioluminescenceSignal
                     {
                         AUP = GridOriginAup + new double3(local.x, local.y, local.z),
-                        Intensity01 = math.saturate(density / math.max(Constants.MaxDensity, NaNEpsilon)),
+                        Intensity01 = math.saturate(density * math.rcp(math.max(Constants.MaxDensity, NaNEpsilon))),
                         ToxicDensity = density,
                         LocalNormal = world.SdfGradient,
                         ChemicalHash = ChemicalHash,

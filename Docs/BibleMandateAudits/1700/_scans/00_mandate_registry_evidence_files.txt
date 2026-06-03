@@ -1,4 +1,5 @@
 ﻿.agents-skills\README.md
 AGENTS.md
-Docs\Actual Domains of Project.txt
+Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md
+Docs\PROJECT_ATLAS.md
 PROJECT_BIBLES.md

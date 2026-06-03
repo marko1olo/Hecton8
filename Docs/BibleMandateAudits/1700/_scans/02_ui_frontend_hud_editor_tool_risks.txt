@@ -1,39 +1,39 @@
 ﻿Assets\_Project\Scripts\UI\Editor\DiegeticUiTunerWindow.cs:111:                _statusLabel.text = "No runtime selected.";
 Assets\_Project\Scripts\UI\Editor\DiegeticUiTunerWindow.cs:115:            _statusLabel.text =
+Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:56:                hudCanvasCount += prefab.GetComponentsInChildren<Canvas>(true).Length;
+Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:75:            Debug.Log($"HUD Canvas Inquisition wrote {reportPath}");
+Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:111:            builder.AppendLine("  \"stencilWaypointOcclusionDearLie\": \"Stencil waypoint occlusion is a bounded cone/distance fake over at most 16 AUP-local rows; no HZB readback, MeshCollider, raycast, or per-waypoint GameObject renderer is used.\",");
+Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:349:            Component[] components = root.GetComponentsInChildren<Component>(true);
 Assets\_Project\Scripts\UI\Editor\BabelSyncTunerWindow.cs:110:            _stateLabel.text =
 Assets\_Project\Scripts\UI\Editor\BabelSyncTunerWindow.cs:130:                _decodedLabel.text = "Hash parse failed.";
 Assets\_Project\Scripts\UI\Editor\BabelSyncTunerWindow.cs:131:                _hexLabel.text = "Raw UTF-8 hex unavailable.";
 Assets\_Project\Scripts\UI\Editor\BabelSyncTunerWindow.cs:140:            _decodedLabel.text = found && decodedLength > 0
 Assets\_Project\Scripts\UI\Editor\BabelSyncTunerWindow.cs:146:                _hexLabel.text = "Raw UTF-8 hex unavailable for 0x" + hash.ToString("X8") + ".";
 Assets\_Project\Scripts\UI\Editor\BabelSyncTunerWindow.cs:151:            _hexLabel.text = hexLength > 0
-Assets\_Project\Scripts\UI\Editor\UIAudioPlaceholderGenerator.cs:43:            Debug.Log($"[UIAudioPlaceholderGenerator] Generated placeholder audio clips in {folderPath}");
+Assets\_Project\Scripts\UI\Editor\MenuVisualVariantContractValidator15MM.cs:20:            Debug.Log("15MM menu visual variants validated: 15 styles, 12 concepts, 180 combinations.");
+Assets\_Project\Scripts\UI\Editor\Minigame_Canvas_Inquisition.cs:44:            Debug.Log("Terminal minigame canvas inquisition wrote " + reportPath);
+Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:76:                _stateLabel.text = "No PDAEncyclopediaStreamer in the loaded scene.";
+Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:82:                _stateLabel.text = "Streamer found. Vault buffers are not available.";
+Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:101:            _stateLabel.text =
+Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:159:                _rawLabel.text = new string(_rawBuffer, 0, written);
+Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:161:                _rawLabel.text = "Raw UTF-8 x-ray unavailable for this hash.";
 Assets\_Project\Scripts\UI\Editor\SettingsPanelAnimatorEditor.cs:60:                Debug.Log($"[SettingsPanelAnimatorEditor] Header CanvasGroup assigned: {header.name}");
 Assets\_Project\Scripts\UI\Editor\SettingsPanelAnimatorEditor.cs:82:                Debug.Log($"[SettingsPanelAnimatorEditor] Preset button CanvasGroups assigned: {presetGroups.Length}");
 Assets\_Project\Scripts\UI\Editor\SettingsPanelAnimatorEditor.cs:104:                Debug.Log($"[SettingsPanelAnimatorEditor] Settings row CanvasGroups assigned: {settingsGroups.Length}");
 Assets\_Project\Scripts\UI\Editor\SettingsPanelAnimatorEditor.cs:115:                Debug.Log($"[SettingsPanelAnimatorEditor] Action buttons CanvasGroup assigned: {actionsContainer.name}");
 Assets\_Project\Scripts\UI\Editor\SettingsPanelAnimatorEditor.cs:119:            Debug.Log("[SettingsPanelAnimatorEditor] Auto-setup complete!");
 Assets\_Project\Scripts\UI\Editor\SettingsPanelAnimatorEditor.cs:136:            Debug.Log("[SettingsPanelAnimatorEditor] CanvasGroups cleared.");
-Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:76:                _stateLabel.text = "No PDAEncyclopediaStreamer in the loaded scene.";
-Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:82:                _stateLabel.text = "Streamer found. Vault buffers are not available.";
-Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:101:            _stateLabel.text =
-Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:159:                _rawLabel.text = new string(_rawBuffer, 0, written);
-Assets\_Project\Scripts\UI\Editor\PDAEncyclopediaTunerWindow.cs:161:                _rawLabel.text = "Raw UTF-8 x-ray unavailable for this hash.";
-Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:56:                hudCanvasCount += prefab.GetComponentsInChildren<Canvas>(true).Length;
-Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:75:            Debug.Log($"HUD Canvas Inquisition wrote {reportPath}");
-Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:111:            builder.AppendLine("  \"stencilWaypointOcclusionDearLie\": \"Stencil waypoint occlusion is a bounded cone/distance fake over at most 16 AUP-local rows; no HZB readback, MeshCollider, raycast, or per-waypoint GameObject renderer is used.\",");
-Assets\_Project\Scripts\UI\Editor\HUDCanvasInquisition.cs:349:            Component[] components = root.GetComponentsInChildren<Component>(true);
-Assets\_Project\Scripts\UI\Editor\Minigame_Canvas_Inquisition.cs:44:            Debug.Log("Terminal minigame canvas inquisition wrote " + reportPath);
-Assets\_Project\Scripts\UI\Editor\MenuVisualVariantContractValidator15MM.cs:20:            Debug.Log("15MM menu visual variants validated: 15 styles, 12 concepts, 180 combinations.");
-Assets\_Project\Scripts\UI\TerminalOS\Editor\TerminalOsLayoutValidator.cs:80:                Debug.Log("[SHINOBU_137/273/331] Terminal OS DTO layout validated.");
-Assets\_Project\Scripts\UI\TerminalOS\Editor\TerminalOsLayoutValidator.cs:91:            Debug.LogError("[SHINOBU_137/273/331] DTO size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\UI\TerminalOS\Editor\TerminalOsLayoutValidator.cs:102:            Debug.LogError("[SHINOBU_137/273/331] DTO offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\UI\TerminalOS\Editor\OscilloscopeDecryptionTunerWindow.cs:225:                _status.text = "No runtime selected.";
-Assets\_Project\Scripts\UI\TerminalOS\Editor\OscilloscopeDecryptionTunerWindow.cs:232:                _status.text = "Puzzle DTO unavailable or job in flight.";
-Assets\_Project\Scripts\UI\TerminalOS\Editor\OscilloscopeDecryptionTunerWindow.cs:251:            _status.text = "Telemetry readout active.";
-Assets\_Project\Scripts\UI\TerminalOS\Editor\OOP_Canvas_Scanner.cs:41:            Debug.Log("OOP Canvas Scanner wrote " + reportPath);
+Assets\_Project\Scripts\UI\Editor\UIAudioPlaceholderGenerator.cs:43:            Debug.Log($"[UIAudioPlaceholderGenerator] Generated placeholder audio clips in {folderPath}");
 Assets\_Project\Scripts\UI\TerminalOS\Editor\DiegeticTerminalXRayWindow.cs:166:                _status.text = "No runtime selected.";
 Assets\_Project\Scripts\UI\TerminalOS\Editor\DiegeticTerminalXRayWindow.cs:172:                _status.text = "Telemetry unavailable. Enter Play Mode or select an initialized TerminalOsRuntime.";
 Assets\_Project\Scripts\UI\TerminalOS\Editor\DiegeticTerminalXRayWindow.cs:185:            _status.text = "Vault buffer 71381, projection DTO stride 64, rollback excluded.";
+Assets\_Project\Scripts\UI\TerminalOS\Editor\OOP_Canvas_Scanner.cs:41:            Debug.Log("OOP Canvas Scanner wrote " + reportPath);
+Assets\_Project\Scripts\UI\TerminalOS\Editor\OscilloscopeDecryptionTunerWindow.cs:225:                _status.text = "No runtime selected.";
+Assets\_Project\Scripts\UI\TerminalOS\Editor\OscilloscopeDecryptionTunerWindow.cs:232:                _status.text = "Puzzle DTO unavailable or job in flight.";
+Assets\_Project\Scripts\UI\TerminalOS\Editor\OscilloscopeDecryptionTunerWindow.cs:251:            _status.text = "Telemetry readout active.";
+Assets\_Project\Scripts\UI\TerminalOS\Editor\TerminalOsLayoutValidator.cs:80:                Debug.Log("[SHINOBU_137/273/331] Terminal OS DTO layout validated.");
+Assets\_Project\Scripts\UI\TerminalOS\Editor\TerminalOsLayoutValidator.cs:91:            Debug.LogError("[SHINOBU_137/273/331] DTO size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\UI\TerminalOS\Editor\TerminalOsLayoutValidator.cs:102:            Debug.LogError("[SHINOBU_137/273/331] DTO offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
 Assets\_Project\Scripts\Visor\Editor\VisorHudArTunerWindow.cs:71:                    _status.text = "Telemetry unavailable";
 Assets\_Project\Scripts\Visor\Editor\VisorHudArTunerWindow.cs:81:                _status.text = $"Targets {entry.TargetCount:0} | CPU {entry.ProjectionMicroseconds:0.00} us | GPU est {entry.EstimatedGpuMicroseconds:0.00} us | Q {entry.QualityWeight:0.00}";
 Assets\_Project\Scripts\Visor\Editor\ScreenSpaceDecalTunerWindow.cs:214:            _csvLabel.text = loaded

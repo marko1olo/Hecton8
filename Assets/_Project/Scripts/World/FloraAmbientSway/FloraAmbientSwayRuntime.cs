@@ -377,9 +377,9 @@ namespace Hecton8.World.FloraAmbientSway
             if (Volatile.Read(ref s_runtimeClaimed) != 0)
                 return;
 
-            GameObject host = new GameObject(RuntimeHostName); // COLD ALLOC: GameObject[1] - scene-local flora ambient sway runtime fallback - owner: FloraAmbientSwayRuntime.
-            host.hideFlags = HideFlags.DontSave;
-            host.AddComponent<FloraAmbientSwayRuntime>(); // COLD ALLOC: FloraAmbientSwayRuntime[1] - auto-bootstrap fallback component - owner: FloraAmbientSwayRuntime.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            H8Debug.LogWarning("[FloraAmbientSwayRuntime] Missing authored scene runtime. Add FloraAmbientSwayRuntime to the biome scene instead of relying on runtime host creation.");
+#endif
         }
 
         public uint GetSystemIdHash() => SystemHash;

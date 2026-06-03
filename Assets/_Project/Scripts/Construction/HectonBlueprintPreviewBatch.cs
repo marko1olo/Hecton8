@@ -19,7 +19,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     public sealed class HectonBlueprintPreviewBatch : MonoBehaviour, IRenderable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private const string HologramShaderPath = "Assets/_Project/Shaders/Hecton_ConstructionDearLieHologram.shader";
+        private const string HologramMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_BuildGhost_Valid.mat";
         private const float DefaultDearLieWiggleSpeed = 18f;
         private const ulong PreviewBuildMutationGuardMask =
             (1UL << ((int)ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId & 31)) |
@@ -27,7 +27,6 @@ namespace Hecton8.Construction
             (1UL << ((int)ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId & 31));
 
         [SerializeField] private Material previewMaterial;
-        [SerializeField] private Shader previewShader;
         [SerializeField] private Camera targetCamera;
         [SerializeField, Min(1)] private int capacity = 128;
         [SerializeField] private Color validColor = new Color(0.08f, 1f, 0.72f, 0.72f);
@@ -67,6 +66,7 @@ namespace Hecton8.Construction
         private uint _lastSignalBatchHash;
         private int _lastSignalBatchCount;
         private bool _hasLastSignalBatchHash;
+        private bool _previewMaterialFaultLogged;
 
         private static readonly int BuilderGhostStatesId = Shader.PropertyToID("_H8BuilderGhostStates");
         private static readonly int BuilderGhostVisualsId = Shader.PropertyToID("_H8BuilderGhostVisuals");
@@ -176,9 +176,6 @@ namespace Hecton8.Construction
             ClearVaultDescriptorState();
             _boundStateBuffer = null;
             _boundVisualBuffer = null;
-
-            if (previewMaterial != null && previewMaterial.hideFlags == HideFlags.DontSave)
-                Destroy(previewMaterial);
         }
 
 #if UNITY_EDITOR
@@ -1148,21 +1145,24 @@ namespace Hecton8.Construction
         private void EnsureMaterial()
         {
             if (previewMaterial != null)
+            {
+                _previewMaterialFaultLogged = false;
                 return;
+            }
 
 #if UNITY_EDITOR
-            if (previewShader == null)
-                previewShader = AssetDatabase.LoadAssetAtPath<Shader>(HologramShaderPath);
-
-            if (previewShader == null)
+            previewMaterial = AssetDatabase.LoadAssetAtPath<Material>(HologramMaterialPath);
+            if (previewMaterial != null)
+            {
+                _previewMaterialFaultLogged = false;
+                return;
+            }
+#endif
+            if (_previewMaterialFaultLogged)
                 return;
 
-            previewMaterial = new Material(previewShader)
-            {
-                enableInstancing = false,
-                hideFlags = HideFlags.DontSave
-            };
-#endif
+            _previewMaterialFaultLogged = true;
+            H8Debug.LogError("[HectonBlueprintPreviewBatch] Missing authored preview material. Runtime material synthesis is forbidden.", this);
         }
 
         private static float ResolveTelemetrySdfDistance(uint flags)

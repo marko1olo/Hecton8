@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4170817678124969994}
   - component: {fileID: 403996919750001411}
+  - component: {fileID: 6186617020048275583}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__cowl__s110-180
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 261533971024895419}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.3173867, y: 6.9168515, z: -0.63887554}
-  m_Size: 13.833703
+  m_LocalReferencePoint: {x: -0.3170402, y: 7.1462083, z: -0.6135551}
+  m_Size: 14.292417
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 855568087783960356}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &6186617020048275583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 261533971024895419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 533fc34ce686c1e4c889493b31c013a4, type: 2}
 --- !u!1 &2891672180703753351
 GameObject:
   m_ObjectHideFlags: 0

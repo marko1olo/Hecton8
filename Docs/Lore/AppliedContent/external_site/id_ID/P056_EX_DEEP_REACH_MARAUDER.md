@@ -1,30 +1,37 @@
 ---
 packet_id: P056_EX_DEEP_REACH_MARAUDER
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.ex_deep_reach_marauder
+unlock_id: unlock.first_ex_deep_reach_recognition
+poi_tags: poi.old_credential_lock;poi.drop_capsule_console
+biome_tags: biome.crash_shelf;biome.shallow_wreck
 locale: id_ID
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Ex-Deep-Reach Marauder
 
-Draft ID localization pending native pass. Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
+Ex-Deep-Reach Marauder defines the player canon: a former corporate field-systems specialist, blacklisted or debt-bound into independent salvage work, returning to HECTON-8 without a family-revenge premise. The drama comes from professional recognition and complicity, not bloodline melodrama.
 
 ## Scanner
 
-Draft ID localization pending native pass. The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
+The old Deep Reach lock does not recognize your name. It recognizes your repair sequence.
 
 ## Terminal
 
-Draft ID localization pending native pass. CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
 
 ## Audio
 
-Draft ID localization pending native pass. You did not come home. You came back to a procedure that never stopped running.
+You did not come home. You came back to a procedure that never stopped running.
 
 ## Field Note
 
-Draft ID localization pending native pass. Not family business. Procedure remembers who taught your hands.
+Not family business. Procedure remembers who taught your hands.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/id_ID. -->

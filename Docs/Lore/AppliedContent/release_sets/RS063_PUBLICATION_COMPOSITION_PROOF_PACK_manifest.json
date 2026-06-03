@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P311_SITE_HOME_PAGE_COMPOSITION_LOCK",
+    "P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK",
+    "P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK",
+    "P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK",
+    "P315_SOCIAL_DEV_NOTE_COPY_LOCK"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS063_PUBLICATION_COMPOSITION_PROOF_PACK.packets.json"
+  ]
+}

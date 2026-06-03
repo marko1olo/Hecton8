@@ -295,7 +295,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half growth01 : TEXCOORD18;
                 half health01 : TEXCOORD19;
                 half geneticTraits : TEXCOORD20;
-                half2 biolumPulseData : TEXCOORD21; // x = spatial pulse offset, y = four-state sync group.
+                half2 biolumPulseData : TEXCOORD21; // x = spatial pulse offset, y = four-state sync group plus baked AO fraction.
                 half globalBiolumVertexPulse : TEXCOORD22;
                 half2 uv : TEXCOORD23;
             };
@@ -1723,9 +1723,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = ResolveOrganicWidthScale(encodedWidthScale, entropyProgress);
                 float heightMask = saturate(input.uv.y);
-                float stiffnessMask = saturate(input.color.r);
+                float vertexSwayMask = saturate(input.color.r);
+                float vertexBiolumMask = saturate(input.color.g);
+                float vertexAoVisibility = saturate(input.color.b);
+                float vertexWearMask = saturate(input.color.a);
+                float stiffnessMask = vertexSwayMask;
                 float bendMask = heightMask * heightMask * authoredBendAmplitude * stiffnessMask;
-                float curvatureMask = saturate(input.color.a);
+                float curvatureMask = vertexWearMask;
                 float4 aupGeneticHash = ResolveAupGeneticHash(stableAupSeed);
                 float2 originXZ = stableAupSeed.xz;
                 float instanceNoise = aupGeneticHash.w;
@@ -2028,7 +2032,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.parasiteMask = parasiteMask;
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.01, instanceData.PulseFrequency);
-                half4 authoredBiolumColor = half4(instanceData.BioluminescenceColor.rgb, saturate(packedPresentation.x * lerp(1.0, 1.28, scatterVisualPayload.w)));
+                half4 authoredBiolumColor = half4(instanceData.BioluminescenceColor.rgb, saturate(max(packedPresentation.x, vertexBiolumMask) * lerp(1.0, 1.28, scatterVisualPayload.w)));
                 output.biolumColor = _HectonFloraVertexColorDebug > 0.5 ? half4(input.color) : ResolveSyncedBiolumColor(authoredBiolumColor);
                 output.flowMagnitude = saturate(flowMagnitude + scatterVisualPayload.z * 0.18);
                 output.biomeLayer = biomeLayer;
@@ -2048,7 +2052,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     sourceIndexSeed * 0.03125);
                 half spatialPulseOffset = (half)ResolveSpatialHashPulseOffset(localPulseSeed);
                 half biolumSyncGroup = (half)fmod(abs(templateSyncSeed >= 0.0 ? templateSyncSeed : fallbackSyncSeed), 4.0);
-                output.biolumPulseData = half2(spatialPulseOffset, biolumSyncGroup);
+                output.biolumPulseData = half2(spatialPulseOffset, biolumSyncGroup + (half)(vertexAoVisibility * 0.125));
                 output.globalBiolumVertexPulse = ResolveIndirectVegetationGlobalBiolumVertexPulse(localBiolumCoord, biolumSyncGroup);
                 output.uv = half2(input.uv);
                 return output;
@@ -2142,6 +2146,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     ? half3(0.18h, 0.95h, 0.72h)
                     : half3(0.14h, 0.78h, 1.00h);
                 gradientColor = lerp(gradientColor, gradientColor + parasiteGlowTint * 0.38h, input.parasiteMask * saturate(1.0h - input.entropyProgress * 0.65h));
+                half vertexWearMask = saturate(input.curvatureMask);
+                gradientColor = lerp(gradientColor, gradientColor * half3(0.90h, 0.84h, 0.72h), vertexWearMask * 0.14h);
                 half biomeTintStrength = 0.10h;
                 half3 biomeAmbientTint = lerp(half3(1.0h, 1.0h, 1.0h), saturate(_HectonVegetationAmbientColor.rgb + 0.16h), biomeTintStrength);
                 gradientColor *= biomeAmbientTint;
@@ -2169,9 +2175,12 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 half3 probeAmbient = H8CustomLightProbeResolveAmbient(input.positionWS, normalWS, (half3)_HectonVegetationAmbientColor.rgb);
                 half3 ambient = lerp(_HectonVegetationAmbientColor.rgb, probeAmbient, 0.55h) * (_AmbientStrength * ambientVisibility);
+                half vertexAoVisibility = saturate(frac(input.biolumPulseData.y) * 8.0h);
+                half bakedAoLighting = lerp(0.52h, 1.0h, vertexAoVisibility);
                 half3 diffuse = gradientColor * ambient;
                 diffuse += gradientColor * (mainLight.color * wrapDiffuse * sunVisibility);
-                half3 transmission = _TranslucencyColor.rgb * backLight * input.heightMask * _TranslucencyStrength * sunVisibility;
+                diffuse *= bakedAoLighting;
+                half3 transmission = _TranslucencyColor.rgb * backLight * input.heightMask * _TranslucencyStrength * sunVisibility * lerp(0.76h, 1.0h, vertexAoVisibility);
                 half3 bladeAxisWS = SafeNormalize3(input.positionWS - input.originWS + float3(0.0, 0.02, 0.0));
                 half3 lightViewBisector = SafeNormalize3(lightDirectionWS + viewDirectionWS);
                 half bladeAlignment = saturate(1.0h - abs(dot(bladeAxisWS, lightViewBisector)));

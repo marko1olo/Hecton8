@@ -21,14 +21,18 @@ namespace Hecton8.UI
 
         private static readonly int CompassOffsetId = Shader.PropertyToID("_CompassOffset");
 
-        [SerializeField] private Shader compassShader;
+        [SerializeField, Tooltip("Required authored compass ribbon material. Runtime material generation is forbidden.")]
+        private Material compassMaterial;
+
+        [SerializeField, Tooltip("Optional authored ribbon root. If omitted, ShaderCompassRibbon is resolved under the HUD content root.")]
+        private RectTransform _authoredRoot;
 
         private bool _registered;
         private bool _uiBuilt;
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
         private Image _ribbonImage;
-        private Material _runtimeMaterial;
+        private Material _resolvedMaterial;
         private IInertialNavigationService _navigation;
         private float _lastOffset = -1f;
         private float _lastRootAlpha = -1f;
@@ -36,7 +40,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             CacheNavigationServiceCold();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -44,7 +48,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             CacheNavigationServiceCold();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -61,11 +65,7 @@ namespace Hecton8.UI
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
-            if (_runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
+            _resolvedMaterial = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -103,7 +103,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_runtimeMaterial == null)
+            if (_resolvedMaterial == null)
             {
                 ApplyRootAlpha(0f);
                 return;
@@ -119,22 +119,19 @@ namespace Hecton8.UI
             float offset = math.frac(snapshot.FalseBearingDegrees * InvFullCircle);
             if (math.abs(offset - _lastOffset) > OffsetEpsilon)
             {
-                _runtimeMaterial.SetFloat(CompassOffsetId, offset);
+                Shader.SetGlobalFloat(CompassOffsetId, offset);
                 _lastOffset = offset;
             }
 
             ApplyRootAlpha(1f);
         }
 
-        private bool EnsureUiBuilt(bool allowCreate)
+        private bool EnsureUiBuilt()
         {
             if (_uiBuilt)
                 return true;
 
-            if (!allowCreate)
-                return false;
-
-            Canvas targetCanvas = ResolveTargetCanvas(allowComponentFallback: true);
+            Canvas targetCanvas = ResolveTargetCanvas();
             if (targetCanvas == null || targetCanvas.renderMode != RenderMode.WorldSpace)
                 return false;
 
@@ -142,14 +139,12 @@ namespace Hecton8.UI
             if (canvasRoot == null)
                 return false;
 
-            _root = FindExistingChild(canvasRoot, RootName);
+            _root = _authoredRoot != null
+                ? _authoredRoot
+                : FindExistingChild(canvasRoot, RootName);
+
             if (_root == null)
-            {
-                GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
-                rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _root);
-                _root.SetParent(canvasRoot, false);
-            }
+                return false;
 
             _root.anchorMin = new Vector2(0.5f, 1f);
             _root.anchorMax = new Vector2(0.5f, 1f);
@@ -161,21 +156,22 @@ namespace Hecton8.UI
 
             _root.TryGetComponent(out _canvasGroup);
             if (_canvasGroup == null)
-                _canvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
+                return false;
+
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.alpha = 0f;
 
             _root.TryGetComponent(out _ribbonImage);
             if (_ribbonImage == null)
-                _ribbonImage = _root.gameObject.AddComponent<Image>();
+                return false;
 
             _ribbonImage.sprite = null;
             _ribbonImage.color = Color.white;
             _ribbonImage.raycastTarget = false;
-            EnsureRuntimeMaterial();
-            if (_runtimeMaterial != null)
-                _ribbonImage.material = _runtimeMaterial;
+            EnsureAuthoredMaterial();
+            if (_resolvedMaterial != null)
+                _ribbonImage.material = _resolvedMaterial;
 
             CacheNavigationServiceCold();
             _uiBuilt = true;
@@ -190,18 +186,13 @@ namespace Hecton8.UI
             _navigation = GlobalRegistry.InertialNavigation;
         }
 
-        private void EnsureRuntimeMaterial()
+        private void EnsureAuthoredMaterial()
         {
-            if (_runtimeMaterial != null)
+            if (_resolvedMaterial != null)
                 return;
 
-            if (compassShader == null)
-                return;
-
-            _runtimeMaterial = new Material(compassShader)
-            {
-                hideFlags = HideFlags.DontSave
-            }; // COLD ALLOC: Material[1] - shader-driven compass ribbon material - owner: ShaderCompassRibbon
+            UnityEngine.Assertions.Assert.IsNotNull(compassMaterial, "Fatal: ShaderCompassRibbon requires an authored compass material.");
+            _resolvedMaterial = compassMaterial;
         }
 
         private void TryRegister()
@@ -247,13 +238,13 @@ namespace Hecton8.UI
             _lastRootAlpha = alpha;
         }
 
-        private static Canvas ResolveTargetCanvas(bool allowComponentFallback)
+        private static Canvas ResolveTargetCanvas()
         {
             SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            if (!allowComponentFallback || overlay == null)
+            if (overlay == null)
                 return null;
 
             overlay.TryGetComponent(out Canvas canvas);
@@ -262,17 +253,7 @@ namespace Hecton8.UI
 
         private static RectTransform FindExistingChild(Transform parent, string name)
         {
-            if (parent == null)
-                return null;
-
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (child.name == name)
-                    return child as RectTransform;
-            }
-
-            return null;
+            return UiChildSpanUtility.FindExistingChild(parent, name);
         }
     }
 }

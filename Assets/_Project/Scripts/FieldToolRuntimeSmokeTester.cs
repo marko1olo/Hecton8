@@ -359,8 +359,7 @@ namespace Hecton8.Gameplay
         private GameObject CreateSalvageProbe()
         {
             Vector3 position = transform.position + GetForwardReference() * salvageForwardDistance + Vector3.up * verticalOffset;
-            GameObject probe = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            probe.name = "SMOKE_SALVAGE_PICKUP";
+            GameObject probe = new GameObject("SMOKE_SALVAGE_PICKUP", typeof(BoxCollider)); // COLD ALLOC: smoke-only pickup shell; no runtime primitive mesh.
             probe.transform.SetPositionAndRotation(position, Quaternion.identity);
             probe.transform.localScale = new Vector3(0.35f, 0.2f, 0.35f);
 
@@ -369,10 +368,6 @@ namespace Hecton8.Gameplay
 
             PickupItem pickup = probe.AddComponent<PickupItem>();
             pickup.Configure(salvageProbeItem, 1);
-
-            probe.TryGetComponent(out Renderer renderer);
-            if (renderer != null && renderer.sharedMaterial != null)
-                renderer.sharedMaterial.color = new Color(0.56f, 0.72f, 0.84f, 1f);
 
             return probe;
         }

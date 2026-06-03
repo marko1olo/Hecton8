@@ -377,7 +377,11 @@ namespace Hecton8.Items
             if (_buoyancy == null)
             {
                 if (!TryGetComponent(out _buoyancy))
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     _buoyancy = gameObject.AddComponent<BuoyancyObject>();
+#else
+                    return;
+#endif
             }
 
             if (itemData.worldBuoyancyProfile != null)

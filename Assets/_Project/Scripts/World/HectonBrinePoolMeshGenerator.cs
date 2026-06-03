@@ -3,6 +3,7 @@ using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace Hecton8.World
 {
@@ -13,10 +14,28 @@ namespace Hecton8.World
     [AddComponentMenu("Hecton8/World/Brine Pool Mesh Generator")]
     public sealed class HectonBrinePoolMeshGenerator : MonoBehaviour
     {
+        [Header("Authored Runtime")]
+        [Tooltip("Player builds consume this pre-baked brine pool hierarchy. Runtime mesh/object generation is editor-only.")]
+        [SerializeField] private GameObject _authoredBrinePoolPrefab;
+
+        [Tooltip("Optional Addressables reference to the pre-baked brine pool prefab/fog/collider hierarchy.")]
+        [SerializeField] private AssetReferenceGameObject _authoredBrinePoolAddressable;
+
+        public GameObject AuthoredBrinePoolPrefab => _authoredBrinePoolPrefab;
+        public AssetReferenceGameObject AuthoredBrinePoolAddressable => _authoredBrinePoolAddressable;
+        public bool HasAuthoredBrinePoolReference => _authoredBrinePoolPrefab != null || HasValidAddressableReference(_authoredBrinePoolAddressable);
+
+        private static bool HasValidAddressableReference(AssetReferenceGameObject reference)
+        {
+            return reference != null && reference.RuntimeKeyIsValid();
+        }
+
+#if UNITY_EDITOR
         private const uint InvalidInputWarningHash = 0x414E4249u;
         private const uint EmptyBoundsWarningHash = 0x414E4245u;
         private const uint PoolCapWarningHash = 0x414E4250u;
         private const uint DuplicateHazardWarningHash = 0x414E4244u;
+        private const uint RuntimeBuildRejectedWarningHash = 0x414E4255u;
         private const uint BrineGeneratorContextHash = 0x414E4252u;
         private const int MaxGeneratedBrinePools = 32;
         private const string GeneratedBrinePoolsRootName = "Generated Brine Pools";
@@ -64,6 +83,12 @@ namespace Hecton8.World
             float cellSizeMeters,
             Vector3 runtimeOrigin)
         {
+            if (Application.isPlaying)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(RuntimeBuildRejectedWarningHash, BrineGeneratorContextHash, 0);
+                return 0;
+            }
+
             if (!TryResolveCellCount(width, height, out int cellCount) ||
                 !basinMask.IsCreated ||
                 !basinRecords.IsCreated ||
@@ -554,6 +579,6 @@ namespace Hecton8.World
             public GameObject GameObject;
             public int HazardId;
         }
-
+#endif
     }
 }

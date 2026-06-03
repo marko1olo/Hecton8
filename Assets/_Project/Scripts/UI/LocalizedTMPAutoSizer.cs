@@ -16,8 +16,12 @@ namespace Hecton8.UI
         private const float CollapsedRectThreshold = 0.5f;
         private const int MaxRectRepairPasses = 4;
         private const int MaxRectRepairDepth = 4;
+        private const int MaxConfigurationAppliesPerLateFrame = 18;
         private static ILocalizationTextReadModel s_cachedLocalization;
         private static bool s_localizationColdResolved;
+        private static int s_failedLocalizationResolveFrame = -1;
+        private static int s_applyBudgetFrame = -1;
+        private static int s_applyBudgetUsed;
 
         [Header("References")]
         [Tooltip("Target TMP text. Defaults to TMP_Text on the same GameObject.")]
@@ -52,7 +56,7 @@ namespace Hecton8.UI
         private bool _isApplyingConfiguration;
         private GameLanguage _lastAppliedLanguage = (GameLanguage)(-1);
         private Vector2 _lastAppliedRectSize = new Vector2(-1f, -1f);
-        private Vector3 _baselineLocalScale = Vector3.one;
+        private float _lastAppliedOverflowScale = 1f;
         private bool _registeredForTick;
         private bool _hotSwapRegistered;
 #if UNITY_EDITOR
@@ -128,7 +132,10 @@ namespace Hecton8.UI
             float resolvedMax = Mathf.Max(resolvedMin, maxSize);
             text.TryGetComponent(out LocalizedTMPAutoSizer autoSizer);
             if (autoSizer == null)
-                autoSizer = text.gameObject.AddComponent<LocalizedTMPAutoSizer>();
+            {
+                ApplyDirectTextConfiguration(text, resolvedMin, resolvedMax, overflow, wrapping);
+                return;
+            }
 
             autoSizer.targetText = text;
             autoSizer.minFontSize = resolvedMin;
@@ -138,6 +145,22 @@ namespace Hecton8.UI
             autoSizer.CaptureDefaults();
             autoSizer.InvalidateConfiguration();
             autoSizer.ApplyConfiguration();
+        }
+
+        private static void ApplyDirectTextConfiguration(
+            TMP_Text text,
+            float minSize,
+            float maxSize,
+            TextOverflowModes overflow,
+            TextWrappingModes wrapping)
+        {
+            CacheLocalizationCold();
+            text.enableAutoSizing = true;
+            text.fontSizeMin = minSize;
+            text.fontSizeMax = Mathf.Max(minSize, maxSize);
+            text.overflowMode = ResolveSafeOverflowMode(text, overflow);
+            text.textWrappingMode = wrapping;
+            ApplyRuntimeLocalizationLayout(text);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -190,10 +213,18 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (!_configurationApplyPending)
+            {
+                TryUnregisterFromTick();
+                return;
+            }
+
+            if (!TryConsumeApplyBudget())
                 return;
 
             _configurationApplyPending = false;
             ApplyConfiguration();
+            if (!_configurationApplyPending)
+                TryUnregisterFromTick();
         }
 
         private void TryRegisterForTick()
@@ -241,7 +272,10 @@ namespace Hecton8.UI
                 targetText.textWrappingMode = wrappingMode;
                 if (enableRightToLeft)
                     ApplyRuntimeLocalizationLayout(targetText);
-                LocOverflowHandler.ApplyScale(targetText, _baselineLocalScale, LocOverflowHandler.ResolveUniformScale(targetText));
+                _lastAppliedOverflowScale = LocOverflowHandler.ApplyScale(
+                    targetText,
+                    _lastAppliedOverflowScale,
+                    LocOverflowHandler.ResolveUniformScale(targetText));
                 _lastAppliedLanguage = language;
                 _lastAppliedRectSize = rectSize;
                 _configurationDirty = false;
@@ -267,9 +301,6 @@ namespace Hecton8.UI
         {
             if (_capturedDefaults || targetText == null)
                 return;
-
-            if (targetText.rectTransform != null)
-                _baselineLocalScale = targetText.rectTransform.localScale;
 
             _capturedDefaults = true;
         }
@@ -297,14 +328,36 @@ namespace Hecton8.UI
             if (s_localizationColdResolved && s_cachedLocalization != null)
                 return;
 
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (s_failedLocalizationResolveFrame == frame)
+                return;
+
             s_cachedLocalization = GlobalRegistry.LocalizationText;
             s_localizationColdResolved = s_cachedLocalization != null;
+            if (s_cachedLocalization == null)
+                s_failedLocalizationResolveFrame = frame;
         }
 
         private static GameLanguage ResolveCurrentLanguage()
         {
             ILocalizationTextReadModel manager = s_cachedLocalization;
             return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
+        }
+
+        private static bool TryConsumeApplyBudget()
+        {
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (s_applyBudgetFrame != frame)
+            {
+                s_applyBudgetFrame = frame;
+                s_applyBudgetUsed = 0;
+            }
+
+            if (s_applyBudgetUsed >= MaxConfigurationAppliesPerLateFrame)
+                return false;
+
+            s_applyBudgetUsed++;
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

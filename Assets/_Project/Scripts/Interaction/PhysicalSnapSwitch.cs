@@ -1,6 +1,7 @@
 namespace Hecton8.Interaction
 {
     using Hecton8.Core;
+    using Hecton8.Gameplay;
     using Hecton8.Tools;
     using Hecton8.World;
     using Unity.Mathematics;
@@ -28,6 +29,10 @@ namespace Hecton8.Interaction
         private const float MinimumSnapCooldownSeconds = 0.02f;
         private const float MaximumSnapCooldownSeconds = 0.5f;
         private const float MinimumAngleSpanDegrees = 0.0001f;
+        private const uint BallastSwitchSourceHash = 0x42535731u;
+        private const uint MaintenanceSwitchSourceHash = 0x56534d31u;
+        private const float BallastLeverSubmitDeadband01 = 0.001f;
+        private const int BallastSubmitRetryFrameInterval = 16;
 
         private enum SnapAxis : byte
         {
@@ -64,6 +69,22 @@ namespace Hecton8.Interaction
         [SerializeField, Range(0.25f, 2.5f), Tooltip("Pitch for mechanical switch clicks.")]
         private float snapAudioPitch = 1f;
 
+        [Header("Vessel Ballast")]
+        [SerializeField, Tooltip("When enabled, this authored cockpit switch writes its lever travel into the submarine ballast telemetry row.")]
+        private bool emitBallastLeverCommand;
+        [SerializeField, Tooltip("Optional explicit submarine core. If empty, the cold GlobalRegistry submarine service is used.")]
+        private SubmarineCoreDirector submarineCore;
+        [SerializeField, Range(0f, 90f), Tooltip("Ballast lever angle submitted when the switch is at the off angle.")]
+        private float ballastOffLeverAngleDegrees;
+        [SerializeField, Range(0f, 90f), Tooltip("Ballast lever angle submitted when the switch is at the on angle.")]
+        private float ballastOnLeverAngleDegrees = 90f;
+
+        [Header("Vessel Maintenance")]
+        [SerializeField, Tooltip("When enabled, each successful physical snap records a vessel-care action into the unmanaged telemetry row.")]
+        private bool recordVesselMaintenanceAction;
+        [SerializeField, Range(0, 63), Tooltip("Panel/circuit bit set in VesselTelemetryEntry.HullCleanlinessMask when this switch is serviced.")]
+        private int vesselMaintenancePanelBitIndex = 4;
+
         private Quaternion _baseLocalRotation;
         private Quaternion _offLocalRotation;
         private Quaternion _onLocalRotation;
@@ -86,8 +107,13 @@ namespace Hecton8.Interaction
         private int _lastSampleFrame = -1;
         private Collider _registeredActivationVolume;
         private IAudioService _audioService;
+        private SubmarineCoreDirector _submarineCore;
         private float _pendingVisualAngle;
+        private float _lastSubmittedBallastRatio = -1f;
         private bool _hasPendingVisualAngle;
+        private bool _ballastSubmitPending;
+        private byte _hasSubmittedBallastRatio;
+        private int _nextBallastSubmitRetryFrame;
 
         public bool IsOn => _isOn;
         public Collider ActivationCollider => activationVolume;
@@ -123,6 +149,8 @@ namespace Hecton8.Interaction
             _isOn = desiredOn;
             _targetAngle = _isOn ? _resolvedOnAngleDegrees : _resolvedOffAngleDegrees;
             _snapCooldownRemaining = _resolvedSnapCooldownSeconds;
+            QueueBallastSubmit();
+            TryRecordVesselMaintenanceSnap();
             TryRegister();
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             QueueSnapAudio(handPosition);
@@ -149,6 +177,7 @@ namespace Hecton8.Interaction
             _currentAngle = _isOn ? _resolvedOnAngleDegrees : _resolvedOffAngleDegrees;
             _targetAngle = _currentAngle;
             ApplyAngle(_currentAngle);
+            QueueBallastSubmit();
         }
 
         private void OnEnable()
@@ -157,6 +186,7 @@ namespace Hecton8.Interaction
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
             RegisterCollider();
+            QueueBallastSubmit();
             RefreshTickRegistration();
         }
 
@@ -167,6 +197,8 @@ namespace Hecton8.Interaction
             UnregisterCollider();
             _snapCooldownRemaining = 0f;
             _lastSampleFrame = -1;
+            _ballastSubmitPending = false;
+            _nextBallastSubmitRetryFrame = 0;
         }
 
         private void OnDestroy()
@@ -180,6 +212,9 @@ namespace Hecton8.Interaction
         {
             if (_tickDormant)
             {
+                if (_ballastSubmitPending)
+                    TrySubmitBallastLeverAngleIfChanged();
+
                 TryRetireDormantTickRegistration();
                 return;
             }
@@ -196,7 +231,8 @@ namespace Hecton8.Interaction
                 _currentAngle = _targetAngle;
                 QueueAngle(_currentAngle);
                 TryRegisterLateFrameTick();
-                if (_snapCooldownRemaining <= 0f)
+                TrySubmitBallastLeverAngleIfChanged();
+                if (_snapCooldownRemaining <= 0f && !_ballastSubmitPending)
                     _tickDormant = true;
                 return;
             }
@@ -205,6 +241,7 @@ namespace Hecton8.Interaction
             _currentAngle = math.lerp(_currentAngle, _targetAngle, alpha);
             QueueAngle(_currentAngle);
             TryRegisterLateFrameTick();
+            TrySubmitBallastLeverAngleIfChanged();
         }
 
         public void LateFrameTick()
@@ -313,6 +350,9 @@ namespace Hecton8.Interaction
             if (!_tickDormant)
                 return;
 
+            if (_ballastSubmitPending && !TrySubmitBallastLeverAngleIfChanged())
+                return;
+
             if (_hasPendingVisualAngle)
             {
                 TryRegisterLateFrameTick();
@@ -324,7 +364,7 @@ namespace Hecton8.Interaction
 
         private void RefreshTickRegistration()
         {
-            if (math.abs(_targetAngle - _currentAngle) >= 0.001f || _snapCooldownRemaining > 0f)
+            if (math.abs(_targetAngle - _currentAngle) >= 0.001f || _snapCooldownRemaining > 0f || _ballastSubmitPending)
                 TryRegister();
             else
                 Unregister();
@@ -352,6 +392,7 @@ namespace Hecton8.Interaction
         {
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             _audioService = GlobalRegistry.Audio;
+            _submarineCore = ResolveSubmarineCore(GlobalRegistry.Submarine);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -363,6 +404,11 @@ namespace Hecton8.Interaction
             {
                 case GlobalRegistryServiceSlot.Audio:
                     _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineCore = ResolveSubmarineCore(currentService);
+                    _nextBallastSubmitRetryFrame = 0;
+                    QueueBallastSubmit();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcherAvailable = currentService != null;
@@ -389,6 +435,29 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
+        }
+
+        private SubmarineCoreDirector ResolveSubmarineCore(object submarineService)
+        {
+            return submarineCore != null ? submarineCore : submarineService as SubmarineCoreDirector;
+        }
+
+        private void TryRecordVesselMaintenanceSnap()
+        {
+            if (!recordVesselMaintenanceAction)
+                return;
+
+            SubmarineCoreDirector core = _submarineCore;
+            if (core == null)
+            {
+                RefreshColdRegistryReferences();
+                core = _submarineCore;
+                if (core == null)
+                    return;
+            }
+
+            uint panelBit = (uint)math.clamp(vesselMaintenancePanelBitIndex, 0, 63);
+            core.TryRecordVesselMaintenanceAction(panelBit, MaintenanceSwitchSourceHash);
         }
 
         private bool ResolveDesiredState(Vector3 localPoint)
@@ -422,6 +491,78 @@ namespace Hecton8.Interaction
         {
             _pendingVisualAngle = angleDegrees;
             _hasPendingVisualAngle = true;
+        }
+
+        private void QueueBallastSubmit()
+        {
+            if (!emitBallastLeverCommand)
+                return;
+
+            _ballastSubmitPending = true;
+            _nextBallastSubmitRetryFrame = 0;
+            TrySubmitBallastLeverAngleIfChanged();
+            if (_ballastSubmitPending)
+                TryRegister();
+        }
+
+        private bool TrySubmitBallastLeverAngleIfChanged()
+        {
+            if (!emitBallastLeverCommand)
+            {
+                _ballastSubmitPending = false;
+                _nextBallastSubmitRetryFrame = 0;
+                return true;
+            }
+
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (_ballastSubmitPending && currentFrame < _nextBallastSubmitRetryFrame)
+                return false;
+
+            SubmarineCoreDirector core = _submarineCore;
+            if (core == null)
+            {
+                _ballastSubmitPending = true;
+                _nextBallastSubmitRetryFrame = currentFrame + BallastSubmitRetryFrameInterval;
+                return false;
+            }
+
+            float travel01 = ResolveCurrentTravel01();
+            float safeOffAngle = math.isfinite(ballastOffLeverAngleDegrees)
+                ? math.clamp(ballastOffLeverAngleDegrees, 0f, 90f)
+                : 0f;
+            float safeOnAngle = math.isfinite(ballastOnLeverAngleDegrees)
+                ? math.clamp(ballastOnLeverAngleDegrees, 0f, 90f)
+                : 90f;
+            float leverAngleDegrees = math.lerp(safeOffAngle, safeOnAngle, travel01);
+            float leverRatio01 = math.saturate(leverAngleDegrees * (1f / 90f));
+            if (!_ballastSubmitPending &&
+                _hasSubmittedBallastRatio != 0 &&
+                math.abs(leverRatio01 - _lastSubmittedBallastRatio) <= BallastLeverSubmitDeadband01)
+            {
+                return true;
+            }
+
+            if (!core.TrySubmitBallastLeverAngle(leverAngleDegrees, BallastSwitchSourceHash))
+            {
+                _ballastSubmitPending = true;
+                _nextBallastSubmitRetryFrame = currentFrame + BallastSubmitRetryFrameInterval;
+                return false;
+            }
+
+            _lastSubmittedBallastRatio = leverRatio01;
+            _hasSubmittedBallastRatio = 1;
+            _ballastSubmitPending = false;
+            _nextBallastSubmitRetryFrame = 0;
+            return true;
+        }
+
+        private float ResolveCurrentTravel01()
+        {
+            float span = _resolvedOnAngleDegrees - _resolvedOffAngleDegrees;
+            if (math.abs(span) <= MinimumAngleSpanDegrees)
+                return _isOn ? 1f : 0f;
+
+            return math.saturate((_currentAngle - _resolvedOffAngleDegrees) * math.rcp(span));
         }
 
         private void CacheSnapRotations()
@@ -679,6 +820,15 @@ namespace Hecton8.Interaction
                 snapCooldownSeconds = 0.08f;
             snapAudioVolume = math.saturate(snapAudioVolume);
             snapAudioPitch = math.clamp(snapAudioPitch, 0.25f, 2.5f);
+            ballastOffLeverAngleDegrees = math.clamp(
+                math.isfinite(ballastOffLeverAngleDegrees) ? ballastOffLeverAngleDegrees : 0f,
+                0f,
+                90f);
+            ballastOnLeverAngleDegrees = math.clamp(
+                math.isfinite(ballastOnLeverAngleDegrees) ? ballastOnLeverAngleDegrees : 90f,
+                0f,
+                90f);
+            vesselMaintenancePanelBitIndex = math.clamp(vesselMaintenancePanelBitIndex, 0, 63);
 
             CacheScalarConfig();
             CacheSnapRotations();

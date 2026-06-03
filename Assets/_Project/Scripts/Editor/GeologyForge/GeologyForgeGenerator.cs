@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -1136,7 +1137,10 @@ namespace Hecton8.Editor.GeologyForge
             try
             {
                 GameObjectUtility.SetStaticEditorFlags(root, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
-                MeshCollider collider = root.AddComponent<MeshCollider>();
+                GameObject colliderRoot = new GameObject("COL_ConvexProxy_1716");
+                colliderRoot.transform.SetParent(root.transform, false);
+                GameObjectUtility.SetStaticEditorFlags(colliderRoot, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+                MeshCollider collider = colliderRoot.AddComponent<MeshCollider>();
                 collider.convex = true;
                 collider.cookingOptions = CollisionCookingOptions;
                 collider.sharedMesh = collisionMesh;
@@ -1153,9 +1157,15 @@ namespace Hecton8.Editor.GeologyForge
                 });
                 lodGroup.RecalculateBounds();
 
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed before save: " + colliderFailure);
+
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 if (prefab == null)
                     throw new InvalidOperationException("Failed to save geology prefab " + prefabPath + ".");
+
+                if (!ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed after save: " + colliderFailure);
             }
             finally
             {

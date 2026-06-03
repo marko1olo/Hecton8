@@ -84,7 +84,6 @@ namespace Hecton8.Gameplay
         private float _pulsePhase;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonPlayerMovement _cachedPlayerMovement;
-        private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _highlightPropertiesDirty;
         private bool _hotSwapRegistered;
@@ -266,22 +265,18 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTick()
         {
-            if (_tickRegistered) return;
+            if (_lateFrameRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
         {
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
+            if (!_lateFrameRegistered) return;
 
-            _tickRegistered = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
         private void CachePlayerContextCold()

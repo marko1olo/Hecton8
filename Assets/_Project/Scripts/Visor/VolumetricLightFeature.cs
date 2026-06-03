@@ -73,6 +73,18 @@ namespace Hecton8.Visor
             [Tooltip("Base participating media density used by the god ray solve.")]
             [Range(0f, 4f)] public float density = 1.05f;
 
+            [Tooltip("Editor-baked packed Texture3D. R=density, G/B=horizontal flow. If absent, god rays use constant density.")]
+            public Texture3D bakedFogDensityFlowTexture = null;
+
+            [Tooltip("World-space center of the baked fog density/flow Texture3D.")]
+            public Vector3 bakedFogVolumeCenterWs = Vector3.zero;
+
+            [Tooltip("World-space cube size covered by the baked fog density/flow Texture3D.")]
+            [Range(1f, 4096f)] public float bakedFogVolumeWorldSize = 96f;
+
+            [Tooltip("Continuous strength for the baked flow vector's secondary density sample.")]
+            [Range(0f, 1f)] public float bakedFogFlowDetailWeight = 0.35f;
+
             [Tooltip("Scattering coefficient applied to the volumetric density sample.")]
             [Range(0f, 4f)] public float scatterCoefficient = 0.85f;
 
@@ -174,6 +186,9 @@ namespace Hecton8.Visor
                 internal Vector4 hudFogPerturbation;
                 internal Vector4 marchParams;
                 internal Vector4 shadowParams;
+                internal TextureHandle bakedFogDensityFlowTexture;
+                internal Vector4 bakedFogDensityFlowCenter;
+                internal Vector4 bakedFogDensityFlowParams;
                 internal float fogScatteringCoeff;
                 internal Matrix4x4 viewProjection;
             }
@@ -245,6 +260,8 @@ namespace Hecton8.Visor
             private float _freezeFrameDither;
             private const uint MaxKernelThreadProduct = 256u;
             private const int MaxDispatchGroupsPerDimension = 65535;
+            private RTHandle _bakedFogDensityFlowTextureHandle;
+            private Texture _bakedFogDensityFlowTextureHandleSource;
 
             public VolumetricLightPass()
             {
@@ -310,7 +327,20 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
+                ReleaseExternalTextureHandle(ref _bakedFogDensityFlowTextureHandle, ref _bakedFogDensityFlowTextureHandleSource);
                 ResetComputeKernelState();
+            }
+
+            public void PrepareBakedFogDensityFlowHandleCold(FeatureSettings settings)
+            {
+                Texture texture = settings != null && IsUsableBakedFogDensityFlowTexture(settings.bakedFogDensityFlowTexture)
+                    ? settings.bakedFogDensityFlowTexture
+                    : null;
+                ResolveExternalTextureHandle(
+                    texture,
+                    ref _bakedFogDensityFlowTextureHandle,
+                    ref _bakedFogDensityFlowTextureHandleSource,
+                    allowAllocation: true);
             }
 
             private void ResetComputeKernelState()
@@ -410,6 +440,28 @@ namespace Hecton8.Visor
                     Mathf.Max(0.001f, _settings.volumetricShadowBias),
                     Mathf.Max(0f, _settings.volumetricShadowStrength));
                 Vector4 compositeParams = new Vector4(Mathf.Max(0.01f, _settings.bilateralDepthScale), 0f, 0f, 0f);
+                Texture3D bakedFogTexture = _settings.bakedFogDensityFlowTexture;
+                bool hasBakedFogDensityFlow = IsUsableBakedFogDensityFlowTexture(bakedFogTexture);
+                RTHandle bakedFogTextureHandle = hasBakedFogDensityFlow
+                    ? TryGetExistingExternalTextureHandle(
+                        bakedFogTexture,
+                        _bakedFogDensityFlowTextureHandle,
+                        _bakedFogDensityFlowTextureHandleSource)
+                    : null;
+                if (bakedFogTextureHandle == null)
+                    hasBakedFogDensityFlow = false;
+
+                TextureHandle bakedFogGraphTexture = TextureHandle.nullHandle;
+                if (hasBakedFogDensityFlow)
+                    bakedFogGraphTexture = renderGraph.ImportTexture(bakedFogTextureHandle);
+
+                Vector3 bakedFogCenter = _settings.bakedFogVolumeCenterWs;
+                Vector4 bakedFogDensityFlowCenter = new Vector4(bakedFogCenter.x, bakedFogCenter.y, bakedFogCenter.z, 0f);
+                Vector4 bakedFogDensityFlowParams = new Vector4(
+                    hasBakedFogDensityFlow ? bakedFogTexture.width : 1f,
+                    Mathf.Clamp(_settings.bakedFogVolumeWorldSize, 1f, 4096f),
+                    hasBakedFogDensityFlow ? 1f : 0f,
+                    Mathf.Clamp01(_settings.bakedFogFlowDetailWeight));
 
                 using (var builder = renderGraph.AddComputePass("Hecton Volumetric Light Raymarch", out RaymarchPassData passData, _profilingSampler))
                 {
@@ -434,15 +486,22 @@ namespace Hecton8.Visor
                     passData.hudFogPerturbation = _hudFogPerturbation;
                     passData.marchParams = marchParams;
                     passData.shadowParams = shadowParams;
+                    passData.bakedFogDensityFlowTexture = bakedFogGraphTexture;
+                    passData.bakedFogDensityFlowCenter = bakedFogDensityFlowCenter;
+                    passData.bakedFogDensityFlowParams = bakedFogDensityFlowParams;
                     passData.fogScatteringCoeff = _fogScatteringCoeff;
                     passData.viewProjection = viewProjection;
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    if (bakedFogGraphTexture.IsValid())
+                        builder.UseTexture(bakedFogGraphTexture, AccessFlags.Read);
                     builder.UseTexture(halfTexture, AccessFlags.Write);
 
                     builder.SetRenderFunc(static (RaymarchPassData data, ComputeGraphContext context) =>
                     {
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
+                        if (data.bakedFogDensityFlowTexture.IsValid())
+                            context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.BakedFogDensityFlowTextureId, data.bakedFogDensityFlowTexture);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfResultId, data.result);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FullSizeId, data.fullSize);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HalfSizeId, data.halfSize);
@@ -459,6 +518,8 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HudFogPerturbationId, data.hudFogPerturbation);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MarchParamsId, data.marchParams);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ShadowParamsId, data.shadowParams);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.BakedFogDensityFlowCenterId, data.bakedFogDensityFlowCenter);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.BakedFogDensityFlowParamsId, data.bakedFogDensityFlowParams);
                         context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FogScatteringCoeffId, data.fogScatteringCoeff);
                         context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.ViewProjectionId, data.viewProjection);
                         context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);
@@ -706,6 +767,47 @@ namespace Hecton8.Visor
                 desc.autoGenerateMips = false;
                 return desc;
             }
+
+            private static bool IsUsableBakedFogDensityFlowTexture(Texture texture)
+            {
+                return texture is Texture3D texture3D &&
+                       texture3D.width > 1 &&
+                       texture3D.height > 1 &&
+                       texture3D.depth > 1;
+            }
+
+            private static RTHandle ResolveExternalTextureHandle(Texture texture, ref RTHandle handle, ref Texture handleSource, bool allowAllocation)
+            {
+                if (texture == null)
+                {
+                    ReleaseExternalTextureHandle(ref handle, ref handleSource);
+                    return null;
+                }
+
+                if (!ReferenceEquals(texture, handleSource))
+                {
+                    if (!allowAllocation)
+                        return null;
+
+                    handle?.Release();
+                    handleSource = texture;
+                    handle = RTHandles.Alloc(texture);
+                }
+
+                return handle;
+            }
+
+            private static RTHandle TryGetExistingExternalTextureHandle(Texture texture, RTHandle handle, Texture handleSource)
+            {
+                return texture != null && handle != null && ReferenceEquals(texture, handleSource) ? handle : null;
+            }
+
+            private static void ReleaseExternalTextureHandle(ref RTHandle handle, ref Texture handleSource)
+            {
+                handle?.Release();
+                handle = null;
+                handleSource = null;
+            }
         }
 
         private static class ShaderConstants
@@ -726,6 +828,9 @@ namespace Hecton8.Visor
             internal static readonly int MarchParamsId = Shader.PropertyToID("_HectonVolumetricMarchParams");
             internal static readonly int ShadowParamsId = Shader.PropertyToID("_HectonVolumetricShadowParams");
             internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricCompositeParams");
+            internal static readonly int BakedFogDensityFlowTextureId = Shader.PropertyToID("_HectonBakedFogDensityFlowTexture");
+            internal static readonly int BakedFogDensityFlowCenterId = Shader.PropertyToID("_HectonBakedFogDensityFlowCenter");
+            internal static readonly int BakedFogDensityFlowParamsId = Shader.PropertyToID("_HectonBakedFogDensityFlowParams");
             internal static readonly int ProxyParamsId = Shader.PropertyToID("_HectonVolumetricProxyParams");
             internal static readonly int ViewProjectionId = Shader.PropertyToID("_HectonVolumetricViewProjection");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
@@ -758,10 +863,18 @@ namespace Hecton8.Visor
         private void OnEnable()
         {
             CacheGraphicsCapabilitiesCold();
+            _pass?.PrepareBakedFogDensityFlowHandleCold(settings);
             TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
             CachePresentationGlobalsLate();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _pass?.PrepareBakedFogDensityFlowHandleCold(settings);
+        }
+#endif
 
         /// <inheritdoc />
         public override void Create()
@@ -774,14 +887,11 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new VolumetricLightPass();
+            _pass.PrepareBakedFogDensityFlowHandleCold(settings);
             CacheGraphicsCapabilitiesCold();
             Shader proxyShader = settings != null ? settings.proxyShader : null;
             if (proxyShader == null)
                 RuntimeShaderReferenceCatalog.TryGetVolumetricLightProxyShader(out proxyShader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (proxyShader == null)
-                proxyShader = Shader.Find("Hidden/Hecton8/VolumetricLightProxy");
-#endif
             RecreateMaterial(ref _proxyMaterial, proxyShader);
             TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();

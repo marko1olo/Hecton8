@@ -1,25 +1,52 @@
-﻿AGENTS.md:33:- Burst/Jobs are correct only when the work is batched, data-local, and completed by dispatcher-owned completion windows. Tiny jobs, noisy schedule/complete loops, same-frame readbacks, and hidden `.Complete()` calls require profiler proof or are rejected.
-AGENTS.md:192:| Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
-AGENTS.md:193:| Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / injected owner interfaces / cold GlobalRegistry lookup cached outside hot path |
-AGENTS.md:194:| Coroutines | StartCoroutine / yield return new | ITickable state machine |
-AGENTS.md:201:| Camera     | Camera.main | cached _mainCam |
-AGENTS.md:204:| Renderer   | renderer.material (leak) · .materials (alloc) | MaterialPropertyBlock · sharedMaterials |
-AGENTS.md:232:[FORBID] StartCoroutine in gameplay code (~100 B alloc per call).
-AGENTS.md:254:[FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
-AGENTS.md:256:[REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
-AGENTS.md:257:[FORBID] Naked Debug.Log/Warning/Error in hot paths. [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames). Binary export on crash.[REQ] Development Build — check Console for log spam before each milestone.
-AGENTS.md:283:[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: Deferred disposal ONLY. array.Dispose(activeHandle); array = default;[FORBID] Calling .Complete() on teardown.
-AGENTS.md:284:[REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
-AGENTS.md:299:[FORBID] Calling .Complete() on a JobHandle just to call .Dispose() on the next line. This causes Main Thread stalls. If you can't dispose asynchronously, you are failing the architecture.
-AGENTS.md:304:[FORBID] JobHandle.Complete() in mid-frame hot paths. ZERO EXCEPTIONS. Only permitted in designated end-of-frame swap windows.
-AGENTS.md:356:- Renderer.materials — use sharedMaterials or cache
-AGENTS.md:512:? StartCoroutine?             ? ITickable state machine
-AGENTS.md:514:? renderer.material?          ? MaterialPropertyBlock
-AGENTS.md:525:? Camera.main in hot path?         ? cache
-AGENTS.md:526:? Debug.Log without #if guard?     ? wrap
-AGENTS.md:547:? jobHandle.Complete() before Dispose()? ? verify order
-AGENTS.md:548:? Renderer.materials (alloc)?     ? sharedMaterials
+﻿AGENTS.md:32:- Burst/Jobs are correct only when the work is batched, data-local, and completed by dispatcher-owned completion windows. Tiny jobs, noisy schedule/complete loops, same-frame readbacks, and hidden `.Complete()` calls require profiler proof or are rejected.
+AGENTS.md:191:| Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
+AGENTS.md:192:| Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / injected owner interfaces / cold GlobalRegistry lookup cached outside hot path |
+AGENTS.md:193:| Coroutines | StartCoroutine / yield return new | ITickable state machine |
+AGENTS.md:200:| Camera     | Camera.main | cached _mainCam |
+AGENTS.md:203:| Renderer   | renderer.material (leak) · .materials (alloc) | MaterialPropertyBlock · sharedMaterials |
+AGENTS.md:231:[FORBID] StartCoroutine in gameplay code (~100 B alloc per call).
+AGENTS.md:253:[FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
+AGENTS.md:255:[REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
+AGENTS.md:256:[FORBID] Naked Debug.Log/Warning/Error in hot paths. [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames). Binary export on crash.[REQ] Development Build — check Console for log spam before each milestone.
+AGENTS.md:282:[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: Deferred disposal ONLY. array.Dispose(activeHandle); array = default;[FORBID] Calling .Complete() on teardown.
+AGENTS.md:283:[REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
+AGENTS.md:298:[FORBID] Calling .Complete() on a JobHandle just to call .Dispose() on the next line. This causes Main Thread stalls. If you can't dispose asynchronously, you are failing the architecture.
+AGENTS.md:303:[FORBID] JobHandle.Complete() in mid-frame hot paths. ZERO EXCEPTIONS. Only permitted in designated end-of-frame swap windows.
+AGENTS.md:355:- Renderer.materials — use sharedMaterials or cache
+AGENTS.md:511:? StartCoroutine?             ? ITickable state machine
+AGENTS.md:513:? renderer.material?          ? MaterialPropertyBlock
+AGENTS.md:524:? Camera.main in hot path?         ? cache
+AGENTS.md:525:? Debug.Log without #if guard?     ? wrap
+AGENTS.md:546:? jobHandle.Complete() before Dispose()? ? verify order
+AGENTS.md:547:? Renderer.materials (alloc)?     ? sharedMaterials
 AGENTS.md:712:[FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.
+Tools\VoxelRuntimeHotPathAudit\Program.cs:15:        ".Select(",
+Tools\VoxelRuntimeHotPathAudit\Program.cs:16:        ".Where(",
+Tools\VoxelRuntimeHotPathAudit\Program.cs:27:        ".ToList(",
+Tools\VoxelRuntimeHotPathAudit\Program.cs:176:                : text.Contains("Allocator.Persistent", StringComparison.Ordinal)
+Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:340:                .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))
+Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:342:                .ToList();
+Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:356:                Sections = selected.Select(s => s.Name).ToArray()
+Tools\PresentationDecouplingAudit\Program.cs:678:            (left.EndsWith(".color", StringComparison.Ordinal) || left.EndsWith(".material", StringComparison.Ordinal) || left.EndsWith(".materials", StringComparison.Ordinal)))
+Tools\SignalBusContractAuditCli\Program.cs:29:    private static readonly Regex UnityLookupRegex = new(@"(?:Try)?GetComponent\s*(?:<|\()|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
+Tools\SignalBusContractAuditCli\Program.cs:31:    private static readonly Regex MaterialMutationRegex = new(@"\.material\b|Material\.Set(Float|Int|Color|Vector|Texture)|\.Set(Float|Int|Color|Vector|Texture)\s*\(", RegexOptions.Compiled);
+Tools\SignalBusContractAuditCli\Program.cs:251:            var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
+Tools\SignalBusContractAuditCli\Program.cs:449:                var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
+Tools\SignalBusContractAuditCli\Program.cs:507:                var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
+Tools\SignalBusContractAuditCli\Program.cs:699:                .Where(item => !item.IsEditor && item.HasStructLayout && item.LayoutSize > 0)
+Tools\SignalBusContractAuditCli\Program.cs:711:                .Where(item => !item.IsEditor)
+Tools\SignalBusContractAuditCli\Program.cs:1201:            if (ContainsAny(code, "GetComponent", "FindObject", "GameObject.Find", "Object.Find") &&
+Tools\SignalBusContractAuditCli\Program.cs:1217:            if (ContainsAny(code, ".Complete(", "CompleteAll(") && JobCompleteRegex.IsMatch(code))
+Tools\SignalBusContractAuditCli\Program.cs:1246:            if (ContainsAny(code, ".material", "Material.Set", ".SetFloat", ".SetColor", ".SetVector", ".SetTexture") &&
+Tools\SignalBusContractAuditCli\Program.cs:1295:            foreach (var group in _signalDefinitions.GroupBy(item => item.Name).Where(item => item.Count() > 1))
+Tools\SignalBusContractAuditCli\Program.cs:1332:                .Select(item =>
+Tools\SignalBusContractAuditCli\Program.cs:1348:                .Select(item => new ClassificationStat(item.Key, item.Count()))
+Tools\SignalBusContractAuditCli\Program.cs:1519:            "GameObject.Find",
+Tools\SignalBusContractAuditCli\Program.cs:1521:            ".Complete(",
+Tools\SignalBusContractAuditCli\Program.cs:1525:            ".material",
+Tools\SignalBusContractAuditCli\Program.cs:1737:        if (code.Contains(".material", StringComparison.Ordinal))
+Tools\SignalBusContractAuditCli\Program.cs:2129:            rawText.Contains("new NativeArray", StringComparison.Ordinal);
+Tools\SignalBusContractAuditCli\Program.cs:2198:        return "(?:" + string.Join("|", aliases.Select(Regex.Escape)) + ")";
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:81:                .Where(ShouldScanFile)
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:180:        string attributeText = string.Join(" ", structure.AttributeLists.Select(static list => list.ToString()));
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:397:            .ToList();
@@ -40,31 +67,4 @@ Tools\SignalArchitectureOptimizationAuditX001\Program.cs:560:            .Select
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:572:            .ToList();
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:681:            .ToList();
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:740:            .ToList();
-Tools\VoxelRuntimeHotPathAudit\Program.cs:15:        ".Select(",
-Tools\VoxelRuntimeHotPathAudit\Program.cs:16:        ".Where(",
-Tools\VoxelRuntimeHotPathAudit\Program.cs:27:        ".ToList(",
-Tools\VoxelRuntimeHotPathAudit\Program.cs:176:                : text.Contains("Allocator.Persistent", StringComparison.Ordinal)
-Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:340:                .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))
-Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:342:                .ToList();
-Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:356:                Sections = selected.Select(s => s.Name).ToArray()
-Tools\SignalBusContractAuditCli\Program.cs:29:    private static readonly Regex UnityLookupRegex = new(@"(?:Try)?GetComponent\s*(?:<|\()|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
-Tools\SignalBusContractAuditCli\Program.cs:31:    private static readonly Regex MaterialMutationRegex = new(@"\.material\b|Material\.Set(Float|Int|Color|Vector|Texture)|\.Set(Float|Int|Color|Vector|Texture)\s*\(", RegexOptions.Compiled);
-Tools\SignalBusContractAuditCli\Program.cs:251:            var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
-Tools\SignalBusContractAuditCli\Program.cs:449:                var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
-Tools\SignalBusContractAuditCli\Program.cs:507:                var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
-Tools\SignalBusContractAuditCli\Program.cs:699:                .Where(item => !item.IsEditor && item.HasStructLayout && item.LayoutSize > 0)
-Tools\SignalBusContractAuditCli\Program.cs:711:                .Where(item => !item.IsEditor)
-Tools\SignalBusContractAuditCli\Program.cs:1201:            if (ContainsAny(code, "GetComponent", "FindObject", "GameObject.Find", "Object.Find") &&
-Tools\SignalBusContractAuditCli\Program.cs:1217:            if (ContainsAny(code, ".Complete(", "CompleteAll(") && JobCompleteRegex.IsMatch(code))
-Tools\SignalBusContractAuditCli\Program.cs:1246:            if (ContainsAny(code, ".material", "Material.Set", ".SetFloat", ".SetColor", ".SetVector", ".SetTexture") &&
-Tools\SignalBusContractAuditCli\Program.cs:1295:            foreach (var group in _signalDefinitions.GroupBy(item => item.Name).Where(item => item.Count() > 1))
-Tools\SignalBusContractAuditCli\Program.cs:1332:                .Select(item =>
-Tools\SignalBusContractAuditCli\Program.cs:1348:                .Select(item => new ClassificationStat(item.Key, item.Count()))
-Tools\SignalBusContractAuditCli\Program.cs:1519:            "GameObject.Find",
-Tools\SignalBusContractAuditCli\Program.cs:1521:            ".Complete(",
-Tools\SignalBusContractAuditCli\Program.cs:1525:            ".material",
-Tools\SignalBusContractAuditCli\Program.cs:1737:        if (code.Contains(".material", StringComparison.Ordinal))
-Tools\SignalBusContractAuditCli\Program.cs:2129:            rawText.Contains("new NativeArray", StringComparison.Ordinal);
-Tools\SignalBusContractAuditCli\Program.cs:2198:        return "(?:" + string.Join("|", aliases.Select(Regex.Escape)) + ")";
-Tools\PresentationDecouplingAudit\Program.cs:678:            (left.EndsWith(".color", StringComparison.Ordinal) || left.EndsWith(".material", StringComparison.Ordinal) || left.EndsWith(".materials", StringComparison.Ordinal)))
 Tools\VaultNativeAliasRoslynAudit\Program.cs:130:            string attributes = string.Join(" ", field.AttributeLists.Select(static list => list.ToString()));

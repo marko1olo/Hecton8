@@ -103,8 +103,7 @@ namespace Hecton8.Optimization
             GameObject[] bodies = new GameObject[BenchmarkCapsuleCount]; // COLD ALLOC: GameObject[1000] - BIOS local physics cleanup table - owner: HardwareProfiler
             try
             {
-                floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                floor.name = "BIOS_Profile_Floor";
+                floor = new GameObject("BIOS_Profile_Floor", typeof(BoxCollider)); // COLD ALLOC: physics-only benchmark floor - no visual primitive mesh.
                 floor.transform.position = new Vector3(0f, -0.5f, 0f);
                 floor.transform.localScale = new Vector3(96f, 1f, 96f);
                 SceneManager.MoveGameObjectToScene(floor, scene);
@@ -117,13 +116,9 @@ namespace Hecton8.Optimization
                     float localZ = (gridZ - 12) * GridSpacingMeters;
                     float localY = 4f + ((i & 7) * 0.125f);
 
-                    GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                    capsule.name = "BIOS_Profile_Capsule";
+                    GameObject capsule = new GameObject("BIOS_Profile_Capsule", typeof(CapsuleCollider)); // COLD ALLOC: physics-only benchmark body - no MeshRenderer/MeshFilter.
                     capsule.hideFlags = HideFlags.HideAndDontSave;
                     capsule.transform.position = new Vector3(localX, localY, localZ);
-                    capsule.TryGetComponent(out MeshRenderer renderer);
-                    if (renderer != null)
-                        renderer.enabled = false;
 
                     Rigidbody rigidbody = capsule.AddComponent<Rigidbody>();
                     rigidbody.useGravity = true;

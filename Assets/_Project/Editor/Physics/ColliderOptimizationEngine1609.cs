@@ -109,7 +109,9 @@ namespace Hecton8.Editor.ColliderOptimization1609
         public const float MinProxyPaddingMeters = 0.015f;
         public const float MaxProxyPaddingMeters = 0.08f;
 
-        private const string GeneratedCompoundRootName = "__CompoundCollider_1609";
+        private const string LegacyCompoundRootName = "__CompoundCollider_1609";
+        private const string GeneratedCompoundRootName = "COL_CompoundProxy_1716";
+        private const string GeneratedConvexRootName = "COL_ConvexProxy_1716";
         private const float MinimumColliderAxisMeters = 0.025f;
         private const float SphereAxisTolerance = 0.18f;
         private const float CapsuleAspectThreshold = 2.25f;
@@ -455,14 +457,26 @@ namespace Hecton8.Editor.ColliderOptimization1609
             }
 
             if (!hadMeshColliders)
-                return false;
-
-            Transform existing = rootTransform.Find(GeneratedCompoundRootName);
-            if (existing != null)
             {
-                Object.DestroyImmediate(existing.gameObject, true);
-                changed = true;
+                Transform legacyRoot = rootTransform.Find(LegacyCompoundRootName);
+                Transform existingGeneratedRoot = rootTransform.Find(GeneratedCompoundRootName);
+                if (legacyRoot != null && existingGeneratedRoot == null)
+                {
+                    legacyRoot.name = GeneratedCompoundRootName;
+                    return true;
+                }
+
+                if (legacyRoot != null)
+                {
+                    Object.DestroyImmediate(legacyRoot.gameObject, true);
+                    return true;
+                }
+
+                return false;
             }
+
+            changed |= RemoveGeneratedChildRoot(rootTransform, LegacyCompoundRootName);
+            changed |= RemoveGeneratedChildRoot(rootTransform, GeneratedCompoundRootName);
 
             GameObject generatedRoot = new GameObject(GeneratedCompoundRootName);
             generatedRoot.layer = ResolvePhysicsLayer(prefabPath, root.name, root.layer);
@@ -576,8 +590,18 @@ namespace Hecton8.Editor.ColliderOptimization1609
                 ClearMeshColliderScratch();
             }
 
-            MeshCollider collider = root.AddComponent<MeshCollider>();
-            collider.sharedMesh = null;
+            Transform rootTransform = root.transform;
+            RemoveGeneratedChildRoot(rootTransform, GeneratedConvexRootName);
+            GameObject colliderRoot = new GameObject(GeneratedConvexRootName);
+            colliderRoot.layer = ResolvePhysicsLayer(prefabPath, root.name, root.layer);
+            Transform colliderTransform = colliderRoot.transform;
+            colliderTransform.SetParent(rootTransform, false);
+            colliderTransform.localPosition = Vector3.zero;
+            colliderTransform.localRotation = Quaternion.identity;
+            colliderTransform.localScale = Vector3.one;
+
+            MeshCollider collider = colliderRoot.AddComponent<MeshCollider>();
+            collider.sharedMesh = proxy;
             collider.convex = true;
             collider.enabled = false;
             collider.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation |
@@ -591,7 +615,7 @@ namespace Hecton8.Editor.ColliderOptimization1609
 
             if (baker == null)
                 baker = root.AddComponent<RuntimePhysicsBaker1609>();
-            baker.ConfigureAuthoring(proxy, collider, bootstrap, true, collider.cookingOptions);
+            baker.ConfigureAuthoring(proxy, collider, bootstrap, true);
             return true;
         }
 
@@ -639,6 +663,19 @@ namespace Hecton8.Editor.ColliderOptimization1609
             return component != null &&
                    baker != null &&
                    component.transform.root == baker.transform.root;
+        }
+
+        private static bool RemoveGeneratedChildRoot(Transform parent, string childName)
+        {
+            if (parent == null || string.IsNullOrEmpty(childName))
+                return false;
+
+            Transform existing = parent.Find(childName);
+            if (existing == null)
+                return false;
+
+            Object.DestroyImmediate(existing.gameObject, true);
+            return true;
         }
 
         private static bool PurgeAllColliders(GameObject root, bool flora, ref ColliderOptimizationReport1609 report)

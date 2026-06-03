@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P186_TRUE_CAUSE_KNOWLEDGE_TIERS",
+      "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+      "article_id": "deep_reach.true_cause_knowledge_tiers",
+      "title_key": "applied_lore.true_cause_knowledge_tiers.title",
+      "unlock": {
+        "primary": "unlock.true_cause_knowledge_tiers",
+        "poi_tags": [
+          "poi.knowledge_tier_matrix",
+          "poi.risk_margin_stamp",
+          "poi.evacuate_hold_note"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.worker_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "ru_RU": {
+          "title": "Уровни знания истинной причины",
+          "scanner": "Знание истинной причины было разнесено между risk, Atlas weighting, evacuation law, insurance и recovery offices.",
+          "field_note": "Так Deep Reach остается виноватой, но не каждый сотрудник всеведущ и не каждый руководитель cartoon villain.",
+          "terminal": "KNOWLEDGE TIERS: field staff видели tide anomalies; risk office принял tail margins; Atlas office weighted continuity; evacuation counsel задерживал releases; Keelmark превращал losses; Recovery Compliance хочет payload до truth.",
+          "audio": "Никто не написал убийство. Они писали колонки, пока спасение проиграло.",
+          "in_game_wiki": "Deep Reach не нужен один mastermind. Катастрофа стала смертельной через распределенные категории и задержанную authority.",
+          "external_site": "Уровни знания истинной причины определяют, кто внутри Deep Reach знал какую часть цепи провала HECTON-8."
+        },
+        "ja_JP": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft JP localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft JP localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft JP localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft JP localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft JP localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "zh_CN": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft CN localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft CN localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft CN localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft CN localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft CN localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "fr_FR": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft FR localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft FR localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft FR localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft FR localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft FR localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "es_ES": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft ES localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft ES localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft ES localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft ES localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft ES localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "de_DE": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft DE localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft DE localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft DE localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft DE localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft DE localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "pl_PL": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft PL localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft PL localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft PL localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft PL localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft PL localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "uk_UA": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft UA localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft UA localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft UA localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft UA localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft UA localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft UA localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "ar_SA": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft AR localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft AR localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft AR localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft AR localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft AR localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "id_ID": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft ID localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft ID localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft ID localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft ID localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft ID localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "ko_KR": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft KO localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft KO localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft KO localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft KO localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft KO localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "he_IL": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft HE localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft HE localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft HE localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft HE localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft HE localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "pt_BR": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft PT localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft PT localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft PT localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft PT localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft PT localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        },
+        "nl_NL": {
+          "title": "True Cause Knowledge Tiers",
+          "scanner": "Draft NL localization pending native pass. True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.",
+          "field_note": "Draft NL localization pending native pass. This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.",
+          "terminal": "Draft NL localization pending native pass. KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.",
+          "audio": "Draft NL localization pending native pass. No one wrote murder. They wrote columns until rescue lost.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.",
+          "external_site": "Draft NL localization pending native pass. True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain."
+        }
+      }
+    },
+    {
+      "packet_id": "P187_LIABILITY_MEMO_FRAGMENT_CHAIN",
+      "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+      "article_id": "deep_reach.liability_memo_fragment_chain",
+      "title_key": "applied_lore.liability_memo_fragment_chain.title",
+      "unlock": {
+        "primary": "unlock.liability_memo_fragment_chain",
+        "poi_tags": [
+          "poi.liability_memo_shards",
+          "poi.packet_notary_stamp",
+          "poi.redacted_margin_sheet"
+        ],
+        "biome_tags": [
+          "biome.worker_archive",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Цепочка фрагментов liability memo",
+          "scanner": "Liability memos должны быть фрагментами, совпадающими с физическими rooms, а не lore speeches.",
+          "field_note": "Полезный memo называет один margin, одну delay, один office и одно видимое consequence.",
+          "terminal": "MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal и present return-action clause. Один memo - подозрение. Цепочка - evidence.",
+          "audio": "Бумага слаба одна. Приложи ее к затопленной двери.",
+          "in_game_wiki": "Фрагменты liability memo учат игрока сверять корпоративный язык с damaged rooms и worker evidence.",
+          "external_site": "Цепочка фрагментов liability memo задает, как работают доказательства Deep Reach в HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft JP localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft JP localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft JP localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft JP localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft JP localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft JP localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft CN localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft CN localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft CN localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft CN localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft CN localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft CN localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft FR localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft FR localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft FR localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft FR localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft FR localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft FR localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "es_ES": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft ES localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft ES localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft ES localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft ES localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft ES localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft ES localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "de_DE": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft DE localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft DE localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft DE localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft DE localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft DE localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft DE localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft PL localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft PL localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft PL localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft PL localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft PL localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft PL localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft UA localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft UA localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft UA localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft UA localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft UA localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft UA localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft AR localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft AR localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft AR localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft AR localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft AR localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft AR localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "id_ID": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft ID localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft ID localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft ID localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft ID localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft ID localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft ID localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft KO localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft KO localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft KO localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft KO localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft KO localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft KO localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "he_IL": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft HE localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft HE localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft HE localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft HE localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft HE localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft HE localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft PT localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft PT localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft PT localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft PT localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft PT localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft PT localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Liability Memo Fragment Chain",
+          "scanner": "Draft NL localization pending native pass. Liability memos must be fragments that match physical rooms, not lore speeches.",
+          "field_note": "Draft NL localization pending native pass. A useful memo names one margin, one delay, one office and one visible consequence.",
+          "terminal": "Draft NL localization pending native pass. MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.",
+          "audio": "Draft NL localization pending native pass. Paper is weak alone. Put it against a flooded door.",
+          "in_game_wiki": "Draft NL localization pending native pass. Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.",
+          "external_site": "Draft NL localization pending native pass. Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P188_SIGNOFF_WITNESS_CONFLICT",
+      "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+      "article_id": "deep_reach.signoff_witness_conflict",
+      "title_key": "applied_lore.signoff_witness_conflict.title",
+      "unlock": {
+        "primary": "unlock.signoff_witness_conflict",
+        "poi_tags": [
+          "poi.signoff_conflict_board",
+          "poi.worker_witness_hash",
+          "poi.evacuate_counterstamp"
+        ],
+        "biome_tags": [
+          "biome.worker_archive",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "The signatures line up. The bodies do not.",
+          "in_game_wiki": "Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "ru_RU": {
+          "title": "Конфликт signoff и witness",
+          "scanner": "Signoff records должны противоречить worker witness hashes и поврежденному evacuation hardware.",
+          "field_note": "Противоречие сильнее villain confession, потому что игрок видит, как room и stamp не сходятся.",
+          "terminal": "CONFLICT: Varnek margin accepted до закрытия field alarms; Arendt weighting preserved Atlas lanes; Haldane hold задержал external evacuation; worker witness hash сообщает, что pump access все еще occupied.",
+          "audio": "Подписи сходятся. Тела - нет.",
+          "in_game_wiki": "Evidence конфликта signoff ломает ложь Deep Reach через records, room damage и worker traces.",
+          "external_site": "Конфликт signoff и witness определяет противоречие доказательств за public Deep Reach report."
+        },
+        "ja_JP": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft JP localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft JP localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft JP localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft JP localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft JP localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft JP localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "zh_CN": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft CN localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft CN localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft CN localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft CN localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft CN localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft CN localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "fr_FR": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft FR localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft FR localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft FR localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft FR localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft FR localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft FR localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "es_ES": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft ES localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft ES localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft ES localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft ES localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft ES localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft ES localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "de_DE": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft DE localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft DE localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft DE localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft DE localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft DE localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft DE localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "pl_PL": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft PL localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft PL localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft PL localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft PL localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft PL localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft PL localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "uk_UA": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft UA localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft UA localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft UA localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft UA localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft UA localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft UA localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "ar_SA": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft AR localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft AR localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft AR localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft AR localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft AR localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft AR localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "id_ID": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft ID localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft ID localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft ID localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft ID localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft ID localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft ID localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "ko_KR": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft KO localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft KO localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft KO localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft KO localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft KO localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft KO localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "he_IL": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft HE localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft HE localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft HE localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft HE localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft HE localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft HE localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "pt_BR": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft PT localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft PT localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft PT localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft PT localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft PT localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft PT localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        },
+        "nl_NL": {
+          "title": "Signoff Witness Conflict",
+          "scanner": "Draft NL localization pending native pass. Signoff records should contradict worker witness hashes and damaged evacuation hardware.",
+          "field_note": "Draft NL localization pending native pass. The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.",
+          "terminal": "Draft NL localization pending native pass. CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.",
+          "audio": "Draft NL localization pending native pass. The signatures line up. The bodies do not.",
+          "in_game_wiki": "Draft NL localization pending native pass. Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.",
+          "external_site": "Draft NL localization pending native pass. Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report."
+        }
+      }
+    },
+    {
+      "packet_id": "P189_SUBOFFICE_PERSONNEL_SEEDS",
+      "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+      "article_id": "deep_reach.suboffice_personnel_seeds",
+      "title_key": "applied_lore.suboffice_personnel_seeds.title",
+      "unlock": {
+        "primary": "unlock.suboffice_personnel_seeds",
+        "poi_tags": [
+          "poi.suboffice_name_seed_card",
+          "poi.loss_desk_badge",
+          "poi.return_queue_token"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "ru_RU": {
+          "title": "Seed-правило персонала suboffice",
+          "scanner": "Имена нижнего персонала Deep Reach должны быть seed signatures, привязанными к функции office.",
+          "field_note": "Использовать имена только когда они делают memo, stamp, badge или order более игровым.",
+          "terminal": "PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board и Return Queue могут генерировать local signatures. Они не заменяют Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Клерк может повредить жизнь, не владея всей катастрофой.",
+          "in_game_wiki": "Seed-правило персонала suboffice позволяет будущим миссиям добавить human texture без новой villain hierarchy.",
+          "external_site": "Seed-правило персонала suboffice задает, как нижние имена Deep Reach могут появляться в будущем контенте."
+        },
+        "ja_JP": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft JP localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft JP localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft JP localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft JP localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft JP localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft JP localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "zh_CN": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft CN localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft CN localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft CN localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft CN localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft CN localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft CN localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "fr_FR": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft FR localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft FR localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft FR localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft FR localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft FR localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft FR localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "es_ES": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft ES localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft ES localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft ES localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft ES localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft ES localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft ES localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "de_DE": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft DE localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft DE localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft DE localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft DE localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft DE localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft DE localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "pl_PL": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft PL localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft PL localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft PL localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft PL localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft PL localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft PL localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "uk_UA": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft UA localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft UA localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft UA localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft UA localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft UA localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft UA localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "ar_SA": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft AR localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft AR localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft AR localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft AR localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft AR localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft AR localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "id_ID": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft ID localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft ID localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft ID localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft ID localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft ID localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft ID localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "ko_KR": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft KO localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft KO localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft KO localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft KO localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft KO localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft KO localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "he_IL": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft HE localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft HE localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft HE localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft HE localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft HE localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft HE localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "pt_BR": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft PT localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft PT localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft PT localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft PT localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft PT localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft PT localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        },
+        "nl_NL": {
+          "title": "Suboffice Personnel Seeds",
+          "scanner": "Draft NL localization pending native pass. Lower Deep Reach personnel names should be seeded signatures tied to office function.",
+          "field_note": "Draft NL localization pending native pass. Use names only when they make a memo, stamp, badge or order more playable.",
+          "terminal": "Draft NL localization pending native pass. PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.",
+          "audio": "Draft NL localization pending native pass. A clerk can damage a life without owning the whole disaster.",
+          "in_game_wiki": "Draft NL localization pending native pass. Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.",
+          "external_site": "Draft NL localization pending native pass. Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content."
+        }
+      }
+    },
+    {
+      "packet_id": "P190_FALSE_PUBLIC_REPORT_PACKET",
+      "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+      "article_id": "deep_reach.false_public_report_packet",
+      "title_key": "applied_lore.false_public_report_packet.title",
+      "unlock": {
+        "primary": "unlock.false_public_report_packet",
+        "poi_tags": [
+          "poi.public_report_packet",
+          "poi.quarantine_redaction",
+          "poi.atlas_log_corruption_stamp"
+        ],
+        "biome_tags": [
+          "biome.public_archive",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "False Public Report Packet",
+          "scanner": "The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "ru_RU": {
+          "title": "Пакет ложного публичного отчета",
+          "scanner": "Публичная ложь говорит: storm, geotechnical collapse, failed evacuation, corrupted Atlas logs и quarantine loss.",
+          "field_note": "Самая сильная ложь почти правдива. Она убирает weighting, margin и delay.",
+          "terminal": "PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Они не подделали шторм. Они похоронили выбор.",
+          "in_game_wiki": "Ложный публичный отчет работает, потому что физика HECTON-8 реально была катастрофичной; Deep Reach стерла человеческие решения внутри этой физики.",
+          "external_site": "Пакет ложного публичного отчета фиксирует публичную версию Deep Reach и скрытые omissions."
+        },
+        "ja_JP": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft JP localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft JP localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft JP localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft JP localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft JP localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "zh_CN": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft CN localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft CN localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft CN localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft CN localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft CN localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "fr_FR": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft FR localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft FR localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft FR localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft FR localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft FR localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "es_ES": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft ES localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft ES localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft ES localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft ES localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft ES localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "de_DE": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft DE localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft DE localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft DE localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft DE localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft DE localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "pl_PL": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft PL localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft PL localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft PL localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft PL localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft PL localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "uk_UA": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft UA localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft UA localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft UA localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft UA localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft UA localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "ar_SA": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft AR localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft AR localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft AR localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft AR localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft AR localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "id_ID": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft ID localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft ID localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft ID localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft ID localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft ID localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "ko_KR": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft KO localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft KO localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft KO localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft KO localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft KO localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "he_IL": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft HE localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft HE localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft HE localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft HE localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft HE localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "pt_BR": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft PT localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft PT localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft PT localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft PT localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft PT localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        },
+        "nl_NL": {
+          "title": "False Public Report Packet",
+          "scanner": "Draft NL localization pending native pass. The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.",
+          "field_note": "Draft NL localization pending native pass. The strongest lie is mostly true. It removes weighting, margin and delay.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.",
+          "audio": "Draft NL localization pending native pass. They did not fake the storm. They buried the choice.",
+          "in_game_wiki": "Draft NL localization pending native pass. The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.",
+          "external_site": "Draft NL localization pending native pass. False Public Report Packet states the Deep Reach public version and the hidden omissions."
+        }
+      }
+    }
+  ]
+}

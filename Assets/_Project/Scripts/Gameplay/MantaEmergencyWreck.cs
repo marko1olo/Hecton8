@@ -447,10 +447,12 @@ namespace Hecton8.Gameplay
             if (_rigidbody != null)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _rigidbody = gameObject.AddComponent<Rigidbody>();
             _rigidbody.useGravity = false;
             _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
             _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+#endif
         }
 
         private void ResetToIdlePickupState(bool releaseResidencySlot)

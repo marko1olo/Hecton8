@@ -635,7 +635,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                float intensity = math.max(signal.Volume, math.sqrt(math.max(0f, signal.VelocitySq)) * 0.04f);
+                float intensity = math.max(signal.Volume, FastLengthFromSq(math.max(0f, signal.VelocitySq)) * 0.04f);
                 if (intensity <= 0f)
                     continue;
 
@@ -1708,13 +1708,13 @@ namespace Hecton8.AI
                 if (selector == 3)
                     return new float3(0f, 0f, -1f);
                 if (selector == 4)
-                    return math.normalize(new float3(1f, 0.25f, 1f));
+                    return NormalizeOrDominant(new float3(1f, 0.25f, 1f));
                 if (selector == 5)
-                    return math.normalize(new float3(-1f, -0.15f, 1f));
+                    return NormalizeOrDominant(new float3(-1f, -0.15f, 1f));
                 if (selector == 6)
-                    return math.normalize(new float3(1f, -0.1f, -1f));
+                    return NormalizeOrDominant(new float3(1f, -0.1f, -1f));
 
-                return math.normalize(new float3(-1f, 0.2f, -1f));
+                return NormalizeOrDominant(new float3(-1f, 0.2f, -1f));
             }
         }
 
@@ -1786,7 +1786,7 @@ namespace Hecton8.AI
                     if (distanceSq > maxDistanceSq)
                         continue;
 
-                    float received = stimulus.InitialIntensity / math.max(distanceSq * Tuning.WaterAttenuationScalar, 0.01f);
+                    float received = stimulus.InitialIntensity * math.rcp(math.max(distanceSq * Tuning.WaterAttenuationScalar, 0.01f));
                     if (received > best)
                     {
                         best = received;
@@ -1914,7 +1914,7 @@ namespace Hecton8.AI
                     if (distanceSq > maxDistanceSq)
                         continue;
 
-                    float raw = stimulus.InitialIntensity / math.max(distanceSq * Tuning.WaterAttenuationScalar, 0.01f);
+                    float raw = stimulus.InitialIntensity * math.rcp(math.max(distanceSq * Tuning.WaterAttenuationScalar, 0.01f));
                     float hearingThreshold = math.max(profile.HearingThreshold, Tuning.MinReceivedThreshold);
                     if (raw < hearingThreshold)
                         continue;

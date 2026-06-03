@@ -27,6 +27,7 @@ namespace Hecton8.Power.Generators
         IColdTickable,
         ILateFrameTickable,
         IPoolable,
+        IPowerActivationTarget,
         ISaveable,
         IRtgDecayOutputReader,
         IRadioisotopeThermalReprocessable,
@@ -98,6 +99,7 @@ namespace Hecton8.Power.Generators
         private float _startTimeSeconds = -1f;
         private float _currentOutputWatts;
         private float _outputNormalized01 = 1f;
+        private float _runtimeActivation01 = 1f;
         private bool _isDead;
         private bool _reprocessed;
         private bool _registeredCold;
@@ -108,9 +110,9 @@ namespace Hecton8.Power.Generators
 
         public int SavePriority => 53;
         public int LoadPriority => 53;
-        public float PowerRating => _isDead || _reprocessed ? 0f : math.max(0f, _currentOutputWatts);
+        public float PowerRating => _isDead || _reprocessed ? 0f : math.max(0f, _currentOutputWatts) * _runtimeActivation01;
         public int PowerPriority => 0;
-        public bool HasPower => !_isDead && !_reprocessed;
+        public bool HasPower => !_isDead && !_reprocessed && _runtimeActivation01 > 0.0001f;
         public float OutputNormalized01 => _outputNormalized01;
         public float CurrentOutputWatts => _currentOutputWatts;
         public int ActiveRtgCount => s_activeCount;
@@ -135,6 +137,18 @@ namespace Hecton8.Power.Generators
             TryUnregisterRuntime();
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
+            _runtimeActivation01 = 1f;
+        }
+
+        public bool SetRuntimeActivation01(float activation01)
+        {
+            float sanitized = math.saturate(math.select(1f, activation01, math.isfinite(activation01)));
+            if (math.abs(_runtimeActivation01 - sanitized) <= 0.0001f)
+                return false;
+
+            _runtimeActivation01 = sanitized;
+            MarkPowerGridDirty();
+            return true;
         }
 
         public void ColdTick()

@@ -331,13 +331,19 @@ namespace Hecton8.World
             if (_activeRuntimeInstance != null)
                 return _activeRuntimeInstance;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameObject runtimeRoot = new GameObject(RuntimeRootName);
             return runtimeRoot.AddComponent<ChemicalInfluenceGrid>();
+#else
+            return null;
+#endif
         }
 
         internal static void BeginAiFrame(int frameId)
         {
-            EnsureRuntimeInstance().PublishFrame(frameId);
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance != null)
+                instance.PublishFrame(frameId);
         }
 
         private static bool TryGetReadableRuntime(out ChemicalInfluenceGrid instance)
@@ -458,6 +464,9 @@ namespace Hecton8.World
         {
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return;
+
             instance.DropBreadcrumb(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f), ChemicalChannel.Blood);
             instance.QueueChemicalEmitter(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f), instance.breadcrumbRadiusMeters, EmitterFlagBlood, HashAscii("PlayerBleeding"));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
@@ -467,6 +476,9 @@ namespace Hecton8.World
         {
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return;
+
             instance.DropBreadcrumb(worldPosition, new float4(0f, clampedIntensity, 0f, 0f), ChemicalChannel.Exhaust);
             instance.QueueChemicalEmitter(worldPosition, new float4(0f, clampedIntensity, 0f, 0f), instance.breadcrumbRadiusMeters, EmitterFlagPheromone, HashAscii("ExhaustTrail"));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
@@ -476,6 +488,9 @@ namespace Hecton8.World
         {
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return;
+
             instance.DropBreadcrumb(worldPosition, new float4(0f, 0f, clampedIntensity, 0f), ChemicalChannel.Fear);
             instance.QueueChemicalEmitter(worldPosition, new float4(0f, 0f, clampedIntensity, 0f), instance.breadcrumbRadiusMeters, EmitterFlagPheromone, HashAscii("FearPheromone"));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
@@ -485,6 +500,9 @@ namespace Hecton8.World
         {
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return;
+
             instance.DropBreadcrumb(worldPosition, new float4(0f, 0f, 0f, clampedIntensity), ChemicalChannel.Toxicity);
             instance.QueueChemicalEmitter(worldPosition, new float4(0f, 0f, 0f, clampedIntensity), instance.breadcrumbRadiusMeters, EmitterFlagToxin, HashAscii("ToxinBurst"));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
@@ -494,6 +512,9 @@ namespace Hecton8.World
         {
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return;
+
             instance.DropBreadcrumb(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity), ChemicalChannel.Toxicity);
             instance.QueueChemicalEmitter(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity), instance.breadcrumbRadiusMeters, EmitterFlagDefoliant, HashAscii("DefoliantBurst"));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
@@ -504,6 +525,9 @@ namespace Hecton8.World
             float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return;
+
             instance.RegisterDefoliantDeadZone(worldPosition, safeRadius, clampedIntensity);
             instance.DropBreadcrumb(worldPosition, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)), ChemicalChannel.Toxicity, safeRadius);
             instance.QueueChemicalEmitter(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity), safeRadius, EmitterFlagDefoliant, HashAscii("DefoliantDeadZone"));
@@ -552,6 +576,9 @@ namespace Hecton8.World
         public static bool TrySetTuningFromEditor(float baseDiffusion, float advection, float dissipation, float qualityWeight)
         {
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            if (instance == null)
+                return false;
+
             instance.InitializeRuntime();
             if (!instance._buffersReady)
                 return false;

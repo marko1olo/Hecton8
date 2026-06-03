@@ -4,7 +4,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Hecton8.Gameplay
 {
@@ -20,23 +19,13 @@ namespace Hecton8.Gameplay
         private const int BeaconIdLength = BeaconIdPrefixLength + BeaconIdHexLength;
         private const string DefaultBeaconLabel = "BEACON";
 
-        private static Shader s_fallbackBeaconShader;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_fallbackBeaconShader = null;
-        }
-
         private GameObject _sourcePrefab;
         private Transform _cachedTransform;
         private Light _light;
-        private Material _ownedFallbackMaterial;
         private AbsoluteUniversePosition _cachedAup;
         private float _baseIntensity;
         private float _flickerTime;
         private bool _registeredLateFrame;
-        private bool _isFallbackRuntime;
         private bool _hotSwapListenerRegistered;
         private IObjectPoolService _cachedObjectPool;
         private IObjectPoolService _pooledOwner;
@@ -86,7 +75,7 @@ namespace Hecton8.Gameplay
                 : label;
             BeaconColor = color;
             LightRange = Mathf.Max(0.5f, range);
-            _sourcePrefab = _isFallbackRuntime ? null : sourcePrefab;
+            _sourcePrefab = sourcePrefab;
             _flickerTime = 0f;
             if (_light == null)
                 TryGetComponent(out _light);
@@ -146,7 +135,6 @@ namespace Hecton8.Gameplay
         {
             UnregisterFromLateFrame();
             TryUnregisterHotSwapListener();
-            ReleaseOwnedFallbackMaterial();
             BeaconNetworkSystem.NotifyRuntimeDestroyed(this);
         }
 
@@ -195,75 +183,9 @@ namespace Hecton8.Gameplay
             _registeredLateFrame = false;
         }
 
-        /// <summary>
-        /// Creates an owned fallback beacon material for one spawned fallback beacon.
-        /// </summary>
-        /// <param name="color">Beacon color baked into the material instance.</param>
-        /// <returns>New material instance, or null when no compatible fallback shader is available.</returns>
-        /// <remarks>The returned material must be passed to <see cref="SetOwnedFallbackMaterial"/> so it is destroyed with the beacon runtime.</remarks>
-        public static Material GetFallbackBeaconMaterial(Color color)
-        {
-            Shader shader = ResolveFallbackBeaconShader();
-            if (shader == null)
-                return null;
-
-            // COLD ALLOC: Material[1] - per fallback beacon color instance with BeaconRuntime ownership - owner: BeaconRuntime
-            Material material = new Material(shader)
-            {
-                name = "MAT_Runtime_BeaconFallback",
-                hideFlags = HideFlags.DontSave
-            };
-            ApplyFallbackBeaconColor(material, color);
-            return material;
-        }
-
-        internal void SetOwnedFallbackMaterial(Material material)
-        {
-            _ownedFallbackMaterial = material;
-            _isFallbackRuntime = true;
-        }
-
         internal void SetPooledOwner(IObjectPoolService pool)
         {
             _pooledOwner = pool;
-        }
-
-        private static void ApplyFallbackBeaconColor(Material material, Color color)
-        {
-            if (material == null)
-                return;
-
-            material.color = color;
-            if (material.HasProperty("_BaseColor"))
-                material.SetColor("_BaseColor", color);
-            if (material.HasProperty("_Color"))
-                material.SetColor("_Color", color);
-        }
-
-        private void ReleaseOwnedFallbackMaterial()
-        {
-            if (_ownedFallbackMaterial == null)
-                return;
-
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                DestroyImmediate(_ownedFallbackMaterial);
-            else
-#endif
-                Destroy(_ownedFallbackMaterial);
-
-            _ownedFallbackMaterial = null;
-        }
-
-        private static Shader ResolveFallbackBeaconShader()
-        {
-            if (s_fallbackBeaconShader != null)
-                return s_fallbackBeaconShader;
-
-            RenderPipelineAsset renderPipeline = GraphicsSettings.currentRenderPipeline ?? GraphicsSettings.defaultRenderPipeline;
-            Material defaultMaterial = renderPipeline != null ? renderPipeline.defaultMaterial : null;
-            s_fallbackBeaconShader = defaultMaterial != null ? defaultMaterial.shader : null;
-            return s_fallbackBeaconShader;
         }
 
         private static string CreateDeterministicBeaconId(in AbsoluteUniversePosition aup, int instanceId)

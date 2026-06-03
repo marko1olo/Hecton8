@@ -1,13 +1,14 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Hecton8.Editor.Bakers
 {
-    public static class ProceduralTextureBaker
+    public static partial class ProceduralTextureBaker
     {
         public const string ComputeShaderPath = "Assets/_Project/Art/Shaders/Bakers/Hecton_ProceduralBaker.compute";
         public const string DefaultOutputRoot = "Assets/_Project/Art/Generated/TextureBaker1605";
@@ -158,7 +159,7 @@ namespace Hecton8.Editor.Bakers
 
             string prefix = SanitizeAssetNameForPath(profile.ProfileName);
             if (string.IsNullOrEmpty(prefix))
-                prefix = "bake_" + profile.Seed.ToString("X8");
+                prefix = BuildSeedFallbackName(profile.Seed);
 
             string albedoPath = normalizedOutputFolder + "/TX_" + prefix + "_Albedo.png";
             string normalPath = normalizedOutputFolder + "/TX_" + prefix + "_Normal.png";
@@ -280,10 +281,10 @@ namespace Hecton8.Editor.Bakers
                 return false;
             }
 
-            Color32[] pixels;
+            NativeArray<Color32> pixels;
             try
             {
-                pixels = maskTexture.GetPixels32();
+                pixels = maskTexture.GetRawTextureData<Color32>();
             }
             catch (Exception ex) when (ex is UnityException || ex is InvalidOperationException || ex is ArgumentException || ex is NotSupportedException)
             {
@@ -291,7 +292,7 @@ namespace Hecton8.Editor.Bakers
                 return false;
             }
 
-            if (pixels == null || pixels.Length == 0)
+            if (!pixels.IsCreated || pixels.Length == 0)
             {
                 failure = "mask texture has no pixels";
                 return false;
@@ -359,6 +360,10 @@ namespace Hecton8.Editor.Bakers
                 importer.mipmapEnabled = true;
                 importer.isReadable = false;
                 importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.alphaIsTransparency = role == TextureRole.Mask;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.filterMode = FilterMode.Bilinear;
+                importer.anisoLevel = role == TextureRole.Normal ? 2 : 1;
                 importer.textureCompression = TextureImporterCompression.CompressedHQ;
                 importer.crunchedCompression = false;
                 int clampedMaxTextureSize = Mathf.Clamp(maxTextureSize, MinimumBakeSize, MaximumBakeSize);
@@ -407,6 +412,177 @@ namespace Hecton8.Editor.Bakers
             }
         }
 
+        internal static bool TryEnforceTextureImportSettings(
+            string assetPath,
+            bool srgb,
+            bool alphaTransparency,
+            TextureWrapMode wrapMode,
+            FilterMode filterMode,
+            int maxTextureSize,
+            TextureImporterFormat standaloneFormat,
+            out string failure)
+        {
+            return TryEnforceTextureImportSettings(
+                assetPath,
+                srgb,
+                alphaTransparency,
+                wrapMode,
+                filterMode,
+                maxTextureSize,
+                standaloneFormat,
+                false,
+                1,
+                out failure);
+        }
+
+        internal static bool TryEnforceTextureImportSettings(
+            string assetPath,
+            bool srgb,
+            bool alphaTransparency,
+            TextureWrapMode wrapMode,
+            FilterMode filterMode,
+            int maxTextureSize,
+            TextureImporterFormat standaloneFormat,
+            bool streamingMipmaps,
+            int anisoLevel,
+            out string failure)
+        {
+            try
+            {
+                failure = string.Empty;
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+                TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                if (importer == null)
+                {
+                    failure = "TextureImporter missing for " + assetPath;
+                    return false;
+                }
+
+                int clampedMaxTextureSize = Mathf.Clamp(maxTextureSize, MinimumBakeSize, MaximumBakeSize);
+                int clampedAnisoLevel = Mathf.Clamp(anisoLevel, 1, 16);
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = srgb;
+                importer.mipmapEnabled = true;
+                importer.streamingMipmaps = streamingMipmaps;
+                importer.isReadable = false;
+                importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.alphaIsTransparency = alphaTransparency;
+                importer.wrapMode = wrapMode;
+                importer.filterMode = filterMode;
+                importer.anisoLevel = clampedAnisoLevel;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.crunchedCompression = false;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.maxTextureSize = clampedMaxTextureSize;
+
+                TextureImporterPlatformSettings standalone = new TextureImporterPlatformSettings
+                {
+                    name = "Standalone",
+                    overridden = true,
+                    maxTextureSize = clampedMaxTextureSize,
+                    format = standaloneFormat,
+                    compressionQuality = 100
+                };
+                importer.SetPlatformTextureSettings(standalone);
+
+                TextureImporterPlatformSettings android = new TextureImporterPlatformSettings
+                {
+                    name = "Android",
+                    overridden = true,
+                    maxTextureSize = clampedMaxTextureSize,
+                    format = TextureImporterFormat.ASTC_6x6,
+                    compressionQuality = 100
+                };
+                importer.SetPlatformTextureSettings(android);
+
+                TextureImporterPlatformSettings iPhone = new TextureImporterPlatformSettings
+                {
+                    name = "iPhone",
+                    overridden = true,
+                    maxTextureSize = clampedMaxTextureSize,
+                    format = TextureImporterFormat.ASTC_6x6,
+                    compressionQuality = 100
+                };
+                importer.SetPlatformTextureSettings(iPhone);
+
+                importer.SaveAndReimport();
+                return AuditTextureImporterSettings(
+                    assetPath,
+                    srgb,
+                    alphaTransparency,
+                    wrapMode,
+                    filterMode,
+                    clampedMaxTextureSize,
+                    standaloneFormat,
+                    streamingMipmaps,
+                    clampedAnisoLevel,
+                    out failure);
+            }
+            catch (Exception ex) when (ex is UnityException || ex is IOException || ex is UnauthorizedAccessException || ex is InvalidOperationException || ex is ArgumentException || ex is NotSupportedException)
+            {
+                failure = "texture import settings failed for " + assetPath + ": " + ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+        }
+
+        private static bool AuditTextureImporterSettings(
+            string assetPath,
+            bool srgb,
+            bool alphaTransparency,
+            TextureWrapMode wrapMode,
+            FilterMode filterMode,
+            int expectedMaxTextureSize,
+            TextureImporterFormat standaloneFormat,
+            bool expectedStreamingMipmaps,
+            int expectedAnisoLevel,
+            out string failure)
+        {
+            failure = string.Empty;
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                failure = "TextureImporter missing for audit " + assetPath;
+                return false;
+            }
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+            TextureImporterPlatformSettings android = importer.GetPlatformTextureSettings("Android");
+            TextureImporterPlatformSettings iPhone = importer.GetPlatformTextureSettings("iPhone");
+
+            bool importerCorrect =
+                importer.textureType == TextureImporterType.Default &&
+                importer.sRGBTexture == srgb &&
+                importer.mipmapEnabled &&
+                importer.streamingMipmaps == expectedStreamingMipmaps &&
+                !importer.isReadable &&
+                importer.alphaSource == TextureImporterAlphaSource.FromInput &&
+                importer.alphaIsTransparency == alphaTransparency &&
+                importer.wrapMode == wrapMode &&
+                importer.filterMode == filterMode &&
+                importer.anisoLevel == expectedAnisoLevel &&
+                importer.textureCompression == TextureImporterCompression.CompressedHQ &&
+                !importer.crunchedCompression &&
+                importer.npotScale == TextureImporterNPOTScale.None &&
+                importer.maxTextureSize == expectedMaxTextureSize;
+            bool standaloneCorrect = standalone.overridden &&
+                                      standalone.maxTextureSize == expectedMaxTextureSize &&
+                                      standalone.format == standaloneFormat;
+            bool androidCorrect = android.overridden &&
+                                  android.maxTextureSize == expectedMaxTextureSize &&
+                                  android.format == TextureImporterFormat.ASTC_6x6;
+            bool iPhoneCorrect = iPhone.overridden &&
+                                 iPhone.maxTextureSize == expectedMaxTextureSize &&
+                                 iPhone.format == TextureImporterFormat.ASTC_6x6;
+            if (importerCorrect && standaloneCorrect && androidCorrect && iPhoneCorrect)
+                return true;
+
+            failure = "importerCorrect=" + importerCorrect +
+                      " standaloneCorrect=" + standaloneCorrect +
+                      " androidCorrect=" + androidCorrect +
+                      " iPhoneCorrect=" + iPhoneCorrect;
+            return false;
+        }
+
         internal static bool AuditTextureImporterSettings(string assetPath, TextureRole role, int expectedMaxTextureSize, out string failure)
         {
             try
@@ -429,18 +605,26 @@ namespace Hecton8.Editor.Bakers
                 bool textureTypeCorrect = importer.textureType == (role == TextureRole.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default);
                 bool srgbCorrect = importer.sRGBTexture == (role == TextureRole.Albedo);
                 bool readableCorrect = !importer.isReadable;
+                bool alphaTransparencyCorrect = importer.alphaIsTransparency == (role == TextureRole.Mask);
+                bool wrapCorrect = importer.wrapMode == TextureWrapMode.Clamp;
+                bool filterCorrect = importer.filterMode == FilterMode.Bilinear;
+                bool anisoCorrect = importer.anisoLevel == (role == TextureRole.Normal ? 2 : 1);
                 bool compressionCorrect = importer.textureCompression == TextureImporterCompression.CompressedHQ;
                 bool maxSizeCorrect = importer.maxTextureSize == expectedMaxTextureSize;
                 bool standaloneCorrect = standalone.overridden && standalone.maxTextureSize == expectedMaxTextureSize && standalone.format == standaloneFormat;
                 bool androidCorrect = android.overridden && android.maxTextureSize == expectedMaxTextureSize && android.format == TextureImporterFormat.ASTC_6x6;
                 bool iPhoneCorrect = iPhone.overridden && iPhone.maxTextureSize == expectedMaxTextureSize && iPhone.format == TextureImporterFormat.ASTC_6x6;
 
-                if (textureTypeCorrect && srgbCorrect && readableCorrect && compressionCorrect && maxSizeCorrect && standaloneCorrect && androidCorrect && iPhoneCorrect)
+                if (textureTypeCorrect && srgbCorrect && readableCorrect && alphaTransparencyCorrect && wrapCorrect && filterCorrect && anisoCorrect && compressionCorrect && maxSizeCorrect && standaloneCorrect && androidCorrect && iPhoneCorrect)
                     return true;
 
                 failure = "textureTypeCorrect=" + textureTypeCorrect +
                           " srgbCorrect=" + srgbCorrect +
                           " readableCorrect=" + readableCorrect +
+                          " alphaTransparencyCorrect=" + alphaTransparencyCorrect +
+                          " wrapCorrect=" + wrapCorrect +
+                          " filterCorrect=" + filterCorrect +
+                          " anisoCorrect=" + anisoCorrect +
                           " compressionCorrect=" + compressionCorrect +
                           " maxSizeCorrect=" + maxSizeCorrect +
                           " standaloneCorrect=" + standaloneCorrect +
@@ -713,6 +897,29 @@ namespace Hecton8.Editor.Bakers
         }
 
         internal static bool TryCaptureAssetFileRollbackSnapshots(
+            string assetPath,
+            out AssetFileRollbackSnapshot[] snapshots,
+            out string failure)
+        {
+            failure = string.Empty;
+            snapshots = new AssetFileRollbackSnapshot[1];
+            return TryCaptureAssetFileRollbackSnapshot(assetPath, out snapshots[0], out failure);
+        }
+
+        internal static bool TryCaptureAssetFileRollbackSnapshots(
+            string firstAssetPath,
+            string secondAssetPath,
+            out AssetFileRollbackSnapshot[] snapshots,
+            out string failure)
+        {
+            failure = string.Empty;
+            snapshots = new AssetFileRollbackSnapshot[2];
+            if (!TryCaptureAssetFileRollbackSnapshot(firstAssetPath, out snapshots[0], out failure))
+                return false;
+            return TryCaptureAssetFileRollbackSnapshot(secondAssetPath, out snapshots[1], out failure);
+        }
+
+        internal static bool TryCaptureAssetFileRollbackSnapshots(
             string firstAssetPath,
             string secondAssetPath,
             string thirdAssetPath,
@@ -745,6 +952,28 @@ namespace Hecton8.Editor.Bakers
             if (!TryCaptureAssetFileRollbackSnapshot(thirdAssetPath, out snapshots[2], out failure))
                 return false;
             return TryCaptureAssetFileRollbackSnapshot(fourthAssetPath, out snapshots[3], out failure);
+        }
+
+        internal static bool TryCaptureAssetFileRollbackSnapshots(
+            string[] assetPaths,
+            out AssetFileRollbackSnapshot[] snapshots,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (assetPaths == null || assetPaths.Length == 0)
+            {
+                snapshots = Array.Empty<AssetFileRollbackSnapshot>();
+                return true;
+            }
+
+            snapshots = new AssetFileRollbackSnapshot[assetPaths.Length];
+            for (int i = 0; i < assetPaths.Length; i++)
+            {
+                if (!TryCaptureAssetFileRollbackSnapshot(assetPaths[i], out snapshots[i], out failure))
+                    return false;
+            }
+
+            return true;
         }
 
         internal static void TryRestoreAssetFileRollbackSnapshots(AssetFileRollbackSnapshot[] snapshots)
@@ -1112,6 +1341,25 @@ namespace Hecton8.Editor.Bakers
             return hasValidAssetNameChar ? new string(chars) : string.Empty;
         }
 
+        private static string BuildSeedFallbackName(uint seed)
+        {
+            Span<char> chars = stackalloc char[13];
+            chars[0] = 'b';
+            chars[1] = 'a';
+            chars[2] = 'k';
+            chars[3] = 'e';
+            chars[4] = '_';
+
+            for (int i = 0; i < 8; i++)
+            {
+                int shift = 28 - i * 4;
+                int nibble = (int)((seed >> shift) & 0xFu);
+                chars[5 + i] = (char)(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
+            }
+
+            return new string(chars);
+        }
+
         private static int CeilDivide(int value, int divisor)
         {
             if (value <= 0 || divisor <= 0)
@@ -1119,7 +1367,7 @@ namespace Hecton8.Editor.Bakers
             return (value + divisor - 1) / divisor;
         }
 
-        private static bool TryResolveDispatchGroups(int textureSize, uint groupSizeX, uint groupSizeY, out int groupsX, out int groupsY, out string failure)
+        internal static bool TryResolveDispatchGroups(int textureSize, uint groupSizeX, uint groupSizeY, out int groupsX, out int groupsY, out string failure)
         {
             groupsX = 0;
             groupsY = 0;

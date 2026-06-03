@@ -38,6 +38,7 @@ Taste decides if the work belongs in HECTON-8. Production standards decide how t
 - Drones, automation, repair/mining/scanner probes, remote systems, and tether relays: `drones.md`.
 - Inventory, resources, crafting, storage, and salvage economy: `inventory.md`.
 - Narrative, missions, evidence, black-box records, quest state, and text taste: `narrative.md`.
+- In-world articles, encyclopedia entries, survivor diaries, technical notes, scanner/codex text, and multilingual AppliedContent packets: `writing.md`.
 - Public copy, store text, social posts, creator outreach, and marketing captions: `textes.md`.
 - Accessibility, readability, subtitles, remapping, flashing, and motion comfort: `accessibility.md`.
 - Bootstrap, startup, initialization, GlobalRegistry cold setup, and scene transition: `bootstrap.md`.
@@ -98,6 +99,23 @@ Good HECTON-8 is:
 - beauty under stress, never clean prettiness.
 
 Hard sci-fi is part of taste, not trivia. Spaceflight, orbital position, communications, entry, descent, and extraction should feel governed by mass, timing, radiation, pressure, and maintenance. A convenient rescue that ignores orbital mechanics is tasteless. A dirty, expensive, delayed solution that forces the player to repair instruments, wait for windows, and make a physical trade is HECTON-8.
+
+## Surface, Sky, And Moon Beauty
+
+The surface is not the abyss. Above-water views, coastline, photic shallows, sky, Aegir, moon silhouettes, cloud layers, and the ocean surface must read bright, legible, detailed, and beautiful.
+
+Darkness belongs to depth, caves, storms, interiors, eclipse windows, and temporary route pressure. It is forbidden to use noir as an excuse to crush surface luminance, hide bad terrain, turn Aegir into procedural stripes, or make the moons and sky look like muddy placeholder art.
+
+Surface quality floor:
+
+- real ocean color with readable waves, refraction, specular response, foam, and waterline detail;
+- terrain with authored or high-quality generated geology, wetness, strata, sediment, scale, and material breakup;
+- Aegir and moons with texture detail, cloud bands, atmospheric softness, orbital scale, and route context;
+- sky and clouds with clean gradients, authored texture sources, and controlled procedural generation, not flat sine/noise scribbles;
+- compact hardware preserving beauty through composition, texture choice, silhouette, and density control, never lower art ambition;
+- high and ultra tiers adding reflection, atmosphere, cloud depth, shafts, material richness, and visual overkill without changing route truth.
+
+A surface screenshot that is black, muddy, crayon-like, or worse than Subnautica-level ocean readability is rejected. The correct contrast is: surface is beautiful and readable; descent is increasingly hostile; depth is dark, structured, and frightening.
 
 ## The Standard
 
@@ -556,3 +574,25 @@ It does not prove:
 - shipping feature scope.
 
 Runtime claims still require current artifacts.
+
+------------------
+If you're making
+Runtime proof or checking project in Unity:
+
+You need to be really critique towards visuals:
+ATTENTION! IN UNITY RUNTIME, IN THE UNITY EDITOR, CORRECT ERRORS, TAKE SCREENSHOTS OF EVERY SCENE AND EVERY WINDOW, CRITICIZE THEM IF THEY ARE PROBLEM-BASED, FIX THE PROBLEMS, AND RE-CHECK EVERYTHING. WORK YOURSELF, LAUNCH UNITY YOURSELF, TURN ON THE MCP SERVER, DEAL WITH POP-UP WARNINGS, MONITOR WINDOWS, COMPILATION, AND PROGRAM BEHAVIOR. GET STARTED.
+
+KEEEP IT UP! WORK ON LONG. THE PROJECT MUST COMPLETELY COMPLETE, WITH A REAL OCEAN, TERRAIN, INSTRUMENTS, FISH, AND FAUNA, WITHOUT ALLOCATION PROBLEMS, LEAKS, ERRORS, OR CODE VIOLATIONS.
+
+I'LL REPEAT IT AGAIN SO YOU CAN CLEARLY UNDERSTAND -
+
+"If it's still fucking crap, but at least it's getting better. Check it out. The water should be really fucking beautiful, why aren't you using the ocean cross? Even though it's been redesigned, it's still really beautiful if you configure it correctly. Mapmagic? The terrain is still pretty good. The fucking gas giant looks like a scribbled mess. Fuck, we have water textures, and textures for different terrains, and textures for the gas giant and celestial bodies. What the hell are you messing around with? What the fuck is this crap? Everything should look REALISTIC! If it doesn't look realistic, then it's FUCKING SHIT! So you rip it out and make it properly, with good textures, with new prefabs, with fully detailed textures. Logic. If you don't have that, then just cut it and do it properly. Really search for textures within the project, inspect them, and track them. Take screenshots of every element, study every object in Unity.
+FIX ALL THE FUCKING VISUAL AND GENERATION BUGS AND DON'T MAKE THEM AGAIN! TAKE THE HARD WAY! IF YOU'RE A SMEARING WORKER IN A FEW HOURS, YOU'LL BE FIRED. WORK FOR A LONG TIME AND IMPORTANTLY.
+
+LOOK! AND I ALSO DON'T UNDERSTAND WHY YOU CREATED SUCH SHIT PROCEDURALLY. SERIOUSLY, THE GAS GIANT IS JUST STRIPS WITH A COUPLE OF SINE WAVES. IF YOU DID IT PROCEDURALLY, COULDN'T YOU HAVE MADE IT A BEAUTIFUL MASTERPIECE? YOU CAN DO IT!
+
+IN ANY CASE, LOOK, THE PROJECT ALREADY HAS SCRIPTS AND SYSTEMS FOR GENERATING MESHES AND TEXTURES FOR ROCKS, FLORA, AND FAUNA – YOU CAN FIND THEM. THEY'RE NOT RUNTIME BUT GENERATED IN THE EDITOR. IF YOU NEED TO, YOU CAN USE THEM AND CONTROL THEM.
+AGAIN!
+BE A STRONG CONTROLLER! IF YOU'RE NOT PRODUCING AAA-DETAILED VISUALS BUT BLURRY SHIT FOR THE PS1, THROW IT IN THE TRASH AND DO IT NORMALLY.
+KEEP AN EYE ON YOUR DETAILS, LODs, AND VISUALS. OUR GOAL IS BEAUTIFUL VISUALS WITH GOOD OPTIMIZATION. THE PROJECT HAS EVERYTHING FOR THIS – LOW-LEVEL MEMORY WORK, BIT-BY-BIT ALIGNMENT FOR CASH LINES, BURST, JOBS. USE IT WISELY. THE PROJECT DEFINITELY HAS TEXTURES OF THE GAS GIANT AND CLOUDS, AND ITS COLOR (BLUISHY BLUE), MANY DIFFERENT CLOUD TEXTURES FOR OUR MOON, VARIOUS WATER TEXTURES, INCLUDING CROSS-COUNTRY TEXTURES. CORAL TEXTURES AND THE ENTIRE TERRAIN (FROM BASALT TO GRAVEL).
+RELATED TO CAPSULES, STRUCTURES, AND OBJECTS, THEY SHOULD BE DETAILED AND HAVE BEAUTIFUL, DETAILED TEXTURES. IF THEY'RE PRIMITIVE, THROW THEM FUCKING AWAY AND DO IT NORMALLY.

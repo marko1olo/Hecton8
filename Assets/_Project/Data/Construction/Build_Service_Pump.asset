@@ -18,8 +18,10 @@ MonoBehaviour:
   description: Flood-control utility module for keeping starter corridors and work
     bays serviceable.
   family: 2
+  blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
   finalPrefab: {fileID: 2293229834002279593, guid: 3df7ebb48b8d74e46801634595e1e864, type: 3}
+  moduleTemplate: {fileID: 0}
   buildCost:
   - item: {fileID: 11400000, guid: ae02bcd19d7e28b44a03544b03dc399a, type: 2}
     amount: 2

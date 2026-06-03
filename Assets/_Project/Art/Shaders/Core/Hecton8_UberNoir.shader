@@ -13,6 +13,7 @@ Shader "Hecton8/Rendering/UberNoir"
 
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
+        _EmissionStrength("Emission Strength", Float) = 1
         _RustTint("Rust Tint", Color) = (0.45, 0.24, 0.10, 1)
         _RustPitTint("Rust Pit Tint", Color) = (0.12, 0.055, 0.032, 1)
         [HDR] _BiolumLowColor("Biolum Low", Color) = (0.0, 0.18, 0.34, 1)

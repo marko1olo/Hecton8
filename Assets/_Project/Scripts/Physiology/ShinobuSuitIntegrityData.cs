@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Memory;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -24,7 +25,7 @@ namespace Hecton8.Physiology
         public const float AtmPerMeter = 0.1f;
         public const float MinimumSafePressureAtm = 1f;
         public const float DefaultTickBudgetMicroseconds = 100f;
-        public const BufferID StateBuffer = BufferID.ShinobuSuitIntegrityStates;
+        public const BufferID StateBuffer = (BufferID)ShinobuSuitIntegrityVaultContract.StateBufferId;
         public const BufferID ProfileBuffer = BufferID.ShinobuSuitIntegrityProfiles;
         public const BufferID TuningBuffer = BufferID.ShinobuSuitIntegrityTuning;
         public const BufferID TelemetryBuffer = BufferID.ShinobuSuitIntegrityTelemetryRing;
@@ -43,19 +44,6 @@ namespace Hecton8.Physiology
         public const uint MockProfile = 1u << 6;
         public const uint CsvProfile = 1u << 7;
         public const uint AcousticGroan = 1u << 8;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct SuitIntegrityDTO
-    {
-        [FieldOffset(0)] public float CurrentIntegrity01;
-        [FieldOffset(4)] public float AppliedPressureATM;
-        [FieldOffset(8)] public float MicroFractureAccumulation;
-        [FieldOffset(12)] public uint EquippedSuitHash;
-        [FieldOffset(16)] public uint IntegrityFlags;
-        [FieldOffset(20)] private uint _pad0;
-        [FieldOffset(24)] private uint _pad1;
-        [FieldOffset(28)] private uint _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -158,7 +146,8 @@ namespace Hecton8.Physiology
 
         public static bool ValidateSuitIntegrityDto()
         {
-            return UnsafeUtility.SizeOf<SuitIntegrityDTO>() == 32 &&
+            return UnsafeUtility.SizeOf<SuitIntegrityDTO>() == ShinobuSuitIntegrityVaultContract.SuitIntegrityStateSizeBytes &&
+                   (UnsafeUtility.SizeOf<SuitIntegrityDTO>() & 7) == 0 &&
                    Marshal.OffsetOf<SuitIntegrityDTO>(nameof(SuitIntegrityDTO.CurrentIntegrity01)).ToInt32() == 0 &&
                    Marshal.OffsetOf<SuitIntegrityDTO>(nameof(SuitIntegrityDTO.AppliedPressureATM)).ToInt32() == 4 &&
                    Marshal.OffsetOf<SuitIntegrityDTO>(nameof(SuitIntegrityDTO.MicroFractureAccumulation)).ToInt32() == 8 &&

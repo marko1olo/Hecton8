@@ -26,8 +26,13 @@ namespace Hecton8.Atmosphere
         public const uint QualityStepTuningHash = 0x51535450u; // QSTP
         public const float AuthoritativeQualityWeight = 1f;
         public const float DefaultSeaLevel = 0f;
+        public const float GravityMetersPerSecondSq = 9.81f;
         public const float MinimumWavelength = 0.25f;
         public const float TwoPi = 6.2831853071795864769f;
+        public const float InverseTwoPi = 0.15915494309189535f;
+        public const float InverseHash1023 = 0.0009775171f;
+        public const float InverseWindSpeedWaveBase = 0.03125f;
+        public const float InverseFoamQualityRange = 1.3888889f;
         public const ulong SeedShipActivatedNarrativeMask = 1UL << 61;
     }
 
@@ -149,6 +154,23 @@ namespace Hecton8.Atmosphere
             return math.saturate(ResolveDesiredWaveCount(qualityWeight, maxWaveCount) - waveIndex);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastSqrtNonNegative(float value)
+        {
+            float safe = math.isfinite(value) ? math.max(0f, value) : 0f;
+            return safe * math.rsqrt(math.max(safe, 0.000001f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 Normalize3OrDefault(float3 value, float3 fallback)
+        {
+            float lenSq = math.dot(value, value);
+            if (!math.isfinite(lenSq) || lenSq < 0.000001f)
+                return fallback;
+
+            return value * math.rsqrt(lenSq);
+        }
+
         public static void EvaluateWaves(
             double3 AUP,
             float time,
@@ -218,7 +240,7 @@ namespace Hecton8.Atmosphere
                     continue;
 
                 float2 direction = WaveLaneDirection(lane);
-                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / wavelength;
+                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi * math.rcp(wavelength);
                 double projected = (AUP.x * direction.x) + (AUP.z * direction.y);
                 double wrappedMeters = WrapMeters(projected, wavelength);
                 float phaseOffset = (i + 1) * 0.754877666f;
@@ -260,7 +282,7 @@ namespace Hecton8.Atmosphere
         public static float ResolveFoamScalar(float jacobianDeterminant, float foamThreshold, float globalQualityWeight)
         {
             float q = SanitizeQualityWeight(globalQualityWeight);
-            float qualityFoam = math.saturate((q - 0.28f) * (1f / 0.72f));
+            float qualityFoam = math.saturate((q - 0.28f) * OceanSurfaceAtmosphereConstants.InverseFoamQualityRange);
             qualityFoam = qualityFoam * qualityFoam * (3f - (2f * qualityFoam));
             float pinched = math.saturate((foamThreshold - jacobianDeterminant) * 4f);
             return pinched * qualityFoam;
@@ -310,7 +332,7 @@ namespace Hecton8.Atmosphere
         public static double WrapMeters(double value, double wavelength)
         {
             double safeWavelength = math.max(0.0001, math.abs(wavelength));
-            double quotient = math.floor(value / safeWavelength);
+            double quotient = math.floor(value * math.rcp(safeWavelength));
             return value - (quotient * safeWavelength);
         }
 
@@ -318,7 +340,7 @@ namespace Hecton8.Atmosphere
         public static float WrapPhaseRadians(float phase)
         {
             float safePhase = math.isfinite(phase) ? phase : 0f;
-            float quotient = math.floor(safePhase * (1f / OceanSurfaceAtmosphereConstants.TwoPi));
+            float quotient = math.floor(safePhase * OceanSurfaceAtmosphereConstants.InverseTwoPi);
             return safePhase - (quotient * OceanSurfaceAtmosphereConstants.TwoPi);
         }
 
@@ -327,7 +349,7 @@ namespace Hecton8.Atmosphere
         {
             float safeWavelength = WaveLaneWavelength(new float4(0f, 0f, wavelength, 0f));
             double wrappedMeters = WrapMeters(projectedMeters, safeWavelength);
-            return WrapPhaseRadians((float)(wrappedMeters * (OceanSurfaceAtmosphereConstants.TwoPi / safeWavelength)));
+            return WrapPhaseRadians((float)(wrappedMeters * (OceanSurfaceAtmosphereConstants.TwoPi * math.rcp(safeWavelength))));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -520,8 +542,8 @@ namespace Hecton8.Atmosphere
                 return 0f;
 
             float wavelength = WaveLaneWavelength(lane);
-            float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / wavelength;
-            return math.min(wavelength * 0.125f, steepness / math.max(0.000001f, waveNumber));
+            float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi * math.rcp(wavelength);
+            return math.min(wavelength * 0.125f, steepness * math.rcp(math.max(0.000001f, waveNumber)));
         }
 
         public static float ResolveMaxWavelength(NativeArray<WaveParametersDTO> waves)
@@ -613,7 +635,7 @@ namespace Hecton8.Atmosphere
             if (!Weather.IsCreated || Weather.Length <= 0)
                 return;
 
-            float t = math.saturate((SimulationFrame & 1023u) * (1f / 1023f));
+            float t = math.saturate((SimulationFrame & 1023u) * OceanSurfaceAtmosphereConstants.InverseHash1023);
             float pulse = 0.5f + (0.5f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(TimeSeconds * 0.071f));
             WeatherStateDTO state = default;
             state.WindDirectionSpeedStorm = new float4(0.78f, 0.62f, math.lerp(9f, 28f, t), math.saturate(math.lerp(0.35f, 1f, pulse)));
@@ -687,7 +709,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float baseWavelength = math.lerp(18f, 48f, math.saturate(windSpeed * (1f / 32f)));
+            float baseWavelength = math.lerp(18f, 48f, math.saturate(windSpeed * OceanSurfaceAtmosphereConstants.InverseWindSpeedWaveBase));
             float stormScale = math.lerp(0.65f, 1.85f, storm);
             float directionAngle = global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(windDirection.y, windDirection.x);
             float maxAmplitude = 0f;
@@ -700,8 +722,8 @@ namespace Hecton8.Atmosphere
                 float spread = ((i & 1) == 0 ? -1f : 1f) * math.lerp(0.08f, 0.72f, octave01);
                 float tunedSteepness = math.lerp(0.08f, 0.92f, choppiness);
                 float steepness = math.saturate(tunedSteepness * math.lerp(0.72f, 1.18f, storm) * math.lerp(1.05f, 0.42f, octave01));
-                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
-                float phaseSpeed = math.sqrt(9.81f * waveNumber) * math.lerp(0.82f, 1.22f, octave01);
+                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi * math.rcp(math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength));
+                float phaseSpeed = HectonOceanSurfaceMath.FastSqrtNonNegative(OceanSurfaceAtmosphereConstants.GravityMetersPerSecondSq * waveNumber) * math.lerp(0.82f, 1.22f, octave01);
                 float4 lane = HectonOceanSurfaceMath.CreateWaveLane(directionAngle + spread, steepness, wavelength, phaseSpeed);
                 int waveIndex = i / OceanSurfaceAtmosphereConstants.WavesPerParameters;
                 int laneIndex = i - (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters);
@@ -1118,7 +1140,7 @@ namespace Hecton8.Atmosphere
                 {
                     case KeyWaveAmplitude:
                     {
-                        float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / HectonOceanSurfaceMath.WaveLaneWavelength(lane);
+                        float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi * math.rcp(HectonOceanSurfaceMath.WaveLaneWavelength(lane));
                         lane.y = math.saturate(math.max(0f, value) * waveNumber);
                         break;
                     }
@@ -1474,7 +1496,7 @@ namespace Hecton8.Atmosphere
             double scale = 1.0d;
             for (int i = 0; i < count; i++)
                 scale *= 10.0d;
-            return exponent < 0 ? 1.0d / scale : scale;
+            return exponent < 0 ? math.rcp(scale) : scale;
         }
 
         private static bool TryParseFloat(ReadOnlySpan<byte> bytes, int start, int end, out float value)

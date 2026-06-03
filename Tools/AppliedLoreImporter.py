@@ -51,6 +51,26 @@ CSV_HEADERS = (
 
 FNV_OFFSET = 2166136261
 FNV_PRIME = 16777619
+ROW_FLAG_DRAFT_LOCALIZATION = 1 << 0
+
+LOCALIZED_TEXT_FIELDS = (
+    "title",
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note",
+)
+
+DRAFT_LOCALIZATION_PREFIX = re.compile(
+    r"^Draft\s+[A-Z]{2}(?:-[A-Z]{2})?\s+localization pending native pass\.\s*",
+    re.ASCII,
+)
+LOCALIZED_DRAFT_PREFIXES = (
+    "Draf ID menunggu native review.",
+    "NL-concept wacht op native review.",
+)
 
 
 def fnv1a32(value: str) -> int:
@@ -145,12 +165,56 @@ def require_text(localized: dict[str, Any], field: str, packet_id: str, locale: 
     value = localized.get(field, "")
     if not isinstance(value, str) or not value:
         raise ValueError(f"Missing localized field {field}: packet={packet_id} locale={locale}")
+    value = sanitize_localized_text(value)
+    if not value:
+        raise ValueError(f"Localized field stripped to empty {field}: packet={packet_id} locale={locale}")
     return value
 
 
 def optional_text(localized: dict[str, Any], field: str) -> str:
     value = localized.get(field, "")
-    return value if isinstance(value, str) else ""
+    return sanitize_localized_text(value) if isinstance(value, str) else ""
+
+
+def split_localization_status(value: str) -> tuple[str, bool]:
+    text = value.strip()
+    draft = False
+    while text:
+        match = DRAFT_LOCALIZATION_PREFIX.match(text)
+        if match is not None:
+            draft = True
+            text = text[match.end():].lstrip()
+            continue
+
+        stripped = False
+        for prefix in LOCALIZED_DRAFT_PREFIXES:
+            if text.startswith(prefix):
+                draft = True
+                text = text[len(prefix):].lstrip()
+                stripped = True
+                break
+
+        if not stripped:
+            break
+
+    return text, draft
+
+
+def sanitize_localized_text(value: str) -> str:
+    text, _draft = split_localization_status(value)
+    return text
+
+
+def localized_row_flags(localized: dict[str, Any]) -> int:
+    flags = 0
+    for field in LOCALIZED_TEXT_FIELDS:
+        value = localized.get(field, "")
+        if isinstance(value, str):
+            _text, draft = split_localization_status(value)
+            if draft:
+                flags |= ROW_FLAG_DRAFT_LOCALIZATION
+                break
+    return flags
 
 
 def first_list(value: Any, limit: int = 2) -> list[str]:
@@ -181,6 +245,7 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
             if not isinstance(localized, dict):
                 raise ValueError(f"Missing locale: packet={packet_id} locale={locale}")
 
+            flags = localized_row_flags(localized)
             rows.append(
                 {
                     "packet_id": packet_id,
@@ -198,7 +263,7 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
                     "field_note": optional_text(localized, "field_note"),
                     "poi_tags": poi_tags,
                     "biome_tags": biome_tags,
-                    "flags": "0",
+                    "flags": str(flags),
                 }
             )
     return rows
@@ -251,6 +316,8 @@ def write_hash_constants(path: Path, packets: list[dict[str, Any]]) -> None:
             "        public const uint SurfaceMaskInGameWiki = 1u << 4;",
             "        public const uint SurfaceMaskExternalSite = 1u << 5;",
             "        public const uint SurfaceMaskFieldNote = 1u << 6;",
+            "",
+            "        public const uint RowFlagDraftLocalization = 1u << 0;",
             "    }",
             "}",
             "",
@@ -259,12 +326,16 @@ def write_hash_constants(path: Path, packets: list[dict[str, Any]]) -> None:
     write_text_if_changed(path, "\n".join(lines))
 
 
-def import_applied_lore(root: Path) -> tuple[int, int]:
+def import_applied_lore(root: Path) -> tuple[int, int, int]:
     packets = collect_packets(root)
     rows = packet_rows(packets)
     write_csv(root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_packets.csv", rows)
     write_hash_constants(root / "Assets" / "_Project" / "Scripts" / "Core" / "Generated" / "H8AppliedLoreHashes.cs", packets)
-    return len(packets), len(rows)
+    draft_rows = 0
+    for row in rows:
+        if int(row["flags"]) & ROW_FLAG_DRAFT_LOCALIZATION:
+            draft_rows += 1
+    return len(packets), len(rows), draft_rows
 
 
 def main() -> int:
@@ -272,8 +343,8 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root.")
     args = parser.parse_args()
     root = Path(args.root).resolve()
-    packet_count, row_count = import_applied_lore(root)
-    print(f"applied_lore_packets={packet_count} localized_rows={row_count}")
+    packet_count, row_count, draft_rows = import_applied_lore(root)
+    print(f"applied_lore_packets={packet_count} localized_rows={row_count} draft_localization_rows={draft_rows}")
     return 0
 
 

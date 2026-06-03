@@ -128,6 +128,29 @@ namespace Hecton8.Environment
             _isDispatching = false;
         }
 
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void RegisterEditorPlayModeTeardown()
+        {
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+            AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+            EditorApplication.quitting -= ResetStaticState;
+            EditorApplication.quitting += ResetStaticState;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change == PlayModeStateChange.ExitingPlayMode ||
+                change == PlayModeStateChange.EnteredEditMode)
+            {
+                ResetStaticState();
+            }
+        }
+#endif
+
         public static void Register(IBiomeMatrixEventListener listener)
         {
             if (listener == null)
@@ -158,6 +181,11 @@ namespace Hecton8.Environment
 
         public static bool TryRaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return false;
+#endif
+
             if (_listenerCount <= 0)
                 return false;
 
@@ -191,6 +219,11 @@ namespace Hecton8.Environment
 
         public static bool TryRaiseDepthTierChanged(int depthTier, float depthMeters)
         {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return false;
+#endif
+
             if (_listenerCount <= 0)
                 return false;
 

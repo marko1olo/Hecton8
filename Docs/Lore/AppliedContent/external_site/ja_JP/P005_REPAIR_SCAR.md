@@ -1,10 +1,17 @@
 ---
 packet_id: P005_REPAIR_SCAR
+release_set_id: RS001_FIRST_DESCENT
 article_id: atlas.repair_scar
+unlock_id: unlock.first_atlas_category_error
+poi_tags: poi.repair_scar;poi.drone_nest
+biome_tags: biome.cable_forest;biome.deep_abyss
 locale: ja_JP
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # 修復痕

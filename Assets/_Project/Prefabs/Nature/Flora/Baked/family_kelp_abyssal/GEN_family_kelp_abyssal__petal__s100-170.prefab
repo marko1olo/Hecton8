@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6779208452679657613}
   - component: {fileID: 239212687228300721}
+  - component: {fileID: 8662119052831828024}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__petal__s100-170
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1135359093605613559}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.17908025, y: 4.486896, z: 0.7867389}
-  m_Size: 8.973792
+  m_LocalReferencePoint: {x: 0.1848948, y: 4.705975, z: 0.8832891}
+  m_Size: 9.41195
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 2288216019379064206}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8662119052831828024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1135359093605613559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: a3c496fb5d650db43971888939278010, type: 2}
 --- !u!1 &1417265572544892104
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,10 +1,17 @@
 ---
 packet_id: P085_BIOMETAL_RESOURCE_STACK
+release_set_id: RS017_HECTON8_GEOLOGY_RESOURCE_ECOLOGY
 article_id: hecton8.biometal_resource_stack
+unlock_id: unlock.first_biometal_resource_stack
+poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
+biome_tags: biome.factory_temple;biome.deep_abyss
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Biometal Resource Stack

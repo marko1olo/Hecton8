@@ -129,6 +129,7 @@ namespace Hecton8.Tools
     public struct BuildCutterSdfProbeHitsJob : IJobParallelFor
     {
         private const float InvEncodedByteMax = 1f / 255f;
+        private const float LengthEpsilonSq = 0.00000001f;
 
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
@@ -236,8 +237,11 @@ namespace Hecton8.Tools
         {
             float3 safeCell = math.max(math.abs(CellSize), new float3(0.0001f));
             float3 gridSpan = safeCell * math.max((float3)(GridDimensions - new int3(1)), new float3(1f));
-            float payloadDistance = math.length(localOrigin - VolumeOrigin) + math.length(gridSpan) + math.cmax(safeCell) * 2f;
-            return math.isfinite(payloadDistance) && payloadDistance > 0.01f
+            float originDistanceSq = math.lengthsq(localOrigin - VolumeOrigin);
+            float gridSpanSq = math.lengthsq(gridSpan);
+            bool payloadFinite = math.isfinite(originDistanceSq) && math.isfinite(gridSpanSq);
+            float payloadDistance = FastLengthFromSq(originDistanceSq) + FastLengthFromSq(gridSpanSq) + math.cmax(safeCell) * 2f;
+            return payloadFinite && math.isfinite(payloadDistance) && payloadDistance > 0.01f
                 ? math.min(maxDistance, payloadDistance)
                 : maxDistance;
         }
@@ -246,6 +250,13 @@ namespace Hecton8.Tools
         {
             float capStep = maxDistance * math.rcp(math.max(1, maxSteps));
             return math.max(requestedStep, math.isfinite(capStep) ? capStep : requestedStep);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.select(0f, lengthSq, math.isfinite(lengthSq) && lengthSq > 0f);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, LengthEpsilonSq));
         }
 
         private bool SdfIsValid()
@@ -272,7 +283,7 @@ namespace Hecton8.Tools
         {
             density = SdfRange;
             float3 safeCell = math.max(CellSize, new float3(0.0001f));
-            float3 sample = (worldPosition - VolumeOrigin) / safeCell;
+            float3 sample = (worldPosition - VolumeOrigin) * math.rcp(safeCell);
             if (!math.all(math.isfinite(sample)))
                 return false;
 
@@ -339,6 +350,8 @@ namespace Hecton8.Tools
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct EvaluateCutterProbeHitsJob : IJobParallelFor
     {
+        private const float LengthEpsilonSq = 0.00000001f;
+
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
         [ReadOnly, NoAlias] public NativeArray<VoxelSonarSdfRaycastHit> ProbeHits;
@@ -525,7 +538,7 @@ namespace Hecton8.Tools
             float3 local = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero);
             float3 axis = SafeNormalize(request.RayDirection, new float3(0f, 0f, 1f));
             float axial = math.dot(local, axis);
-            float radial = math.length(local - axis * axial);
+            float radial = FastLengthFromSq(math.lengthsq(local - axis * axial));
             float slab01 = math.saturate(1f - radial * math.lerp(12f, 4f, qualityCurve));
             float range01 = math.saturate(distance * math.rcp(math.max(0.01f, request.MaximumDistance)));
             return math.saturate((slab01 * 0.72f + (1f - range01) * 0.28f) * power);
@@ -580,6 +593,13 @@ namespace Hecton8.Tools
         private static ulong Mix(ulong hash, uint value)
         {
             return (hash ^ value) * 1099511628211UL;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.select(0f, lengthSq, math.isfinite(lengthSq) && lengthSq > 0f);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, LengthEpsilonSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

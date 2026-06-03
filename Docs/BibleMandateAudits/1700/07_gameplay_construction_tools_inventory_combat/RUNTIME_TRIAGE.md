@@ -11,49 +11,50 @@ Required classification for every listed line:
 - RUNTIME_VIOLATION: can execute in gameplay/player runtime and violates the bible/mandate hot-path law.
 - FALSE_POSITIVE: static pattern matched wording that is not the risky API or code path.
 
-Total runtime suspects: 193. Full raw list: `../_scans/07_gameplay_construction_tools_inventory_combat_runtime_risks.txt`.
+Raw generated runtime suspects: 198. Line-level reconciliation: 193 classified lines in `LINE_LEVEL_CLASSIFICATION.md`. Full raw list: `../_scans/07_gameplay_construction_tools_inventory_combat_runtime_risks.txt`.
 
 ## Unity scene lookup (22)
 
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:757:                Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\DebrisManager.cs:1712:            root.GetComponentsInChildren<MeshFilter>(true, _meshFilterScratch);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\DebrisManager.cs:1731:            root.GetComponentsInChildren<Collider>(true, _colliderScratch);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HarvestableOutcrop.cs:146:            GetComponentsInChildren<Renderer>(true, _cachedRenderers);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HarvestableOutcrop.cs:148:            GetComponentsInChildren<Collider>(true, _cachedColliders);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\LifePodTactilePrologueController.cs:449:                    GetComponentsInChildren<LifePodSeatStrapLatch>(true, _seatStrapLatches);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\MountablePlayerTransport.cs:1587:            if (!TryGetComponent<SubmarineCoreDirector>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerKinematicsRuntime.cs:1067:            TryGetComponent<IPlayerKinematicsMovementRuntime>(out _movement);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerKinematicsRuntime.cs:1068:            TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerKinematicsRuntime.cs:1575:                    TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerKinematicsRuntime.cs:1733:                TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\LifePodTactilePrologueController.cs:449:                    GetComponentsInChildren<LifePodSeatStrapLatch>(true, _seatStrapLatches);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\MountablePlayerTransport.cs:1587:            if (!TryGetComponent<SubmarineCoreDirector>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:1743:            prefab.GetComponentsInChildren(true, _meteorSplashValidationScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SubmarineCoreDirector.cs:397:                !TryGetComponent<SubmarineAutoLevelBallastController>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SubmarineCompoundColliderAuthoring.cs:316:            generatedRoot.GetComponentsInChildren(true, _compoundColliderCache);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:757:                Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Economy\EconomyRuntimeInstaller.cs:23:            if (!runtimeRoot.TryGetComponent<ScrapManager>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Economy\EconomyRuntimeInstaller.cs:26:            if (!runtimeRoot.TryGetComponent<ResourceScarcityDirector>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Economy\EconomyRuntimeInstaller.cs:29:            if (!runtimeRoot.TryGetComponent<TradeMarauderDirector>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Economy\EconomyRuntimeInstaller.cs:32:            if (!runtimeRoot.TryGetComponent<Hecton8.World.EnvironmentalStrainManager>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Interaction\InteractableRegistry.cs:228:            owner.GetComponentsInChildren(true, s_invalidationColliders);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Interaction\InteractableRegistry.cs:243:            owner.GetComponentsInChildren(true, s_invalidationColliders);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:1782:            GameObject[] objects = Resources.FindObjectsOfTypeAll<GameObject>(); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:1788:                    candidate.GetComponent<ScavengingLootOracleRuntime>() != null)
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:1791:            GameObject[] objects = Resources.FindObjectsOfTypeAll<GameObject>(); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:1797:                    candidate.GetComponent<ScavengingLootOracleRuntime>() != null)
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ResourceNodeTemplate.cs:949:            if (runtimeNodePrefab != null && runtimeNodePrefab.GetComponent<ResourceNode>() == null)
 
 ## Runtime mesh/material mutation (1)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ResourceNodeTemplate.cs:275:        [Tooltip("Primitive collider family used by runtime nodes. MeshCollider is forbidden.")]
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ResourceNodeTemplate.cs:279:        [Tooltip("Primitive collider family used by runtime nodes. MeshCollider is forbidden.")]
 
 ## Native allocation or persistent lifetime (52)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BaseAirlockEvents.cs:103:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\ContextualPhysicalIkRuntime.cs:1886:                    array = new NativeArray<T>(length, Allocator.Persistent, options);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\ContextualPhysicalIkRuntime.cs:2793:                array = new NativeArray<T>(length, allocator, options);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\ContextualPhysicalIkRig.cs:3210:                array = new NativeArray<T>(length, Allocator.Persistent, options);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\FirstHourDirector.cs:67:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:102:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HectonSubmarineOS.cs:240:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerSignalEvents.cs:111:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EclipseGameplaySystem.cs:75:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:102:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerSignalEvents.cs:111:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerExpressionManager.cs:56:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:221:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RadiationHazardGrid.cs:2367:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HectonSubmarineOS.cs:240:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:221:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs:891:                        State = new NativeArray<PlayerKinematicState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs:896:                        Sphere = new NativeArray<PlayerBoundingSphere>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs:901:                        HandHistory = new NativeArray<SomaticHandStrokeSample>(HandHistoryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -63,17 +64,16 @@ Total runtime suspects: 193. Full raw list: `../_scans/07_gameplay_construction_
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs:921:                        BlackBox = new NativeArray<SomaticKinematicBlackBoxEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs:926:                        BlackBoxCursor = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs:2488:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SubmarineAutoLevelBallastController.cs:3074:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SubmarineAutoLevelBallastController.cs:3136:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SuitMeshUpdateEvents.cs:43:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SubmarineAutoLevelBallastController.cs:3106:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SubmarineAutoLevelBallastController.cs:3168:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\FirstHourDirector.cs:67:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VehicleCommandSignals.cs:55:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs:1189:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs:1626:            NativeArray<SomaticComfortStateDTO> stateBuffer = new NativeArray<SomaticComfortStateDTO>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs:1630:            NativeArray<SomaticDerivativeDTO> derivativeBuffer = new NativeArray<SomaticDerivativeDTO>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs:1634:            NativeArray<VrComfortProfileDTO> profileBuffer = new NativeArray<VrComfortProfileDTO>(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VehicleCommandSignals.cs:55:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SuitMeshUpdateEvents.cs:43:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\VRSomaticProvider.cs:3080:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\ContextualPhysicalIkRuntime.cs:1886:                    array = new NativeArray<T>(length, Allocator.Persistent, options);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\ContextualPhysicalIkRuntime.cs:2793:                array = new NativeArray<T>(length, allocator, options);
 - Additional lines omitted here: 22. Use the raw scan file for full classification.
 
 ## Coroutine / managed timing (2)
@@ -81,56 +81,57 @@ Total runtime suspects: 193. Full raw list: `../_scans/07_gameplay_construction_
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:314:                "yield return new " + "WaitForSeconds",
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:389:            json.Append("float>\", \"yield return new Wait");
 
-## Runtime debug logging (99)
+## Runtime debug logging (104)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BeaconRegistry.cs:182:            Hecton8.Core.H8Debug.LogWarning("[BeaconRegistry] Fixed active beacon capacity exceeded.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BaseAirlockEvents.cs:284:            Hecton8.Core.H8Debug.LogError($"[BaseAirlockEvents] {ownerName} was destroyed while still registered as an IBaseAirlockEventListener.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BeaconRegistry.cs:182:            Hecton8.Core.H8Debug.LogWarning("[BeaconRegistry] Fixed active beacon capacity exceeded.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BatteryCharger.cs:873:            Hecton8.Core.H8Debug.LogError("BatteryCharger bridge rollback failed; Inventory-owner reservation route is required for a hard conservation proof.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BaseAirlock.cs:850:                Hecton8.Core.H8Debug.LogError(
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\BaseAirlock.cs:862:                Hecton8.Core.H8Debug.LogError(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Floater.cs:617:                Hecton8.Core.H8Debug.LogWarning("[Floater] Cannot attach to object without Rigidbody.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\FirstHourDirector.cs:392:            Hecton8.Core.H8Debug.LogException(exception);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\FirstHourDirector.cs:1468:            H8Debug.Log($"[FirstHour] Milestone: {milestone} (t={sessionTime:F0}s)");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingTerminalInteractable.cs:345:            Hecton8.Core.H8Debug.Log("[EndingTerminal] Ending already complete.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingTerminalInteractable.cs:351:            Hecton8.Core.H8Debug.Log("[EndingTerminal] Choice UI opened. " +
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:443:            Hecton8.Core.H8Debug.LogException(exception);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:1294:            Hecton8.Core.H8Debug.LogWarning($"[Ending] Cannot choose ending: conditionMet={conditionMet}, complete={endingComplete}");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:1302:            H8Debug.Log($"[Ending] Choice executed: {choice}");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:1310:            H8Debug.Log("[Ending] Condition met — player at Atlas-6 core.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HarvestablePlant.cs:377:                    Hecton8.Core.H8Debug.LogWarning("[HarvestablePlant] ObjectPoolManager unavailable. Loot spawn skipped to avoid runtime Instantiate.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HarvestablePlant.cs:740:                    Hecton8.Core.H8Debug.LogWarning($"[HarvestablePlant] Segment {i} has no mesh renderer assigned.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\BallisticsEditorFacade.cs:62:                Hecton8.Core.H8Debug.LogError("[BallisticsLayoutVerifier] Ballistic DTO layout mismatch. SHINOBU_127 cannot be trusted until offsets match the XML contract.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\BallisticsEditorFacade.cs:67:                Hecton8.Core.H8Debug.Log("[BallisticsLayoutVerifier] BallisticTrajectoryDTO=64B, AABBPrimitiveDTO=96B, BallisticHitResultDTO=112B, ImpactVfx=80B, Tuning/Telemetry/Counters=64B.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:55:                Hecton8.Core.H8Debug.LogError("[ArmorPenetrationLayoutVerifier] Armor LUT DTO layout mismatch. SHINOBU_318 output rejected until fixed.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:60:                Hecton8.Core.H8Debug.Log("[ArmorPenetrationLayoutVerifier] ArmorProfileDTO=64B with material-row x angle-step 8x6 LUT at offset 16; ShinobuArmorPenetrationTable=64B; resolved hit=128B; telemetry=64B; debug hit=96B.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:208:                Hecton8.Core.H8Debug.LogWarning("[ArmorPenetrationTorture] Runtime not ready; register at least one combat target before running 10k LUT torture.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:212:            Hecton8.Core.H8Debug.Log($"[ArmorPenetrationTorture] impacts={entry.ImpactCount} weak={entry.WeakPointHits} deflect={entry.DeflectCount} solveUs={entry.SolveMicroseconds} flags=0x{entry.Flags:X}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:219:                Hecton8.Core.H8Debug.LogWarning($"[ArmorPenetrationCasTorture] FAILED successes={successes}/100 finalHealth={finalHealth}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:223:            Hecton8.Core.H8Debug.Log($"[ArmorPenetrationCasTorture] PASS successes={successes}/100 finalHealth={finalHealth}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:413:                Hecton8.Core.H8Debug.LogException(exception);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:443:                Hecton8.Core.H8Debug.Log("[ArmorPenetrationBatchProofRunner] PASS. Wrote " + ReportPath);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:445:                Hecton8.Core.H8Debug.LogError("[ArmorPenetrationBatchProofRunner] FAILED: " + failure + " Wrote " + ReportPath);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:655:            Hecton8.Core.H8Debug.Log($"[OOP_Hitbox_Scanner] Wrote {ReportPath}");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HazardZoneManager.cs:2670:            Hecton8.Core.H8Debug.LogWarning(OverflowLogText);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\OxygenPlant.cs:170:                    Hecton8.Core.H8Debug.LogWarning("[OxygenPlant] ObjectPoolManager unavailable. Bubble release skipped to avoid runtime Instantiate.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EclipseGameplaySystem.cs:562:            H8Debug.Log("[Eclipse] Night predators rising.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EclipseGameplaySystem.cs:728:            H8Debug.Log("[Eclipse] Eclipse started — gameplay consequences active.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EclipseGameplaySystem.cs:736:            H8Debug.Log("[Eclipse] Eclipse ended — temperature recovering.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerExpressionManager.cs:1169:            H8Debug.Log($"[PlayerExpression] Active profile: {profileId} ({displayName})");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\PlayerExpressionManager.cs:1180:            H8Debug.Log($"[PlayerExpression] Suit applied: {profileId} -> {suitName}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HarvestablePlant.cs:377:                    Hecton8.Core.H8Debug.LogWarning("[HarvestablePlant] ObjectPoolManager unavailable. Loot spawn skipped to avoid runtime Instantiate.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\HarvestablePlant.cs:740:                    Hecton8.Core.H8Debug.LogWarning($"[HarvestablePlant] Segment {i} has no mesh renderer assigned.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:53:                Hecton8.Core.H8Debug.LogError("[StatusEffectLayoutVerifier] Status FSM DTO layout mismatch. SHINOBU_319 output rejected until fixed.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:58:                Hecton8.Core.H8Debug.Log("[StatusEffectLayoutVerifier] StatusEffectState=64B; StatusEffectMask offset=0; timers at 8/24; telemetry/counter/vfx/damage lanes=64B.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:329:            Hecton8.Core.H8Debug.Log($"[OOP_Buff_Scanner] Wrote {ReportPath} key={SharedReportKey}; findings={findings}");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\DirectorMissionBridge.cs:130:                H8Debug.Log($"[DirectorBridge] Mission triggered: {missionId} near {position}");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\DirectorMissionBridge.cs:233:                H8Debug.Log($"[DirectorBridge] Profile mission triggered: {missionId} near {position}");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:1333:            H8Debug.Log("[RandomEvent] Started");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:1342:            H8Debug.Log("[RandomEvent] Ended");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:1722:                Hecton8.Core.H8Debug.LogWarning(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs:1729:                Hecton8.Core.H8Debug.LogWarning(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\StorageCrate.cs:587:                Hecton8.Core.H8Debug.LogWarning("[StorageCrate] PlayerInventory is null. Cannot transfer item.");
-- Additional lines omitted here: 69. Use the raw scan file for full classification.
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:443:            Hecton8.Core.H8Debug.LogException(exception);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\EndingSystem.cs:1294:            Hecton8.Core.H8Debug.LogWarning($"[Ending] Cannot choose ending: conditionMet={conditionMet}, complete={endingComplete}");
+- Additional lines omitted here: 74. Use the raw scan file for full classification.
 
 ## Uncategorized Static Risk Pattern (17)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SolarPanel.cs:527:                s_gizmoLabelContent.text = ResolveEditorGizmoLabel(watts, depth, angle, shadow);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\BallisticsEditorFacade.cs:244:                _telemetryStateLabel.text = "Telemetry: latest solved frame.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\BallisticsEditorFacade.cs:255:                _telemetryStateLabel.text = "Telemetry: no solved frame yet.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:235:                _state.text = "Telemetry: runtime not initialized.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs:239:            _state.text = (entry.Flags & 0x3u) != 0u ? "Telemetry: fault flag present." : "Telemetry: latest armor solve.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:211:                _state.text = "Telemetry: runtime not initialized.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs:215:            _state.text = _lastTelemetry.AnomalyHash != 0u ? "Telemetry: anomaly present." : "Telemetry: latest status solve.";
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2439:            _layoutLabel.text = valid
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2455:            _auditLabel.text = applied
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2467:                _auditLabel.text = "Audit unavailable: Vault not created.";
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2475:            _auditLabel.text = $"10k: {c0}/{c1}/{c2}/{c3}";
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2490:                _auditLabel.text = "CSV ingest failed: invalid byte length.";
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2513:                    _auditLabel.text = "CSV ingest failed: incomplete file read.";
-- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2517:                _auditLabel.text = ScavengingLootOracleRuntime.TryIngestLootDistributionCsvBytes(nativeBytes, out int entryCount)
+- [ ] CLASSIFY: Assets\_Project\Scripts\Gameplay\SolarPanel.cs:527:                s_gizmoLabelContent.text = ResolveEditorGizmoLabel(watts, depth, angle, shadow);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2461:            _layoutLabel.text = valid
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2477:            _auditLabel.text = applied
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2489:                _auditLabel.text = "Audit unavailable: Vault not created.";
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2497:            _auditLabel.text = $"10k: {c0}/{c1}/{c2}/{c3}";
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2512:                _auditLabel.text = "CSV ingest failed: invalid byte length.";
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2535:                    _auditLabel.text = "CSV ingest failed: incomplete file read.";
+- [ ] CLASSIFY: Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs:2539:                _auditLabel.text = ScavengingLootOracleRuntime.TryIngestLootDistributionCsvBytes(nativeBytes, out int entryCount)
 - [ ] CLASSIFY: Assets\_Project\Scripts\Power\SolverConvergenceXRayWindow.cs:84:                _statusLabel.text = "Runtime: offline";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Power\SolverConvergenceXRayWindow.cs:88:            _statusLabel.text = "Runtime: online";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Power\SolverConvergenceXRayWindow.cs:89:            _telemetryLabel.text =
+

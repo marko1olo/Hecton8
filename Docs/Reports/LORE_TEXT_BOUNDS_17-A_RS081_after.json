@@ -1,0 +1,1879 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "TEXT_EXPANSION_GT_1_35": 52,
+    "TEXT_OVERFLOW_LINES": 174
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "МАРА ВЕНН / НАЧАЛЬНИК НАСОСОВ: ручной обход удержали во время первого предела затопления. Ее правки показывают воду как машинную нагрузку, а не фон.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Mara Venn Pump Chief Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: MARA VENN / PUMP CHIEF: manual bypass authority held during the first flood margin. Her corrections mark water as a rationed machine load, not background scenery.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье Джуно Кейда, релейного нотариуса",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье рабочего: Джуно Кейд. Печать нотариуса и лоток пакетов показывают отложенную цепочку доказательств.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ДЖУНО КЕЙД / РЕЛЕЙНЫЙ НОТАРИУС: лотки свидетельств штамповались после каждого окна связи. Задержка не стирала показания, а усложняла хранение.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Juno Kade Relay Notary Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: JUNO KADE / RELAY NOTARY: packet witness trays were stamped in sequence after every comm window. Delay did not erase testimony; it made custody harder.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье Рена Окойе, картографа рассолов",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье рабочего: Рен Окойе. Плотностная пластина и доска маршрутов показывают рассол как движущуюся дорогу.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Ren Okoye Brine Cartographer Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: REN OKOYE / BRINE CARTOGRAPHER: route permission stamps lagged behind the currents. The safest path was often legally closed.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье Саханы Икбал, механика сортировки",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье рабочего: Сахана Икбал. Доска момента и теги сортировки показывают ремонт под карантинной задержкой.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "САХАНА ИКБАЛ / МЕХАНИК СОРТИРОВКИ: койки удержания маршрута помечены рядом с пределами момента. Одна доска ставила людей и оборудование в ожидание.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Sahana Iqbal Triage Mechanic Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Worker dossier: Sahana Iqbal. Torque board and triage tags show repairs sorted under quarantine delay.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: SAHANA IQBAL / TRIAGE MECHANIC: route-hold cots were tagged beside torque limits. The same board assigned humans and equipment to waiting.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "en_US",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Lian Torres Vent Forge Operator Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "LIAN TORRES / VENT FORGE OPERATOR: reject trays were not waste. They recorded pressure history, operator judgement and the cost of every usable seal.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье Лиана Торреса, оператора вент-кузни",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Досье рабочего: Лиан Торрес. Перчатка кузни, таймер отжига и лоток брака отмечают квалифицированную работу со стеклом давления.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ЛИАН ТОРРЕС / ОПЕРАТОР ВЕНТ-КУЗНИ: лотки брака не были мусором. Они записывали историю давления, решение оператора и цену каждого рабочего уплотнения.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Lian Torres Vent Forge Operator Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Worker dossier: Lian Torres. Forge glove, anneal timer and reject tray mark skilled pressure-glass work.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: LIAN TORRES / VENT FORGE OPERATOR: reject trays were not waste. They recorded pressure history, operator judgement and the cost of every usable seal.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Lian Torres Vent Forge Operator Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Worker dossier: Lian Torres. Forge glove, anneal timer and reject tray mark skilled pressure-glass work.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: LIAN TORRES / VENT FORGE OPERATOR: reject trays were not waste. They recorded pressure history, operator judgement and the cost of every usable seal.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Lian Torres Vent Forge Operator Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Worker dossier: Lian Torres. Forge glove, anneal timer and reject tray mark skilled pressure-glass work.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: LIAN TORRES / VENT FORGE OPERATOR: reject trays were not waste. They recorded pressure history, operator judgement and the cost of every usable seal.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Lian Torres Vent Forge Operator Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Worker dossier: Lian Torres. Forge glove, anneal timer and reject tray mark skilled pressure-glass work.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: LIAN TORRES / VENT FORGE OPERATOR: reject trays were not waste. They recorded pressure history, operator judgement and the cost of every usable seal.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Lian Torres Vent Forge Operator Dossier",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [
+    {
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json",
+      "change": "shortened draft native-pass prefix"
+    }
+  ],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

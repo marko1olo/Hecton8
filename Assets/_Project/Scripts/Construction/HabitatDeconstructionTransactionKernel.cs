@@ -581,41 +581,4 @@ namespace Hecton8.Construction
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct GenerateMockDeconstructionDataJob : IJob
-    {
-        [NoAlias] public NativeArray<DeconstructionTransactionDTO> Transactions;
-        [NoAlias] public NativeArray<ModuleCostDTO> Costs;
-        public uint ModuleHash;
-        public uint InitiatorHash;
-        public double3 Aup;
-        public uint ItemHashA;
-        public uint ItemHashB;
-
-        public void Execute()
-        {
-            if (Transactions.IsCreated && Transactions.Length > 0)
-            {
-                Transactions[0] = new DeconstructionTransactionDTO
-                {
-                    TargetModuleHash = ModuleHash != 0u ? ModuleHash : 0x53333336u,
-                    InitiatorEntityHash = InitiatorHash,
-                    OriginalAUP = Aup
-                };
-            }
-
-            if (Costs.IsCreated && Costs.Length > 0)
-            {
-                Costs[0] = new ModuleCostDTO
-                {
-                    PrefabHashID = ModuleHash != 0u ? ModuleHash : 0x53333336u,
-                    CostCount = 2u,
-                    ItemHash0 = ItemHashA != 0u ? ItemHashA : 0x5449544Eu,
-                    Quantity0 = 4,
-                    ItemHash1 = ItemHashB != 0u ? ItemHashB : 0x43555052u,
-                    Quantity1 = 2
-                };
-            }
-        }
-    }
 }

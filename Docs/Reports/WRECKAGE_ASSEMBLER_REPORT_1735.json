@@ -1,0 +1,37 @@
+{
+  "agentId": "1735",
+  "reportType": "static_validation",
+  "factoryPath": "Assets/_Project/Editor/Assembly/WreckagePrefabFactory.cs",
+  "runtimeMetadataPath": "Assets/_Project/Scripts/World/VoxelCarveVolume.cs",
+  "runtimeQualityPath": "Assets/_Project/Scripts/World/WreckageScatterManager.cs",
+  "testPath": "Assets/_Project/Tests/Editor/WreckagePrefabFactory1735EditTests.cs",
+  "prefabsAssembled": 0,
+  "prefabExecutionStatus": "not_run_compiler_gate_active_dotnet_cpu_91_62",
+  "validation": {
+    "unityValidateScriptErrors": 0,
+    "unityValidateScriptWarnings": 3,
+    "warningNote": "validator false positives from audit string literals, not runtime calls",
+    "dotnetBuildLaunched": false,
+    "editModeTestsLaunched": false,
+    "activeDotnetProcessDetected": true,
+    "cpuPercentAtBuildGate": 91.62
+  },
+  "staticProof": {
+    "factoryUsesMeshCombineMeshes": true,
+    "factoryUsesPrefabUtilitySaveAsPrefabAsset": true,
+    "factoryAttachesVoxelCarveVolume": true,
+    "factoryRequiresCollisionProxy": true,
+    "factoryRequiresExactWave3WreckageMaterialNames": true,
+    "factoryRejectsRuntimeMaterialFallbacks": true,
+    "runtimeScatterSceneSearch": false,
+    "runtimeMeshCombineMeshes": false,
+    "runtimeMaterialInstantiation": false,
+    "rendererMaterialAccess": false
+  },
+  "sha256": {
+    "WreckagePrefabFactory.cs": "AC7CA93069E8C6DAA3722D05370A1BC615ABA4CA4F555495A48473041D476AD7",
+    "VoxelCarveVolume.cs": "CB3640C925E1BA346380FE474F4EFE8FAC41D355C3915A2E2BB1D1F7D9E4FDA0",
+    "WreckageScatterManager.cs": "3651475C084362977746682158C9F6779E34E940E5EA1127629FFDF235442AF2",
+    "WreckagePrefabFactory1735EditTests.cs": "CB598F1424E5C306F85F737D3C4CF299F032DE74A20F1C70B79E27D68DD07F00"
+  }
+}

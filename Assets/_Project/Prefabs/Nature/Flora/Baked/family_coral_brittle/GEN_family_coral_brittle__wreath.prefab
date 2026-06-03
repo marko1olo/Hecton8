@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 544253949667042112}
   - component: {fileID: 1160034649576002458}
+  - component: {fileID: 4575477393097987194}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__wreath
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7688324492433018330}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.04401636, y: 0.88135844, z: -0.23541579}
-  m_Size: 1.7627169
+  m_LocalReferencePoint: {x: 0.044010848, y: 0.8813589, z: -0.2354452}
+  m_Size: 1.7627178
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 7846350222482676913}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &4575477393097987194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7688324492433018330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 95daddc4493db9f449e947e89cf634cf, type: 2}
 --- !u!1 &8419832792650884968
 GameObject:
   m_ObjectHideFlags: 0

@@ -95,4 +95,14 @@ namespace Hecton8.Power
         /// <param name="hasPower">true = pitanie est, false = net.</param>
         void OnPowerStatusChanged(bool hasPower);
     }
+
+    /// <summary>
+    /// Cold-authored activation gate used by physical breakers and switches.
+    /// This does not replace <see cref="IPowerComponent"/>; it only scales an
+    /// already-owned power participant without runtime component discovery.
+    /// </summary>
+    public interface IPowerActivationTarget
+    {
+        bool SetRuntimeActivation01(float activation01);
+    }
 }

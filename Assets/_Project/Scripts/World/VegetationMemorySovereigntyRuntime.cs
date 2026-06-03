@@ -11,8 +11,15 @@ namespace Hecton8.World
 {
     public sealed partial class HectonMapMagicVegetationBridge
     {
+        private const int VegetationMemoryDumpHeaderBytes = 24;
+        private const int VegetationMemoryDumpPayloadBytes =
+            VegetationMemoryDumpHeaderBytes +
+            VegetationMemorySovereigntyConstants.TelemetryFrameCount *
+            VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes;
+
         private VaultGenerationHandle<VegetationMemoryTelemetryEntry> _vegetationMemoryTelemetryHandle;
         private VaultGenerationHandle<int> _vegetationMemoryTelemetryCursorHandle;
+        private NativeArray<byte> _vegetationMemoryTelemetryDumpPayload;
         private IDataVault _vegetationMemoryVault;
         private bool _vegetationMemoryTelemetryDumped;
 
@@ -31,6 +38,7 @@ namespace Hecton8.World
                 ReleaseVegetationMemoryTelemetryResources(previousVault);
 
             _vegetationMemoryVault = currentVault;
+            RebindAbyssalPathTelemetryVaultCold(currentVault);
             if (currentVault != null)
                 EnsureVegetationMemoryTelemetryCold();
         }
@@ -39,6 +47,9 @@ namespace Hecton8.World
         {
             IDataVault vault = CacheVegetationMemoryVaultCold();
             if (vault == null)
+                return false;
+
+            if (!EnsureVegetationMemoryDumpPayloadCold())
                 return false;
 
             bool hadRing = IsExactVegetationMemoryHandle(
@@ -113,7 +124,36 @@ namespace Hecton8.World
 
             _vegetationMemoryTelemetryHandle = default;
             _vegetationMemoryTelemetryCursorHandle = default;
+            DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
             _vegetationMemoryTelemetryDumped = false;
+        }
+
+        private bool EnsureVegetationMemoryDumpPayloadCold()
+        {
+            if (_vegetationMemoryTelemetryDumpPayload.IsCreated &&
+                _vegetationMemoryTelemetryDumpPayload.Length >= VegetationMemoryDumpPayloadBytes)
+            {
+                return true;
+            }
+
+            DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
+            _vegetationMemoryTelemetryDumpPayload = new NativeArray<byte>(
+                VegetationMemoryDumpPayloadBytes,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            if (!_vegetationMemoryTelemetryDumpPayload.IsCreated ||
+                _vegetationMemoryTelemetryDumpPayload.Length < VegetationMemoryDumpPayloadBytes)
+            {
+                DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
+                return false;
+            }
+
+            NativeMemorySentinel.RegisterNativeArray(
+                _vegetationMemoryTelemetryDumpPayload,
+                NativeMemoryOwner,
+                nameof(_vegetationMemoryTelemetryDumpPayload),
+                NativeMemoryLifetime);
+            return true;
         }
 
         private void RecordVegetationMemoryTelemetry(
@@ -405,6 +445,32 @@ namespace Hecton8.World
             return false;
         }
 
+        private bool TryPinVegetationReadBuffer(
+            BufferID bufferId,
+            uint pinBit,
+            ref IDataVault readPinVault,
+            ref uint readPinMask)
+        {
+            if (pinBit == 0u)
+                return false;
+
+            if ((readPinMask & pinBit) != 0u)
+                return true;
+
+            IDataVault vault = _vegetationMemoryVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                (readPinVault != null && !ReferenceEquals(readPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, VegetationMemorySovereigntyConstants.OwnerSystemId))
+            {
+                return false;
+            }
+
+            readPinVault = vault;
+            readPinMask |= pinBit;
+            return true;
+        }
+
         private bool TryReadOnlyVegetationMemoryBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -498,16 +564,18 @@ namespace Hecton8.World
                 return;
             }
 
-            NativeArray<byte> payload = default;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, VegetationMemorySovereigntyConstants.DumpRelativePath);
-                int headerBytes = 24;
+                int headerBytes = VegetationMemoryDumpHeaderBytes;
                 int rowBytes = VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes;
                 int rowBytesTotal = telemetry.Length * rowBytes;
                 int totalBytes = headerBytes + rowBytesTotal;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeArray<byte> payload = _vegetationMemoryTelemetryDumpPayload;
+                if (!payload.IsCreated || payload.Length < totalBytes)
+                    return;
+
                 byte* destination = (byte*)payload.GetUnsafePtr();
                 Span<byte> header = new Span<byte>(destination, headerBytes);
                 WriteUInt64LittleEndian(header, 0, VegetationMemorySovereigntyConstants.DumpMagic);
@@ -529,11 +597,6 @@ namespace Hecton8.World
             }
             catch (UnauthorizedAccessException)
             {
-            }
-            finally
-            {
-                if (payload.IsCreated)
-                    payload.Dispose();
             }
         }
 

@@ -98,7 +98,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Source topology source-spine recheck | Corrected player/environment runtime-context source anchors to `Assets/_Project/Scripts/Core/...` | PowerShell path scan |
 | Domain coverage doc | Added echelon map to active docs, source anchors, and proof gaps | `DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md` |
 | Domain coverage reference check | Every listed architecture doc and `Assets/_Project/Scripts` anchor exists | PowerShell path scan |
-| Black-box doctrine sync | 300-frame rings; `Dump_*.bin` primary; `.h8dump` legacy | `../Actual Domains of Project.txt`, `../PROJECT_ATLAS.md` |
+| Black-box doctrine sync | 300-frame rings; `Dump_*.bin` primary; `.h8dump` legacy | `../PROJECT_ATLAS.md` |
 | Index updates | Root and architecture read orders now surface topology, boot, dispatch, first route, and platform proof ladder | `../README.md`, `README.md`, `../PROJECT_BASELINE.md`, `../HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `../HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` |
 | Atlas stub cleanup | `observedAssemblyCount = 83` is compatibility-only; current count lives in topology/generated graph | `../PROJECT_ATLAS.md` |
 | Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache on 2026-05-28; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project`; graph count is stale against the 2026-06-01 filesystem count of `171` until regenerated | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |

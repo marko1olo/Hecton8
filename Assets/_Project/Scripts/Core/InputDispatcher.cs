@@ -67,6 +67,15 @@ namespace Hecton8.Core
         private const byte HapticHighMotorMask = 0b0010;
         private const byte HapticBlendOverride = 0;
         private const byte HapticBlendAdditive = 1;
+        private const byte HapticBlendMax = 2;
+        private const byte HapticPriorityMicro = 0;
+        private const byte HapticPriorityTool = 1;
+        private const byte HapticPriorityCollision = 2;
+        private const byte HapticPriorityCritical = 3;
+        private const uint HapticCommandMotorMaskBits = 0xFFu;
+        private const int HapticCommandPriorityShift = 8;
+        private const int HapticCommandBlendShift = 12;
+        private const uint HapticCommandNibbleMask = 0xFu;
         private const byte DeviceLostFlagGamepad = 1 << 0;
         private const byte DeviceLostFlagXR = 1 << 1;
         private const byte ToolTriggerFlagPrimaryPressed = 1 << 0;
@@ -672,6 +681,13 @@ namespace Hecton8.Core
                 return;
 
             bool stageReplaySnapshot = false;
+            bool dumpDeterministicBlackBox = false;
+            bool publishInputState = false;
+            bool reportDeterministicFrame = false;
+            uint deterministicPackedAxes = 0u;
+            uint discretePreviousButtonMask = 0u;
+            uint discreteCurrentButtonMask = 0u;
+            InputStateSignal signal = default;
             try
             {
                 if (!TryResolveInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out NativeArray<InputStateDTO> inputJournal) ||
@@ -720,16 +736,20 @@ namespace Hecton8.Core
                 WriteCurrentInputDto(BuildInputStateDtoFromResolvedState(in resolvedState));
                 WriteReplayFrameDto(currentFrame, in resolvedState);
 
-                InputStateSignal signal = default;
                 signal.State = resolvedState;
                 signal.CurrentInputSchemeHash = _currentInputSchemeHash;
                 signal.InputDelayFrames = (byte)delayFrames;
                 signal.AppliedDelayFrames = appliedDelayFrames;
                 signal.Flags = resolvedState.Flags;
-                SignalBus<InputStateSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
-                PublishDiscreteInputSignals(resolvedState.ButtonsBitmask, _previousButtonMask);
+                discretePreviousButtonMask = _previousButtonMask;
+                discreteCurrentButtonMask = resolvedState.ButtonsBitmask;
                 _previousButtonMask = resolvedState.ButtonsBitmask;
-                WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
+                publishInputState = true;
+                dumpDeterministicBlackBox = WriteDeterministicInputBlackBox(
+                    in resolvedState,
+                    _currentInputSchemeHash,
+                    out deterministicPackedAxes,
+                    out reportDeterministicFrame);
                 if ((resolvedState.Sequence % StandardInputRingCapacity) == 0u)
                     stageReplaySnapshot = true;
             }
@@ -737,6 +757,24 @@ namespace Hecton8.Core
             {
                 ReleaseInputMutationGuard();
             }
+
+            if (publishInputState)
+            {
+                SignalBus<InputStateSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
+                PublishDiscreteInputSignals(discreteCurrentButtonMask, discretePreviousButtonMask);
+            }
+
+            if (reportDeterministicFrame)
+            {
+                CrashTelemetryBuffer.ReportDeterministicInputFrame(
+                    signal.State.Frame,
+                    signal.State.Sequence,
+                    signal.State.ButtonsBitmask,
+                    deterministicPackedAxes);
+            }
+
+            if (dumpDeterministicBlackBox)
+                DumpDeterministicInputBlackBox();
 
             if (stageReplaySnapshot)
                 StageInputReplaySnapshot();
@@ -1630,33 +1668,43 @@ namespace Hecton8.Core
 
         private bool ApplyStagedInputProfileCsvToVault()
         {
+            InputProfileDTO stagedProfile;
+            int stagedVersion;
+            lock (_inputProfileCsvStageGate)
+            {
+                stagedVersion = _inputProfileCsvStageVersion;
+                if (stagedVersion == _inputProfileCsvAppliedVersion)
+                    return false;
+
+                stagedProfile = _stagedInputProfileCsv;
+            }
+
             if (!TryAcquireInputMutationGuard())
                 return false;
 
+            bool wroteProfile = false;
             try
             {
                 if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
                     return false;
 
-                InputProfileDTO stagedProfile;
-                int stagedVersion;
-                lock (_inputProfileCsvStageGate)
-                {
-                    stagedVersion = _inputProfileCsvStageVersion;
-                    if (stagedVersion == _inputProfileCsvAppliedVersion)
-                        return false;
-
-                    stagedProfile = _stagedInputProfileCsv;
-                }
-
                 profiles[0] = stagedProfile;
-                _inputProfileCsvAppliedVersion = stagedVersion;
-                return true;
+                wroteProfile = true;
             }
             finally
             {
                 ReleaseInputMutationGuard();
             }
+
+            if (!wroteProfile)
+                return false;
+
+            lock (_inputProfileCsvStageGate)
+            {
+                _inputProfileCsvAppliedVersion = stagedVersion;
+            }
+
+            return true;
         }
 
         private static void ParseInputProfileCsvLine(ReadOnlySpan<byte> line, ref InputProfileDTO profile)
@@ -1794,14 +1842,20 @@ namespace Hecton8.Core
         }
 #endif
 
-        private void WriteDeterministicInputBlackBox(in InputState state, uint currentInputSchemeHash)
+        private bool WriteDeterministicInputBlackBox(
+            in InputState state,
+            uint currentInputSchemeHash,
+            out uint packedAxes,
+            out bool recordedFrame)
         {
+            packedAxes = 0u;
+            recordedFrame = false;
             if (!TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO> telemetry))
-                return;
+                return false;
 
             int writeIndex = _deterministicBlackBoxWriteIndex;
             int wrappedIndex = writeIndex % InputBlackBoxCapacity;
-            uint packedAxes = PackInputAxes(in state);
+            packedAxes = PackInputAxes(in state);
             telemetry[wrappedIndex] = new InputTelemetryEntryDTO
             {
                 InputSystemTimeSeconds = UnityEngine.InputSystem.LowLevel.InputState.currentTime,
@@ -1816,17 +1870,10 @@ namespace Hecton8.Core
             };
             _bufferedInputsConsumedThisFrame = 0u;
             _deterministicBlackBoxWriteIndex = (writeIndex + 1) % InputBlackBoxCapacity;
-            CrashTelemetryBuffer.ReportDeterministicInputFrame(
-                state.Frame,
-                state.Sequence,
-                state.ButtonsBitmask,
-                packedAxes);
+            recordedFrame = true;
 
-            if ((state.Flags & (ushort)InputStateFlags.NonFiniteSanitized) != 0 ||
-                _lastPollingTimeMicroseconds > 500u)
-            {
-                DumpDeterministicInputBlackBox();
-            }
+            return (state.Flags & (ushort)InputStateFlags.NonFiniteSanitized) != 0 ||
+                   _lastPollingTimeMicroseconds > 500u;
         }
 
         private static uint PackInputAxes(in InputState state)
@@ -2070,7 +2117,7 @@ namespace Hecton8.Core
 
         private void DumpDeterministicInputBlackBox()
         {
-            if (!TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO> telemetry))
+            if (!TryReadInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO>.ReadOnly telemetry))
                 return;
 
             NativeArray<byte> payload = default;
@@ -2078,7 +2125,7 @@ namespace Hecton8.Core
             try
             {
                 int byteCount = telemetry.Length * UnsafeUtility.SizeOf<InputTelemetryEntryDTO>();
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                void* source = telemetry.GetUnsafeReadOnlyPtr();
                 payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
                     nameof(InputDispatcher),
@@ -2965,11 +3012,11 @@ namespace Hecton8.Core
             if (magnitudeSq <= innerSq)
                 return float2.zero;
 
-            float magnitude = math.sqrt(math.max(magnitudeSq, 0.00000001f));
-            float normalized = math.saturate((magnitude - inner) / math.max(outer - inner, 0.0001f));
+            float magnitude = FastInputLengthFromSq(magnitudeSq, 0.00000001f);
+            float normalized = math.saturate((magnitude - inner) * math.rcp(math.max(outer - inner, 0.0001f)));
             float exponent = math.clamp(profile.MoveExponent, 0.25f, 4f);
             float curved = MathLodApproximation.ApproxPow01Curve(normalized, exponent);
-            float scale = curved / math.max(magnitude, 0.0001f);
+            float scale = curved * math.rcp(math.max(magnitude, 0.0001f));
             return rawAxis * scale;
         }
 
@@ -2979,10 +3026,20 @@ namespace Hecton8.Core
                 return float2.zero;
 
             float viewportHeight = _viewportHeightSnapshot;
-            float magnitude = math.sqrt(math.max(math.lengthsq(rawLookDelta), 0f));
+            float magnitude = FastInputLengthFromSq(math.lengthsq(rawLookDelta), 0f);
             float sensitivity = math.clamp(profile.MouseSensitivity, 0.01f, 20f);
             float acceleration = 1f + (math.min(magnitude, 64f) * math.clamp(profile.MouseAcceleration, 0f, 8f));
-            return rawLookDelta * (sensitivity * acceleration / viewportHeight);
+            return rawLookDelta * (sensitivity * acceleration * math.rcp(viewportHeight));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastInputLengthFromSq(float lengthSq, float minLengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return 0f;
+
+            float safeLengthSq = math.max(lengthSq, minLengthSq);
+            return safeLengthSq > 0f ? safeLengthSq * math.rsqrt(safeLengthSq) : 0f;
         }
 
         private void RefreshViewportSnapshotSlowSample()
@@ -3943,8 +4000,8 @@ namespace Hecton8.Core
             if (intensity <= 0f || request.DurationSeconds <= 0f)
                 return;
 
-            byte priority = request.Channel;
-            byte blendMode = (request.Flags & HapticBlendAdditive) != 0 ? HapticBlendAdditive : (byte)2;
+            byte priority = ResolveHapticRequestPriority(in request);
+            byte blendMode = ResolveHapticRequestBlendMode(in request);
             float highContribution = intensity * math.max(0.25f, ClampFinite01(request.Frequency01));
 
             ApplyHapticContribution(
@@ -3971,10 +4028,27 @@ namespace Hecton8.Core
 
             float highContribution = intensity * math.max(0.25f, ClampFinite01(request.Frequency01));
             float decayRate = 1f / math.max(request.DurationSeconds, 0.02f);
-            InsertHapticCommandDto(intensity, highContribution, decayRate, HapticLowMotorMask | HapticHighMotorMask);
+            InsertHapticCommandDto(
+                intensity,
+                highContribution,
+                decayRate,
+                HapticLowMotorMask | HapticHighMotorMask,
+                ResolveHapticRequestPriority(in request),
+                ResolveHapticRequestBlendMode(in request));
         }
 
         private void InsertHapticCommandDto(float lowFreqIntensity, float highFreqIntensity, float decayRate, uint motorMask)
+        {
+            InsertHapticCommandDto(
+                lowFreqIntensity,
+                highFreqIntensity,
+                decayRate,
+                motorMask,
+                HapticPriorityTool,
+                HapticBlendAdditive);
+        }
+
+        private void InsertHapticCommandDto(float lowFreqIntensity, float highFreqIntensity, float decayRate, uint motorMask, byte priority, byte blendMode)
         {
             if (!TryAcquireInputMutationGuard())
                 return;
@@ -3988,10 +4062,12 @@ namespace Hecton8.Core
                 command.LowFreqIntensity = ClampFinite01(lowFreqIntensity);
                 command.HighFreqIntensity = ClampFinite01(highFreqIntensity);
                 command.DecayRate = math.clamp(math.isfinite(decayRate) ? decayRate : 1f, 0.01f, 64f);
-                command.MotorMask = motorMask;
+                command.MotorMask = PackHapticCommandMotorMask(motorMask, priority, blendMode);
 
                 int weakestIndex = 0;
                 float weakestMagnitude = float.MaxValue;
+                byte weakestPriority = byte.MaxValue;
+                float commandMagnitude = math.max(command.LowFreqIntensity, command.HighFreqIntensity);
                 for (int i = 0; i < commands.Length; i++)
                 {
                     HapticCommandDTO existing = commands[i];
@@ -4002,12 +4078,23 @@ namespace Hecton8.Core
                         return;
                     }
 
-                    if (magnitude >= weakestMagnitude)
+                    byte existingPriority = ExtractHapticCommandPriority(existing.MotorMask);
+                    if (existingPriority > weakestPriority)
+                        continue;
+
+                    if (existingPriority == weakestPriority && magnitude >= weakestMagnitude)
                         continue;
 
                     weakestMagnitude = magnitude;
+                    weakestPriority = existingPriority;
                     weakestIndex = i;
                 }
+
+                if (priority < weakestPriority)
+                    return;
+
+                if (priority == weakestPriority && commandMagnitude <= weakestMagnitude)
+                    return;
 
                 commands[weakestIndex] = command;
             }
@@ -4049,16 +4136,19 @@ namespace Hecton8.Core
                 for (int i = 0; i < commands.Length; i++)
                 {
                     HapticCommandDTO command = commands[i];
-                    float low = (command.MotorMask & HapticLowMotorMask) != 0u ? ClampFinite01(command.LowFreqIntensity) : 0f;
-                    float high = (command.MotorMask & HapticHighMotorMask) != 0u ? ClampFinite01(command.HighFreqIntensity) : 0f;
+                    uint motorMask = ExtractHapticCommandMotorMask(command.MotorMask);
+                    byte priority = ExtractHapticCommandPriority(command.MotorMask);
+                    byte blendMode = ExtractHapticCommandBlendMode(command.MotorMask);
+                    float low = (motorMask & HapticLowMotorMask) != 0u ? ClampFinite01(command.LowFreqIntensity) : 0f;
+                    float high = (motorMask & HapticHighMotorMask) != 0u ? ClampFinite01(command.HighFreqIntensity) : 0f;
                     if (low <= HapticMotorWriteEpsilon && high <= HapticMotorWriteEpsilon)
                     {
                         commands[i] = default;
                         continue;
                     }
 
-                    ApplyHapticContribution(low, 1, HapticBlendAdditive, ref lowMotor, ref lowPriority, ref hasLowPriority);
-                    ApplyHapticContribution(high, 1, HapticBlendAdditive, ref highMotor, ref highPriority, ref hasHighPriority);
+                    ApplyHapticContribution(low, priority, blendMode, ref lowMotor, ref lowPriority, ref hasLowPriority);
+                    ApplyHapticContribution(high, priority, blendMode, ref highMotor, ref highPriority, ref hasHighPriority);
 
                     float decayFactor = ResolveHapticDecayFactor(command.DecayRate, safeDeltaTime);
                     command.LowFreqIntensity = ClampFinite01(low * decayFactor);
@@ -4084,6 +4174,100 @@ namespace Hecton8.Core
             float x = math.min(math.max(0f, decayRate) * math.max(0f, deltaTime), 3f);
             float x2 = x * x;
             return 1f / math.max(1f + x + (0.48f * x2) + (0.235f * x2 * x), 0.0001f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint PackHapticCommandMotorMask(uint motorMask, byte priority, byte blendMode)
+        {
+            byte clampedPriority = priority > HapticPriorityCritical ? HapticPriorityCritical : priority;
+            byte clampedBlend = blendMode > HapticBlendMax ? HapticBlendMax : blendMode;
+            uint packedPriority = (uint)(clampedPriority + 1);
+            uint packedBlend = (uint)(clampedBlend + 1);
+            return (motorMask & HapticCommandMotorMaskBits) |
+                   (packedPriority << HapticCommandPriorityShift) |
+                   (packedBlend << HapticCommandBlendShift);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ExtractHapticCommandMotorMask(uint packedMotorMask)
+        {
+            return packedMotorMask & HapticCommandMotorMaskBits;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ExtractHapticCommandPriority(uint packedMotorMask)
+        {
+            uint encoded = (packedMotorMask >> HapticCommandPriorityShift) & HapticCommandNibbleMask;
+            uint priority = encoded == 0u ? HapticPriorityTool : encoded - 1u;
+            return priority > HapticPriorityCritical ? HapticPriorityCritical : (byte)priority;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ExtractHapticCommandBlendMode(uint packedMotorMask)
+        {
+            uint encoded = (packedMotorMask >> HapticCommandBlendShift) & HapticCommandNibbleMask;
+            uint blendMode = encoded == 0u ? HapticBlendAdditive : encoded - 1u;
+            return blendMode > HapticBlendMax ? HapticBlendMax : (byte)blendMode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ResolveHapticRequestPriority(in HapticRequest request)
+        {
+            if ((request.Flags & HapticRequest.FlagCrush) != 0 ||
+                request.Channel == HapticRequest.ChannelVehicleCritical ||
+                request.Channel == HapticRequest.ChannelCrush)
+            {
+                return HapticPriorityCritical;
+            }
+
+            if (request.Channel == HapticRequest.ChannelCollision)
+                return HapticPriorityCollision;
+
+            if ((request.Flags & HapticRequest.FlagMicroVibration) != 0 ||
+                request.Channel == HapticRequest.ChannelMicroVibration)
+            {
+                return HapticPriorityMicro;
+            }
+
+            return HapticPriorityTool;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ResolveHapticRequestBlendMode(in HapticRequest request)
+        {
+            if ((request.Flags & HapticRequest.FlagCrush) != 0 ||
+                request.Channel == HapticRequest.ChannelVehicleCritical ||
+                request.Channel == HapticRequest.ChannelCrush ||
+                request.Channel == HapticRequest.ChannelCollision ||
+                request.Channel == HapticRequest.ChannelLightThud ||
+                (request.Flags & HapticRequest.FlagLightThud) != 0)
+            {
+                return HapticBlendMax;
+            }
+
+            return HapticBlendAdditive;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ResolveHapticPulsePriority(uint priorityFlags)
+        {
+            uint priority = HapticPulseSignal.ExtractPriorityFlags(priorityFlags);
+            if ((priority & HapticPulseSignal.PriorityExplosion) != 0u)
+                return HapticPriorityCritical;
+            if ((priority & HapticPulseSignal.PriorityCollision) != 0u)
+                return HapticPriorityCollision;
+            if ((priority & HapticPulseSignal.PriorityTool) != 0u)
+                return HapticPriorityTool;
+            return HapticPriorityMicro;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ResolveHapticPulseBlendMode(uint priorityFlags)
+        {
+            uint priority = HapticPulseSignal.ExtractPriorityFlags(priorityFlags);
+            return (priority & (HapticPulseSignal.PriorityExplosion | HapticPulseSignal.PriorityCollision)) != 0u
+                ? HapticBlendMax
+                : HapticBlendAdditive;
         }
 
         private static bool ShouldThrottleHapticDispatch(uint schemeHash)

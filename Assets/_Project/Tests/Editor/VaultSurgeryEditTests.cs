@@ -240,7 +240,7 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void VaultInternalRuntimeStructs_KeepExpectedNaturalOffsets()
         {
-            Assembly memoryAssembly = typeof(GlobalDataVault).Assembly;
+            global::System.Reflection.Assembly memoryAssembly = typeof(GlobalDataVault).Assembly;
 
             AssertLayout(
                 memoryAssembly.GetType("Hecton8.Core.Memory.VaultBufferMeta", true),

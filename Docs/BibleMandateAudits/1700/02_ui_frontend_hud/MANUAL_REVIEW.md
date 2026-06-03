@@ -1,6 +1,6 @@
 # UI / Menus / HUD Manual Review
 
-Status: STATIC REVIEW - NO UNITY/PROFILER PROOF
+Status: YELLOW_LINE_LEVEL_STATIC_CLASSIFIED_RUNTIME_PROOF_PENDING - NO UNITY/PROFILER PROOF
 Date: 2026-06-02
 
 ## Reviewed Files
@@ -18,6 +18,8 @@ Date: 2026-06-02
 - `Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs`
 - `Assets/_Project/Scripts/UI/WorldSpaceTMPSharpnessController.cs`
 - `Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs`
+- `Assets/_Project/Scripts/Core/UIStateStore.cs`
+- `Assets/_Project/Scripts/Core/SceneRuntimeService.cs`
 
 ## What Exists
 
@@ -43,6 +45,7 @@ Date: 2026-06-02
 
 ## Current Classification
 
+- `LINE_LEVEL_CLASSIFICATION.md`: all 241 runtime suspect lines classified; 128 editor/dev guarded, 86 cold/setup/fault/user-action paths, 24 false positives, and 3 registered runtime violations.
 - `FontAssetRecovery.cs`: `LEGAL_EDITOR_OR_DEV_GUARDED` for active route; dormant runtime methods must not be revived without editor-only guard.
 - `SuitHUDV4CanvasOverlay.cs`: `YELLOW_BOOTSTRAP_REVIEW_REQUIRED`.
 - `SettingsPanel.cs` / `SettingsManager.cs`: `LIKELY_LEGAL_DIAGNOSTIC_OR_USER_ACTION_PATH`.
@@ -68,3 +71,40 @@ Date: 2026-06-02
 
 - `SettingsPanel.CreateMenuStyleTextCold()` and `ConfigureMenuStyleLayoutCold()` read as legal cold menu assembly, not a steady-state UI tick. Closure still needs menu interaction proof that the panel does not rebuild hierarchy or add layout components after construction.
 - `FontAssetRecovery` material repair and asset import repair are editor-guarded, but runtime `RefreshTextComponent()` can force a TMP mesh rebuild. Release closure requires callsite proof that this is bootstrap/recovery only and not the normal text update route.
+
+## Pass 8 Addendum - Suit HUD Runtime Materials And Hierarchy
+
+- `SuitHUDV4CanvasOverlay` creates runtime materials for threat chevron, dithered background, saving pulse, and acoustic radar paths. These may be cold owner resources, but release acceptance needs prefab/material assignment proof or lifecycle proof that creation happens once and never repeats under HUD re-enable, language swap, scene reload, or save-state transitions.
+- The HUD can add `CanvasGroup`, `RectMask2D`, `CanvasRenderer`, isolated `Canvas`, gauge graphics, quickbar images, TMP labels, and a content root GameObject during bootstrap assembly. This is not automatically a violation, but it is still not a release-green UI route until a 300-frame interaction capture proves no post-bootstrap hierarchy growth, no canvas rebuild spikes, and 0 B/frame steady-state text updates.
+
+## Pass 11 Addendum - Topographical Sonar Buffer And Mock SDF Detail
+
+- `TopographicalSonarSynthesizer` has persistent H8Memory job buffers, DataVault handles, double point buffers, indirect args buffer, shader globals buffer, non-forced job finalization, ping interval gating, and black-box telemetry.
+- The release gate remains yellow because `ScheduleSonarScan()` can generate mock SDF when no published SDF snapshot is available. UI can display diagnostic mock data, but production sonar cannot present mock geometry as real terrain.
+- Required proof: published SDF/DataMonolith availability in release scenes, ping spam profile, GPU upload budget, no repeated graphics buffer creation after bootstrap, and black-box dump only on fault.
+
+## Pass 15 Addendum - UI State Store And Scene Transition Overlay
+
+- `UIStateStore` owns fixed native arrays for UI state, numeric slots, PDA rollback snapshots, and event hashes. The state shape is good after initialization.
+- The unresolved UI issue is first-use: methods like `SetPDAOpenState`, `SetPDAActiveTab`, `AppendPDALogEventHash`, `WriteValue`, and `Clear` call `EnsureInitialized()`. If bootstrap does not call it first, the first UI interaction can allocate persistent native arrays.
+- `SceneRuntimeService` creates a transition overlay hierarchy and a dither material during scene transition. This may be legal cold scene-transition work, but release UI proof must show fixed count, assigned shader/material, no repeated leaks, and no steady-state UI hierarchy growth.
+- UI proof now needs `UIStateStore` prewarm evidence in addition to the existing HUD/menu/cockpit/wrist interaction profiler.
+
+## Pass 17 Addendum - UI Fallback Assets, Localization Staging, And Input Remap
+
+- `DiegeticMenuCanvasUtility.ResolveCamera(...)` uses `Camera.main` only in menu setup context after a preferred camera check. `NormalizeReadableText(...)` scans TMP children with a static scratch list and labels itself as main-menu setup only. Classification: `LEGAL_COLD_MENU_SETUP_WITH_INJECTED_CAMERA_PROOF_REQUIRED`.
+- `DiegeticPDAController` resolves and caches tablet renderer/collider/canvas visibility lists in `Awake()`, `OnEnable()`, and root-change paths. This is cold/rebind-shaped, not steady-state PDA open/close proof. It remains yellow until repeated enable/language/scene cases show no hierarchy scan or runtime EventSystem/material fallback in normal interaction.
+- `AcousticRadarSphereRenderer` late-frame drawing uses fixed matrices and `DrawMeshInstanced`, but missing authored `voxelMesh` creates a runtime cube mesh and missing material setup creates a runtime material. Production HUD/radar cannot rely on that fallback.
+- `DiegeticVisorHudMesh` builds a runtime projection mesh/material and DataVault black-box ring in `OnEnable()`. Method review found `RefreshQualityPolicy()` can set `_meshRebuildDirty`, but `LateFrameTick()` clears that flag without calling `RebuildMesh()`. This either intentionally makes mesh quality bootstrap-only or is a functional quality-scaling bug.
+- `DiegeticGlitchSurgeonRuntime` owns large persistent H8Memory scratch storage for text/glitch/quads/radar/synth/telemetry. Shape is acceptable only with boot prewarm counters; fault dumps use Temp payloads and must remain fault-only.
+- `LocRegistry` span/UTF-8 resolve routes are strong, but `TryBeginBabelDictionaryStage(...)` and `EnsureOverrideCsvScratch()` allocate persistent stage/scratch storage. Language switch and override staging must be explicit bounded transactions, not hidden first-use HUD lookups.
+- `ControlRemapper` Temp buffers are user-action IO/settings save-load paths, not HUD hot paths. Acceptance still needs a visible blocking/settings transaction proof so control remap cannot freeze gameplay silently.
+- `RelayHUDRuntimeBootstrap` creates marker hierarchy after scene load if the active HUD has none. This is a fail-safe only; authored HUD release scenes must prove the marker exists without runtime repair.
+
+## Pass 21 Addendum - Line-Level UI Runtime Closure
+
+- Added `LINE_LEVEL_CLASSIFICATION.md` and classified all 241 runtime suspect lines in the UI/menu/HUD/terminal/localization/settings group.
+- Result: 128 `LEGAL_EDITOR_OR_DEV_GUARDED`, 86 `LEGAL_COLD_PATH`, 24 `FALSE_POSITIVE`, and 3 registered `RUNTIME_VIOLATION` lines.
+- Registered violation lines: `AcousticRadarSphereRenderer.cs:531`, `DiegeticVisorHudMesh.cs:438`, and `VehicleSubOsCockpitRuntime.cs:2601`.
+- `RB-131` was strengthened to include the `VehicleSubOsCockpitRuntime` fallback damage hologram cube mesh path and to require authored cockpit-damage-proxy proof.
+- Static closure is not release proof. The UI group remains yellow until authored fallback assets, boot prewarm, localization/language-switch transactions, input-remap IO, visor quality scaling, and 300-frame player profiler captures are provided.

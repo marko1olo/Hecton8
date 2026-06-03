@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldExpeditionLoopProfile
   profileId: loop.profile.resources.starter
   profileLabel: Resources Starter Read
-  entryBeat: A readable shelf, arch, or scrap silhouette makes the water easy to read
-    at first glance.
+  entryBeat: A readable shelf, arch, or scrap silhouette makes the water easy to
+    read at first glance.
   routineBeat: Common materials are visible quickly without forcing one exact sweep.
-  reliefBeat: Short reorientation pockets let the player reassess and decide whether to keep
-    wandering.
+  reliefBeat: Short reorientation pockets let the player reassess and decide whether
+    to keep wandering.
   pressureBeat: Risk rises naturally as visibility drops and easy materials thin
     out.
   payoffBeat: A stronger node or denser material patch exists deeper in for players
@@ -35,7 +35,9 @@ MonoBehaviour:
     shapes and material rhythm.
   masteryLogic: Mastery means building a personal quick-harvest loop, not following
     a designer path.
-  playerPromise: Readable early water with recoverable value, mild risk, and room to improvise.
+  playerPromise: Readable early water with recoverable value, mild risk, and room
+    to improvise.
   routeMemoryRule: Memory should come from one strong silhouette and one reliable
     reorientation pocket.
-  failureMode: If shapes, pressure, and value blur together, the area turns into mush.
+  failureMode: If shapes, pressure, and value blur together, the area turns into
+    mush.

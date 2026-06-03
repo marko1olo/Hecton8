@@ -132,18 +132,55 @@ namespace Hecton8.World
 
             _abyssalPathCount = 0;
             int fixedPathCapacity = ResolveMaxAbyssalPathWaypointCapacity();
-            NativeList<Vector3> rawPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.Persistent);
-            NativeList<Vector3> resultPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.Persistent);
-            if (!rawPath.IsCreated || !resultPath.IsCreated)
-            {
-                if (rawPath.IsCreated)
-                    rawPath.Dispose();
-                if (resultPath.IsCreated)
-                    resultPath.Dispose();
+            NativeArray<byte>.ReadOnly navPassabilityGrid = default;
+            int3 navPassabilityDimensions = int3.zero;
+            float3 navPassabilityOrigin = float3.zero;
+            float navPassabilityCellSize = 0f;
 
+            if (startUsesVoxel &&
+                !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
+                    startProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize))
+            {
+                VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
+                    startProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize);
+            }
+
+            if (navPassabilityGrid.Length <= 0 &&
+                endUsesVoxel &&
+                !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
+                    endProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize))
+            {
+                VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
+                    endProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize);
+            }
+
+            int navPassabilityLength = math.max(0, navPassabilityGrid.Length);
+            if (!TryAcquireAbyssalPathStagingBuffer(
+                    _abyssalNavNodeCount,
+                    fixedPathCapacity,
+                    navPassabilityLength,
+                    out IDataVault pathStagingVault,
+                    out NativeArray<AbyssalPathStagingPoint> pathStaging))
+            {
                 RecordVegetationMemoryTelemetry(
-                    BufferID.VegetationAbyssalPathSnapshot,
-                    _nativeMemory.AbyssalPathSnapshotHandle.Generation,
+                    BufferID.VegetationAbyssalPathStagingPacked,
+                    _nativeMemory.AbyssalPathStagingHandle.Generation,
                     fixedPathCapacity,
                     0,
                     0,
@@ -155,21 +192,31 @@ namespace Hecton8.World
                 return false;
             }
 
+            int navPassabilityLengthForJob = 0;
             bool scheduled = false;
             NativeArray<VegetationDensityChunkRecord> densityChunksForJob = default;
             NativeArray<float3> densityGridForJob = default;
             NativeArray<float2> threatAttractorGridForJob = default;
             NativeArray<TerrainHoleRecord> terrainHolesForJob = default;
             NativeArray<ArtificialStructureRecord> artificialStructuresForJob = default;
-            NativeArray<byte> navPassabilityGridForJob = default;
             NativeArray<byte> threatVoxelGridForSmoothing = default;
+            IDataVault pathReadPinVault = null;
+            uint pathReadPinMask = 0u;
             try
             {
+                ResetAbyssalPathStaging(pathStaging);
+                if (navPassabilityLength > 0 &&
+                    TryCopyNavPassabilityToPathStaging(navPassabilityGrid, navPassabilityLength, pathStaging))
+                {
+                    navPassabilityLengthForJob = navPassabilityLength;
+                }
+
                 JobHandle pathSourceHandle = default;
                 bool scheduledMacroVoxelRoute = false;
                 if (startUsesVoxel &&
                     endUsesVoxel &&
-                    VoxelDynamicNavGridRuntime.TryBuildMacroPortalRoute(startProbe, endProbe, rawPath))
+                    VoxelDynamicNavGridRuntime.TryBuildMacroPortalRouteNonAlloc(startProbe, endProbe, _abyssalPathSnapshot, out int macroWaypointCount) &&
+                    TryCopyManagedAbyssalPathToNative(_abyssalPathSnapshot, macroWaypointCount, fixedPathCapacity, pathStaging))
                 {
                     scheduledMacroVoxelRoute = true;
                 }
@@ -181,40 +228,34 @@ namespace Hecton8.World
                     NativeArray<byte> navNodeTypesForJob = default;
                     NativeArray<Vector3> conduitVectorsForJob = default;
                     NativeArray<float> conduitStrengthsForJob = default;
-                    NativeArray<int> pathParentsForJob = default;
-                    NativeArray<float> pathGScoreForJob = default;
-                    NativeArray<float> pathFScoreForJob = default;
-                    NativeArray<byte> pathClosedFlagsForJob = default;
-                    NativeArray<int> pathHeapNodesForJob = default;
-                    NativeArray<int> pathHeapPositionsForJob = default;
                     int predatorFearNodeCountForJob = 0;
                     int predatorFearNodeCount = math.max(0, _predatorFearNodeCount);
-                    if (predatorFearNodeCount > 0 &&
-                        TryReadVegetationMemoryBuffer(
-                            in _nativeMemory.PredatorFearNodesSnapshotHandle,
-                            BufferID.VegetationPredatorFearNodeSnapshot,
-                            predatorFearNodeCount,
-                            out NativeArray<PredatorFearNodeSnapshot> predatorFearSnapshots))
+                    if (predatorFearNodeCount > 0)
                     {
-                        int copyCount = math.min(predatorFearNodeCount, predatorFearSnapshots.Length);
-                        predatorFearNodesForJob = H8Memory.Allocate<PredatorFearNodeSnapshot>(
-                            copyCount,
-                            VegetationMemorySovereigntyConstants.OwnerSystemId,
-                            Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory);
-                        if (predatorFearNodesForJob.IsCreated)
+                        if (TryLockAbyssalPathReadBuffer(
+                                BufferID.VegetationPredatorFearNodeSnapshot,
+                                AbyssalPathPinPredatorFear,
+                                ref pathReadPinVault,
+                                ref pathReadPinMask) &&
+                            TryReadVegetationMemoryBuffer(
+                                in _nativeMemory.PredatorFearNodesSnapshotHandle,
+                                BufferID.VegetationPredatorFearNodeSnapshot,
+                                predatorFearNodeCount,
+                                out predatorFearNodesForJob))
                         {
-                            for (int i = 0; i < copyCount; i++)
-                                predatorFearNodesForJob[i] = predatorFearSnapshots[i];
-
-                            predatorFearNodeCountForJob = copyCount;
+                            predatorFearNodeCountForJob = math.min(predatorFearNodeCount, predatorFearNodesForJob.Length);
                         }
                         else
                         {
+                            ReleaseAbyssalPathReadPin(
+                                pathReadPinVault,
+                                AbyssalPathPinPredatorFear,
+                                BufferID.VegetationPredatorFearNodeSnapshot,
+                                ref pathReadPinMask);
                             RecordVegetationMemoryTelemetry(
                                 BufferID.VegetationPredatorFearNodeSnapshot,
                                 _nativeMemory.PredatorFearNodesSnapshotHandle.Generation,
-                                copyCount,
+                                predatorFearNodeCount,
                                 0,
                                 0,
                                 0f,
@@ -227,68 +268,43 @@ namespace Hecton8.World
 
                     if (!TryCreateAbyssalNavJobSnapshot(
                             _abyssalNavNodeCount,
+                            ref pathReadPinVault,
+                            ref pathReadPinMask,
                             out navNodesForJob,
                             out navNodeTypesForJob,
                             out conduitVectorsForJob,
                             out conduitStrengthsForJob))
                     {
-                        H8Memory.Release(ref predatorFearNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        return false;
-                    }
-
-                    if (!TryCreateAbyssalPathScratch(
-                            _abyssalNavNodeCount,
-                            out pathParentsForJob,
-                            out pathGScoreForJob,
-                            out pathFScoreForJob,
-                            out pathClosedFlagsForJob,
-                            out pathHeapNodesForJob,
-                            out pathHeapPositionsForJob))
-                    {
-                        H8Memory.Release(ref predatorFearNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref navNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref navNodeTypesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref conduitVectorsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref conduitStrengthsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                         return false;
                     }
 
                     NativeArray<float> threatGridForJob = default;
                     NativeArray<byte> threatVoxelGridForJob = default;
-                    if (!TryReadVegetationMemoryBuffer(
+                    if (!TryLockAbyssalPathReadBuffer(
+                            BufferID.VegetationEcosystemThreatGrid,
+                            AbyssalPathPinThreatGrid,
+                            ref pathReadPinVault,
+                            ref pathReadPinMask) ||
+                        !TryLockAbyssalPathReadBuffer(
+                            BufferID.VegetationEcosystemThreatVoxel,
+                            AbyssalPathPinThreatVoxel,
+                            ref pathReadPinVault,
+                            ref pathReadPinMask) ||
+                        !TryReadVegetationMemoryBuffer(
                             in _nativeMemory.EcosystemThreatGridHandle,
                             BufferID.VegetationEcosystemThreatGrid,
                             _ecosystemThreatGridCellCount,
-                            out NativeArray<float> threatGridSource) ||
+                            out threatGridForJob) ||
                         !TryReadVegetationMemoryBuffer(
                             in _nativeMemory.EcosystemThreatVoxelHandle,
                             BufferID.VegetationEcosystemThreatVoxel,
                             _ecosystemThreatVoxelCellCount,
-                            out NativeArray<byte> threatVoxelGridSource) ||
-                        !TryCreateReadOnlyAbyssalPathJobSnapshot(
-                            threatGridSource.AsReadOnly(),
-                            _ecosystemThreatGridCellCount,
-                            out threatGridForJob) ||
-                        !TryCreateReadOnlyAbyssalPathJobSnapshot(
-                            threatVoxelGridSource.AsReadOnly(),
-                            _ecosystemThreatVoxelCellCount,
                             out threatVoxelGridForJob))
                     {
-                        H8Memory.Release(ref predatorFearNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref navNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref navNodeTypesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref conduitVectorsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref conduitStrengthsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref pathParentsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref pathGScoreForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref pathFScoreForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref pathClosedFlagsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref pathHeapNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref pathHeapPositionsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref threatGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                        H8Memory.Release(ref threatVoxelGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                         return false;
                     }
+
+                    threatVoxelGridForSmoothing = threatVoxelGridForJob;
 
                     var astarJob = new NativeAStarJob
                     {
@@ -305,13 +321,8 @@ namespace Hecton8.World
                         ThreatVoxelOrigin = new float3(_ecosystemThreatVoxelOrigin.x, _ecosystemThreatVoxelOrigin.y, _ecosystemThreatVoxelOrigin.z),
                         ThreatVoxelCellSize = new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize),
                         WaterLevel = waterLevel,
-                        Parents = pathParentsForJob,
-                        GScore = pathGScoreForJob,
-                        FScore = pathFScoreForJob,
-                        ClosedFlags = pathClosedFlagsForJob,
-                        HeapNodes = pathHeapNodesForJob,
-                        HeapPositions = pathHeapPositionsForJob,
-                        Path = rawPath,
+                        PathStaging = pathStaging,
+                        PathCapacity = fixedPathCapacity,
                         PredatorFearNodes = predatorFearNodesForJob,
                         PredatorFearNodeCount = predatorFearNodeCountForJob,
                         TraversalSpeciesId = traversalSpeciesId,
@@ -332,103 +343,7 @@ namespace Hecton8.World
                     };
 
                     pathSourceHandle = astarJob.Schedule();
-                    pathSourceHandle = H8Memory.Release(
-                        ref navNodesForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref navNodeTypesForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref conduitVectorsForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref conduitStrengthsForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref pathParentsForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref pathGScoreForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref pathFScoreForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref pathClosedFlagsForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref pathHeapNodesForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref pathHeapPositionsForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref threatGridForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    pathSourceHandle = H8Memory.Release(
-                        ref threatVoxelGridForJob,
-                        pathSourceHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                    if (predatorFearNodesForJob.IsCreated)
-                        pathSourceHandle = H8Memory.Release(
-                            ref predatorFearNodesForJob,
-                            pathSourceHandle,
-                            VegetationMemorySovereigntyConstants.OwnerSystemId);
                 }
-
-                NativeArray<byte>.ReadOnly navPassabilityGrid = default;
-                int3 navPassabilityDimensions = int3.zero;
-                float3 navPassabilityOrigin = float3.zero;
-                float navPassabilityCellSize = 0f;
-
-                if (startUsesVoxel &&
-                    !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
-                        startProbe,
-                        out navPassabilityGrid,
-                        out navPassabilityDimensions,
-                        out navPassabilityOrigin,
-                        out navPassabilityCellSize))
-                {
-                    VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
-                        startProbe,
-                        out navPassabilityGrid,
-                        out navPassabilityDimensions,
-                        out navPassabilityOrigin,
-                        out navPassabilityCellSize);
-                }
-
-                if (navPassabilityGrid.Length <= 0 &&
-                    endUsesVoxel &&
-                    !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
-                        endProbe,
-                        out navPassabilityGrid,
-                        out navPassabilityDimensions,
-                        out navPassabilityOrigin,
-                        out navPassabilityCellSize))
-                {
-                    VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
-                        endProbe,
-                        out navPassabilityGrid,
-                        out navPassabilityDimensions,
-                        out navPassabilityOrigin,
-                        out navPassabilityCellSize);
-                }
-
-                TryCreateReadOnlyAbyssalPathJobSnapshot(
-                    navPassabilityGrid,
-                    navPassabilityGrid.Length,
-                    out navPassabilityGridForJob);
 
                 int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead();
                 int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(abyssalPathSmoothingMaxSamples);
@@ -436,46 +351,116 @@ namespace Hecton8.World
                 _lastAbyssalPathPortalLookAhead = smoothingPortalLookAhead;
                 _lastAbyssalPathMaxSamples = smoothingDdaSampleCap;
                 int densityChunkCountForJob = 0;
-                if (TryPrepareDensityQueryJobSnapshot(
+                if (TryPinDensityQueryJobSnapshot(
                         true,
                         false,
+                        AbyssalPathPinDensityChunks,
+                        AbyssalPathPinDensityGrid,
+                        AbyssalPathPinThreatAttractorGrid,
+                        ref pathReadPinVault,
+                        ref pathReadPinMask,
                         out densityChunksForJob,
                         out densityGridForJob,
-                        out threatAttractorGridForJob) &&
+                        out threatAttractorGridForJob,
+                        out int densityChunkCount,
+                        out _) &&
                     densityChunksForJob.IsCreated &&
                     densityGridForJob.IsCreated)
                 {
-                    densityChunkCountForJob = _densityQueryChunkCount;
+                    densityChunkCountForJob = math.min(densityChunkCount, densityChunksForJob.Length);
                 }
 
-                TryCreateTerrainHoleJobSnapshot(out terrainHolesForJob);
-
-                int terrainHoleCountForJob = terrainHolesForJob.IsCreated ? _terrainHoleCount : 0;
-                TryPrepareArtificialStructureJobSnapshot(out artificialStructuresForJob);
-
-                if (TryReadVegetationMemoryBuffer(
-                        in _nativeMemory.EcosystemThreatVoxelHandle,
-                        BufferID.VegetationEcosystemThreatVoxel,
-                        _ecosystemThreatVoxelCellCount,
-                        out NativeArray<byte> threatVoxelGridForSmoothingSource))
+                int terrainHoleCountForJob = 0;
+                int terrainHoleCount = math.max(0, _terrainHoleCount);
+                if (terrainHoleCount > 0)
                 {
-                    TryCreateReadOnlyAbyssalPathJobSnapshot(
-                        threatVoxelGridForSmoothingSource.AsReadOnly(),
-                        _ecosystemThreatVoxelCellCount,
-                        out threatVoxelGridForSmoothing);
+                    if (TryLockAbyssalPathReadBuffer(
+                            BufferID.VegetationTerrainHoleRecords,
+                            AbyssalPathPinTerrainHoles,
+                            ref pathReadPinVault,
+                            ref pathReadPinMask) &&
+                        TryReadVegetationMemoryBuffer(
+                            in _nativeMemory.TerrainHoleRecordsHandle,
+                            BufferID.VegetationTerrainHoleRecords,
+                            terrainHoleCount,
+                            out terrainHolesForJob))
+                    {
+                        terrainHoleCountForJob = math.min(terrainHoleCount, terrainHolesForJob.Length);
+                    }
+                    else
+                    {
+                        ReleaseAbyssalPathReadPin(
+                            pathReadPinVault,
+                            AbyssalPathPinTerrainHoles,
+                            BufferID.VegetationTerrainHoleRecords,
+                            ref pathReadPinMask);
+                    }
+                }
+
+                int artificialStructureCountForJob = 0;
+                int artificialStructureCount = math.max(0, _artificialStructureCount);
+                if (artificialStructureCount > 0 &&
+                    TryLockAbyssalPathReadBuffer(
+                        BufferID.VegetationArtificialStructureRecords,
+                        AbyssalPathPinArtificialStructures,
+                        ref pathReadPinVault,
+                        ref pathReadPinMask))
+                {
+                    if (TryReadVegetationMemoryBuffer(
+                            in _nativeMemory.ArtificialStructureRecordsHandle,
+                            BufferID.VegetationArtificialStructureRecords,
+                            artificialStructureCount,
+                            out artificialStructuresForJob))
+                    {
+                        artificialStructureCountForJob = math.min(artificialStructureCount, artificialStructuresForJob.Length);
+                    }
+                    else
+                    {
+                        ReleaseAbyssalPathReadPin(
+                            pathReadPinVault,
+                            AbyssalPathPinArtificialStructures,
+                            BufferID.VegetationArtificialStructureRecords,
+                            ref pathReadPinMask);
+                    }
+                }
+
+                if (!threatVoxelGridForSmoothing.IsCreated &&
+                    TryLockAbyssalPathReadBuffer(
+                        BufferID.VegetationEcosystemThreatVoxel,
+                        AbyssalPathPinThreatVoxel,
+                        ref pathReadPinVault,
+                        ref pathReadPinMask))
+                {
+                    if (TryReadVegetationMemoryBuffer(
+                            in _nativeMemory.EcosystemThreatVoxelHandle,
+                            BufferID.VegetationEcosystemThreatVoxel,
+                            _ecosystemThreatVoxelCellCount,
+                            out NativeArray<byte> threatVoxelGridForSmoothingSource))
+                    {
+                        threatVoxelGridForSmoothing = threatVoxelGridForSmoothingSource;
+                    }
+                    else
+                    {
+                        ReleaseAbyssalPathReadPin(
+                            pathReadPinVault,
+                            AbyssalPathPinThreatVoxel,
+                            BufferID.VegetationEcosystemThreatVoxel,
+                            ref pathReadPinMask);
+                    }
                 }
 
                 var smoothingJob = new StringPullPathJob
                 {
-                    InputPath = rawPath.AsDeferredJobArray(),
+                    PathStaging = pathStaging,
                     DensityChunks = densityChunksForJob,
                     DensityGrid = densityGridForJob,
                     ChunkCount = densityChunkCountForJob,
                     TerrainHoles = terrainHolesForJob,
                     TerrainHoleCount = terrainHoleCountForJob,
                     ArtificialStructures = artificialStructuresForJob,
+                    ArtificialStructureCount = artificialStructureCountForJob,
                     ArtificialStructureHash = default,
-                    NavPassabilityGrid = navPassabilityGridForJob.IsCreated ? navPassabilityGridForJob.AsReadOnly() : default,
+                    NavPassabilityLength = navPassabilityLengthForJob,
                     ThreatVoxelGrid = threatVoxelGridForSmoothing,
                     ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
                     ThreatGridCellSize = threatGridCellSize,
@@ -492,22 +477,24 @@ namespace Hecton8.World
                     KelpWeight = abyssalPathSmoothingKelpWeight,
                     SargassumWeight = abyssalPathSmoothingSargassumWeight,
                     DensityObstacleThreshold = abyssalPathSmoothingObstacleThreshold,
-                    OutputPath = resultPath
+                    PathCapacity = fixedPathCapacity
                 };
 
                 long scheduleStartTicks = Stopwatch.GetTimestamp();
                 JobHandle smoothingHandle = smoothingJob.Schedule(pathSourceHandle);
                 _abyssalPathJob = new AbyssalPathPendingJob
                 {
-                    RawPath = rawPath,
-                    ResultPath = resultPath,
+                    PathStaging = pathStaging,
                     DensityChunks = densityChunksForJob,
                     DensityGrid = densityGridForJob,
                     ThreatAttractorGrid = threatAttractorGridForJob,
                     TerrainHoles = terrainHolesForJob,
                     ArtificialStructures = artificialStructuresForJob,
-                    NavPassabilityGrid = navPassabilityGridForJob,
                     ThreatVoxelGrid = threatVoxelGridForSmoothing,
+                    PathStagingVault = pathStagingVault,
+                    ReadPinVault = pathReadPinVault,
+                    ReadPinMask = pathReadPinMask,
+                    PathCapacity = fixedPathCapacity,
                     TargetPosition = resolvedEndPosition,
                     EndNode = endNode,
                     ScheduleTicks = scheduleStartTicks,
@@ -520,30 +507,22 @@ namespace Hecton8.World
                 handle = smoothingHandle;
                 scheduled = true;
 
-                rawPath = default;
-                resultPath = default;
+                pathStaging = default;
+                pathStagingVault = null;
+                pathReadPinVault = null;
+                pathReadPinMask = 0u;
                 densityChunksForJob = default;
                 densityGridForJob = default;
                 threatAttractorGridForJob = default;
                 terrainHolesForJob = default;
                 artificialStructuresForJob = default;
-                navPassabilityGridForJob = default;
                 threatVoxelGridForSmoothing = default;
                 return true;
             }
             finally
             {
-                H8Memory.Release(ref densityChunksForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref densityGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref threatAttractorGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref terrainHolesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref artificialStructuresForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref navPassabilityGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref threatVoxelGridForSmoothing, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (rawPath.IsCreated)
-                    rawPath.Dispose();
-                if (resultPath.IsCreated)
-                    resultPath.Dispose();
+                ReleaseAbyssalPathStagingWriteLock(pathStagingVault);
+                ReleaseAbyssalPathReadPins(pathReadPinVault, pathReadPinMask);
                 if (!scheduled)
                 {
                     _abyssalPathCount = 0;
@@ -601,29 +580,28 @@ namespace Hecton8.World
             return q * q * (3f - 2f * q);
         }
 
-        private static bool TryCreateReadOnlyAbyssalPathJobSnapshot<T>(
-            NativeArray<T>.ReadOnly source,
+        private static bool TryCopyNavPassabilityToPathStaging(
+            NativeArray<byte>.ReadOnly source,
             int requiredCount,
-            out NativeArray<T> snapshot)
-            where T : struct
+            NativeArray<AbyssalPathStagingPoint> staging)
         {
-            snapshot = default;
             if (requiredCount <= 0)
                 return true;
 
-            if (!source.IsCreated || source.Length < requiredCount)
+            if (!source.IsCreated ||
+                !staging.IsCreated ||
+                source.Length < requiredCount ||
+                staging.Length < requiredCount)
+            {
                 return false;
-
-            snapshot = H8Memory.Allocate<T>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            if (!snapshot.IsCreated)
-                return false;
+            }
 
             for (int i = 0; i < requiredCount; i++)
-                snapshot[i] = source[i];
+            {
+                AbyssalPathStagingPoint point = staging[i];
+                point.ScratchFlags = source[i];
+                staging[i] = point;
+            }
 
             return true;
         }
@@ -1233,76 +1211,57 @@ namespace Hecton8.World
                     registryCount++;
             }
 
-            _hlodRegistryCount = registryCount;
             if (registryCount <= 0)
-            {
-                _visibleHlodCount = 0;
-                return;
-            }
-
-            EnsureHLODDataCapacity(ref _hlodRegistrySnapshot, registryCount);
-            if (!TryAcquireVegetationMemoryBuffer(
-                    ref _nativeMemory.HlodRegistrySnapshotHandle,
-                    BufferID.VegetationHlodRegistrySnapshot,
-                    registryCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out IDataVault registryVault,
-                    out NativeArray<HLODData> registrySnapshot))
             {
                 _hlodRegistryCount = 0;
                 _visibleHlodCount = 0;
                 return;
             }
 
+            EnsureHLODDataCapacity(ref _hlodRegistrySnapshot, registryCount);
             int writeIndex = 0;
-            try
+            if (megaWreckDefinitions != null)
             {
-                if (megaWreckDefinitions != null)
+                for (int i = 0; i < megaWreckDefinitions.Length; i++)
                 {
-                    for (int i = 0; i < megaWreckDefinitions.Length; i++)
-                    {
-                        MegaWreckDefinition definition = megaWreckDefinitions[i];
-                        if (!ShouldRegisterHLOD(definition.Center, definition.Size, in viewerAup))
-                            continue;
-
-                        HLODData entry = new HLODData
-                        {
-                            StructureId = definition.WreckId,
-                            Type = StructureType.MegaWreck,
-                            Center = definition.Center,
-                            Size = definition.Size,
-                            Fade01 = 0f
-                        };
-                        _hlodRegistrySnapshot[writeIndex] = entry;
-                        registrySnapshot[writeIndex] = entry;
-                        writeIndex++;
-                    }
-                }
-
-                for (int i = 0; i < _persistentArtificialStructureCount; i++)
-                {
-                    PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
-                    if (!ShouldRegisterHLOD(structure.Bounds.center, structure.Bounds.size, in viewerAup))
+                    MegaWreckDefinition definition = megaWreckDefinitions[i];
+                    if (!ShouldRegisterHLOD(definition.Center, definition.Size, in viewerAup))
                         continue;
 
-                    HLODData entry = new HLODData
+                    _hlodRegistrySnapshot[writeIndex] = new HLODData
                     {
-                        StructureId = structure.StructureId,
-                        Type = structure.Type,
-                        Center = structure.Bounds.center,
-                        Size = structure.Bounds.size,
+                        StructureId = definition.WreckId,
+                        Type = StructureType.MegaWreck,
+                        Center = definition.Center,
+                        Size = definition.Size,
                         Fade01 = 0f
                     };
-                    _hlodRegistrySnapshot[writeIndex] = entry;
-                    registrySnapshot[writeIndex] = entry;
                     writeIndex++;
                 }
             }
-            finally
+
+            for (int i = 0; i < _persistentArtificialStructureCount; i++)
             {
-                registryVault.ReleaseWriteLock(
-                    in _nativeMemory.HlodRegistrySnapshotHandle,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+                PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
+                if (!ShouldRegisterHLOD(structure.Bounds.center, structure.Bounds.size, in viewerAup))
+                    continue;
+
+                _hlodRegistrySnapshot[writeIndex] = new HLODData
+                {
+                    StructureId = structure.StructureId,
+                    Type = structure.Type,
+                    Center = structure.Bounds.center,
+                    Size = structure.Bounds.size,
+                    Fade01 = 0f
+                };
+                writeIndex++;
+            }
+
+            _hlodRegistryCount = writeIndex;
+            if (writeIndex <= 0 || !TryMirrorHLODRegistrySnapshotToVault())
+            {
+                _hlodRegistryCount = 0;
+                _visibleHlodCount = 0;
             }
         }
 
@@ -1555,6 +1514,8 @@ namespace Hecton8.World
             EnsureAbyssalPathBuffers(fixedNodeCapacity);
             EnsureVector3Capacity(ref _abyssalPathSnapshot, fixedPathCapacity);
             EnsureAbyssalPathSnapshotHandle(fixedPathCapacity);
+            EnsureAbyssalPathTelemetryDumpPayloadCold();
+            EnsureAbyssalPathTelemetry();
         }
 
         private bool EnsureAbyssalNavSnapshotHandles(int requiredCapacity)
@@ -1634,6 +1595,8 @@ namespace Hecton8.World
 
         private bool TryCreateAbyssalNavJobSnapshot(
             int requiredCount,
+            ref IDataVault readPinVault,
+            ref uint readPinMask,
             out NativeArray<Vector3> nodes,
             out NativeArray<byte> nodeTypes,
             out NativeArray<Vector3> conduitVectors,
@@ -1643,61 +1606,54 @@ namespace Hecton8.World
             nodeTypes = default;
             conduitVectors = default;
             conduitStrengths = default;
-            if (requiredCount <= 0 ||
-                !TryReadOnlyVegetationMemoryBuffer(
+            if (requiredCount <= 0)
+                return false;
+
+            if (!TryLockAbyssalPathReadBuffer(
+                    BufferID.VegetationAbyssalNavNodeSnapshot,
+                    AbyssalPathPinNavNodes,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryLockAbyssalPathReadBuffer(
+                    BufferID.VegetationAbyssalNavNodeTypes,
+                    AbyssalPathPinNavNodeTypes,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryLockAbyssalPathReadBuffer(
+                    BufferID.VegetationAbyssalNavConduitVectors,
+                    AbyssalPathPinConduitVectors,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryLockAbyssalPathReadBuffer(
+                    BufferID.VegetationAbyssalNavConduitStrengths,
+                    AbyssalPathPinConduitStrengths,
+                    ref readPinVault,
+                    ref readPinMask) ||
+                !TryReadVegetationMemoryBuffer(
                     in _nativeMemory.AbyssalNavNodeSnapshotHandle,
                     BufferID.VegetationAbyssalNavNodeSnapshot,
                     requiredCount,
-                    out NativeArray<Vector3>.ReadOnly sourceNodes) ||
-                !TryReadOnlyVegetationMemoryBuffer(
+                    out nodes) ||
+                !TryReadVegetationMemoryBuffer(
                     in _nativeMemory.AbyssalNavNodeTypesHandle,
                     BufferID.VegetationAbyssalNavNodeTypes,
                     requiredCount,
-                    out NativeArray<byte>.ReadOnly sourceNodeTypes) ||
-                !TryReadOnlyVegetationMemoryBuffer(
+                    out nodeTypes) ||
+                !TryReadVegetationMemoryBuffer(
                     in _nativeMemory.AbyssalNavConduitVectorsHandle,
                     BufferID.VegetationAbyssalNavConduitVectors,
                     requiredCount,
-                    out NativeArray<Vector3>.ReadOnly sourceConduitVectors) ||
-                !TryReadOnlyVegetationMemoryBuffer(
+                    out conduitVectors) ||
+                !TryReadVegetationMemoryBuffer(
                     in _nativeMemory.AbyssalNavConduitStrengthsHandle,
                     BufferID.VegetationAbyssalNavConduitStrengths,
                     requiredCount,
-                    out NativeArray<float>.ReadOnly sourceConduitStrengths))
+                    out conduitStrengths) ||
+                nodes.Length < requiredCount ||
+                nodeTypes.Length < requiredCount ||
+                conduitVectors.Length < requiredCount ||
+                conduitStrengths.Length < requiredCount)
             {
-                return false;
-            }
-
-            nodes = H8Memory.Allocate<Vector3>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            nodeTypes = H8Memory.Allocate<byte>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            conduitVectors = H8Memory.Allocate<Vector3>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            conduitStrengths = H8Memory.Allocate<float>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-
-            if (!nodes.IsCreated ||
-                !nodeTypes.IsCreated ||
-                !conduitVectors.IsCreated ||
-                !conduitStrengths.IsCreated)
-            {
-                H8Memory.Release(ref nodes, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref nodeTypes, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref conduitVectors, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref conduitStrengths, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 RecordVegetationMemoryTelemetry(
                     BufferID.VegetationAbyssalNavNodeSnapshot,
                     _nativeMemory.AbyssalNavNodeSnapshotHandle.Generation,
@@ -1709,97 +1665,14 @@ namespace Hecton8.World
                     VegetationMemoryTelemetryPhase.SlowTick,
                     VegetationMemorySovereigntyConstants.FlagCapacity,
                     default);
+                nodes = default;
+                nodeTypes = default;
+                conduitVectors = default;
+                conduitStrengths = default;
                 return false;
-            }
-
-            for (int i = 0; i < requiredCount; i++)
-            {
-                nodes[i] = sourceNodes[i];
-                nodeTypes[i] = sourceNodeTypes[i];
-                conduitVectors[i] = sourceConduitVectors[i];
-                conduitStrengths[i] = sourceConduitStrengths[i];
             }
 
             return true;
-        }
-
-        private bool TryCreateAbyssalPathScratch(
-            int requiredCount,
-            out NativeArray<int> parents,
-            out NativeArray<float> gScore,
-            out NativeArray<float> fScore,
-            out NativeArray<byte> closedFlags,
-            out NativeArray<int> heapNodes,
-            out NativeArray<int> heapPositions)
-        {
-            parents = default;
-            gScore = default;
-            fScore = default;
-            closedFlags = default;
-            heapNodes = default;
-            heapPositions = default;
-            if (requiredCount <= 0)
-                return false;
-
-            parents = H8Memory.Allocate<int>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            gScore = H8Memory.Allocate<float>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            fScore = H8Memory.Allocate<float>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            closedFlags = H8Memory.Allocate<byte>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            heapNodes = H8Memory.Allocate<int>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            heapPositions = H8Memory.Allocate<int>(
-                requiredCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-
-            if (parents.IsCreated &&
-                gScore.IsCreated &&
-                fScore.IsCreated &&
-                closedFlags.IsCreated &&
-                heapNodes.IsCreated &&
-                heapPositions.IsCreated)
-            {
-                return true;
-            }
-
-            H8Memory.Release(ref parents, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref gScore, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref fScore, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref closedFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref heapNodes, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref heapPositions, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            RecordVegetationMemoryTelemetry(
-                BufferID.VegetationAbyssalPathSnapshot,
-                _nativeMemory.AbyssalPathSnapshotHandle.Generation,
-                requiredCount,
-                0,
-                0,
-                0f,
-                VegetationMemoryTelemetryCode.VaultResolveFailed,
-                VegetationMemoryTelemetryPhase.SlowTick,
-                VegetationMemorySovereigntyConstants.FlagCapacity,
-                default);
-            return false;
         }
 
         private bool TryMirrorAbyssalNavSnapshotsToVault(int requiredCount)
@@ -1953,6 +1826,186 @@ namespace Hecton8.World
 
             EnsureVector3Capacity(ref _abyssalPathSnapshot, fixedPathCapacity);
             EnsureAbyssalPathSnapshotHandle(fixedPathCapacity);
+            EnsureAbyssalPathStagingHandles(nodeCount, fixedPathCapacity, 0);
+            return true;
+        }
+
+        private bool EnsureAbyssalPathStagingHandles(int nodeCapacity, int fixedPathCapacity, int extraCapacity)
+        {
+            IDataVault vault = _vegetationMemoryVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            int stagingPointSize = UnsafeUtility.SizeOf<AbyssalPathStagingPoint>();
+            if (stagingPointSize != 64 || (stagingPointSize & 7) != 0)
+                return false;
+
+            int capacity = math.max(math.max(2, fixedPathCapacity), math.max(math.max(1, nodeCapacity), math.max(1, extraCapacity)));
+            _nativeMemory.AbyssalPathStagingHandle =
+                vault.EnsureGenerationHandle<AbyssalPathStagingPoint>(
+                    BufferID.VegetationAbyssalPathStagingPacked,
+                    capacity,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    NativeArrayOptions.UninitializedMemory);
+
+            return IsExactVegetationMemoryHandle(
+                in _nativeMemory.AbyssalPathStagingHandle,
+                BufferID.VegetationAbyssalPathStagingPacked);
+        }
+
+        private bool TryAcquireAbyssalPathStagingBuffer(
+            int nodeCapacity,
+            int fixedPathCapacity,
+            int extraCapacity,
+            out IDataVault vault,
+            out NativeArray<AbyssalPathStagingPoint> pathStaging)
+        {
+            vault = null;
+            pathStaging = default;
+            if (!EnsureAbyssalPathStagingHandles(nodeCapacity, fixedPathCapacity, extraCapacity))
+                return false;
+
+            return TryAcquireVegetationMemoryBuffer(
+                ref _nativeMemory.AbyssalPathStagingHandle,
+                BufferID.VegetationAbyssalPathStagingPacked,
+                math.max(math.max(2, fixedPathCapacity), math.max(math.max(1, nodeCapacity), math.max(1, extraCapacity))),
+                NativeArrayOptions.UninitializedMemory,
+                out vault,
+                out pathStaging);
+        }
+
+        private void ReleaseAbyssalPathStagingWriteLock(IDataVault vault)
+        {
+            if (vault == null || !IsExactVegetationMemoryHandle(in _nativeMemory.AbyssalPathStagingHandle, BufferID.VegetationAbyssalPathStagingPacked))
+                return;
+
+            vault.ReleaseWriteLock(in _nativeMemory.AbyssalPathStagingHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+        }
+
+        private bool TryLockAbyssalPathReadBuffer(
+            BufferID bufferId,
+            uint pinBit,
+            ref IDataVault readPinVault,
+            ref uint readPinMask)
+        {
+            return TryPinVegetationReadBuffer(bufferId, pinBit, ref readPinVault, ref readPinMask);
+        }
+
+        private static void ReleaseAbyssalPathReadPins(IDataVault vault, uint pinMask)
+        {
+            if (vault == null || pinMask == 0u)
+                return;
+
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinPredatorFear, BufferID.VegetationPredatorFearNodeSnapshot);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinNavNodes, BufferID.VegetationAbyssalNavNodeSnapshot);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinNavNodeTypes, BufferID.VegetationAbyssalNavNodeTypes);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinConduitVectors, BufferID.VegetationAbyssalNavConduitVectors);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinConduitStrengths, BufferID.VegetationAbyssalNavConduitStrengths);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinThreatGrid, BufferID.VegetationEcosystemThreatGrid);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinThreatVoxel, BufferID.VegetationEcosystemThreatVoxel);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinArtificialStructures, BufferID.VegetationArtificialStructureRecords);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinTerrainHoles, BufferID.VegetationTerrainHoleRecords);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinDensityChunks, BufferID.VegetationDensityQueryChunks);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinDensityGrid, BufferID.VegetationDensityQueryGrid);
+            TryUnlockAbyssalPathReadPin(vault, pinMask, AbyssalPathPinThreatAttractorGrid, BufferID.VegetationThreatAttractorGrid);
+        }
+
+        private static void ReleaseAbyssalPathReadPin(IDataVault vault, uint pinBit, BufferID bufferId, ref uint pinMask)
+        {
+            if (vault == null || (pinMask & pinBit) == 0u)
+                return;
+
+            vault.TryUnlockBuffer(bufferId, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            pinMask &= ~pinBit;
+        }
+
+        private static void TryUnlockAbyssalPathReadPin(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, VegetationMemorySovereigntyConstants.OwnerSystemId);
+        }
+
+        private static void ResetAbyssalPathStaging(NativeArray<AbyssalPathStagingPoint> staging)
+        {
+            if (!staging.IsCreated || staging.Length <= 0)
+                return;
+
+            AbyssalPathStagingPoint meta = staging[0];
+            meta.RawCount = 0;
+            meta.ResultCount = 0;
+            meta.RawFlags = 0;
+            meta.ResultFlags = 0;
+            staging[0] = meta;
+        }
+
+        private static int ResolveAbyssalPathCapacity(NativeArray<AbyssalPathStagingPoint> staging, int pathCapacity)
+        {
+            if (!staging.IsCreated || staging.Length <= 0)
+                return 0;
+
+            int requestedCapacity = pathCapacity > 0 ? pathCapacity : staging.Length;
+            return math.clamp(requestedCapacity, 0, staging.Length);
+        }
+
+        private static int ReadAbyssalRawPathCount(NativeArray<AbyssalPathStagingPoint> staging, int pathCapacity)
+        {
+            if (!staging.IsCreated || staging.Length <= 0)
+                return 0;
+
+            return math.clamp(staging[0].RawCount, 0, ResolveAbyssalPathCapacity(staging, pathCapacity));
+        }
+
+        private static int ReadAbyssalResultPathCount(NativeArray<AbyssalPathStagingPoint> staging, int pathCapacity)
+        {
+            if (!staging.IsCreated || staging.Length <= 0)
+                return 0;
+
+            return math.clamp(staging[0].ResultCount, 0, ResolveAbyssalPathCapacity(staging, pathCapacity));
+        }
+
+        private static uint ReadAbyssalPathFlags(NativeArray<AbyssalPathStagingPoint> staging)
+        {
+            if (!staging.IsCreated || staging.Length <= 0)
+                return 0u;
+
+            AbyssalPathStagingPoint meta = staging[0];
+            return unchecked((uint)(meta.RawFlags | meta.ResultFlags));
+        }
+
+        private static bool TryCopyManagedAbyssalPathToNative(
+            Vector3[] source,
+            int sourceCount,
+            int pathCapacity,
+            NativeArray<AbyssalPathStagingPoint> staging)
+        {
+            ResetAbyssalPathStaging(staging);
+            int safePathCapacity = ResolveAbyssalPathCapacity(staging, pathCapacity);
+            if (source == null ||
+                sourceCount <= 0 ||
+                !staging.IsCreated ||
+                safePathCapacity <= 0)
+            {
+                return false;
+            }
+
+            if (sourceCount > source.Length || sourceCount > safePathCapacity)
+            {
+                AbyssalPathStagingPoint overflowMeta = staging[0];
+                overflowMeta.RawFlags |= AbyssalPathOverflowFlag;
+                staging[0] = overflowMeta;
+                return false;
+            }
+
+            for (int i = 0; i < sourceCount; i++)
+            {
+                AbyssalPathStagingPoint entry = staging[i];
+                entry.Raw = source[i];
+                staging[i] = entry;
+            }
+
+            AbyssalPathStagingPoint meta = staging[0];
+            meta.RawCount = sourceCount;
+            staging[0] = meta;
             return true;
         }
 
@@ -1979,7 +2032,18 @@ namespace Hecton8.World
                     _lastAbyssalPathEndNode = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute ? pending.EndNode : -1;
                     _lastAbyssalPathTargetPosition = pending.TargetPosition;
                     _hasLastAbyssalPathTarget = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute;
-                    CommitAbyssalPathResult(pending.RawPath, pending.ResultPath, funnelMs);
+                    AbyssalPathCommitRecord commit = StageAbyssalPathResultForCommit(pending.PathStaging, pending.PathCapacity, funnelMs);
+                    ReleaseAbyssalPathStagingWriteLock(pending.PathStagingVault);
+                    pending.PathStagingVault = null;
+                    pending.PathStaging = default;
+                    if (commit.OutputCount > 0 && !PublishAbyssalPathSnapshotFromStagedResult(commit.OutputCount))
+                    {
+                        _abyssalPathCount = 0;
+                        commit.OutputCount = 0;
+                        commit.Flags |= 8u;
+                    }
+
+                    RecordAbyssalPathTelemetry(in commit);
                 }
             }
             finally
@@ -1991,36 +2055,68 @@ namespace Hecton8.World
             }
         }
 
-        private static void ReleaseAbyssalPathPendingJob(ref AbyssalPathPendingJob pending)
+        private void ReleaseAbyssalPathPendingJob(ref AbyssalPathPendingJob pending)
         {
-            H8Memory.Release(ref pending.DensityChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref pending.DensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref pending.TerrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref pending.ArtificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref pending.NavPassabilityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            H8Memory.Release(ref pending.ThreatVoxelGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-
-            if (pending.RawPath.IsCreated)
-                pending.RawPath.Dispose();
-            if (pending.ResultPath.IsCreated)
-                pending.ResultPath.Dispose();
+            ReleaseAbyssalPathStagingWriteLock(pending.PathStagingVault);
+            ReleaseAbyssalPathReadPins(pending.ReadPinVault, pending.ReadPinMask);
 
             pending = default;
         }
 
-        private bool CommitAbyssalPathResult(NativeList<Vector3> rawPath, NativeList<Vector3> resultPath, float funnelMs)
+        private AbyssalPathCommitRecord StageAbyssalPathResultForCommit(
+            NativeArray<AbyssalPathStagingPoint> pathStaging,
+            int pathCapacity,
+            float funnelMs)
         {
-            int rawPathCount = rawPath.IsCreated ? rawPath.Length : 0;
-            int resultCount = resultPath.IsCreated ? resultPath.Length : 0;
-            _abyssalPathCount = resultCount;
+            AbyssalPathCommitRecord commit = new AbyssalPathCommitRecord
+            {
+                FunnelMs = funnelMs,
+                Finite = true
+            };
+            int rawPathCount = ReadAbyssalRawPathCount(pathStaging, pathCapacity);
+            int resultCount = ReadAbyssalResultPathCount(pathStaging, pathCapacity);
+            commit.RawCount = rawPathCount;
+            commit.Flags = ReadAbyssalPathFlags(pathStaging);
             if (resultCount <= 0)
             {
-                RecordAbyssalPathTelemetry(funnelMs, rawPathCount, 0, default, default, true, rawPath);
-                return false;
+                TryResolveAbyssalRawPathTelemetry(pathStaging, pathCapacity, rawPathCount, out commit.Start, out commit.End, out commit.Finite);
+                return commit;
             }
 
-            EnsureVector3Capacity(ref _abyssalPathSnapshot, resultCount);
+            if (_abyssalPathSnapshot == null || _abyssalPathSnapshot.Length < resultCount)
+            {
+                commit.Flags |= 8u;
+                TryResolveAbyssalRawPathTelemetry(pathStaging, pathCapacity, rawPathCount, out commit.Start, out commit.End, out commit.Finite);
+                return commit;
+            }
+
+            int safeCount = math.min(resultCount, _abyssalPathSnapshot.Length);
+            if (!pathStaging.IsCreated || safeCount <= 0)
+            {
+                TryResolveAbyssalRawPathTelemetry(pathStaging, pathCapacity, rawPathCount, out commit.Start, out commit.End, out commit.Finite);
+                return commit;
+            }
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                Vector3 waypoint = pathStaging[i].Result;
+                if (i == 0)
+                    commit.Start = waypoint;
+                commit.End = waypoint;
+                if (!IsFinite(waypoint))
+                    commit.Finite = false;
+                _abyssalPathSnapshot[i] = waypoint;
+            }
+
+            commit.OutputCount = safeCount;
+            return commit;
+        }
+
+        private bool PublishAbyssalPathSnapshotFromStagedResult(int resultCount)
+        {
+            if (resultCount <= 0 || _abyssalPathSnapshot == null || _abyssalPathSnapshot.Length < resultCount)
+                return false;
+
             if (!TryAcquireVegetationMemoryBuffer(
                     ref _nativeMemory.AbyssalPathSnapshotHandle,
                     BufferID.VegetationAbyssalPathSnapshot,
@@ -2029,30 +2125,17 @@ namespace Hecton8.World
                     out IDataVault pathVault,
                     out NativeArray<Vector3> pathSnapshot))
             {
-                _abyssalPathCount = 0;
-                RecordAbyssalPathTelemetry(funnelMs, rawPathCount, 0, default, default, true, rawPath);
                 return false;
             }
 
-            Vector3 start = default;
-            Vector3 end = default;
-            bool finite = true;
             try
             {
                 int safeCount = math.min(resultCount, pathSnapshot.Length);
                 for (int i = 0; i < safeCount; i++)
-                {
-                    Vector3 waypoint = resultPath[i];
-                    if (i == 0)
-                        start = waypoint;
-                    end = waypoint;
-                    if (!IsFinite(waypoint))
-                        finite = false;
-                    _abyssalPathSnapshot[i] = waypoint;
-                    pathSnapshot[i] = waypoint;
-                }
+                    pathSnapshot[i] = _abyssalPathSnapshot[i];
 
                 _abyssalPathCount = safeCount;
+                return safeCount > 0;
             }
             finally
             {
@@ -2060,9 +2143,6 @@ namespace Hecton8.World
                     in _nativeMemory.AbyssalPathSnapshotHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
-
-            RecordAbyssalPathTelemetry(funnelMs, rawPathCount, _abyssalPathCount, start, end, finite, rawPath);
-            return _abyssalPathCount > 0;
         }
 
         private bool EnsureAbyssalPathSnapshotHandle(int requiredCapacity)
@@ -2094,7 +2174,7 @@ namespace Hecton8.World
                 telemetry.IsCreated &&
                 telemetry.Length >= AbyssalPathTelemetryFrameCount)
             {
-                return true;
+                return IsAbyssalPathTelemetryDumpPayloadReady();
             }
 
             if (IsAbyssalPathTelemetryHandleCreated())
@@ -2109,15 +2189,68 @@ namespace Hecton8.World
             _abyssalPathTelemetryWrittenCount = 0;
             _abyssalPathTelemetrySequence = 0;
             _abyssalPathTelemetryDumpedForFault = false;
-            return IsAbyssalPathTelemetryHandleCreated();
+            return IsAbyssalPathTelemetryHandleCreated() &&
+                   IsAbyssalPathTelemetryDumpPayloadReady();
+        }
+
+        private bool EnsureAbyssalPathTelemetryDumpPayloadCold()
+        {
+            if (_abyssalPathTelemetryDumpPayload.IsCreated &&
+                _abyssalPathTelemetryDumpPayload.Length >= AbyssalPathTelemetryDumpPayloadBytes)
+            {
+                return true;
+            }
+
+            DisposeNativeArray(ref _abyssalPathTelemetryDumpPayload);
+
+            _abyssalPathTelemetryDumpPayload = new NativeArray<byte>(
+                AbyssalPathTelemetryDumpPayloadBytes,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _abyssalPathTelemetryDumpPayload,
+                NativeMemoryOwner,
+                nameof(_abyssalPathTelemetryDumpPayload),
+                NativeMemoryLifetime);
+            return _abyssalPathTelemetryDumpPayload.IsCreated &&
+                   _abyssalPathTelemetryDumpPayload.Length >= AbyssalPathTelemetryDumpPayloadBytes;
+        }
+
+        private bool IsAbyssalPathTelemetryDumpPayloadReady()
+        {
+            return _abyssalPathTelemetryDumpPayload.IsCreated &&
+                   _abyssalPathTelemetryDumpPayload.Length >= AbyssalPathTelemetryDumpPayloadBytes;
         }
 
         private IDataVault CacheAbyssalPathTelemetryVaultCold()
         {
             if (_abyssalPathTelemetryVault == null)
-                _abyssalPathTelemetryVault = GlobalRegistry.DataVault;
+                _abyssalPathTelemetryVault = _vegetationMemoryVault;
 
             return _abyssalPathTelemetryVault;
+        }
+
+        private void RebindAbyssalPathTelemetryVaultCold(IDataVault currentVault)
+        {
+            IDataVault previousVault = _abyssalPathTelemetryVault;
+            if (previousVault != null && !ReferenceEquals(previousVault, currentVault))
+                ReleaseAbyssalPathTelemetryResources(previousVault);
+
+            _abyssalPathTelemetryVault = currentVault;
+            if (currentVault != null && IsAbyssalPathTelemetryDumpPayloadReady())
+                EnsureAbyssalPathTelemetry();
+        }
+
+        private void ReleaseAbyssalPathTelemetryResources(IDataVault vault)
+        {
+            if (vault != null && IsAbyssalPathTelemetryHandleCreated())
+                vault.ReleaseBuffer(in _abyssalPathTelemetryHandle);
+
+            _abyssalPathTelemetryHandle = default;
+            _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetryWrittenCount = 0;
+            _abyssalPathTelemetrySequence = 0;
+            _abyssalPathTelemetryDumpedForFault = false;
         }
 
         private bool IsAbyssalPathTelemetryHandleCreated()
@@ -2134,31 +2267,17 @@ namespace Hecton8.World
             return (float)(elapsedTicks * 1000.0 * math.rcp((double)Stopwatch.Frequency));
         }
 
-        private void RecordAbyssalPathTelemetry(
-            float funnelMs,
-            int rawCount,
-            int outputCount,
-            Vector3 start,
-            Vector3 end,
-            bool finite,
-            NativeList<Vector3> rawPath)
+        private void RecordAbyssalPathTelemetry(in AbyssalPathCommitRecord commit)
         {
             if (!EnsureAbyssalPathTelemetry())
                 return;
 
-            if (outputCount <= 0 &&
-                TryResolveAbyssalRawPathTelemetry(rawPath, rawCount, out Vector3 rawStart, out Vector3 rawEnd, out bool rawFinite))
-            {
-                start = rawStart;
-                end = rawEnd;
-                finite = rawFinite;
-            }
-
             uint flags = 0u;
-            if (outputCount <= 0)
+            if (commit.OutputCount <= 0)
                 flags |= 2u;
-            if (!finite)
+            if (!commit.Finite)
                 flags |= 4u;
+            flags |= commit.Flags;
 
             IDataVault vault = _abyssalPathTelemetryVault;
             if (vault == null)
@@ -2175,17 +2294,17 @@ namespace Hecton8.World
                 telemetry[_abyssalPathTelemetryCursor] = new AbyssalPathTelemetryEntry
                 {
                     Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                    RawCount = rawCount,
-                    OutputCount = outputCount,
+                    RawCount = commit.RawCount,
+                    OutputCount = commit.OutputCount,
                     PortalLookAhead = _lastAbyssalPathPortalLookAhead,
                     MaxDdaSamples = _lastAbyssalPathMaxSamples,
-                    FunnelMs = funnelMs,
-                    StartX = start.x,
-                    StartY = start.y,
-                    StartZ = start.z,
-                    EndX = end.x,
-                    EndY = end.y,
-                    EndZ = end.z,
+                    FunnelMs = commit.FunnelMs,
+                    StartX = commit.Start.x,
+                    StartY = commit.Start.y,
+                    StartZ = commit.Start.z,
+                    EndX = commit.End.x,
+                    EndY = commit.End.y,
+                    EndZ = commit.End.z,
                     Flags = flags,
                     Sequence = _abyssalPathTelemetrySequence
                 };
@@ -2202,10 +2321,10 @@ namespace Hecton8.World
                 vault.ReleaseWriteLock(in _abyssalPathTelemetryHandle, AbyssalPathTelemetryOwner);
             }
 
-            if (funnelMs > 0.1f)
-                GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathOverBudgetHash, AbyssalPathTelemetryContextHash, funnelMs);
+            if (commit.FunnelMs > 0.1f)
+                GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathOverBudgetHash, AbyssalPathTelemetryContextHash, commit.FunnelMs);
 
-            if (!finite)
+            if (!commit.Finite)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathNanFaultHash, AbyssalPathTelemetryContextHash, flags);
                 DumpAbyssalPathTelemetry(AbyssalPathNanFaultHash);
@@ -2250,21 +2369,27 @@ namespace Hecton8.World
             return IsFiniteAup(in positionAup);
         }
 
-        private static bool TryResolveAbyssalRawPathTelemetry(NativeList<Vector3> rawPath, int rawCount, out Vector3 start, out Vector3 end, out bool finite)
+        private static bool TryResolveAbyssalRawPathTelemetry(
+            NativeArray<AbyssalPathStagingPoint> pathStaging,
+            int pathCapacity,
+            int rawCount,
+            out Vector3 start,
+            out Vector3 end,
+            out bool finite)
         {
             start = default;
             end = default;
             finite = true;
-            if (!rawPath.IsCreated || rawCount <= 0)
+            if (!pathStaging.IsCreated || rawCount <= 0)
                 return false;
 
-            int count = math.min(rawCount, rawPath.Length);
+            int count = math.min(rawCount, ReadAbyssalRawPathCount(pathStaging, pathCapacity));
             if (count <= 0)
                 return false;
 
             for (int i = 0; i < count; i++)
             {
-                Vector3 waypoint = rawPath[i];
+                Vector3 waypoint = pathStaging[i].Raw;
                 if (i == 0)
                     start = waypoint;
                 end = waypoint;
@@ -2287,11 +2412,16 @@ namespace Hecton8.World
                 return;
             }
 
-            const int HeaderBytes = 20;
-            const int RowBytes = 56;
             int validEntryCount = math.clamp(_abyssalPathTelemetryWrittenCount, 0, AbyssalPathTelemetryFrameCount);
-            int totalBytes = HeaderBytes + validEntryCount * RowBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            int totalBytes = AbyssalPathTelemetryDumpHeaderBytes + validEntryCount * AbyssalPathTelemetryDumpRowBytes;
+            if (!_abyssalPathTelemetryDumpPayload.IsCreated ||
+                _abyssalPathTelemetryDumpPayload.Length < AbyssalPathTelemetryDumpPayloadBytes ||
+                totalBytes > _abyssalPathTelemetryDumpPayload.Length)
+            {
+                return;
+            }
+
+            NativeArray<byte> payload = _abyssalPathTelemetryDumpPayload;
             try
             {
                 WriteUInt32LittleEndian(payload, 0, reasonHash);
@@ -2309,7 +2439,7 @@ namespace Hecton8.World
                         entryIndex -= AbyssalPathTelemetryFrameCount;
 
                     AbyssalPathTelemetryEntry entry = telemetry[entryIndex];
-                    int offset = HeaderBytes + dumpOffset * RowBytes;
+                    int offset = AbyssalPathTelemetryDumpHeaderBytes + dumpOffset * AbyssalPathTelemetryDumpRowBytes;
                     WriteInt32LittleEndian(payload, offset, entry.Frame);
                     WriteInt32LittleEndian(payload, offset + 4, entry.RawCount);
                     WriteInt32LittleEndian(payload, offset + 8, entry.OutputCount);
@@ -2339,11 +2469,6 @@ namespace Hecton8.World
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathNanFaultHash, AbyssalPathTelemetryContextHash, exception.HResult);
             }
-            finally
-            {
-                if (payload.IsCreated)
-                    payload.Dispose();
-            }
         }
 
         private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
@@ -2370,11 +2495,11 @@ namespace Hecton8.World
                 CompleteAbyssalPathJob(forceComplete: true);
             ReleaseAbyssalPathPendingJob(ref _abyssalPathJob);
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.AbyssalPathSnapshotHandle);
+            ReleaseVegetationMemoryBuffer(ref _nativeMemory.AbyssalPathStagingHandle);
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.PredatorFearNodesSnapshotHandle);
-            IDataVault telemetryVault = _abyssalPathTelemetryVault;
-            if (telemetryVault != null && IsAbyssalPathTelemetryHandleCreated())
-                telemetryVault.ReleaseBuffer(in _abyssalPathTelemetryHandle);
-            _abyssalPathTelemetryHandle = default;
+            ReleaseAbyssalPathTelemetryResources(_abyssalPathTelemetryVault);
+            DisposeNativeArray(ref _abyssalPathTelemetryDumpPayload);
+            _abyssalPathTelemetryVault = null;
             _abyssalPathHandle = default;
             _abyssalPathScheduled = false;
             _abyssalPathCount = 0;
@@ -2521,58 +2646,6 @@ namespace Hecton8.World
                 vault.ReleaseWriteLock(
                     in _nativeMemory.AbyssalPathSnapshotHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
-            }
-        }
-
-        private void BuildFlowFieldNavSupportGrid(NativeArray<float> navSupportGrid, Vector3 gridCenter)
-        {
-            if (!navSupportGrid.IsCreated ||
-                navSupportGrid.Length < _ecosystemThreatGridCellCount ||
-                _ecosystemThreatGridResolution <= 0 ||
-                _abyssalNavNodeCount <= 0 ||
-                threatGridCellSize <= 0f ||
-                !math.isfinite(threatGridCellSize) ||
-                !IsFinite(gridCenter))
-            {
-                return;
-            }
-
-            int halfExtent = _ecosystemThreatGridResolution >> 1;
-            int stencilRadius = math.max(0, flowFieldNavStencilRadiusCells);
-            float inverseThreatGridCellSize = math.rcp(math.max(0.0001f, threatGridCellSize));
-            float supportRadius = math.max(1f, stencilRadius + 0.25f);
-            float inverseSupportRadiusSq = math.rcp(math.max(1f, supportRadius * supportRadius));
-            for (int i = 0; i < _abyssalNavNodeCount; i++)
-            {
-                Vector3 node = _abyssalNavNodeSnapshot[i];
-                if (!IsFinite(node))
-                    continue;
-
-                int centerX = (int)math.round((node.x - gridCenter.x) * inverseThreatGridCellSize) + halfExtent;
-                int centerZ = (int)math.round((node.z - gridCenter.z) * inverseThreatGridCellSize) + halfExtent;
-                if (centerX < 0 || centerZ < 0 || centerX >= _ecosystemThreatGridResolution || centerZ >= _ecosystemThreatGridResolution)
-                    continue;
-
-                for (int offsetZ = -stencilRadius; offsetZ <= stencilRadius; offsetZ++)
-                {
-                    int cellZ = centerZ + offsetZ;
-                    if (cellZ < 0 || cellZ >= _ecosystemThreatGridResolution)
-                        continue;
-
-                    for (int offsetX = -stencilRadius; offsetX <= stencilRadius; offsetX++)
-                    {
-                        int cellX = centerX + offsetX;
-                        if (cellX < 0 || cellX >= _ecosystemThreatGridResolution)
-                            continue;
-
-                        float distanceSq = (offsetX * offsetX) + (offsetZ * offsetZ);
-                        float support01 = 1f - math.saturate(distanceSq * inverseSupportRadiusSq);
-                        int index = (cellZ * _ecosystemThreatGridResolution) + cellX;
-                        float clampedSupport = math.saturate(support01);
-                        if (navSupportGrid[index] < clampedSupport)
-                            navSupportGrid[index] = clampedSupport;
-                    }
-                }
             }
         }
 

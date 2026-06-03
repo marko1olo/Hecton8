@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P296_ABYSSAL_MACHINE_FIELD_WARNING",
+    "P297_ATLAS_BASIN_PRESSURE_GATE",
+    "P298_FACTORY_TEMPLE_ENTRY_FRAGMENT",
+    "P299_PAYLOAD_AUTHORITY_LAST_CHECK",
+    "P300_NO_CLEAN_ENDING_DOSSIER_NOTE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS060_FINAL_DESCENT_ROUTE_FRAGMENTS.packets.json"
+  ]
+}

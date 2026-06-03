@@ -1,0 +1,1315 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "TEXT_EXPANSION_GT_1_35": 137
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Блок native-review для русского",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: RU Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: CJK Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: Wrong direction can turn a warning into noise.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: RTL Review Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Direction is a system, not a decoration.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Блок review для европейских языков",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: A longer word is allowed. A hidden field is not.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: EU Loc Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Блок review для субтитров и аудио",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JP LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "CN LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UA LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KR LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC HOLD: If the player cannot act on it, keep it quiet.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Subtitle Audio Gate",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: A caption can spoil more than a voice.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [
+    {
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json",
+      "change": "shortened draft native-pass prefix"
+    },
+    {
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json",
+      "change": "shortened title review-lock labels"
+    }
+  ],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5312228270209703867}
   - component: {fileID: 8304220217644253282}
+  - component: {fileID: 8983700618223465114}
   m_Layer: 0
   m_Name: GEN_family_coral_low__spread
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6888786279405320980}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.026926517, y: 0.21763097, z: -0.04332292}
-  m_Size: 2.9203033
+  m_LocalReferencePoint: {x: 0.027350545, y: 0.2176478, z: -0.04330647}
+  m_Size: 2.9191697
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 5617427302589384293}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8983700618223465114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6888786279405320980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 62bb2a67f625f6e4fa3f0746efe2e661, type: 2}

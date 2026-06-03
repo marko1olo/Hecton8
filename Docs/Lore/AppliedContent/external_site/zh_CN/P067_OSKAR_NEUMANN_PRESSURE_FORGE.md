@@ -1,30 +1,37 @@
 ---
 packet_id: P067_OSKAR_NEUMANN_PRESSURE_FORGE
+release_set_id: RS014_COLONY_RETURN_WINDOWS
 article_id: hecton8.oskar_neumann_pressure_forge
+unlock_id: unlock.first_oskar_neumann_pressure_forge
+poi_tags: poi.pressure_forge;poi.clamp_ring_jig
+biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: zh_CN
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Oskar Neumann Pressure Forge
 
-Draft CN localization pending native pass. Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
+Oskar Neumann Pressure Forge is the fabrication article for HECTON-8 escape logic: the player must build an ascent path from pressure-world craft, not find a generic rocket key.
 
 ## Scanner
 
-Draft CN localization pending native pass. Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
+Oskar Neumann left a forge recipe for clamp rings strong enough to make the ascent cradle more than a coffin.
 
 ## Terminal
 
-Draft CN localization pending native pass. NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
+NEUMANN, O. Forge note: pressure glass dust ruins the first seal if mixed cold. Heat ring under vent draw, quench inside brine jacket, then test at twice ascent load.
 
 ## Audio
 
-Draft CN localization pending native pass. A launch is just a pressure door that moves upward. Build it like one.
+A launch is just a pressure door that moves upward. Build it like one.
 
 ## Field Note
 
-Draft CN localization pending native pass. The exit needs craft, not courage.
+The exit needs craft, not courage.
 
 <!-- External Site; generated from P067_OSKAR_NEUMANN_PRESSURE_FORGE/zh_CN. -->

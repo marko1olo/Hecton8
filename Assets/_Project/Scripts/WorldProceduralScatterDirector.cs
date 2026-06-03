@@ -3867,6 +3867,9 @@ namespace Hecton8.World
 
         private void InvalidateLayerRadiiCache()
         {
+            if (_memory == null)
+                return;
+
             _cachedLayerRadiiCellSize = -1f;
             _cachedLayerRadiiProfile = null;
             for (int i = 0; i < 8; i++)
@@ -4209,6 +4212,7 @@ namespace Hecton8.World
             if (generativeGeologyService != null || !createIfMissing)
                 return generativeGeologyService;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameObject root = GetOrCreateRoot();
             Transform serviceTransform = FindDirectChildByName(root.transform, "__GENERATIVE_GEOLOGY_SERVICE");
             if (serviceTransform == null)
@@ -4221,6 +4225,9 @@ namespace Hecton8.World
                 generativeGeologyService = serviceTransform.gameObject.AddComponent<WorldGenerativeGeologyService>();
 
             return generativeGeologyService;
+#else
+            return null;
+#endif
         }
 
         private static WorldGenerativeGeologyProfile ResolveEffectiveGenerativeGeologyProfile(WorldPrefabFamilyProfile family)
@@ -4231,6 +4238,7 @@ namespace Hecton8.World
             if (family.generativeGeologyProfile != null && family.generativeGeologyProfile.IsEnabled)
                 return family.generativeGeologyProfile;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             return family.proceduralDomain switch
             {
                 WorldPrefabFamilyProfile.ProceduralDomain.RockArch => GetOrCreateEmergencyGeologyProfile(
@@ -4258,6 +4266,9 @@ namespace Hecton8.World
                     WorldGenerativeGeologyProfile.ShapeArchetype.ComplexRock,
                     WorldGenerativeGeologyProfile.CompositionMode.PairedFeature)
             };
+#else
+            return null;
+#endif
         }
 
         private static WorldGenerativeGeologyProfile GetOrCreateEmergencyGeologyProfile(
@@ -4267,6 +4278,9 @@ namespace Hecton8.World
             WorldGenerativeGeologyProfile.ShapeArchetype archetype,
             WorldGenerativeGeologyProfile.CompositionMode compositionMode)
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return null;
+#else
             if (cachedProfile != null)
                 return cachedProfile;
 
@@ -4293,6 +4307,7 @@ namespace Hecton8.World
             cachedProfile.lodCount = 3;
             cachedProfile.lodScreenHeights = new Vector3(0.62f, 0.27f, 0.08f);
             return cachedProfile;
+#endif
         }
 
         private bool ShouldUseFinalVariant(ScatterPlacement placement)

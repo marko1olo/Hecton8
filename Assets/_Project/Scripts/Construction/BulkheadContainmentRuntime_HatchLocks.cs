@@ -27,7 +27,6 @@ namespace Hecton8.Construction
         [SerializeField, Range(0.05f, 3f)] private float safePressureDifferentialATM = HatchLockConstants.DefaultSafePressureDifferentialATM;
         [SerializeField, Range(0.01f, 0.95f)] private float structuralJamThreshold01 = HatchLockConstants.DefaultStructuralJamThreshold01;
         [SerializeField, Range(0.1f, 5f)] private float catastrophicPressureDifferentialATM = HatchLockConstants.DefaultCatastrophicPressureDifferentialATM;
-        [SerializeField] private bool generateMockHatchPressure;
         [SerializeField] private bool uploadHatchShaderBuffer = true;
 
         private VaultGenerationHandle<HatchStateDTO> _hatchStatesHandle;
@@ -35,7 +34,6 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<uint> _hatchTelemetryCursorHandle;
         private VaultGenerationHandle<HatchTuningDTO> _hatchTuningHandle;
         private VaultGenerationHandle<HatchHardwareProfileDTO> _hatchProfilesHandle;
-        private VaultGenerationHandle<FluidCompartmentDTO> _hatchMockFluidCompartmentsHandle;
         private VaultGenerationHandle<FluidCompartmentDTO> _hatchFluidCompartmentsHandle;
         private VaultGenerationHandle<StructuralIntegrityStateDTO> _hatchStructuralStatesHandle;
         private bool _hatchLayoutChecked;
@@ -215,12 +213,6 @@ namespace Hecton8.Construction
                 _hatchTuningHandle = vault.EnsureGenerationHandle<HatchTuningDTO>(BufferID.Shinobu343HatchTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             if (!IsBulkheadVaultHandle(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles))
                 _hatchProfilesHandle = vault.EnsureGenerationHandle<HatchHardwareProfileDTO>(BufferID.Shinobu343HatchProfiles, HatchLockConstants.ProfileCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsBulkheadVaultHandle(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments))
-                _hatchMockFluidCompartmentsHandle = vault.EnsureGenerationHandle<FluidCompartmentDTO>(
-                    BufferID.Shinobu343HatchMockFluidCompartments,
-                    safeCapacity * HatchLockConstants.MockFluidRowsPerHatch,
-                    OwnerSystemId,
-                    NativeArrayOptions.UninitializedMemory);
 
             return RefreshHatchLockVaultState(vault, safeCapacity, allowDefaultProfileLoad);
         }
@@ -238,8 +230,7 @@ namespace Hecton8.Construction
             int safeCapacity = math.clamp(capacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
             if (!Resolve(in _hatchStatesHandle, BufferID.Shinobu343HatchStates, out NativeArray<HatchStateDTO> hatches) ||
                 !Resolve(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing, out NativeArray<HatchTelemetryEntry> telemetry) ||
-                !Resolve(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, out NativeArray<HatchHardwareProfileDTO> profiles) ||
-                !Resolve(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments, out NativeArray<FluidCompartmentDTO> mockFluid))
+                !Resolve(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, out NativeArray<HatchHardwareProfileDTO> profiles))
             {
                 return false;
             }
@@ -247,11 +238,9 @@ namespace Hecton8.Construction
             if (!hatches.IsCreated ||
                 !telemetry.IsCreated ||
                 !profiles.IsCreated ||
-                !mockFluid.IsCreated ||
                 hatches.Length <= 0 ||
                 telemetry.Length <= 0 ||
-                profiles.Length <= 0 ||
-                mockFluid.Length <= 0)
+                profiles.Length <= 0)
             {
                 return false;
             }
@@ -457,39 +446,17 @@ namespace Hecton8.Construction
             TrackScheduledSimulationJob(handle);
 
             NativeArray<FluidCompartmentDTO> fluidCompartments = default;
-            bool useMockFluid = generateMockHatchPressure;
-            if (!useMockFluid &&
-                IsVaultHandleForBuffer(in _hatchFluidCompartmentsHandle, BufferID.ShinobuFluidCompartmentFront) &&
+            if (IsVaultHandleForBuffer(in _hatchFluidCompartmentsHandle, BufferID.ShinobuFluidCompartmentFront) &&
                 TryLockOptionalBulkheadJobPin(BufferID.ShinobuFluidCompartmentFront, BulkheadJobPinHatchFluidFront) &&
                 vault.TryReadHandle(in _hatchFluidCompartmentsHandle, out fluidCompartments) &&
                 fluidCompartments.IsCreated &&
                 fluidCompartments.Length > 0)
             {
-                useMockFluid = false;
+                // Real fluid compartment front buffer is the only pressure truth source.
             }
             else
             {
                 ReleaseOptionalBulkheadJobPin(BufferID.ShinobuFluidCompartmentFront, BulkheadJobPinHatchFluidFront);
-                useMockFluid = generateMockHatchPressure;
-            }
-
-            if (useMockFluid &&
-                Resolve(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments, out NativeArray<FluidCompartmentDTO> mockFluid) &&
-                mockFluid.IsCreated &&
-                mockFluid.Length >= activeCount * HatchLockConstants.MockFluidRowsPerHatch)
-            {
-                GenerateMockHatchPressureJob mockJob = new GenerateMockHatchPressureJob
-                {
-                    Hatches = (HatchStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(hatches),
-                    MockCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(mockFluid),
-                    HatchCount = activeCount,
-                    CompartmentCount = mockFluid.Length,
-                    Frame = frame,
-                    Seed = MockSeed
-                };
-                handle = mockJob.Schedule(activeCount, 32, handle);
-                TrackScheduledSimulationJob(handle);
-                fluidCompartments = mockFluid;
             }
 
             uint telemetryFlags = 0u;
@@ -1024,7 +991,6 @@ namespace Hecton8.Construction
                 ReleaseVaultHandle(vault, ref _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor);
                 ReleaseVaultHandle(vault, ref _hatchTuningHandle, BufferID.Shinobu343HatchTuning);
                 ReleaseVaultHandle(vault, ref _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles);
-                ReleaseVaultHandle(vault, ref _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments);
             }
 
             _hatchStatesHandle = default;
@@ -1032,7 +998,6 @@ namespace Hecton8.Construction
             _hatchTelemetryCursorHandle = default;
             _hatchTuningHandle = default;
             _hatchProfilesHandle = default;
-            _hatchMockFluidCompartmentsHandle = default;
             _hatchFluidCompartmentsHandle = default;
             _hatchStructuralStatesHandle = default;
         }

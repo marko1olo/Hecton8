@@ -13,9 +13,10 @@ This report compares the current root bible routes and selected mandate registry
 - OK AGENTS.md - 790 lines; GlobalQualityWeight, proof, acceptance, rejection.
 - OK PROJECT_BIBLES.md - 96 lines; GlobalQualityWeight, proof, acceptance, rejection.
 - OK .agents-skills\README.md - 116 lines; proof, rejection.
-- OK Docs\Actual Domains of Project.txt - 392 lines; GlobalQualityWeight, proof, rejection.
+- OK Docs\PROJECT_ATLAS.md - 221 lines; GlobalQualityWeight, proof.
+- OK Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md - 626 lines; GlobalQualityWeight, proof, rejection.
 
-Static weak-bible flags: .agents-skills\README.md, Docs\Actual Domains of Project.txt. These may still be acceptable if the clauses use domain-specific wording, but they require manual review.
+Static weak-bible flags: .agents-skills\README.md, Docs\PROJECT_ATLAS.md, Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md. These may still be acceptable if the clauses use domain-specific wording, but they require manual review.
 
 ## Mandates Matched
 
@@ -105,20 +106,22 @@ Static weak-bible flags: .agents-skills\README.md, Docs\Actual Domains of Projec
 - OK .agents-skills
 - OK AGENTS.md
 - OK PROJECT_BIBLES.md
-- OK Docs\Actual Domains of Project.txt
+- OK Docs\PROJECT_ATLAS.md
+- OK Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md
 
 ## Static Evidence Found
 
-Total matching files: 4. Showing first 80. Full list: _scans/00_mandate_registry_evidence_files.txt.
+Total matching files: 5. Showing first 80. Full list: _scans/00_mandate_registry_evidence_files.txt.
 
 - .agents-skills\README.md
 - AGENTS.md
-- Docs\Actual Domains of Project.txt
+- Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md
+- Docs\PROJECT_ATLAS.md
 - PROJECT_BIBLES.md
 
 ## Static Risk Suspects
 
-These are suspects, not confirmed defects. Runtime suspects need code review. Editor/tool suspects are legal only if they cannot execute in gameplay/player hot paths.
+These are raw static suspects, not confirmed defects. Current manual or line-level review files are the authority for classification where present; editor/tool suspects remain legal only if they cannot execute in gameplay/player hot paths.
 
 Runtime suspects:
 - None in configured scan.
@@ -126,27 +129,27 @@ Runtime suspects:
 Editor/tool/static suspects:
 Total editor/tool/static suspects: 22. Showing first 80. Full list: _scans/00_mandate_registry_editor_tool_risks.txt.
 
-- AGENTS.md:33:- Burst/Jobs are correct only when the work is batched, data-local, and completed by dispatcher-owned completion windows. Tiny jobs, noisy schedule/complete loops, same-frame readbacks, and hidden `.Complete()` calls require profiler proof or are rejected.
-- AGENTS.md:192:| Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
-- AGENTS.md:193:| Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / injected owner interfaces / cold GlobalRegistry lookup cached outside hot path |
-- AGENTS.md:194:| Coroutines | StartCoroutine / yield return new | ITickable state machine |
-- AGENTS.md:201:| Camera     | Camera.main | cached _mainCam |
-- AGENTS.md:204:| Renderer   | renderer.material (leak) · .materials (alloc) | MaterialPropertyBlock · sharedMaterials |
-- AGENTS.md:232:[FORBID] StartCoroutine in gameplay code (~100 B alloc per call).
-- AGENTS.md:254:[FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
-- AGENTS.md:256:[REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
-- AGENTS.md:257:[FORBID] Naked Debug.Log/Warning/Error in hot paths. [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames). Binary export on crash.[REQ] Development Build — check Console for log spam before each milestone.
-- AGENTS.md:283:[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: Deferred disposal ONLY. array.Dispose(activeHandle); array = default;[FORBID] Calling .Complete() on teardown.
-- AGENTS.md:284:[REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
-- AGENTS.md:299:[FORBID] Calling .Complete() on a JobHandle just to call .Dispose() on the next line. This causes Main Thread stalls. If you can't dispose asynchronously, you are failing the architecture.
-- AGENTS.md:304:[FORBID] JobHandle.Complete() in mid-frame hot paths. ZERO EXCEPTIONS. Only permitted in designated end-of-frame swap windows.
-- AGENTS.md:356:- Renderer.materials — use sharedMaterials or cache
-- AGENTS.md:512:? StartCoroutine?             ? ITickable state machine
-- AGENTS.md:514:? renderer.material?          ? MaterialPropertyBlock
-- AGENTS.md:525:? Camera.main in hot path?         ? cache
-- AGENTS.md:526:? Debug.Log without #if guard?     ? wrap
-- AGENTS.md:547:? jobHandle.Complete() before Dispose()? ? verify order
-- AGENTS.md:548:? Renderer.materials (alloc)?     ? sharedMaterials
+- AGENTS.md:32:- Burst/Jobs are correct only when the work is batched, data-local, and completed by dispatcher-owned completion windows. Tiny jobs, noisy schedule/complete loops, same-frame readbacks, and hidden `.Complete()` calls require profiler proof or are rejected.
+- AGENTS.md:191:| Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
+- AGENTS.md:192:| Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / injected owner interfaces / cold GlobalRegistry lookup cached outside hot path |
+- AGENTS.md:193:| Coroutines | StartCoroutine / yield return new | ITickable state machine |
+- AGENTS.md:200:| Camera     | Camera.main | cached _mainCam |
+- AGENTS.md:203:| Renderer   | renderer.material (leak) · .materials (alloc) | MaterialPropertyBlock · sharedMaterials |
+- AGENTS.md:231:[FORBID] StartCoroutine in gameplay code (~100 B alloc per call).
+- AGENTS.md:253:[FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
+- AGENTS.md:255:[REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
+- AGENTS.md:256:[FORBID] Naked Debug.Log/Warning/Error in hot paths. [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames). Binary export on crash.[REQ] Development Build — check Console for log spam before each milestone.
+- AGENTS.md:282:[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: Deferred disposal ONLY. array.Dispose(activeHandle); array = default;[FORBID] Calling .Complete() on teardown.
+- AGENTS.md:283:[REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
+- AGENTS.md:298:[FORBID] Calling .Complete() on a JobHandle just to call .Dispose() on the next line. This causes Main Thread stalls. If you can't dispose asynchronously, you are failing the architecture.
+- AGENTS.md:303:[FORBID] JobHandle.Complete() in mid-frame hot paths. ZERO EXCEPTIONS. Only permitted in designated end-of-frame swap windows.
+- AGENTS.md:355:- Renderer.materials — use sharedMaterials or cache
+- AGENTS.md:511:? StartCoroutine?             ? ITickable state machine
+- AGENTS.md:513:? renderer.material?          ? MaterialPropertyBlock
+- AGENTS.md:524:? Camera.main in hot path?         ? cache
+- AGENTS.md:525:? Debug.Log without #if guard?     ? wrap
+- AGENTS.md:546:? jobHandle.Complete() before Dispose()? ? verify order
+- AGENTS.md:547:? Renderer.materials (alloc)?     ? sharedMaterials
 - AGENTS.md:712:[FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.
 
 ## Exists / Missing / Required Proof

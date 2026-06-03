@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1145728022126199362}
   - component: {fileID: 3762975404802634111}
+  - component: {fileID: 4032904690687149237}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__pennant
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3231351368205398563}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.30327713, y: 3.7879238, z: 0.02739197}
-  m_Size: 7.5758476
+  m_LocalReferencePoint: {x: -0.30337477, y: 3.9021046, z: 0.026977181}
+  m_Size: 7.804209
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 9190681915542713240}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &4032904690687149237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3231351368205398563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: f3eb69679f4308241ab0df59005b0b82, type: 2}
 --- !u!1 &3277748880218510878
 GameObject:
   m_ObjectHideFlags: 0

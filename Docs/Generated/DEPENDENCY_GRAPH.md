@@ -18,7 +18,6 @@ No Unity import, Console, Play Mode, profiler, GC/memory, render, player-build, 
 - `Docs/DOC_GOVERNANCE.md`
 - `Docs/PROJECT_ATLAS.md`
 - `Docs/DEPENDENCY_GRAPH.md`
-- `Docs/Actual Domains of Project.txt`
 - `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
 - `Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
 - `Docs/Generated/DEPENDENCY_GRAPH.md`

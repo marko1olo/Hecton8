@@ -31,7 +31,7 @@ namespace Hecton8.AI
         private const int TelemetryCapacity = 300;
         private const uint TentacleStateActive = 1u << 0;
         private const uint TentacleStateGrabbing = 1u << 1;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
         private const string TelemetryDumpPayloadLabel = "leviathanTentacleTelemetryDumpPayload";
         private const ulong TelemetryDumpMagic = 0x484543544F4E3800UL;
         private const int TelemetryEntryPayloadBytes = 64;
@@ -51,6 +51,20 @@ namespace Hecton8.AI
         private const float DefaultSuctionPulseStrength = 0.16f;
         private const float DefaultGrabDamageAmount = 12f;
         private const float DefaultGrabDamageImpulse = 35f;
+        private const ulong TentacleVaultMutationGuardMask =
+            (1UL << ((int)BufferID.LeviathanTentaclePositions & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentaclePreviousPositions & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleRadius & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleSegmentMatrices & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleStretchFractions & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleConstraintCorrections & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleConstraintCorrectionCounts & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleRootPositions & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleTargetPositions & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleRootAups & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleTargetAups & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleStates & 31)) |
+            (1UL << ((int)BufferID.LeviathanTentacleTelemetryRing & 31));
 
         private static readonly int _MatrixBufferId = Shader.PropertyToID("_H8LeviathanTentacleMatrices");
         private static readonly int _RadiusBufferId = Shader.PropertyToID("_H8LeviathanTentacleRadius");
@@ -529,11 +543,14 @@ namespace Hecton8.AI
         private GraphicsBuffer _tentacleGlobalsBufferB;
         private GraphicsBuffer _activeTentacleGlobalsBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
+        private MaterialPropertyBlock _tentacleMaterialProperties;
         private Mesh _argsUploadMesh;
         private int _tentacleGlobalsUploadBufferIndex;
         private JobHandle _pendingSolverHandle;
         private IDataVault _dataVault;
         private IAbyssalFlowGpuReadModel _fluidRuntime;
+        private bool _solverMutationGuardHeld;
+        private IDataVault _solverMutationGuardVault;
 
         // COLD ALLOC: Vector3[8] - deterministic missing-socket local anchors - owner: LeviathanTentacleVerletSolver
         private readonly Vector3[] _fallbackRootOffsets = new Vector3[MaxTentacles];
@@ -573,6 +590,7 @@ namespace Hecton8.AI
         {
             _cachedTransform = transform;
             RefreshGraphicsCapabilitySnapshotCold();
+            EnsureTentacleMaterialPropertiesCold();
             BuildFallbackRootOffsets();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
@@ -586,6 +604,7 @@ namespace Hecton8.AI
 
             CompletePendingJob(force: true);
             RefreshGraphicsCapabilitySnapshotCold();
+            EnsureTentacleMaterialPropertiesCold();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedAllTentaclesFromSockets();
@@ -655,9 +674,16 @@ namespace Hecton8.AI
                     return;
                 }
 
-                _solverScheduled = false;
-                ApplyOriginShiftRebase(offset);
-                WriteTelemetryFrame();
+                try
+                {
+                    _solverScheduled = false;
+                    ApplyOriginShiftRebase(offset);
+                    WriteTelemetryFrame();
+                }
+                finally
+                {
+                    ReleaseTentacleMutationGuard();
+                }
                 return;
             }
 
@@ -700,56 +726,75 @@ namespace Hecton8.AI
         /// <param name="deltaTime">Scaled dispatcher delta time in seconds.</param>
         public void Tick(float deltaTime)
         {
-            if (_disposed || _solverScheduled || deltaTime <= 0f || !TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
+            if (_disposed || _solverScheduled || !math.isfinite(deltaTime) || deltaTime <= 0f)
                 return;
 
-            ApplyPendingOriginShiftRebase();
-            CaptureTentacleInputs(buffers);
-            ResolveFlowInput();
-            TryQueueGrabDamage(deltaTime, in buffers);
-            float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
-            float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
-            float safeMaxStretchLength = SanitizeFiniteMinInput(
-                maxStretchLength,
-                math.max(DefaultMaxStretchLength, safeRestLength * SegmentLastIndex),
-                safeRestLength * SegmentLastIndex);
-            float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
-            _globalQualityWeight = ResolveGlobalQualityWeight();
-            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime);
-            _solverTimeSeconds += safeDeltaTime;
-            if (_solverTimeSeconds > 4096f)
-                _solverTimeSeconds -= 4096f;
+            if (!TryEnterTentacleMutationGuard(out _, out bool acquiredGuard))
+                return;
 
-            VerletSolveJob job = new VerletSolveJob
+            bool retainGuardForJob = false;
+            try
             {
-                Positions = buffers.Positions,
-                PreviousPositions = buffers.PreviousPositions,
-                Radius = buffers.Radius,
-                SegmentMatrices = buffers.SegmentMatrices,
-                StretchFractions = buffers.StretchFractions,
-                ConstraintCorrections = buffers.ConstraintCorrections,
-                ConstraintCorrectionCounts = buffers.ConstraintCorrectionCounts,
-                RootPositions = buffers.RootPositions,
-                TargetPositions = buffers.TargetPositions,
-                TentacleStates = buffers.TentacleStates,
-                DeltaTime = safeDeltaTime,
-                Damping = SanitizeFiniteRangeInput(damping, DefaultDamping, 0f, 1f),
-                RestLength = safeRestLength,
-                MaxStretchLength = safeMaxStretchLength,
-                BaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f),
-                TipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f),
-                FlowStrength = SanitizeFiniteMinInput(flowStrength, DefaultFlowStrength, 0f),
-                FlowNoiseStrength = SanitizeFiniteMinInput(flowNoiseStrength, DefaultFlowNoiseStrength, 0f),
-                SuctionPulseStrength = SanitizeFiniteRangeInput(suctionPulseStrength, DefaultSuctionPulseStrength, 0f, 0.5f),
-                TimeSeconds = _solverTimeSeconds,
-                Gravity = safeGravity,
-                FlowVector = _lastFlowVector,
-                TentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles),
-                ConstraintIterations = constraintIterations
-            };
+                if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
+                    return;
 
-            _pendingSolverHandle = job.Schedule();
-            _solverScheduled = true;
+                float safeDeltaTime = math.min(math.max(0f, deltaTime), 0.05f);
+                if (safeDeltaTime <= 0f)
+                    return;
+
+                ApplyPendingOriginShiftRebase();
+                CaptureTentacleInputs(buffers);
+                ResolveFlowInput();
+                TryQueueGrabDamage(safeDeltaTime, in buffers);
+                float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
+                float safeMaxStretchLength = SanitizeFiniteMinInput(
+                    maxStretchLength,
+                    math.max(DefaultMaxStretchLength, safeRestLength * SegmentLastIndex),
+                    safeRestLength * SegmentLastIndex);
+                float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
+                _globalQualityWeight = ResolveGlobalQualityWeight();
+                int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime);
+                _solverTimeSeconds += safeDeltaTime;
+                if (_solverTimeSeconds > 4096f)
+                    _solverTimeSeconds -= 4096f;
+
+                VerletSolveJob job = new VerletSolveJob
+                {
+                    Positions = buffers.Positions,
+                    PreviousPositions = buffers.PreviousPositions,
+                    Radius = buffers.Radius,
+                    SegmentMatrices = buffers.SegmentMatrices,
+                    StretchFractions = buffers.StretchFractions,
+                    ConstraintCorrections = buffers.ConstraintCorrections,
+                    ConstraintCorrectionCounts = buffers.ConstraintCorrectionCounts,
+                    RootPositions = buffers.RootPositions,
+                    TargetPositions = buffers.TargetPositions,
+                    TentacleStates = buffers.TentacleStates,
+                    DeltaTime = safeDeltaTime,
+                    Damping = SanitizeFiniteRangeInput(damping, DefaultDamping, 0f, 1f),
+                    RestLength = safeRestLength,
+                    MaxStretchLength = safeMaxStretchLength,
+                    BaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f),
+                    TipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f),
+                    FlowStrength = SanitizeFiniteMinInput(flowStrength, DefaultFlowStrength, 0f),
+                    FlowNoiseStrength = SanitizeFiniteMinInput(flowNoiseStrength, DefaultFlowNoiseStrength, 0f),
+                    SuctionPulseStrength = SanitizeFiniteRangeInput(suctionPulseStrength, DefaultSuctionPulseStrength, 0f, 0.5f),
+                    TimeSeconds = _solverTimeSeconds,
+                    Gravity = safeGravity,
+                    FlowVector = _lastFlowVector,
+                    TentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles),
+                    ConstraintIterations = constraintIterations
+                };
+
+                _pendingSolverHandle = job.Schedule();
+                _solverScheduled = true;
+                retainGuardForJob = true;
+            }
+            finally
+            {
+                if (!retainGuardForJob)
+                    ReleaseTentacleMutationGuard(acquiredGuard);
+            }
         }
 
         /// <summary>
@@ -769,15 +814,22 @@ namespace Hecton8.AI
             if (!DispatcherJobSwap.TryComplete(ref _pendingSolverHandle, forceComplete: false))
                 return;
 
-            _solverScheduled = false;
-            if (ApplyPendingOriginShiftRebase())
+            try
             {
-                WriteTelemetryFrame();
-                return;
-            }
+                _solverScheduled = false;
+                if (ApplyPendingOriginShiftRebase())
+                {
+                    WriteTelemetryFrame();
+                    return;
+                }
 
-            WriteTelemetryFrame();
-            UploadAndRenderIndirect();
+                WriteTelemetryFrame();
+                UploadAndRenderIndirect();
+            }
+            finally
+            {
+                ReleaseTentacleMutationGuard();
+            }
         }
 
         private void TryRegister()
@@ -859,14 +911,24 @@ namespace Hecton8.AI
         private bool CompletePendingJob(bool force)
         {
             if (!_solverScheduled)
+            {
+                ReleaseTentacleMutationGuard();
                 return true;
+            }
 
             if (!DispatcherJobSwap.TryComplete(ref _pendingSolverHandle, force))
                 return false;
 
-            _solverScheduled = false;
-            WriteTelemetryFrame();
-            return true;
+            try
+            {
+                _solverScheduled = false;
+                WriteTelemetryFrame();
+                return true;
+            }
+            finally
+            {
+                ReleaseTentacleMutationGuard();
+            }
         }
 
         private void RefreshColdDependencies()
@@ -933,6 +995,7 @@ namespace Hecton8.AI
         private void DisposePersistentBuffers()
         {
             CompletePendingJob(force: true);
+            ReleaseTentacleMutationGuard();
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _pendingSolverHandle = default;
@@ -1074,6 +1137,45 @@ namespace Hecton8.AI
                    buffer.IsCreated;
         }
 
+        private bool TryEnterTentacleMutationGuard(out IDataVault vault, out bool acquired)
+        {
+            acquired = false;
+            vault = _solverMutationGuardHeld ? _solverMutationGuardVault : _dataVault;
+            if (vault == null)
+                return false;
+
+            if (_solverMutationGuardHeld)
+                return true;
+
+            if (!vault.TryAcquireMutationGuard(TentacleVaultMutationGuardMask))
+            {
+                vault = null;
+                return false;
+            }
+
+            _solverMutationGuardVault = vault;
+            _solverMutationGuardHeld = true;
+            acquired = true;
+            return true;
+        }
+
+        private void ReleaseTentacleMutationGuard(bool acquired)
+        {
+            if (acquired)
+                ReleaseTentacleMutationGuard();
+        }
+
+        private void ReleaseTentacleMutationGuard()
+        {
+            if (!_solverMutationGuardHeld)
+                return;
+
+            IDataVault vault = _solverMutationGuardVault;
+            _solverMutationGuardHeld = false;
+            _solverMutationGuardVault = null;
+            vault?.ReleaseMutationGuard(TentacleVaultMutationGuardMask);
+        }
+
         private static bool IsAnimationFaunaHandle<T>(
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId) where T : struct
@@ -1095,40 +1197,51 @@ namespace Hecton8.AI
 
         private void SeedAllTentaclesFromSockets()
         {
-            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers) || _cachedTransform == null)
+            if (_cachedTransform == null ||
+                !TryEnterTentacleMutationGuard(out _, out bool acquiredGuard))
                 return;
 
-            float3 ownerFallback = ResolveOwnerRuntimePosition();
-            float3 back = SanitizeFiniteInputFloat3(-(float3)_cachedTransform.forward, new float3(0f, 0f, -1f));
-            float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
-            float safeBaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f);
-            float safeTipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f);
-            int safeTentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles);
-            for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
+            try
             {
-                float3 root = SanitizeFiniteFloat3(ResolveRootRuntimePosition(tentacleIndex), ownerFallback);
-                uint state = tentacleIndex < safeTentacleCount ? TentacleStateActive : 0u;
-                buffers.RootPositions[tentacleIndex] = root;
-                buffers.TargetPositions[tentacleIndex] = root;
-                buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(root);
-                buffers.TargetAups[tentacleIndex] = buffers.RootAups[tentacleIndex];
-                buffers.TentacleStates[tentacleIndex] = state;
-                buffers.StretchFractions[tentacleIndex] = 0f;
+                if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
+                    return;
 
-                int baseIndex = FlatIndex(tentacleIndex, 0);
-                for (int segmentIndex = 0; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                float3 ownerFallback = ResolveOwnerRuntimePosition();
+                float3 back = SanitizeFiniteInputFloat3(-(float3)_cachedTransform.forward, new float3(0f, 0f, -1f));
+                float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
+                float safeBaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f);
+                float safeTipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f);
+                int safeTentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles);
+                for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
                 {
-                    int nodeIndex = baseIndex + segmentIndex;
-                    float3 position = SanitizeFiniteFloat3(root + (back * safeRestLength * segmentIndex), root);
-                    buffers.Positions[nodeIndex] = position;
-                    buffers.PreviousPositions[nodeIndex] = position;
-                    float t = segmentIndex * math.rcp(SegmentLastIndex);
-                    float solvedRadius = math.max(0.001f, math.lerp(safeBaseRadius, safeTipRadius, t));
-                    buffers.Radius[nodeIndex] = solvedRadius;
-                    LeviathanBoneDTO matrix = default;
-                    matrix.LocalToWorld = float4x4.TRS(position, quaternion.identity, new float3(solvedRadius, solvedRadius, safeRestLength));
-                    buffers.SegmentMatrices[nodeIndex] = matrix;
+                    float3 root = SanitizeFiniteFloat3(ResolveRootRuntimePosition(tentacleIndex), ownerFallback);
+                    uint state = tentacleIndex < safeTentacleCount ? TentacleStateActive : 0u;
+                    buffers.RootPositions[tentacleIndex] = root;
+                    buffers.TargetPositions[tentacleIndex] = root;
+                    buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(root);
+                    buffers.TargetAups[tentacleIndex] = buffers.RootAups[tentacleIndex];
+                    buffers.TentacleStates[tentacleIndex] = state;
+                    buffers.StretchFractions[tentacleIndex] = 0f;
+
+                    int baseIndex = FlatIndex(tentacleIndex, 0);
+                    for (int segmentIndex = 0; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                    {
+                        int nodeIndex = baseIndex + segmentIndex;
+                        float3 position = SanitizeFiniteFloat3(root + (back * safeRestLength * segmentIndex), root);
+                        buffers.Positions[nodeIndex] = position;
+                        buffers.PreviousPositions[nodeIndex] = position;
+                        float t = segmentIndex * math.rcp(SegmentLastIndex);
+                        float solvedRadius = math.max(0.001f, math.lerp(safeBaseRadius, safeTipRadius, t));
+                        buffers.Radius[nodeIndex] = solvedRadius;
+                        LeviathanBoneDTO matrix = default;
+                        matrix.LocalToWorld = float4x4.TRS(position, quaternion.identity, new float3(solvedRadius, solvedRadius, safeRestLength));
+                        buffers.SegmentMatrices[nodeIndex] = matrix;
+                    }
                 }
+            }
+            finally
+            {
+                ReleaseTentacleMutationGuard(acquiredGuard);
             }
         }
 
@@ -1327,16 +1440,19 @@ namespace Hecton8.AI
             GraphicsBuffer radiusBuffer = _matrixUploadBufferIndex == 0 ? _radiusGraphicsBufferA : _radiusGraphicsBufferB;
             if (!HasValidGraphicsBuffer(matrixBuffer, instanceCount) ||
                 !HasValidGraphicsBuffer(radiusBuffer, instanceCount) ||
-                !HasValidGraphicsBuffer(_indirectArgsBuffer, 1))
+                !HasValidGraphicsBuffer(_indirectArgsBuffer, 1) ||
+                _tentacleMaterialProperties == null)
             {
                 return;
             }
 
             GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, buffers.SegmentMatrices, instanceCount);
             GraphicsBufferUploadUtility.UploadNativeArray(radiusBuffer, buffers.Radius, instanceCount);
-            Shader.SetGlobalBuffer(_MatrixBufferId, matrixBuffer);
-            Shader.SetGlobalBuffer(_RadiusBufferId, radiusBuffer);
-            if (!PublishTentacleShaderGlobals())
+            MaterialPropertyBlock materialProperties = _tentacleMaterialProperties;
+            materialProperties.Clear();
+            materialProperties.SetBuffer(_MatrixBufferId, matrixBuffer);
+            materialProperties.SetBuffer(_RadiusBufferId, radiusBuffer);
+            if (!PublishTentacleShaderGlobals(materialProperties))
                 return;
             UploadIndirectArgs(instanceCount);
 
@@ -1353,13 +1469,14 @@ namespace Hecton8.AI
                 layer = gameObject.layer,
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = receiveShadows,
-                motionVectorMode = MotionVectorGenerationMode.Camera
+                motionVectorMode = MotionVectorGenerationMode.Camera,
+                matProps = materialProperties
             };
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, tentacleSegmentMesh, _indirectArgsBuffer, 1, 0);
             _matrixUploadBufferIndex ^= 1;
         }
 
-        private bool PublishTentacleShaderGlobals()
+        private bool PublishTentacleShaderGlobals(MaterialPropertyBlock materialProperties)
         {
             bool hasFlowBuffer = TryPrepareAbyssalFlowPayload(
                 _gpuAbyssalFlowFieldBuffer,
@@ -1370,7 +1487,7 @@ namespace Hecton8.AI
                 out Vector4 safeFlowCenter,
                 out Vector4 safeFlowSpacing);
             if (hasFlowBuffer)
-                Shader.SetGlobalBuffer(_AbyssalFlowFieldId, _gpuAbyssalFlowFieldBuffer);
+                materialProperties.SetBuffer(_AbyssalFlowFieldId, _gpuAbyssalFlowFieldBuffer);
 
             LeviathanTentacleShaderGlobalsDTO globals = new LeviathanTentacleShaderGlobalsDTO
             {
@@ -1384,13 +1501,14 @@ namespace Hecton8.AI
                 FlowSpacing = new float4(safeFlowSpacing.x, safeFlowSpacing.y, safeFlowSpacing.z, safeFlowSpacing.w)
             };
 
-            return PublishTentacleGlobals(in globals);
+            return PublishTentacleGlobals(in globals, materialProperties);
         }
 
-        private bool PublishTentacleGlobals(in LeviathanTentacleShaderGlobalsDTO globals)
+        private bool PublishTentacleGlobals(in LeviathanTentacleShaderGlobalsDTO globals, MaterialPropertyBlock materialProperties)
         {
             if (!ValidateTentacleShaderGlobalsLayout() ||
                 !_supportsConstantBufferBinding ||
+                materialProperties == null ||
                 !EnsureTentacleGlobalsBuffers())
                 return false;
 
@@ -1407,7 +1525,7 @@ namespace Hecton8.AI
 
             _tentacleGlobalsUploadBufferIndex ^= 1;
             _activeTentacleGlobalsBuffer = writeBuffer;
-            Shader.SetGlobalConstantBuffer(_TentacleGlobalsId, _activeTentacleGlobalsBuffer, 0, TentacleShaderGlobalsBytes);
+            materialProperties.SetConstantBuffer(_TentacleGlobalsId, _activeTentacleGlobalsBuffer, 0, TentacleShaderGlobalsBytes);
             return true;
         }
 
@@ -1432,6 +1550,12 @@ namespace Hecton8.AI
 
             return HasValidTentacleGlobalsBuffer(_tentacleGlobalsBufferA) &&
                    HasValidTentacleGlobalsBuffer(_tentacleGlobalsBufferB);
+        }
+
+        private void EnsureTentacleMaterialPropertiesCold()
+        {
+            if (_tentacleMaterialProperties == null)
+                _tentacleMaterialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-runtime leviathan indirect draw payload - owner: LeviathanTentacleVerletSolver
         }
 
         private void EnsureGraphicsBuffers()
@@ -1545,34 +1669,44 @@ namespace Hecton8.AI
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
-            if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
+            if (!TryEnterTentacleMutationGuard(out _, out bool acquiredGuard))
                 return;
 
-            if (!math.all(math.isfinite(offset)))
+            try
             {
-                DumpTelemetryBlackBoxOnce();
-                return;
-            }
+                if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
+                    return;
 
-            for (int i = 0; i < TotalSegments; i++)
-            {
-                buffers.Positions[i] = SanitizeFiniteInputFloat3(buffers.Positions[i] - offset, float3.zero);
-                buffers.PreviousPositions[i] = SanitizeFiniteInputFloat3(buffers.PreviousPositions[i] - offset, buffers.Positions[i]);
-                LeviathanBoneDTO dto = buffers.SegmentMatrices[i];
-                float4x4 matrix = dto.LocalToWorld;
-                float4 c3 = matrix.c3;
-                float3 matrixPosition = SanitizeFiniteInputFloat3(new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z), buffers.Positions[i]);
-                matrix.c3 = new float4(matrixPosition.x, matrixPosition.y, matrixPosition.z, c3.w);
-                dto.LocalToWorld = matrix;
-                buffers.SegmentMatrices[i] = dto;
-            }
+                if (!math.all(math.isfinite(offset)))
+                {
+                    DumpTelemetryBlackBoxOnce();
+                    return;
+                }
 
-            for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
+                for (int i = 0; i < TotalSegments; i++)
+                {
+                    buffers.Positions[i] = SanitizeFiniteInputFloat3(buffers.Positions[i] - offset, float3.zero);
+                    buffers.PreviousPositions[i] = SanitizeFiniteInputFloat3(buffers.PreviousPositions[i] - offset, buffers.Positions[i]);
+                    LeviathanBoneDTO dto = buffers.SegmentMatrices[i];
+                    float4x4 matrix = dto.LocalToWorld;
+                    float4 c3 = matrix.c3;
+                    float3 matrixPosition = SanitizeFiniteInputFloat3(new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z), buffers.Positions[i]);
+                    matrix.c3 = new float4(matrixPosition.x, matrixPosition.y, matrixPosition.z, c3.w);
+                    dto.LocalToWorld = matrix;
+                    buffers.SegmentMatrices[i] = dto;
+                }
+
+                for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
+                {
+                    buffers.RootPositions[tentacleIndex] = SanitizeFiniteInputFloat3(buffers.RootPositions[tentacleIndex] - offset, float3.zero);
+                    buffers.TargetPositions[tentacleIndex] = SanitizeFiniteInputFloat3(buffers.TargetPositions[tentacleIndex] - offset, buffers.RootPositions[tentacleIndex]);
+                    buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(buffers.RootPositions[tentacleIndex]);
+                    buffers.TargetAups[tentacleIndex] = ToAbsoluteUniversePosition(buffers.TargetPositions[tentacleIndex]);
+                }
+            }
+            finally
             {
-                buffers.RootPositions[tentacleIndex] = SanitizeFiniteInputFloat3(buffers.RootPositions[tentacleIndex] - offset, float3.zero);
-                buffers.TargetPositions[tentacleIndex] = SanitizeFiniteInputFloat3(buffers.TargetPositions[tentacleIndex] - offset, buffers.RootPositions[tentacleIndex]);
-                buffers.RootAups[tentacleIndex] = ToAbsoluteUniversePosition(buffers.RootPositions[tentacleIndex]);
-                buffers.TargetAups[tentacleIndex] = ToAbsoluteUniversePosition(buffers.TargetPositions[tentacleIndex]);
+                ReleaseTentacleMutationGuard(acquiredGuard);
             }
         }
 

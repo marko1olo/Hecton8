@@ -1,10 +1,17 @@
 ---
 packet_id: P047_HATCH_SEAL_LEDGER
+release_set_id: RS010_PRESSURE_MACHINERY_RETURN_ROUTE
 article_id: hecton8.hatch_seal_ledger
+unlock_id: unlock.first_hatch_seal_ledger
+poi_tags: poi.hatch_seal;poi.airlock_frame
+biome_tags: biome.drowned_colony;biome.service_corridor
 locale: ar_SA
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Hatch Seal Ledger

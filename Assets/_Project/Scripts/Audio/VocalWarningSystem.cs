@@ -6,6 +6,7 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Physics.Vehicles;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -22,6 +23,7 @@ namespace Hecton8.Audio
     {
         private static int s_x001DirectSignalPushDropCount_VocalWarningSystem;
         private const string TelemetryDumpPayloadLabel = "vocalWarningTelemetryDumpPayload";
+        private const uint VesselTelemetryHandleRetryMask = 63u;
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         internal struct VocalWarningDTO
@@ -329,6 +331,7 @@ namespace Hecton8.Audio
         private VaultGenerationHandle<VocalWarningProfileDTO> _profilesHandle;
         private VaultGenerationHandle<VocalWarningTuningDTO> _tuningHandle;
         private VaultGenerationHandle<VwsTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<VesselTelemetryEntry> _vesselTelemetryHandle;
         private PostSimulationPhaseSystem _postSimulationSystem;
         private int _telemetryCursor;
         private int _queueCount;
@@ -349,6 +352,7 @@ namespace Hecton8.Audio
         private uint _lastProcessedFrame = uint.MaxValue;
         private uint _pendingPresentationFrame;
         private float _globalQualityWeight01 = 1f;
+        private float _vesselCareTone01;
         private float _vwsClockSeconds;
         private float _warningPlaybackRemainingSeconds;
         private float _currentPriorityScore;
@@ -791,6 +795,61 @@ namespace Hecton8.Audio
                 TelemetryCapacity,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
+            RefreshVesselTelemetryHandleCold(vault);
+        }
+
+        private void RefreshVesselTelemetryHandleCold(IDataVault vault)
+        {
+            if (vault == null)
+            {
+                _vesselTelemetryHandle = default;
+                return;
+            }
+
+            if (!vault.TryGetGenerationHandle<VesselTelemetryEntry>(
+                    SubmarineBallastBufferIds.VesselTelemetry,
+                    out _vesselTelemetryHandle))
+            {
+                _vesselTelemetryHandle = default;
+            }
+        }
+
+        private void RefreshVesselTelemetryHandleIfMissing(uint frame)
+        {
+            if (IsExternalVaultHandle(in _vesselTelemetryHandle, SubmarineBallastBufferIds.VesselTelemetry) ||
+                (frame & VesselTelemetryHandleRetryMask) != 0u)
+            {
+                return;
+            }
+
+            RefreshVesselTelemetryHandleCold(_dataVault);
+        }
+
+        private float ReadVesselCareTone01()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return math.saturate(_vesselCareTone01);
+
+            if (!IsExternalVaultHandle(in _vesselTelemetryHandle, SubmarineBallastBufferIds.VesselTelemetry) ||
+                !vault.TryReadOnlyHandle(in _vesselTelemetryHandle, out NativeArray<VesselTelemetryEntry>.ReadOnly vesselTelemetry) ||
+                !vesselTelemetry.IsCreated ||
+                vesselTelemetry.Length <= 0)
+            {
+                return math.saturate(_vesselCareTone01);
+            }
+
+            VesselTelemetryEntry entry = vesselTelemetry[0];
+            return VesselTelemetryEntry.ResolveToneWeight01(entry.TotalCareActionsCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsExternalVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)SystemID.VehiclesPhysics &&
+                   handle.Generation != 0u;
         }
 
         private void InitializeVaultStorage(ref VwsVaultViews views)
@@ -906,6 +965,8 @@ namespace Hecton8.Audio
             _profilesHandle = default;
             _tuningHandle = default;
             _telemetryRingHandle = default;
+            _vesselTelemetryHandle = default;
+            _vesselCareTone01 = 0f;
         }
 
         private bool TryResolveVwsOwnerViews(out VwsVaultViews views)
@@ -1010,6 +1071,9 @@ namespace Hecton8.Audio
             float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
             _vwsClockSeconds += dt;
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+            RefreshVesselTelemetryHandleIfMissing(frame);
+            _vesselCareTone01 = ReadVesselCareTone01();
+            float vesselCareTone01 = _vesselCareTone01;
             int maxEvaluations = ResolveMaxEvaluations(_globalQualityWeight01, views.Queue.Length);
             AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
 
@@ -1055,6 +1119,7 @@ namespace Hecton8.Audio
                 TimeSeconds = _vwsClockSeconds,
                 DeltaSeconds = dt,
                 QualityWeight01 = _globalQualityWeight01,
+                VesselCareTone01 = vesselCareTone01,
                 VoiceGain = voiceGain,
                 Frame = frame
             };
@@ -2369,6 +2434,7 @@ namespace Hecton8.Audio
             public float TimeSeconds;
             public float DeltaSeconds;
             public float QualityWeight01;
+            public float VesselCareTone01;
             public float VoiceGain;
             public uint Frame;
 
@@ -2427,7 +2493,10 @@ namespace Hecton8.Audio
                 }
 
                 float duration = ResolveDurationSeconds(candidate.AudioBankHashID, candidate.PriorityScore, QualityWeight01);
-                float distortion = ResolveRadioDistortion01(candidate.AudioBankHashID, flags, QualityWeight01);
+                float vesselCareTone = math.saturate(math.select(0f, VesselCareTone01, math.isfinite(VesselCareTone01)));
+                float distortion = ResolveRadioDistortion01(candidate.AudioBankHashID, flags, QualityWeight01) *
+                                   math.lerp(1f, 0.72f, vesselCareTone);
+                float playbackSpeed = math.lerp(0.985f, 1.015f, vesselCareTone);
                 byte warningId = ExtractWarningId(candidate.Flags);
                 ushort directionHash = ExtractDirectionHash(candidate.Flags);
                 current.AudioBankHashID = candidate.AudioBankHashID;
@@ -2447,7 +2516,7 @@ namespace Hecton8.Audio
                     AudioBankHashID = candidate.AudioBankHashID,
                     CuePriority = ResolveCuePriority(candidateBitIndex, candidate.PriorityScore),
                     VolumeScalar = math.saturate(math.select(DefaultGain, VoiceGain, math.isfinite(VoiceGain))),
-                    PlaybackSpeed = 1f,
+                    PlaybackSpeed = playbackSpeed,
                     RadioDistortion01 = distortion,
                     SpatialBlend01 = ResolveVwsSpatialBlend01(flags, QualityWeight01, in candidate),
                     SourceAupGridX = candidate.SourceAupGridX,

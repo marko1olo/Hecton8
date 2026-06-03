@@ -30,7 +30,9 @@ namespace Hecton8.Quest
             QuestDagMutationGuardBit(BufferID.QuestDagFactionStandings) |
             QuestDagMutationGuardBit(BufferID.QuestDagCounters) |
             QuestDagMutationGuardBit(BufferID.QuestDagTriggerNodeIndices) |
-            QuestDagMutationGuardBit(BufferID.QuestDagNoTriggerNodeIndices);
+            QuestDagMutationGuardBit(BufferID.QuestDagNoTriggerNodeIndices) |
+            QuestDagMutationGuardBit(BufferID.QuestDagQuestStates) |
+            QuestDagMutationGuardBit(BufferID.QuestDagDependencyLinks);
 
         /// <summary>
         /// Attempts to load the current OSHINO binary; falls back to a deterministic mock DAG.
@@ -244,11 +246,18 @@ namespace Hecton8.Quest
                         return false;
                     }
 
+                    if (!TryPopulateDependencyLinks(in buffers, loadedNodeCount, out int dependencyLinkCount))
+                    {
+                        stats.Flags = (uint)QuestDagLoadFlags.BinaryUnreadable;
+                        return false;
+                    }
+
                     WriteCounters(
                         in buffers,
                         loadedNodeCount,
                         loadedTriggerCount,
                         noTriggerCount,
+                        dependencyLinkCount,
                         unchecked((int)QuestDagRuntimeConstants.OshinoBinarySourceHash));
 
                     stats = new QuestDagLoadStats
@@ -328,7 +337,7 @@ namespace Hecton8.Quest
 
                     QuestNodeDTO node = default;
                     node.NodeHash = nodeHash;
-                    node.RequiredStateHash = unchecked(0x71000000u + (uint)i);
+                    node.RequiredStateHash = i > 0 ? unchecked(0x51000000u + (uint)(i - 1)) : 0u;
                     node.PrerequisiteMask = prerequisiteMask;
                     node.CompletionMask = doneMask;
                     node._pad0 = 0u;
@@ -380,11 +389,15 @@ namespace Hecton8.Quest
                     buffers.TriggerVolumes[i] = volume;
                 }
 
+                if (!TryPopulateDependencyLinks(in buffers, nodeCount, out int dependencyLinkCount))
+                    return;
+
                 WriteCounters(
                     in buffers,
                     nodeCount,
                     nodeCount,
                     noTriggerCount,
+                    dependencyLinkCount,
                     unchecked((int)QuestDagRuntimeConstants.EmergencyMockSourceHash));
 
                 stats = new QuestDagLoadStats
@@ -478,7 +491,9 @@ namespace Hecton8.Quest
                    Clear(buffers.PlayerItemQuantities) &&
                    Clear(buffers.FactionStandings) &&
                    Clear(buffers.TriggerNodeIndices) &&
-                   Clear(buffers.NoTriggerNodeIndices);
+                   Clear(buffers.NoTriggerNodeIndices) &&
+                   Clear(buffers.QuestStates) &&
+                   Clear(buffers.DependencyLinks);
         }
 
         private static bool Clear<T>(NativeArray<T> values)
@@ -498,6 +513,7 @@ namespace Hecton8.Quest
             int nodeCount,
             int triggerCount,
             int noTriggerCount,
+            int dependencyLinkCount,
             int sourceHash)
         {
             NativeArray<int> counters = buffers.Counters;
@@ -507,6 +523,10 @@ namespace Hecton8.Quest
             counters[(int)QuestDagRuntimeConstants.CounterSlot.NodeCount] = nodeCount;
             counters[(int)QuestDagRuntimeConstants.CounterSlot.TriggerCount] = triggerCount;
             counters[(int)QuestDagRuntimeConstants.CounterSlot.NoTriggerNodeCount] = noTriggerCount;
+            counters[(int)QuestDagRuntimeConstants.CounterSlot.QuestStateCount] = 0;
+            counters[(int)QuestDagRuntimeConstants.CounterSlot.DependencyLinkCount] = dependencyLinkCount;
+            counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikInjectedCount] = 0;
+            counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikFailClosedCount] = 0;
             counters[(int)QuestDagRuntimeConstants.CounterSlot.StateChunkCount] = math.max(
                 1,
                 counters[(int)QuestDagRuntimeConstants.CounterSlot.StateChunkCount]);
@@ -540,6 +560,75 @@ namespace Hecton8.Quest
             }
 
             return true;
+        }
+
+        private static bool TryPopulateDependencyLinks(
+            in QuestDagBuffers buffers,
+            int nodeCount,
+            out int count)
+        {
+            count = 0;
+            NativeArray<QuestNodeDTO> nodes = buffers.Nodes;
+            NativeArray<QuestDependencyLinkDTO> links = buffers.DependencyLinks;
+            if (!nodes.IsCreated || !links.IsCreated)
+                return false;
+
+            int limit = math.min(nodeCount, nodes.Length);
+            for (int i = 0; i < limit; i++)
+            {
+                QuestNodeDTO node = nodes[i];
+                if (node.NodeHash == 0u || node.RequiredStateHash == 0u)
+                    continue;
+
+                if ((uint)count >= (uint)links.Length)
+                    return false;
+
+                links[count] = new QuestDependencyLinkDTO
+                {
+                    ParentQuestHashID = node.RequiredStateHash,
+                    ChildQuestHashID = node.NodeHash,
+                    Flags = 0u,
+                    _pad0 = 0u
+                };
+                count++;
+            }
+
+            SortDependencyLinks(links, count);
+            return true;
+        }
+
+        internal static void SortDependencyLinks(NativeArray<QuestDependencyLinkDTO> links, int count)
+        {
+            int length = math.min(count, links.Length);
+            for (int gap = length >> 1; gap > 0; gap >>= 1)
+            {
+                for (int i = gap; i < length; i++)
+                {
+                    QuestDependencyLinkDTO value = links[i];
+                    int j = i;
+                    while (j >= gap && CompareDependencyLinks(links[j - gap], value) > 0)
+                    {
+                        links[j] = links[j - gap];
+                        j -= gap;
+                    }
+
+                    links[j] = value;
+                }
+            }
+        }
+
+        internal static int CompareDependencyLinks(QuestDependencyLinkDTO left, QuestDependencyLinkDTO right)
+        {
+            if (left.ParentQuestHashID < right.ParentQuestHashID)
+                return -1;
+            if (left.ParentQuestHashID > right.ParentQuestHashID)
+                return 1;
+            if (left.ChildQuestHashID < right.ChildQuestHashID)
+                return -1;
+            if (left.ChildQuestHashID > right.ChildQuestHashID)
+                return 1;
+
+            return 0;
         }
 
         private static bool TryFindNodeIndexByDoneMask(

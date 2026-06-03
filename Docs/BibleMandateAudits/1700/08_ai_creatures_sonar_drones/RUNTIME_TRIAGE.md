@@ -16,8 +16,8 @@ Total runtime suspects: 70. Full raw list: `../_scans/08_ai_creatures_sonar_dron
 ## Unity scene lookup (9)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\CreatureDamageManager.cs:229:            GetComponentsInChildren(true, _rendererScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4425:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7434:            GetComponentsInChildren(true, _logicalLodColliderScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4438:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7382:            GetComponentsInChildren(true, _logicalLodColliderScratch);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:24:            if (!runtimeRoot.TryGetComponent<FaunaGeneticsManager>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:27:            if (!runtimeRoot.TryGetComponent<EcosystemHealthDirector>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:30:            if (!runtimeRoot.TryGetComponent<MigrationDirector>(out _))
@@ -27,18 +27,18 @@ Total runtime suspects: 70. Full raw list: `../_scans/08_ai_creatures_sonar_dron
 
 ## Runtime mesh/material mutation (2)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7756:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7760:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7704:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7708:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
 
 ## Native allocation or persistent lifetime (17)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:1444:            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:5047:            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\AI\Ecosystem\ShinobuSpatialGridSolver.cs:1724:            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\AI\Ecosystem\ShinobuFloraFaunaSymbiosisSolver.cs:740:            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\WfcLaserCutRuntime.cs:623:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:1444:            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:5047:            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs:1077:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:957:            NativeArray<byte> bytes = new NativeArray<byte>(
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\WfcLaserCutRuntime.cs:623:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:1031:            NativeArray<byte> bytes = new NativeArray<byte>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\Audio\NativeAudioFrameRingBuffer.cs:506:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Audio\NativeAudioFrameRingBuffer.cs:515:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Audio\NativeAudioFrameRingBuffer.cs:527:                Allocator.Persistent,
@@ -52,26 +52,20 @@ Total runtime suspects: 70. Full raw list: `../_scans/08_ai_creatures_sonar_dron
 
 ## Runtime debug logging (43)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaPOI.cs:53:                Hecton8.Core.H8Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaSpeciesProfile.cs:127:            Hecton8.Core.H8Debug.LogWarning(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1765:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:5063:                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:6121:                Hecton8.Core.H8Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7760:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7772:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaPOI.cs:53:                Hecton8.Core.H8Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:2041:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:5001:                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:6059:                Hecton8.Core.H8Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7708:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7720:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:121:                Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:123:                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:162:                Hecton8.Core.H8Debug.LogException(exception);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:198:                Hecton8.Core.H8Debug.Log($"[SceneTransitionVerifier] {message}");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:217:                Hecton8.Core.H8Debug.LogException(exception);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:400:                Hecton8.Core.H8Debug.Log($"[PauseSystemVerifier] {message}");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:410:                Hecton8.Core.H8Debug.Log(isPaused ? PauseChangedPausedLog : PauseChangedUnpausedLog);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:360:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:367:                Hecton8.Core.H8Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:371:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:376:            Hecton8.Core.H8Debug.Log("[PerformanceMonitor] Current: " + currentFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms | samples=" + sampleCount);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:158:                Hecton8.Core.H8Debug.LogException(exception, this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:520:                Hecton8.Core.H8Debug.Log($"[StateRecoveryVerifier] {message}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:162:                Hecton8.Core.H8Debug.LogException(exception);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:198:                Hecton8.Core.H8Debug.Log($"[SceneTransitionVerifier] {message}");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:651:            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] System '{systemName}' already registered");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:656:            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] Ignoring invalid registration '{systemName}'");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:661:            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] Ignoring registration '{systemName}' because budget capacity {MaxTrackedBudgetSystems} is full");
@@ -81,5 +75,12 @@ Total runtime suspects: 70. Full raw list: `../_scans/08_ai_creatures_sonar_dron
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:683:            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Reducing system '" + systemName +
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:693:            Hecton8.Core.H8Debug.Log($"[PerformanceBudgetController] Restoring system '{systemName}' performance");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:698:            Hecton8.Core.H8Debug.Log(DescribeStatus());
-- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:1225:                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:360:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:367:                Hecton8.Core.H8Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:371:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:376:            Hecton8.Core.H8Debug.Log("[PerformanceMonitor] Current: " + currentFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms | samples=" + sampleCount);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:158:                Hecton8.Core.H8Debug.LogException(exception, this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:520:                Hecton8.Core.H8Debug.Log($"[StateRecoveryVerifier] {message}");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:1301:                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
 - Additional lines omitted here: 13. Use the raw scan file for full classification.
+

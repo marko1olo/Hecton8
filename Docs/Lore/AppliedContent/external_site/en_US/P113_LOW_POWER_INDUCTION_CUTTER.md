@@ -1,10 +1,17 @@
 ---
 packet_id: P113_LOW_POWER_INDUCTION_CUTTER
+release_set_id: RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE
 article_id: first_hour.low_power_induction_cutter
+unlock_id: unlock.first_low_power_induction_cutter
+poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
+biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Low-Power Induction Cutter

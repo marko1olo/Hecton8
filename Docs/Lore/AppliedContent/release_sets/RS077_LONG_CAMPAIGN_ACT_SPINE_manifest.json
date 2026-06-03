@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS077_LONG_CAMPAIGN_ACT_SPINE",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P381_CONTRACT_APPROACH_ACT_GATE",
+    "P382_PHOTIC_SHELF_SURVIVAL_ACT",
+    "P383_BRINE_CANYON_LIABILITY_ACT",
+    "P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT",
+    "P385_ATLAS_BASIN_PAYLOAD_ACT"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS077_LONG_CAMPAIGN_ACT_SPINE.packets.json"
+  ]
+}

@@ -36,6 +36,7 @@ namespace Hecton8.Core.Contracts
         public const uint TuningFlagVelocitySignalEnabled = 1u << 3;
         public const uint TuningFlagMockInputEnabled = 1u << 4;
         public const uint TelemetryMarker = 0x56524B42u;
+        public const ulong MutationGuardMask = 1UL << 46;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_271.bin";
 
         public const int HandStatesBufferId = 73680;

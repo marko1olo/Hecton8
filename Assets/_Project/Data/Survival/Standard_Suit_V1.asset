@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b68da2c3b8067f428014fdd72172010, type: 3}
   m_Name: Standard_Suit_V1
   m_EditorClassIdentifier: Assembly-CSharp::SurvivalStats
-  maxOxygen: 100
-  oxygenConsumptionRate: 0.5
+  maxOxygen: 139.2400
+  oxygenConsumptionRate: 0.0150
   maxEnergy: 200
   energyConsumptionRate: 0.8
   maxIntegrity: 100

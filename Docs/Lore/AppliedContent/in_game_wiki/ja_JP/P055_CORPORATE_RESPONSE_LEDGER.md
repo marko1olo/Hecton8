@@ -1,30 +1,37 @@
 ---
 packet_id: P055_CORPORATE_RESPONSE_LEDGER
+release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.corporate_response_ledger
+unlock_id: unlock.first_corporate_response_ledger
+poi_tags: poi.response_ledger;poi.liability_seal
+biome_tags: biome.corporate_wreck;biome.return_route
 locale: ja_JP
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Corporate Response Ledger
 
-Draft JP localization pending native pass. Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
+Corporate Response Ledger makes the carrier answer visible without making it benevolent. Automated replies protect assets before people.
 
 ## Scanner
 
-Draft JP localization pending native pass. Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
+Every reply arrives in contract language: asset custody, liability locks, sample routing and only then operator recovery.
 
 ## Terminal
 
-Draft JP localization pending native pass. RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal and payment route.
 
 ## Audio
 
-Draft JP localization pending native pass. The reply was automatic. The rescue was conditional.
+The reply was automatic. The rescue was conditional.
 
 ## Field Note
 
-Draft JP localization pending native pass. Immediate response is not immediate rescue.
+Immediate response is not immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ja_JP. -->

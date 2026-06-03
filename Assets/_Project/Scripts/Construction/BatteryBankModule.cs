@@ -13,7 +13,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Battery Bank Module")]
-    public sealed class BatteryBankModule : MonoBehaviour, IPowerComponent, IPoolable
+    public sealed class BatteryBankModule : MonoBehaviour, IPowerComponent, IPoolable, IPowerActivationTarget
     {
         private const float DispatchDeltaTimeSeconds = PowerGrid.LogisticsTickDeltaTimeSeconds;
 
@@ -52,12 +52,14 @@ namespace Hecton8.Construction
         private float _plannedGridPowerWatts;
         private float _pendingStoredEnergyWattSeconds;
         private float _pendingHeatLossJoules;
+        private float _runtimeActivation01 = 1f;
         private bool _hasPendingDispatch;
         private bool _hasPower = true;
         private int _cachedRoomIndex = -1;
         private bool _hasCachedRoomWorldPosition;
         private float3 _cachedRoomWorldPosition;
         private Transform _cachedTransform;
+        private PowerNode _powerNode;
         private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
 
         /// <inheritdoc />
@@ -86,6 +88,7 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
+            CachePowerNodeCold();
             CacheReferences();
             ResetChargeToInitialState();
         }
@@ -93,6 +96,7 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             ResetCachedRoomBinding();
+            CachePowerNodeCold();
             CacheReferences();
             ResetDispatchPlan();
             RefreshDebugState();
@@ -104,6 +108,7 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             ResetCachedRoomBinding();
+            CachePowerNodeCold();
             ResetChargeToInitialState();
             ResetDispatchPlan();
             RefreshDebugState();
@@ -114,6 +119,7 @@ namespace Hecton8.Construction
         {
             _hasPower = true;
             _debugHasPower = true;
+            _runtimeActivation01 = 1f;
             ResetCachedRoomBinding();
             ResetChargeToInitialState();
             ResetDispatchPlan();
@@ -127,14 +133,33 @@ namespace Hecton8.Construction
             _debugHasPower = hasPower;
         }
 
+        public bool SetRuntimeActivation01(float activation01)
+        {
+            float sanitized = math.saturate(math.select(1f, activation01, math.isfinite(activation01)));
+            if (math.abs(_runtimeActivation01 - sanitized) <= 0.0001f)
+                return false;
+
+            _runtimeActivation01 = sanitized;
+            if (_runtimeActivation01 <= 0.0001f)
+                ResetDispatchPlan();
+
+            RefreshDebugState();
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            grid?.MarkDirty();
+            return true;
+        }
+
         internal float ResolveChargeAcceptanceWatts(float deltaTimeSeconds)
         {
+            if (_runtimeActivation01 <= 0.0001f)
+                return 0f;
+
             float safeDeltaTime = math.max(0.001f, deltaTimeSeconds);
             float safeCapacity = math.max(1f, energyCapacityWattSeconds);
             float missingEnergy = math.max(0f, safeCapacity - _storedEnergyWattSeconds);
             float safeEfficiency = math.max(0.1f, chargeEfficiency);
             float capacityLimitedPower = missingEnergy / (safeDeltaTime * safeEfficiency);
-            return math.max(0f, math.min(math.max(0f, maxChargePowerWatts), capacityLimitedPower));
+            return math.max(0f, math.min(math.max(0f, maxChargePowerWatts), capacityLimitedPower)) * _runtimeActivation01;
         }
 
         internal float ResolveDischargeAvailabilityWatts(float deltaTimeSeconds)
@@ -144,12 +169,15 @@ namespace Hecton8.Construction
 
         internal float ResolveDischargeAvailabilityWatts(float deltaTimeSeconds, float reserveFloorNormalized)
         {
+            if (_runtimeActivation01 <= 0.0001f)
+                return 0f;
+
             float safeDeltaTime = math.max(0.001f, deltaTimeSeconds);
             float safeEfficiency = math.max(0.1f, dischargeEfficiency);
             float reserveEnergyFloor = math.saturate(reserveFloorNormalized) * math.max(1f, energyCapacityWattSeconds);
             float usableStoredEnergy = math.max(0f, _storedEnergyWattSeconds - reserveEnergyFloor);
             float energyLimitedPower = (usableStoredEnergy * safeEfficiency) / safeDeltaTime;
-            return math.max(0f, math.min(math.max(0f, maxDischargePowerWatts), energyLimitedPower));
+            return math.max(0f, math.min(math.max(0f, maxDischargePowerWatts), energyLimitedPower)) * _runtimeActivation01;
         }
 
         internal void ResetDispatchPlan()
@@ -163,6 +191,12 @@ namespace Hecton8.Construction
 
         internal void StageResolvedDispatch(float nextStoredEnergyWattSeconds, float plannedGridPowerWatts)
         {
+            if (_runtimeActivation01 <= 0.0001f)
+            {
+                ResetDispatchPlan();
+                return;
+            }
+
             _pendingStoredEnergyWattSeconds = math.clamp(
                 nextStoredEnergyWattSeconds,
                 0f,
@@ -170,7 +204,7 @@ namespace Hecton8.Construction
             _plannedGridPowerWatts = plannedGridPowerWatts;
             _pendingHeatLossJoules = ResolvePendingHeatLossJoules(_storedEnergyWattSeconds, _pendingStoredEnergyWattSeconds, plannedGridPowerWatts);
             _hasPendingDispatch = math.abs(plannedGridPowerWatts) > 0.0001f;
-            _debugPlannedGridPowerWatts = plannedGridPowerWatts;
+            _debugPlannedGridPowerWatts = _plannedGridPowerWatts;
         }
 
         internal void CommitResolvedDispatch()
@@ -226,6 +260,12 @@ namespace Hecton8.Construction
             _hasCachedRoomWorldPosition = false;
             _cachedRoomWorldPosition = default;
             _atmosphereSystem = null;
+        }
+
+        private void CachePowerNodeCold()
+        {
+            if (_powerNode == null)
+                TryGetComponent(out _powerNode);
         }
 
         private void CacheReferences()
@@ -300,7 +340,7 @@ namespace Hecton8.Construction
 
         internal float TryConsumeDirectGridEnergy(float requestedGridEnergyWattSeconds, float reserveFloorNormalized)
         {
-            if (requestedGridEnergyWattSeconds <= 0f)
+            if (requestedGridEnergyWattSeconds <= 0f || _runtimeActivation01 <= 0.0001f)
                 return 0f;
 
             float safeCapacity = math.max(1f, energyCapacityWattSeconds);

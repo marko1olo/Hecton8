@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5372088919249446930}
   - component: {fileID: 6267954130751070623}
+  - component: {fileID: 3725134793669553814}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__broadleaf__s110-170
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1541011913624349959}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.4228654, y: 4.4239078, z: -0.08464241}
-  m_Size: 9.584188
+  m_LocalReferencePoint: {x: -0.71762514, y: 4.68939, z: -0.091376305}
+  m_Size: 9.829791
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 3444593796946208408}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &3725134793669553814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1541011913624349959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 6ada24166e62a884cb71bb67748da8e6, type: 2}
 --- !u!1 &5877432476241220940
 GameObject:
   m_ObjectHideFlags: 0

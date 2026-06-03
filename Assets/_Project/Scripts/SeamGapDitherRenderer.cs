@@ -23,29 +23,12 @@ namespace Hecton8.World
         private const string LegacyGapDitherName = "__SEAM_DITHER";
         private const int MaxMotesPerChunk = 256;
         private const float CurrentFadeInvSpeedSq = 0.16f;
-        // COLD ALLOC: Vector3[4] - immutable seam dither quad vertex template - owner: SeamGapDitherRenderer
-        private static readonly Vector3[] _quadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f)
-        };
-        // COLD ALLOC: Vector2[4] - immutable seam dither quad uv template - owner: SeamGapDitherRenderer
-        private static readonly Vector2[] _quadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(0f, 1f),
-            new Vector2(1f, 1f),
-            new Vector2(1f, 0f)
-        };
-        // COLD ALLOC: int[6] - immutable seam dither quad triangle template - owner: SeamGapDitherRenderer
-        private static readonly int[] _quadTriangles = { 0, 1, 2, 0, 2, 3 };
         [Header("References")]
         [SerializeField] private SeamRegistry seamRegistry;
         [SerializeField] private Transform playerTransform;
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Material seamDitherMaterial;
+        [SerializeField] private Mesh seamDitherQuadMesh;
         [SerializeField] private CaveBiomeTemplate defaultBiomeTemplate;
         [SerializeField] private CaveBiomeTemplate[] biomeTemplates;
         [SerializeField] private WorldGenerativeGeologyIntegrationDirector integrationDirector;
@@ -108,7 +91,7 @@ namespace Hecton8.World
         private GraphicsBuffer _activeArgsBuffer;
         private Mesh _quadMesh;
         // COLD ALLOC: MaterialPropertyBlock - per-draw seam dither parameters without mutating the shared/runtime material.
-        private readonly MaterialPropertyBlock _drawPropertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock _drawPropertyBlock;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private HectonMapMagicVegetationBridge _vegetationBridge;
@@ -229,6 +212,7 @@ namespace Hecton8.World
             _visualUploadBufferIndex ^= 1;
 
             Material drawMaterial = ResolveMaterial();
+            EnsureDrawPropertyBlockCold();
             _drawPropertyBlock.Clear();
             _drawPropertyBlock.SetBuffer(_MatrixBufferId, _activeMatrixBuffer);
             _drawPropertyBlock.SetBuffer(_ColorBufferId, _activeColorBuffer);
@@ -396,11 +380,21 @@ namespace Hecton8.World
 
         private void EnsureRenderingResourcesCold()
         {
+            EnsureDrawPropertyBlockCold();
             EnsureCpuCapacity();
             EnsureQuadMesh();
             ResolveMaterial();
             if (Application.isPlaying)
                 EnsureBuffers();
+        }
+
+        private void EnsureDrawPropertyBlockCold()
+        {
+            if (_drawPropertyBlock != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] - per-draw seam dither parameters - owner: SeamGapDitherRenderer.
+            _drawPropertyBlock = new MaterialPropertyBlock();
         }
 
         private bool AreRenderingResourcesResident()
@@ -447,18 +441,7 @@ namespace Hecton8.World
 
         private void EnsureQuadMesh()
         {
-            if (_quadMesh != null)
-                return;
-
-            _quadMesh = new Mesh
-            {
-                name = "GEN_SeamGapDitherQuad"
-            }; // COLD ALLOC: Mesh[1] - billboard quad used by seam dither indirect draw - owner: SeamGapDitherRenderer
-            _quadMesh.SetVertices(_quadVertices);
-            _quadMesh.SetUVs(0, _quadUvs);
-            _quadMesh.SetTriangles(_quadTriangles, 0, true);
-            _quadMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
-            _quadMesh.UploadMeshData(false);
+            _quadMesh = seamDitherQuadMesh;
         }
 
         private void EnsureBuffers()
@@ -850,6 +833,8 @@ namespace Hecton8.World
             _activeColorBuffer = null;
             _activeArgsBuffer = null;
             _visualUploadBufferIndex = 0;
+            if (_drawPropertyBlock != null)
+                _drawPropertyBlock.Clear();
         }
 
         private void ReleaseRuntimeMaterial()
@@ -858,14 +843,6 @@ namespace Hecton8.World
 
         private void ReleaseQuadMesh()
         {
-            if (_quadMesh == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(_quadMesh);
-            else
-                DestroyImmediate(_quadMesh);
-
             _quadMesh = null;
         }
 

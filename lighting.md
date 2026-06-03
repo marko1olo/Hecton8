@@ -9,6 +9,12 @@ Light is scarce machinery. Darkness is pressure, not absence of art.
 
 Every light must have a source, a reason, a state owner, and a gameplay readability job. HECTON-8 rejects generic blue ambience, clean sci-fi white rooms, random neon accents, bloom as identity, and black screens that hide unfinished geometry.
 
+## Surface Light Boundary
+
+Darkness-as-pressure applies to abyss, caves, industrial interiors, storms, and temporary eclipse windows. Surface, shoreline, ocean skin, photic shallows, sky, Aegir, and moons need motivated star, sky, atmospheric, and reflected light sufficient for beauty and navigation.
+
+Surface lighting must not be black-crushed to imply mood. Use weather bands, glare, cloud shadow, radiation timing, wave state, and route risk for tension. Compact preserves readable surface silhouettes and ocean color; Middle adds richer cloud and shoreline response; High and Ultra add selective shafts, reflections, contact shadows, and cinematic celestial bounce without changing gameplay truth.
+
 ## Truth Ownership
 
 Lighting owns visual illumination, shadow eligibility, baked/static light setup, probe placement, emissive material response, and light-state presentation. It does not own power truth, route truth, threat truth, biolum biology, damage truth, or objective state.

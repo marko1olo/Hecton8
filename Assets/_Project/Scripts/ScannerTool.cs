@@ -15,9 +15,6 @@ using Hecton.Localization;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Gameplay
 {
@@ -27,7 +24,6 @@ namespace Hecton8.Gameplay
     public sealed class ScannerTool : PlayerTool, IBatteryTool, IFastTickable, ISlowTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static int s_x001ScannerToolSignalPushDropCount;
-        internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
         private const int AtlasNavigationRevealStage = 3;
         private const int ScientificConeRayCount = 12;
@@ -43,6 +39,7 @@ namespace Hecton8.Gameplay
         private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
         private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
         private const float ScannerQualityWeightEpsilon = 1f / 255f;
+        private const float PowerIndicatorEmissionEpsilon = 0.0001f;
         private const ushort ScannerBlackBoxFlagEquipped = 1 << 0;
         private const ushort ScannerBlackBoxFlagHeld = 1 << 1;
         private const ushort ScannerBlackBoxFlagSnapshotActive = 1 << 2;
@@ -52,6 +49,8 @@ namespace Hecton8.Gameplay
         private const uint ScannerToolTuningHash = 0x53434E52u; // SCNR
         private const uint FallbackScannerBlueprintHash = 0x534F5648u; // SOVH
         private const string ScannerBlackBoxFileName = "Dump_SHINOBU_224_ScannerTool.bin";
+        private static readonly Color PowerIndicatorOffEmission = new Color(0f, 0f, 0f, 1f);
+        private static readonly Color PowerIndicatorLowBatteryEmission = new Color(1f, 0.3f, 0f, 1f);
         private static uint ResolveScannerFrame()
         {
             return TimeSliceScheduler.CurrentFrameId;
@@ -551,7 +550,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private float resultFeedbackInterval = 0.5f;
         [SerializeField] private float modeFeedbackInterval = 0.4f;
         [SerializeField, Min(1f)] private float bloodWaypointWarningRadius = 100f;
-        [SerializeField] private Shader scannerMarkerShader;
+        [SerializeField] private Mesh scannerMarkerMesh;
+        [SerializeField] private Material scannerMarkerMaterial;
 
         // COLD ALLOC: SpatialQueryHit[64] - scanner spatial contact cap - owner: ScannerTool
         private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[64];
@@ -656,6 +656,8 @@ namespace Hecton8.Gameplay
         // MaterialPropertyBlock for power indicator
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] - power indicator emission - owner: ScannerTool
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private Color _appliedPowerIndicatorEmission;
+        private bool _powerIndicatorEmissionApplied;
         private bool _powerIndicatorDirty;
 
         internal float ScanRadius => scanRadius;
@@ -719,29 +721,41 @@ namespace Hecton8.Gameplay
 
         private void UpdatePowerIndicator()
         {
-            if (_powerIndicatorRenderer == null)
+            if (_powerIndicatorRenderer == null || _mpb == null)
                 return;
 
-            _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            Color targetEmission = ResolvePowerIndicatorEmission();
+            if (_powerIndicatorEmissionApplied &&
+                SamePowerIndicatorEmission(in _appliedPowerIndicatorEmission, in targetEmission))
+                return;
+
+            _mpb.SetColor(_EmissionColorID, targetEmission);
+            _powerIndicatorRenderer.SetPropertyBlock(_mpb);
+            _appliedPowerIndicatorEmission = targetEmission;
+            _powerIndicatorEmissionApplied = true;
+        }
+
+        private Color ResolvePowerIndicatorEmission()
+        {
             float currentCharge = BatteryCharge;
             float flickerScalar = 1f;
             if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
                 flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
 
             if (_installedBattery == null || currentCharge <= 0f)
-            {
-                _mpb.SetColor(_EmissionColorID, Color.black);
-            }
-            else if (currentCharge <= 0.2f)
-            {
-                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f) * flickerScalar);
-            }
-            else
-            {
-                _mpb.SetColor(_EmissionColorID, _powerOnColor * flickerScalar);
-            }
+                return PowerIndicatorOffEmission;
 
-            _powerIndicatorRenderer.SetPropertyBlock(_mpb);
+            return currentCharge <= 0.2f
+                ? PowerIndicatorLowBatteryEmission * flickerScalar
+                : _powerOnColor * flickerScalar;
+        }
+
+        private static bool SamePowerIndicatorEmission(in Color left, in Color right)
+        {
+            return Mathf.Abs(left.r - right.r) <= PowerIndicatorEmissionEpsilon &&
+                   Mathf.Abs(left.g - right.g) <= PowerIndicatorEmissionEpsilon &&
+                   Mathf.Abs(left.b - right.b) <= PowerIndicatorEmissionEpsilon &&
+                   Mathf.Abs(left.a - right.a) <= PowerIndicatorEmissionEpsilon;
         }
 
         internal override float ResolveModularBatteryNormalized()
@@ -752,22 +766,17 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - power indicator emission - owner: ScannerTool
+            InvalidatePowerIndicatorEmission();
             EnsureScientificNativeState();
             InitializeScannerQualityWeightCold();
             BindCachedRuntimeServicesCold();
             InvalidateFocusedConeCache();
             RefreshModeStrings();
-            #if UNITY_EDITOR
-            if (scannerMarkerShader == null)
-                scannerMarkerShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerMarkerShaderPath);
-
-            #endif
-
             if (!TryGetComponent(out HectonScanMarkerSystem markerSystem))
                 markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] - scanner marker owner - owner: ScannerTool
 
             if (markerSystem != null)
-                markerSystem.Initialize(scannerMarkerShader);
+                markerSystem.Initialize(scannerMarkerMesh, scannerMarkerMaterial);
 
             if (!TryGetComponent(out _dataArchaeology))
                 _dataArchaeology = gameObject.AddComponent<DataArchaeologyRuntime>(); // COLD ALLOC: DataArchaeologyRuntime[1] - scanner archaeology owner - owner: ScannerTool
@@ -776,6 +785,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
+            InvalidatePowerIndicatorEmission();
             ClearCachedRuntimeServicesCold();
             BindCachedRuntimeServicesCold();
             RefreshModeStrings();
@@ -979,6 +989,13 @@ namespace Hecton8.Gameplay
             _powerIndicatorDirty = true;
         }
 
+        private void InvalidatePowerIndicatorEmission()
+        {
+            _appliedPowerIndicatorEmission = default;
+            _powerIndicatorEmissionApplied = false;
+            QueuePowerIndicatorUpdate();
+        }
+
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
         {
             if (_cachedBabelLocalization == null)
@@ -1101,6 +1118,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
+            InvalidatePowerIndicatorEmission();
             ClearCachedRuntimeServicesCold();
             BindCachedRuntimeServicesCold();
             ResetScientificFocus();
@@ -1169,8 +1187,11 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
+            if (vault.IsCompactionFenceActive)
+                return false;
+
             if (IsScannerBlackBoxHandleCreated(in _scannerBlackBoxHandle) &&
-                vault.TryResolveHandle(in _scannerBlackBoxHandle, out NativeArray<ScannerBlackBoxEntry> existing) &&
+                vault.TryReadOnlyHandle(in _scannerBlackBoxHandle, out NativeArray<ScannerBlackBoxEntry>.ReadOnly existing) &&
                 existing.IsCreated &&
                 existing.Length >= ScannerBlackBoxCapacity)
             {
@@ -1186,7 +1207,7 @@ namespace Hecton8.Gameplay
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
 
-            if (!vault.TryResolveHandle(in _scannerBlackBoxHandle, out NativeArray<ScannerBlackBoxEntry> ring) ||
+            if (!vault.TryReadOnlyHandle(in _scannerBlackBoxHandle, out NativeArray<ScannerBlackBoxEntry>.ReadOnly ring) ||
                 !ring.IsCreated ||
                 ring.Length < ScannerBlackBoxCapacity)
             {
@@ -1196,13 +1217,14 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private bool TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> ring)
+        private bool TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry>.ReadOnly ring)
         {
             ring = default;
             IDataVault vault = _scannerBlackBoxVault;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    IsScannerBlackBoxHandleCreated(in _scannerBlackBoxHandle) &&
-                   vault.TryResolveHandle(in _scannerBlackBoxHandle, out ring) &&
+                   vault.TryReadOnlyHandle(in _scannerBlackBoxHandle, out ring) &&
                    ring.IsCreated &&
                    ring.Length > 0;
         }
@@ -1214,9 +1236,6 @@ namespace Hecton8.Gameplay
 
         private void WriteScannerBlackBox(float deltaTime, bool heldThisFrame, float now, int frame)
         {
-            if (!TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> scannerBlackBox))
-                return;
-
             bool hasPose = TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot, out float3 scannerForward);
             float3 toolPosition = hasPose ? poseSnapshot.RuntimePosition : float3.zero;
             float3 toolForward = hasPose ? scannerForward : new float3(0f, 0f, 1f);
@@ -1270,7 +1289,7 @@ namespace Hecton8.Gameplay
                 flags |= ScannerBlackBoxFlagInvalidState;
 
             ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out _);
-            scannerBlackBox[_scannerBlackBoxCursor] = new ScannerBlackBoxEntry
+            ScannerBlackBoxEntry entry = new ScannerBlackBoxEntry
             {
                 Frame = unchecked((uint)frame),
                 ToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash,
@@ -1291,17 +1310,59 @@ namespace Hecton8.Gameplay
                 QualityWeightByte = _scannerBlackBoxQualityWeightByte
             };
 
-            if (_scannerBlackBoxRecordedCount < scannerBlackBox.Length)
+            if (!TryWriteScannerBlackBoxEntry(in entry, _scannerBlackBoxCursor, out int ringLength, out int writtenIndex))
+                return;
+
+            if (_scannerBlackBoxRecordedCount < ringLength)
                 _scannerBlackBoxRecordedCount++;
 
-            _scannerBlackBoxCursor++;
-            if (_scannerBlackBoxCursor >= scannerBlackBox.Length)
+            _scannerBlackBoxCursor = writtenIndex + 1;
+            if (_scannerBlackBoxCursor >= ringLength)
                 _scannerBlackBoxCursor = 0;
 
             if (invalidState && !_scannerBlackBoxDumped && !_scannerBlackBoxDumpPending)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(ScannerBlackBoxInvalidStateHash);
                 _scannerBlackBoxDumpPending = true;
+            }
+        }
+
+        private bool TryWriteScannerBlackBoxEntry(
+            in ScannerBlackBoxEntry entry,
+            int cursor,
+            out int ringLength,
+            out int writtenIndex)
+        {
+            ringLength = 0;
+            writtenIndex = 0;
+            IDataVault vault = _scannerBlackBoxVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsScannerBlackBoxHandleCreated(in _scannerBlackBoxHandle))
+            {
+                return false;
+            }
+
+            bool lockAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _scannerBlackBoxHandle, SystemID.UI, out NativeArray<ScannerBlackBoxEntry> ring))
+                    return false;
+
+                lockAcquired = true;
+                if (!ring.IsCreated || ring.Length <= 0)
+                    return false;
+
+                int index = (uint)cursor < (uint)ring.Length ? cursor : 0;
+                ring[index] = entry;
+                ringLength = ring.Length;
+                writtenIndex = index;
+                return true;
+            }
+            finally
+            {
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _scannerBlackBoxHandle, SystemID.UI);
             }
         }
 
@@ -1318,7 +1379,7 @@ namespace Hecton8.Gameplay
         {
             if (_scannerBlackBoxDumped)
                 return true;
-            if (!TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> scannerBlackBox))
+            if (!TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry>.ReadOnly scannerBlackBox))
                 return false;
 
             const int HeaderBytes = 16;

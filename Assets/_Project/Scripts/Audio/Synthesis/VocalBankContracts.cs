@@ -29,6 +29,8 @@ namespace Hecton8.Audio.Synthesis
         public const float VwsDuckingTargetGain = 0.25f;
         public const float VwsDuckingAttackSeconds = 0.1f;
         public const float VwsDuckingReleaseSeconds = 0.1f;
+        public const float InvPcm16Scale = 0.000030517578125f;
+        public const float InvU16Max = 0.000015259021896696421759365224689f;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -411,7 +413,7 @@ namespace Hecton8.Audio.Synthesis
 
         private float GenerateMockSample(uint sampleIndex, uint sampleRate, float baseHz)
         {
-            float t = sampleIndex / math.max(1f, sampleRate);
+            float t = sampleIndex * math.rcp(math.max(1f, sampleRate));
             float env = math.saturate(math.min(t * 6f, (safeDuration(sampleRate) - t) * 4f));
             float a = ApproxSinBhaskara(t * baseHz * 6.28318530718f);
             float b = ApproxSinBhaskara(t * (baseHz * 1.497f) * 6.28318530718f) * 0.33f;
@@ -436,7 +438,7 @@ namespace Hecton8.Audio.Synthesis
 
         private float safeDuration(uint sampleRate)
         {
-            return TotalSamples / math.max(1f, sampleRate);
+            return TotalSamples * math.rcp(math.max(1f, sampleRate));
         }
 
         private void WriteUInt16(int offset, ushort value)
@@ -645,7 +647,7 @@ namespace Hecton8.Audio.Synthesis
                     uint nextQuantizedIndex = math.min(stateRef.TotalSamples - 1u, quantizedIndex + stride);
                     VocalCodecStateDTO probeCodec = codecRef;
                     float nextDecoded = DecodeSample(payload, payloadLength, nextQuantizedIndex, ref probeCodec, codecRef.Codec);
-                    float interpolation = (sourceIndex - quantizedIndex) / math.max(1f, nextQuantizedIndex - quantizedIndex);
+                    float interpolation = (sourceIndex - quantizedIndex) * math.rcp(math.max(1f, nextQuantizedIndex - quantizedIndex));
                     decoded = math.lerp(decoded, nextDecoded, math.saturate(interpolation));
                 }
                 float filtered = ApplyDearLieRadioFilter(decoded, distortion, smoothQuality, ref codecRef);
@@ -699,7 +701,7 @@ namespace Hecton8.Audio.Synthesis
             }
 
             stateRef.DuckingEnvelope01 = duckEnvelope;
-            float rms = written > 0 ? math.sqrt(sumSq / math.max(1, written)) : 0f;
+            float rms = written > 0 ? FastSqrtNonNegative(sumSq * math.rcp(math.max(1f, (float)written))) : 0f;
             counters->LastFaultFlags = stateRef.Flags | codecRef.FaultFlags;
             counters->LastPhraseHashID = stateRef.PhraseHashID;
             counters->LastPeak = peak;
@@ -743,7 +745,7 @@ namespace Hecton8.Audio.Synthesis
         {
             float safeRate = math.max(8000f, (float)sampleRate);
             float safeSeconds = math.max(0.001f, math.select(0.1f, timeSeconds, math.isfinite(timeSeconds)));
-            return math.saturate(1f - math.exp(-1f / (safeRate * safeSeconds)));
+            return math.saturate(1f - math.exp(-math.rcp(safeRate * safeSeconds)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -772,7 +774,7 @@ namespace Hecton8.Audio.Synthesis
             int value = payload[index] | (payload[index + 1] << 8);
             if ((value & 0x8000) != 0)
                 value -= 0x10000;
-            return math.clamp(value / 32768f, -1f, 1f);
+            return math.clamp(value * VocalBankConstants.InvPcm16Scale, -1f, 1f);
         }
 
         private static float DecodeH8Adpcm(byte* payload, uint payloadLength, uint sampleIndex, ref VocalCodecStateDTO codec)
@@ -799,7 +801,7 @@ namespace Hecton8.Audio.Synthesis
                 codec.Predictor = (short)predictor;
                 codec.Step = (byte)math.max(1, payload[blockByteOffset + 2]);
                 codec.DecodedSampleIndex = (int)blockSampleStart;
-                codec.LastSample = math.clamp(codec.Predictor / 32768f, -1f, 1f);
+                codec.LastSample = math.clamp(codec.Predictor * VocalBankConstants.InvPcm16Scale, -1f, 1f);
             }
 
             int target = (int)sampleIndex;
@@ -821,7 +823,7 @@ namespace Hecton8.Audio.Synthesis
                 codec.DecodedSampleIndex++;
             }
 
-            codec.LastSample = math.clamp(codec.Predictor / 32768f, -1f, 1f);
+            codec.LastSample = math.clamp(codec.Predictor * VocalBankConstants.InvPcm16Scale, -1f, 1f);
             return codec.LastSample;
         }
 
@@ -837,12 +839,21 @@ namespace Hecton8.Audio.Synthesis
             float mixed = math.lerp(sample, banded, distortion);
             float drive = math.lerp(1.1f, 3.8f, distortion) * math.lerp(1.28f, 1f, smoothQuality);
             float driven = mixed * drive;
-            float soft = driven / math.max(1f, 1f + math.abs(driven));
+            float soft = driven * math.rcp(math.max(1f, 1f + math.abs(driven)));
             uint rng = (codec.ActivePhraseHashID ^ (uint)math.max(0, codec.DecodedSampleIndex)) * 1664525u + 1013904223u;
-            float staticNoise = (((rng >> 9) & 0xFFFFu) / 65535f - 0.5f) * distortion * math.lerp(0.007f, 0.0015f, smoothQuality);
+            float staticNoise = (((rng >> 9) & 0xFFFFu) * VocalBankConstants.InvU16Max - 0.5f) * distortion * math.lerp(0.007f, 0.0015f, smoothQuality);
             float crushed = soft + staticNoise;
             float steps = math.lerp(40f, 384f, smoothQuality);
-            return math.round(crushed * steps) / math.max(1f, steps);
+            return math.round(crushed * steps) * math.rcp(math.max(1f, steps));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastSqrtNonNegative(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return 0f;
+
+            return value * math.rsqrt(math.max(value, 0.000000000001f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

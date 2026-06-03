@@ -1,30 +1,37 @@
 ---
 packet_id: P051_LIGHT_DELAY_AUTHORITY
+release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.light_delay_authority
+unlock_id: unlock.first_light_delay_authority
+poi_tags: poi.relay_mast;poi.signal_buffer
+biome_tags: biome.storm_shelf;biome.surface_relay
 locale: pt_BR
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Light-Delay Authority
 
-Draft PT-BR localization pending native pass. Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
+Light-Delay Authority fixes HECTON-8 communication canon: no FTL, no ansible, no instant rescue. The player reads relay timing as route pressure.
 
 ## Scanner
 
-Draft PT-BR localization pending native pass. No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
+No ansible lane exists here: every carrier reply is limited by light speed, relay queue, weather scatter and orbital geometry.
 
 ## Terminal
 
-Draft PT-BR localization pending native pass. COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
+COMM AUTHORITY: one-way delay valid. Relay queue loaded. Storm scatter high. Human override outside local survival window.
 
 ## Audio
 
-Draft PT-BR localization pending native pass. Nobody ignored the call fast enough. Distance did it first.
+Nobody ignored the call fast enough. Distance did it first.
 
 ## Field Note
 
-Draft PT-BR localization pending native pass. Physics is the first censor. Priority only decides which late answer leaves first.
+Physics is the first censor. Priority only decides which late answer leaves first.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/pt_BR. -->

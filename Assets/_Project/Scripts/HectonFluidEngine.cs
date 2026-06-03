@@ -1025,6 +1025,8 @@ namespace Hecton8.Physics
         [SerializeField, Min(0.25f)] private float prebakedVectorNoiseCellSizeMeters = 48f;
         [SerializeField, Range(0f, 1f)] private float prebakedVectorNoiseTriangleModulation = 0.35f;
         [SerializeField] private int prebakedVectorNoiseSeed = 1828914165;
+        [SerializeField, Tooltip("Authored 32x32x32 RGBAHalf curl-noise Texture3D for fluid shader globals. Runtime Texture3D synthesis is forbidden.")]
+        private Texture3D authoredPrebakedVectorNoiseTexture;
 
         [Header("-- Analytical Flow Field -----------------------")]
         [SerializeField] private bool enableAnalyticalFlowField = true;
@@ -1092,6 +1094,8 @@ namespace Hecton8.Physics
         [SerializeField] private bool enableGpuAbyssalFlowField = true;
         [SerializeField] private ComputeShader abyssalFlowFieldCompute;
         [SerializeField] private ComputeShader fluidAdvectionCompute;
+        [SerializeField, Tooltip("Authored 1x1x1 neutral Texture3D bound to inactive fluid advection slots. Runtime fallback texture synthesis is forbidden.")]
+        private Texture3D authoredEmptyFluidAdvectionTexture;
         [SerializeField, Range(8, 32)] private int abyssalFlowHorizontalResolution = 16;
         [SerializeField, Range(4, 24)] private int abyssalFlowVerticalResolution = 12;
         [SerializeField, Range(4f, 32f)] private float abyssalFlowHorizontalCellSize = 12f;
@@ -4981,15 +4985,10 @@ namespace Hecton8.Physics
             if (!allowAllocate)
                 return false;
 
-            _emptyFluidAdvectionTexture = new Texture3D(1, 1, 1, TextureFormat.RGBA32, false)
-            {
-                name = "__HectonFluidAdvectionEmptyTex3D",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Texture3D[1x1x1 RGBA32] - bound fallback for advection compute texture slots - owner: HectonFluidEngine
-            _emptyFluidAdvectionTexture.SetPixel(0, 0, 0, Color.black);
-            _emptyFluidAdvectionTexture.Apply(false, true);
+            if (authoredEmptyFluidAdvectionTexture == null)
+                return false;
+
+            _emptyFluidAdvectionTexture = authoredEmptyFluidAdvectionTexture;
             _emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture);
             return _emptyFluidAdvectionTextureHandle != null;
         }
@@ -6870,7 +6869,6 @@ namespace Hecton8.Physics
                 HectonAnalyticalFlowField.VectorNoiseVoxelCount,
                 NativeArrayOptions.UninitializedMemory);
 
-            Color[] pixels = new Color[HectonAnalyticalFlowField.VectorNoiseVoxelCount]; // COLD ALLOC: Color[32768] - one-shot Texture3D upload staging - owner: HectonFluidEngine
             uint seed = unchecked((uint)prebakedVectorNoiseSeed);
             int index = 0;
             for (int z = 0; z < HectonAnalyticalFlowField.VectorNoiseResolution; z++)
@@ -6881,26 +6879,14 @@ namespace Hecton8.Physics
                     {
                         float3 sample = BuildPrebakedCurlVector(x, y, z, seed);
                         _prebakedVectorNoiseField[index] = sample;
-                        pixels[index] = new Color(
-                            sample.x * 0.5f + 0.5f,
-                            sample.y * 0.5f + 0.5f,
-                            sample.z * 0.5f + 0.5f,
-                            1f);
                         index++;
                     }
                 }
             }
 
-            _prebakedVectorNoiseTexture = new Texture3D(
-                HectonAnalyticalFlowField.VectorNoiseResolution,
-                HectonAnalyticalFlowField.VectorNoiseResolution,
-                HectonAnalyticalFlowField.VectorNoiseResolution,
-                TextureFormat.RGBAHalf,
-                false); // COLD ALLOC: Texture3D[32^3 RGBAHalf] - shared organic current atlas - owner: HectonFluidEngine
-            _prebakedVectorNoiseTexture.wrapMode = TextureWrapMode.Repeat;
-            _prebakedVectorNoiseTexture.filterMode = FilterMode.Trilinear;
-            _prebakedVectorNoiseTexture.SetPixels(pixels);
-            _prebakedVectorNoiseTexture.Apply(false, true);
+            _prebakedVectorNoiseTexture = IsValidPrebakedVectorNoiseTexture(authoredPrebakedVectorNoiseTexture)
+                ? authoredPrebakedVectorNoiseTexture
+                : null;
             Shader.SetGlobalTexture(_PrebakedVectorNoise3DId, _prebakedVectorNoiseTexture);
             _prebakedVectorNoiseRuntimeSeed = prebakedVectorNoiseSeed;
         }
@@ -6909,20 +6895,16 @@ namespace Hecton8.Physics
         {
             _prebakedVectorNoiseField.Release();
             _prebakedVectorNoiseRuntimeSeed = int.MinValue;
-
-            if (_prebakedVectorNoiseTexture == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(_prebakedVectorNoiseTexture);
-#if UNITY_EDITOR
-            else
-                DestroyImmediate(_prebakedVectorNoiseTexture);
-#else
-            else
-                Destroy(_prebakedVectorNoiseTexture);
-#endif
+            Shader.SetGlobalTexture(_PrebakedVectorNoise3DId, null);
             _prebakedVectorNoiseTexture = null;
+        }
+
+        private static bool IsValidPrebakedVectorNoiseTexture(Texture3D texture)
+        {
+            return texture != null &&
+                   texture.width == HectonAnalyticalFlowField.VectorNoiseResolution &&
+                   texture.height == HectonAnalyticalFlowField.VectorNoiseResolution &&
+                   texture.depth == HectonAnalyticalFlowField.VectorNoiseResolution;
         }
 
         private static float3 BuildPrebakedCurlVector(int x, int y, int z, uint seed)
@@ -8038,11 +8020,7 @@ namespace Hecton8.Physics
             _cachedFluidAdvectionSdfHandleSource = null;
             ReleaseRTHandle(ref _emptyFluidAdvectionTextureHandle);
 
-            if (_emptyFluidAdvectionTexture != null)
-            {
-                UnityEngine.Object.Destroy(_emptyFluidAdvectionTexture);
-                _emptyFluidAdvectionTexture = null;
-            }
+            _emptyFluidAdvectionTexture = null;
 
             _activeAdvectedSiltCount = 0;
             _activeAdvectedBubbleCount = 0;

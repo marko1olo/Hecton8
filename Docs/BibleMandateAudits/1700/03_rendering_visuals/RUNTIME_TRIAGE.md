@@ -19,16 +19,14 @@ Total runtime suspects: 109. Full raw list: `../_scans/03_rendering_visuals_runt
 
 ## Native allocation or persistent lifetime (52)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs:2118:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs:1925:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1682:            _visibleCountReadback.Data = new NativeArray<uint>(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1684:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:322:            payload.Matrices = new NativeArray<Matrix4x4>(header.MatrixCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:323:            payload.Metadata = new NativeArray<GpuScatterFloraInstanceData>(header.MetadataCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:324:            payload.QualityIndices = new NativeArray<int>(header.QualityIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:486:            NativeArray<byte> seen = new NativeArray<byte>(count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:895:            _indirectArgsReadback.Data = new NativeArray<uint>(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:897:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs:1925:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs:2118:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1682:            _visibleCountReadback.Data = new NativeArray<uint>(
+- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1684:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:509:                _buffers.MockVisibleInstances = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:510:                _buffers.SortScratch = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:511:                _buffers.MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
@@ -49,10 +47,14 @@ Total runtime suspects: 109. Full raw list: `../_scans/03_rendering_visuals_runt
 - [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:520:                TransparentQuadCount = new NativeArray<int>(TransparentCounterCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:521:                TelemetryRing = new NativeArray<TBDRPipelineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:1291:                SliceTable = new NativeArray<TextureStreamingSliceDTO>(SliceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: fixed texture array residency table; production should pass GlobalDataVault
+- [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:1719:            Ring = new NativeArray<TBDRPipelineTelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<TBDRPipelineTelemetryEntry>[300] - TBDR black-box ring - owner: SHINOBU_45_TBDR_TELEMETRY
+- [ ] CLASSIFY: Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:895:            _indirectArgsReadback.Data = new NativeArray<uint>(
 - Additional lines omitted here: 22. Use the raw scan file for full classification.
 
 ## Runtime debug logging (51)
 
+- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs:1394:                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:606:            Debug.LogWarning(message, context);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:501:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Water_Extinction_Matrix.bin not found. Using analytical Beer-Lambert fallback.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:508:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Failed to load Water_Extinction_Matrix.bin: " + exception.Message);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:515:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Invalid Water_Extinction_Matrix.bin byte count: " + byteCount);
@@ -60,12 +62,17 @@ Total runtime suspects: 109. Full raw list: `../_scans/03_rendering_visuals_runt
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:529:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] R16G16B16A16_SFloat sampling is unsupported; packed R16 path remains active when available.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:536:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] StreamingAssets URI staging failed: " + error);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:543:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Portable or low-memory target detected. Using analytical Beer-Lambert fallback instead of streaming Water_Extinction_Matrix.bin.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs:1394:                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:389:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:422:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:606:            Debug.LogWarning(message, context);
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\BiomeProfile.cs:68:                Hecton8.Core.H8Debug.LogWarning("[BiomeProfile] High AOIntensity may impact performance.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs:184:                Hecton8.Core.H8Debug.LogError("[SHINOBU_354] Camera juice ABI violation.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2845:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2853:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2861:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2869:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2877:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2885:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel thread-group contract is invalid. Disabling compute marine snow.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\ShakeProfile.cs:52:                Hecton8.Core.H8Debug.LogWarning("[ShakeProfile] Invalid Duration. Clamping to 0.5s.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:861:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:869:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:877:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
@@ -76,13 +83,6 @@ Total runtime suspects: 109. Full raw list: `../_scans/03_rendering_visuals_runt
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:917:            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]. Clamping.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:925:            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] ShakeProfile Duration invalid. Using default 0.5s.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:933:            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:941:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:949:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:957:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:965:            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:973:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2845:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2853:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
 - Additional lines omitted here: 21. Use the raw scan file for full classification.
 
 ## Uncategorized Static Risk Pattern (5)
@@ -92,3 +92,4 @@ Total runtime suspects: 109. Full raw list: `../_scans/03_rendering_visuals_runt
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuAtmosphereWaveTunerWindow.cs:150:            _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
 - [ ] CLASSIFY: Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:5362:                    _statusLabel.text = "Play Mode and GlobalDataVault required.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:5410:                _statusLabel.text = "Vault live. Layout: CelestialStateDTO 64B, EnvironmentStateDTO 64B, CelestialTelemetryEntry 64B.";
+

@@ -1,10 +1,17 @@
 ---
 packet_id: P093_ACCESSIBLE_SEAFLOOR_WINDOWS
+release_set_id: RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS
 article_id: hecton8.accessible_seafloor_windows
+unlock_id: unlock.first_accessible_seafloor_windows
+poi_tags: poi.exposed_ridge_marker;poi.vent_scar_floor
+biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Accessible Seafloor Windows

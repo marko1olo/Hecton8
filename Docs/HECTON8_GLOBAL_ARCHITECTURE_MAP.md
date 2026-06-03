@@ -48,7 +48,7 @@ Rules:
 
 ## Domain Backbone
 
-`Docs/Actual Domains of Project.txt` defines domain ids `1..85`.
+`Docs/PROJECT_ATLAS.md` carries the current domain index. This map summarizes domain ids `1..85`.
 
 | Range | Echelon | Scope |
 |---:|---|---|

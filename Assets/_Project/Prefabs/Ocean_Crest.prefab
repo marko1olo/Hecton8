@@ -101,7 +101,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c5e624660e55f64da5c7e5b19f0dfcc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Crest::Crest.RegisterAlbedoInput
   _checkShaderName: 1
   _checkShaderPasses: 1
@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26cbe8d1fc0a69249bc135d85739ad39, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Crest::Crest.RegisterAnimWavesInput
   _checkShaderName: 1
   _checkShaderPasses: 1
@@ -326,7 +326,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66f48a8051df1bc4580cc98f58f1114b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Crest::Crest.RegisterFoamInput
   _checkShaderName: 1
   _checkShaderPasses: 1
@@ -337,6 +337,67 @@ MonoBehaviour:
   _subdivisions: 1
   _version: 0
   _followHorizontalMotion: 0
+--- !u!1 &1182089648734552002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1182089648734552003}
+  - component: {fileID: 1182089648734552004}
+  m_Layer: 4
+  m_Name: OceanDepthCache
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1182089648734552003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182089648734552002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 4900, z: 0}
+  m_LocalScale: {x: 256, y: 1, z: 256}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5811674931265784657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1182089648734552004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182089648734552002}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be4155a909a5ef47bdaaf1422602735, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.OceanDepthCache
+  _version: 0
+  _type: 0
+  _refreshMode: 1
+  _layers:
+    serializedVersion: 2
+    m_Bits: 129
+  _layerNames: []
+  _resolution: 512
+  _cameraMaxTerrainHeight: 256
+  _terrainPixelErrorOverride: 0
+  _lodBiasOverride: 3.4028235e+38
+  _maximumLodLevelOverride: 0
+  _forceAlwaysUpdateDebug: 0
+  _hideDepthCacheCam: 1
+  _savedCache: {fileID: 0}
+  _runValidationOnStart: 1
+  _relative: 1
 --- !u!1 &5513631557248329811
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,7 +450,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dde37eff0f7685f41902f400d1de0c6c, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Crest::Crest.OceanRenderer
   _version: 0
   _globalWindSpeed: 30
@@ -401,7 +462,7 @@ MonoBehaviour:
   _searchForPrimaryLightOnStartup: 1
   _material: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
   _waterTilePrefab: {fileID: 0}
-  _layerName: 
+  _layerName:
   _layer: 4
   _overrideGravity: 1
   _gravity: -8.8
@@ -424,7 +485,7 @@ MonoBehaviour:
   _simSettingsDynamicWaves: {fileID: 0}
   _createFlowSim: 0
   _simSettingsFlow: {fileID: 0}
-  _createShadowData: 1
+  _createShadowData: 0
   _simSettingsShadow: {fileID: 11400000, guid: dca1133cd95ddf64095eebe8c7cabf85, type: 2}
   _createClipSurfaceData: 0
   _simSettingsClipSurface: {fileID: 0}
@@ -436,7 +497,7 @@ MonoBehaviour:
   _verifyOpaqueAndDepthTexturesEnabled: 1
   _showOceanProxyPlane: 0
   _editModeFPS: 30
-  _followSceneCamera: 1
+  _followSceneCamera: 0
   _heightQueries: 1
   _debug:
     _attachDebugGUI: 0
@@ -455,7 +516,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a57126133720c243a7af00a156c9ee8, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Crest::Crest.ShapeFFT
   _spectrum: {fileID: 11400000, guid: 607e7fb6e77257849a630c42b169a452, type: 2}
   _spectrumFixedAtRuntime: 1
@@ -493,17 +554,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39b3c7c0989641240856225ecd4807ed, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumCrestDampingController
   dragManager: {fileID: 0}
+  cutManager: {fileID: 0}
+  facadeBakeComputeOverride: {fileID: 7200000, guid: ec30823a09aaacc41a09218f9e986e63, type: 3}
   wavesInputTransform: {fileID: 661104235710018482}
   wavesInputRenderer: {fileID: 661104235710018484}
   foamInputTransform: {fileID: 771104235710018482}
   foamInputRenderer: {fileID: 771104235710018484}
   oilFilmInputTransform: {fileID: 0}
   oilFilmInputRenderer: {fileID: 0}
-  _debugDensityWorldRect: {x: 0, y: 0, z: 0, w: 0}
+  waveDampingDensityPower: 1.35
+  waveDampingCutRelief: 1
+  oilFilmDensityPower: 1.45
+  oilFilmCutRelief: 1
+  oilFilmAlphaScale: 0.92
+  _debugFacadeWorldRect: {x: 0, y: 0, z: 0, w: 0}
   _debugAppliedDriftOffset: {x: 0, y: 0, z: 0}
+  _debugWaveFacadeResolution: 0
+  _debugOilFacadeResolution: 0
 --- !u!114 &631104235710018482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -514,17 +584,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 324f9121423a1ad409a63674c3d213a9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumMicroFaunaBoids
   boidCompute: {fileID: 7200000, guid: d03fb4ee2f5e49f6a4d12caa5eab4c33, type: 3}
   boidMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
   boidMaterial: {fileID: 2100000, guid: a3e4cd9f5f99492cc5705fb11b348966, type: 2}
+  boidVatPositionTexture: {fileID: 0}
+  boidVatNormalTexture: {fileID: 0}
+  boidVatFrameCount: 1
+  boidVatPlaybackSpeed: 1
+  boidVatInstancePhaseScale: 0.0175
+  boidVatPositionScale: 1
+  boidVatNormalBlend: 1
+  hitFlashDurationSeconds: 0.1
+  hitFlashRadiusMeters: 6
+  hitFlashIntensity: 1
+  hitFlashBloatMeters: 0.035
+  hitFlashColor: {r: 1, g: 0.08, b: 0.04, a: 1}
   dragManager: {fileID: 0}
   cutManager: {fileID: 0}
   biolumManager: {fileID: 0}
   viewCamera: {fileID: 0}
   playerTransform: {fileID: 0}
-  boidCount: 768
+  neutralAbyssalFlowTexture: {fileID: 11700000, guid: 5b18df2e53d2a3f4bbd9eba32746810b, type: 2}
+  boidCount: 128
   densityThreshold: 0.42
   windowThreshold: 0.32
   maxSpawnAttempts: 18
@@ -533,6 +616,8 @@ MonoBehaviour:
   panicSpeedBoost: 2.4
   perceptionRadius: 2.25
   separationRadius: 0.85
+  boidBodyRadius: 0.18
+  consumedCollapseSpeed: 6
   separationWeight: 1.85
   alignmentWeight: 0.85
   cohesionWeight: 0.7
@@ -553,9 +638,20 @@ MonoBehaviour:
   panicPlayerRadius: 3.6
   cameraAvoidRadius: 0.95
   cameraAvoidWeight: 4.8
+  voxelAvoidanceLookAheadDistance: 3.5
+  voxelAvoidanceWeight: 0
   maxMassiveThreatCount: 4
   massiveThreatPanicRadius: 56
   massiveThreatWeight: 8.6
+  ecosystemCamouflageWeight: 1.8
+  fragmentationWeight: 5.2
+  fragmentationOffsetScale: 1.6
+  fragmentationMinDurationSeconds: 5
+  fragmentationMaxDurationSeconds: 8
+  activeSonarWaveSpeed: 52
+  activeSonarWaveBandWidth: 3.25
+  activeSonarScatterImpulse: 12
+  activeSonarScatterWeight: 6.8
   waterLevel: 4900
   minDepthBelowSurface: 0.8
   maxDepthBelowSurface: 4.5
@@ -575,6 +671,9 @@ MonoBehaviour:
   parasiteMaxLatchedDronesForFullDrag: 24
   parasiteMaxEnvironmentalDragMultiplier: 1.85
   parasiteLatchReadbackInterval: 0.12
+  enableParasiteLatchGpuReadback: 0
+  parasiteHarvesterLatchThreshold: 5
+  parasiteHarvesterFullLatchCount: 18
   formationBeaconCapacity: 4
   formationBeaconSearchRadius: 120
   formationWeight: 3.2
@@ -583,11 +682,35 @@ MonoBehaviour:
   formationPulseSpeed: 1.1
   formationBreakPanicThreshold: 0.24
   formationObstacleCapacity: 8
-  formationObstacleLayers:
-    serializedVersion: 2
-    m_Bits: 1048575
   formationObstacleSearchRadius: 24
   formationObstacleWeight: 3.6
+  leviathanNodeCapacity: 24
+  leviathanThreatThreshold: 0.42
+  leviathanHotspotMinDistance: 28
+  leviathanHotspotMaxDistance: 180
+  leviathanBodyWeight: 4.8
+  leviathanForwardWeight: 3.6
+  leviathanBodyRadius: 6.5
+  leviathanWaveAmplitude: 0.42
+  leviathanWaveFrequency: 1.35
+  leviathanSurroundThreatThreshold: 0.8
+  leviathanSurroundRadius: 14
+  leviathanSurroundWeight: 4.25
+  leviathanSurroundSpinSpeed: 0.7
+  leviathanModeBlendSharpness: 3.2
+  simulationCullDistance: 200
+  hibernationStartDistance: 50
+  hibernationMaxStepSeconds: 0.18
+  hibernationMinTimeScale: 0.4
+  leviathanStrikeRadius: 5
+  leviathanStrikeTraumaWeight: 0.48
+  leviathanStrikeImpulse: 34
+  leviathanStrikeDamage: 12
+  leviathanStrikeCooldown: 0.42
+  leviathanShockwaveSpeedThreshold: 8.5
+  leviathanShockwaveRadius: 15
+  leviathanShockwaveImpulse: 18
+  leviathanShockwaveCadence: 0.18
   shadowCastingMode: 0
   useGameObjectLayer: 1
   _debugFieldRevision: 0
@@ -595,10 +718,18 @@ MonoBehaviour:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
   _debugDriftOffset: {x: 0, y: 0, z: 0}
-  _debugDispatchGroups: 1
+  _debugDispatchGroups: 0
+  _debugActiveBoidCount: 128
+  _debugPopulationBudgetScale: 1
+  _debugEcosystemFitness: 0
+  _debugEcosystemCamouflageIndex: 0
+  _debugApexInSector: 0
   _debugGrazingAnchorCount: 0
+  _debugParasiteCenterOfMassLS: {x: 0, y: 0, z: 0}
+  _debugParasiteHarvesterPullWS: {x: 0, y: 0, z: 0}
   _debugPlayerSpeed: 0
   _debugPlayerPanicRadiusScale: 1
+  _debugHibernation01: 0
   _debugVisible: 0
   _debugMassiveThreatCount: 0
   _debugDeepModeActive: 0
@@ -609,6 +740,16 @@ MonoBehaviour:
   _debugFormationModeActive: 0
   _debugFormationBeaconCount: 0
   _debugFormationObstacleCount: 0
+  _debugLeviathanModeActive: 0
+  _debugLeviathanNodeCount: 0
+  _debugLeviathanThreatLevel: 0
+  _debugLeviathanHotspotWS: {x: 0, y: 0, z: 0}
+  _debugFragmentation01: 0
+  _debugSonarScatter01: 0
+  _debugPredatorAupThreatCount: 0
+  _debugBoidSensoryThreatCount: 0
+  _debugBoidFlashlightThreatRadius: 0
+  _debugConsumedBoidCount: 0
 --- !u!114 &7666709485588549063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -619,9 +760,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64660468a19de6246ba98d46adabdcc1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Physics.Crest4KinematicsAdapter
-  crestOceanRenderer: {fileID: 0}
+  crestOceanRenderer: {fileID: 1881482921440711839}
+  burstDepthCullingThresholdMeters: 50
+  burstMaxOctaveLimit: 6
+  burstWaveAmplitudeMultiplier: 1
 --- !u!114 &1182089648734552001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -632,7 +776,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8f54dfc1dc54c4da9a83c91f1c4b27a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCrestOceanDepthCacheBootstrap
   oceanRenderer: {fileID: 1881482921440711839}
   oceanDepthCache: {fileID: 1182089648734552004}
@@ -640,6 +784,9 @@ MonoBehaviour:
   terrainBoundsPadding: 64
   depthCacheResolution: 512
   repopulateOnTerrainChange: 1
+  enableTidalHeightCacheModulation: 1
+  tidalHeightCacheAmplitudeMeters: 4
+  dumpDepthDebugFrame: 0
   _debugCacheReady: 0
   _debugTerrainCount: 0
   _debugWaterLevel: 0
@@ -647,7 +794,23 @@ MonoBehaviour:
   _debugLastCacheScaleWS: {x: 0, y: 0, z: 0}
   _debugCaptureLayerMask: 0
   _debugCameraMaxTerrainHeight: 0
+  _debugAbsoluteWaterLevel: 0
+  _debugTerrainBoundsMinWS: {x: 0, y: 0, z: 0}
+  _debugTerrainBoundsMaxWS: {x: 0, y: 0, z: 0}
+  _debugTerrainBoundsMinAUP: {x: 0, y: 0, z: 0}
+  _debugTerrainBoundsMaxAUP: {x: 0, y: 0, z: 0}
+  _debugCacheBoundsMinWS: {x: 0, y: 0, z: 0}
+  _debugCacheBoundsMaxWS: {x: 0, y: 0, z: 0}
+  _debugCacheBoundsMinAUP: {x: 0, y: 0, z: 0}
+  _debugCacheBoundsMaxAUP: {x: 0, y: 0, z: 0}
   _debugLastPopulateFrame: -1
+  _debugOwnershipMode: 0
+  _debugCaptureCameraPositionWS: {x: 0, y: 0, z: 0}
+  _debugCaptureCameraNear: 0
+  _debugCaptureCameraFar: 0
+  _debugCaptureCameraOrthoSize: 0
+  _debugTidalWaterLevelOffset: 0
+  _debugTidalAegirDirection: {x: 0, y: 0, z: 0}
 --- !u!114 &1954067716359082144
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -658,7 +821,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb39863bb9d0457b93e91ab29b91da4d, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCaveVoxelAmbientOcclusionController
   viewerTransform: {fileID: 0}
   viewerCamera: {fileID: 0}
@@ -671,64 +834,3 @@ MonoBehaviour:
   _debugTargetOcclusion: 0
   _debugAppliedOcclusion: 0
   _debugViewerPositionWS: {x: 0, y: 0, z: 0}
---- !u!1 &1182089648734552002
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1182089648734552003}
-  - component: {fileID: 1182089648734552004}
-  m_Layer: 4
-  m_Name: OceanDepthCache
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1182089648734552003
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1182089648734552002}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4900, z: 0}
-  m_LocalScale: {x: 256, y: 1, z: 256}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5811674931265784657}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1182089648734552004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1182089648734552002}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5be4155a909a5ef47bdaaf1422602735, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Crest::Crest.OceanDepthCache
-  _version: 0
-  _type: 0
-  _refreshMode: 1
-  _layers:
-    serializedVersion: 2
-    m_Bits: 129
-  _layerNames: []
-  _resolution: 512
-  _cameraMaxTerrainHeight: 256
-  _terrainPixelErrorOverride: 0
-  _lodBiasOverride: 3.4028235e+38
-  _maximumLodLevelOverride: 0
-  _forceAlwaysUpdateDebug: 0
-  _hideDepthCacheCam: 1
-  _savedCache: {fileID: 0}
-  _runValidationOnStart: 1
-  _relative: 1

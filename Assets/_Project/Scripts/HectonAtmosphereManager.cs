@@ -658,10 +658,6 @@ namespace Hecton8.Atmosphere
         private static readonly int _shaderID_AegirDirection =
             Shader.PropertyToID("_AegirDirection");
 
-        private const int AegirRingCookieMinResolution = 16;
-        private const int AegirRingCookieMaxResolution = 256;
-        private const int AegirRingCookieResolutionStep = 16;
-
         #endregion
 
         #region ══════════ Inspector ══════════
@@ -689,9 +685,9 @@ namespace Hecton8.Atmosphere
                  "At dot ∈ [0, -sin(fadeAngle)] intensity smoothly → 0.")]
         [SerializeField, Range(1f, 30f)]
         private float _sunHorizonFadeAngle = 10f;
-        [Tooltip("Assigns a tiny striped directional-light cookie for Aegir ring banding. Runtime resolution scales continuously from GlobalQualityWeight.")]
+        [Tooltip("Binds an authored striped directional-light cookie for Aegir ring banding. Runtime cookie synthesis is forbidden.")]
         [SerializeField] private bool _useAegirRingShadowCookie = true;
-        [SerializeField, Range(16, 256)] private int _aegirRingShadowCookieResolution = 128;
+        [SerializeField] private Texture2D _authoredAegirRingShadowCookie;
 
         [Header("═══ Atmosphere Profiles ═══")]
         [SerializeField] private AtmosphereProfile _profileDay;
@@ -805,7 +801,6 @@ namespace Hecton8.Atmosphere
         private float _pendingShaderSargassumBiolumPhaseMultiplier = HectonVegetationConstants.SargassumBiolumPhaseMultiplier;
         private bool _pendingGiantAbyssLightDirty;
         private Texture2D _aegirRingShadowCookie;
-        private int _aegirRingShadowCookieResolutionApplied;
 
         /// <summary>Dictionary for O(1) biome profile lookup (instead of linear search).</summary>
         private Dictionary<int, AtmosphereProfile> _biomeProfileDict;
@@ -1009,13 +1004,15 @@ namespace Hecton8.Atmosphere
         {
             if (_cachedCelestialEngine != null)
             {
-                ReleaseAegirRingShadowCookie();
+                if (_aegirRingShadowCookie != null)
+                    ReleaseAegirRingShadowCookie();
                 return;
             }
 
             if (!_useAegirRingShadowCookie)
             {
-                ReleaseAegirRingShadowCookie();
+                if (_aegirRingShadowCookie != null)
+                    ReleaseAegirRingShadowCookie();
                 return;
             }
 
@@ -1029,79 +1026,31 @@ namespace Hecton8.Atmosphere
             if (_sunLight == null)
                 return;
 
-            int resolution = ResolveAegirRingShadowCookieResolution();
-            if (_aegirRingShadowCookie == null || _aegirRingShadowCookieResolutionApplied != resolution)
+            Texture2D authoredCookie = _authoredAegirRingShadowCookie;
+            if (authoredCookie == null)
+            {
+                if (_aegirRingShadowCookie != null)
+                    ReleaseAegirRingShadowCookie();
+                return;
+            }
+
+            if (!ReferenceEquals(_aegirRingShadowCookie, authoredCookie))
             {
                 ReleaseAegirRingShadowCookie();
-                _aegirRingShadowCookie = new Texture2D(resolution, 1, TextureFormat.RGBA32, false, true)
-                {
-                    name = "__HectonAegirRingShadowCookie",
-                    wrapMode = TextureWrapMode.Repeat,
-                    filterMode = FilterMode.Bilinear,
-                    hideFlags = HideFlags.DontSave
-                };
-                _aegirRingShadowCookieResolutionApplied = resolution;
-
-                float invResolution = 1f / Mathf.Max(1, resolution - 1);
-                for (int x = 0; x < resolution; x++)
-                {
-                    float u = x * invResolution;
-                    float ringA = Mathf.SmoothStep(0.0f, 1.0f, CinematicMath.FastTriangleWave01((u * 11.0f) + 0.13f));
-                    float ringB = Mathf.SmoothStep(0.0f, 1.0f, CinematicMath.FastTriangleWave01((u * 23.0f) + 0.41f));
-                    float cookie = math.lerp(0.58f, 1.0f, math.saturate(math.max(ringA, ringB)));
-                    _aegirRingShadowCookie.SetPixel(x, 0, new Color(cookie, cookie, cookie, 1f));
-                }
-
-                _aegirRingShadowCookie.Apply(false, true);
+                _aegirRingShadowCookie = authoredCookie;
             }
 
             if (_sunLight.cookie != _aegirRingShadowCookie)
                 _sunLight.cookie = _aegirRingShadowCookie;
         }
 
-        private int ResolveAegirRingShadowCookieResolution()
-        {
-            int maxResolution = Mathf.Clamp(
-                _aegirRingShadowCookieResolution,
-                AegirRingCookieMinResolution,
-                AegirRingCookieMaxResolution);
-
-            if (!Application.isPlaying)
-                return maxResolution;
-
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            if (!math.isfinite(quality))
-                quality = 1f;
-
-            float shapedQuality = Smooth01(math.saturate(quality));
-            int resolved = Mathf.RoundToInt(math.lerp(AegirRingCookieMinResolution, maxResolution, shapedQuality));
-            resolved = Mathf.Clamp(resolved, AegirRingCookieMinResolution, maxResolution);
-            int quantized = ((resolved + (AegirRingCookieResolutionStep >> 1)) / AegirRingCookieResolutionStep) * AegirRingCookieResolutionStep;
-            return Mathf.Clamp(quantized, AegirRingCookieMinResolution, maxResolution);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float Smooth01(float value)
-        {
-            float t = math.saturate(value);
-            return t * t * (3f - (2f * t));
-        }
-
         private void ReleaseAegirRingShadowCookie()
         {
-            if (_sunLight != null && _sunLight.cookie == _aegirRingShadowCookie)
+            Texture2D boundCookie = _aegirRingShadowCookie;
+            if (boundCookie != null && _sunLight != null && ReferenceEquals(_sunLight.cookie, boundCookie))
                 _sunLight.cookie = null;
 
-            if (_aegirRingShadowCookie == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(_aegirRingShadowCookie);
-            else
-                DestroyImmediate(_aegirRingShadowCookie);
-
             _aegirRingShadowCookie = null;
-            _aegirRingShadowCookieResolutionApplied = 0;
         }
 
         private void TryRegister()

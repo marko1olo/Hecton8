@@ -27,6 +27,19 @@ Any water feature must name its job before implementation:
 
 If the feature cannot name a player-readable job, it is decoration and must not enter runtime.
 
+## 1.1 Surface And Shallows Water
+
+Surface water and photic shallows must be beautiful, bright, and readable. They are not allowed to inherit abyssal darkness as a default grade.
+
+Required surface/shallow traits:
+
+- clear ocean color with believable depth falloff;
+- wave normals, specular sparkle, foam, refraction, caustic hints, and waterline wetness where visible;
+- terrain readable through shallow water when the player or camera is near the surface;
+- quality scaling that reduces density, resolution, or update cadence before it damages the art direction.
+
+Depth can remove light and increase turbidity. The surface cannot be made ugly to save budget. Low hardware keeps the clean ocean read; high hardware buys richer reflection, caustics, spray, foam breakup, and underwater light shafts.
+
 ## 2. Truth Ownership
 
 Water truth is split deliberately:

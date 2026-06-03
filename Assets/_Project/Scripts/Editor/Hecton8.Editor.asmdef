@@ -6,6 +6,7 @@
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Scheduling",
         "Hecton8.Core.Memory",
+        "Hecton8.Project.Editor",
         "Hecton8.Physics.Cable132",
         "Hecton8.Rendering.TexturePacker.Editor",
         "Hecton8.Rendering.BilateralDrs",

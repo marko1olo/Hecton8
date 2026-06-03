@@ -157,7 +157,7 @@ namespace Hecton8.Construction
     internal enum ModuleCatalogHydrationStatus : uint
     {
         Empty = 0,
-        Mock = 1,
+        RetiredGeneratedCatalog = 1,
         Hydrated = 2,
         InvalidHeader = 3,
         InvalidLength = 4,
@@ -183,7 +183,6 @@ namespace Hecton8.Construction
         public const uint BinaryVersion = 1u;
         public const uint UniversalConnectionMask = 0x7FFFFF00u;
         public const uint CatalogImmutableFlag = 1u << 0;
-        public const uint CatalogGeneratedMockFlag = 1u << 1;
         public const uint BinaryLittleEndianFlag = 1u << 2;
         public const uint TelemetryOverBudgetFlag = 1u << 0;
         public const uint TelemetryNonFiniteFlag = 1u << 1;
@@ -195,10 +194,6 @@ namespace Hecton8.Construction
         public const int CatalogByteLoadInvalidTarget = -1;
         public const int CatalogByteLoadIoFailure = -2;
         public const int CatalogByteLoadShortRead = -3;
-        public const uint MockCorridorHash = 0x21601001u;
-        public const uint MockAirlockHash = 0x21601002u;
-        public const uint MockVerticalHash = 0x21601003u;
-        public const uint MockUtilityHash = 0x21601004u;
         private const int CompatibilityLaneBitOffset = 8;
         private const int CompatibilityLaneCount = 23;
         private const uint ClassHabitatHash = 0x48414249u; // "HABI"
@@ -226,7 +221,48 @@ namespace Hecton8.Construction
             int hashCapacity = DefaultHashCapacity)
         {
             views = default;
-            return false;
+            if (!TryAcquireCatalogWriteViews(
+                    vault,
+                    out views,
+                    out ModuleCatalogWriteLease lease,
+                    moduleCapacity,
+                    socketCapacity,
+                    costCapacity,
+                    hashCapacity))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!views.State.IsCreated ||
+                    views.State.Length == 0 ||
+                    !views.Modules.IsCreated ||
+                    !views.Sockets.IsCreated ||
+                    !views.Costs.IsCreated ||
+                    !views.HashToIndex.IsCreated ||
+                    !views.Telemetry.IsCreated)
+                {
+                    views = default;
+                    return false;
+                }
+
+                ModuleCatalogStateDTO state = views.State[0];
+                if (state.HydrationStatus == (uint)ModuleCatalogHydrationStatus.Empty &&
+                    state.ModuleCount == 0u &&
+                    state.SocketCount == 0u &&
+                    state.CostCount == 0u)
+                {
+                    state.Flags |= BinaryLittleEndianFlag;
+                    views.State[0] = state;
+                }
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteLease(in lease);
+            }
         }
 
         public static bool TryResolveViews(IDataVault vault, out ModuleCatalogViews views)
@@ -458,43 +494,6 @@ namespace Hecton8.Construction
             }
 
             return true;
-        }
-
-        public static JobHandle ScheduleMockCatalog(IDataVault vault, out ModuleCatalogViews views, JobHandle dependency = default)
-        {
-            views = default;
-            return dependency;
-        }
-
-        public static JobHandle ScheduleMockCatalog(
-            IDataVault vault,
-            out ModuleCatalogViews views,
-            out ModuleCatalogWriteLease lease,
-            JobHandle dependency = default)
-        {
-            if (!TryAcquireCatalogWriteViews(vault, out views, out lease, 16, 64, 16, 64))
-                return dependency;
-
-            var job = new GenerateMockModuleCatalogJob
-            {
-                State = views.State,
-                Modules = views.Modules,
-                Sockets = views.Sockets,
-                Costs = views.Costs,
-                HashToIndex = views.HashToIndex
-            };
-            return job.Schedule(dependency);
-        }
-
-        public static JobHandle ScheduleHydrateCatalog(
-            IDataVault vault,
-            NativeArray<byte> sourceBytes,
-            int sourceByteLength,
-            out ModuleCatalogViews views,
-            JobHandle dependency = default)
-        {
-            views = default;
-            return dependency;
         }
 
         public static JobHandle ScheduleHydrateCatalog(
@@ -1249,115 +1248,6 @@ namespace Hecton8.Construction
         private static byte ToLowerAscii(byte value)
         {
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public struct GenerateMockModuleCatalogJob : IJob
-        {
-            [NoAlias] public NativeArray<ModuleCatalogStateDTO> State;
-            [NoAlias] public NativeArray<ModuleDefinitionDTO> Modules;
-            [NoAlias] public NativeArray<SocketDefinitionDTO> Sockets;
-            [NoAlias] public NativeArray<ModuleCostDTO> Costs;
-            [NoAlias] public NativeArray<uint> HashToIndex;
-
-            public void Execute()
-            {
-                if (!State.IsCreated || State.Length == 0 || Modules.Length < 4 || Sockets.Length < 14 || Costs.Length < 4)
-                    return;
-
-                uint genericMask = UniversalConnectionMask;
-                WriteModule(0, MockCorridorHash, 0, 6, new float3(2f, 2f, 2f), 240u);
-                WriteSocket(0, new float3(0f, 0f, 2f), new float3(0f, 0f, 1f), genericMask);
-                WriteSocket(1, new float3(0f, 0f, -2f), new float3(0f, 0f, -1f), genericMask);
-                WriteSocket(2, new float3(2f, 0f, 0f), new float3(1f, 0f, 0f), genericMask);
-                WriteSocket(3, new float3(-2f, 0f, 0f), new float3(-1f, 0f, 0f), genericMask);
-                WriteSocket(4, new float3(0f, 2f, 0f), new float3(0f, 1f, 0f), genericMask);
-                WriteSocket(5, new float3(0f, -2f, 0f), new float3(0f, -1f, 0f), genericMask);
-
-                WriteModule(1, MockAirlockHash, 6, 2, new float3(2f, 2f, 2f), 320u);
-                WriteSocket(6, new float3(0f, 0f, 2f), new float3(0f, 0f, 1f), genericMask);
-                WriteSocket(7, new float3(0f, 0f, -2f), new float3(0f, 0f, -1f), genericMask);
-
-                WriteModule(2, MockVerticalHash, 8, 2, new float3(2f, 3f, 2f), 300u);
-                WriteSocket(8, new float3(0f, 3f, 0f), new float3(0f, 1f, 0f), genericMask);
-                WriteSocket(9, new float3(0f, -3f, 0f), new float3(0f, -1f, 0f), genericMask);
-
-                WriteModule(3, MockUtilityHash, 10, 4, new float3(2f, 2f, 2f), 180u);
-                WriteSocket(10, new float3(0f, 0f, 2f), new float3(0f, 0f, 1f), genericMask);
-                WriteSocket(11, new float3(0f, 0f, -2f), new float3(0f, 0f, -1f), genericMask);
-                WriteSocket(12, new float3(2f, 0f, 0f), new float3(1f, 0f, 0f), genericMask);
-                WriteSocket(13, new float3(-2f, 0f, 0f), new float3(-1f, 0f, 0f), genericMask);
-
-                WriteCost(0, MockCorridorHash, 0x434F4D50u, 2, 0x54495441u, 1);
-                WriteCost(1, MockAirlockHash, 0x434F4D50u, 4, 0x5345414Cu, 2);
-                WriteCost(2, MockVerticalHash, 0x434F4D50u, 3, 0x54495441u, 2);
-                WriteCost(3, MockUtilityHash, 0x434F4D50u, 3, 0x434F494Cu, 1);
-
-                if (HashToIndex.IsCreated)
-                {
-                    int clearCount = math.min(HashToIndex.Length, 16);
-                    for (int i = 0; i < clearCount; i++)
-                        HashToIndex[i] = 0u;
-                    if (HashToIndex.Length >= 8)
-                    {
-                        HashToIndex[0] = MockCorridorHash;
-                        HashToIndex[1] = 0u;
-                        HashToIndex[2] = MockAirlockHash;
-                        HashToIndex[3] = 1u;
-                        HashToIndex[4] = MockVerticalHash;
-                        HashToIndex[5] = 2u;
-                        HashToIndex[6] = MockUtilityHash;
-                        HashToIndex[7] = 3u;
-                    }
-                }
-
-                ModuleCatalogStateDTO state = default;
-                state.ModuleCount = 4u;
-                state.SocketCount = 14u;
-                state.CostCount = 4u;
-                state.HydrationStatus = (uint)ModuleCatalogHydrationStatus.Mock;
-                state.Generation = State[0].Generation + 1u;
-                state.CatalogHash = 0x53483216u;
-                state.Flags = CatalogImmutableFlag | CatalogGeneratedMockFlag | BinaryLittleEndianFlag;
-                State[0] = state;
-            }
-
-            private void WriteModule(int index, uint prefabHash, int socketStart, int socketCount, float3 extents, uint strength)
-            {
-                Modules[index] = new ModuleDefinitionDTO
-                {
-                    PrefabHashID = prefabHash,
-                    ModuleClassHash = ClassHabitatHash,
-                    BoundingBoxExtents = extents,
-                    SocketCount = (uint)socketCount,
-                    SocketStartIndex = socketStart,
-                    BaseStrength = strength,
-                    AllowedBiomesMask = AllBiomesMask
-                };
-            }
-
-            private void WriteSocket(int index, float3 localOffset, float3 normal, uint mask)
-            {
-                Sockets[index] = new SocketDefinitionDTO
-                {
-                    LocalOffset = localOffset,
-                    Normal = math.normalizesafe(normal, new float3(0f, 0f, 1f)),
-                    AllowedConnectionsMask = mask
-                };
-            }
-
-            private void WriteCost(int index, uint prefabHash, uint itemHash0, int qty0, uint itemHash1, int qty1)
-            {
-                Costs[index] = new ModuleCostDTO
-                {
-                    PrefabHashID = prefabHash,
-                    CostCount = 2u,
-                    ItemHash0 = itemHash0,
-                    Quantity0 = qty0,
-                    ItemHash1 = itemHash1,
-                    Quantity1 = qty1
-                };
-            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

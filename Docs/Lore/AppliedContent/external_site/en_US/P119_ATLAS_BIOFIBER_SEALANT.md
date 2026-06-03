@@ -1,10 +1,17 @@
 ---
 packet_id: P119_ATLAS_BIOFIBER_SEALANT
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.atlas_biofiber_sealant
+unlock_id: unlock.first_atlas_biofiber_sealant
+poi_tags: poi.biofiber_seam;poi.living_patch_growth
+biome_tags: biome.cable_reef;biome.repair_ecology
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Atlas Biofiber Sealant

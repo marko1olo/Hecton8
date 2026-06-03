@@ -311,11 +311,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: MessageTerminal
-
-            if (statusLightRenderer == null)
-                TryGetComponent(out statusLightRenderer);
+            EnsureStatusLightResourcesCold();
 
             CacheRegistryServicesCold();
             CacheMessageHashesCold();
@@ -331,6 +327,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            EnsureStatusLightResourcesCold();
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
             InteractableRegistry.RegisterTree(this);
@@ -368,6 +365,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            EnsureStatusLightResourcesCold();
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -417,6 +415,18 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void EnsureStatusLightResourcesCold()
+        {
+            if (_emissionPropertyId == 0)
+                _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
+
+            if (_mpb == null)
+                _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - Unity reload can clear nonserialized fields without re-running Awake.
+
+            if (statusLightRenderer == null)
+                TryGetComponent(out statusLightRenderer);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1151,7 +1161,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _statusLightDirty = false;
-            if (statusLightRenderer == null)
+            if (statusLightRenderer == null || _mpb == null)
                 return;
 
             statusLightRenderer.GetPropertyBlock(_mpb);

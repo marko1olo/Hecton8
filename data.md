@@ -104,6 +104,21 @@ Changing a primary DTO requires:
 
 Until Unity/Burst/IL2CPP/player proof exists, the evidence class is static source only.
 
+## Proof Artifacts
+
+Data work must attach the artifact that proves the claim:
+
+- source path and struct/type name;
+- layout report with field order, offsets, size, alignment, padding, and managed-reference scan;
+- owner/lifetime/disposal route for every native collection;
+- hot/cold boundary table for DTOs, save records, file records, GPU records, and SignalBus payloads;
+- finite-value clamp/reject proof for externally sourced numeric data;
+- migration/version/checksum proof for file-facing records;
+- Burst/Jobs/IL2CPP/player proof where runtime layout or platform behavior is claimed;
+- profiler/GC/memory proof when data route changes affect runtime allocation, upload, or completion cadence.
+
+If only static inspection was performed, label the work `STATIC VERIFIED` and do not claim runtime readiness.
+
 ## Scalability
 
 `GlobalQualityWeight` scales capacities, optional telemetry payloads, presentation upload density, dirty upload cadence, and diagnostic record depth. It never changes authoritative DTO layout, save identity, command payload meaning, owner route, or gameplay truth field semantics.

@@ -17,10 +17,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.UI
 {
     /// <summary>
@@ -60,9 +56,6 @@ namespace Hecton8.UI
         private const float RadarRedispatchPowerEpsilon = 0.01f;
         private const float RadarRedispatchFlickerEpsilon = 0.01f;
         private const float DefaultMaxSonarDelaySeconds = 6.75f;
-        private const string ComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_CockpitHoloRadar.compute";
-        private const string DamageHologramComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_DamageHologram.compute";
-        private const string DamageHologramMaterialAssetPath = "Assets/_Project/Art/Materials/MAT_Damage_Hologram.mat";
         private const string DamageHologramKernelName = "KMapHullDents";
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const uint TelemetryContextHash = 0x56534F53u; // VSOS
@@ -117,81 +110,6 @@ namespace Hecton8.UI
         private static readonly int DamageProxyVertexCountId = Shader.PropertyToID("_HectonDamageProxyVertexCount");
         private static readonly int DamageRoomCountId = Shader.PropertyToID("_HectonDamageRoomCount");
         private static readonly int DamageHologramFlickerId = Shader.PropertyToID("_Flicker");
-        private static readonly Vector3[] RadarQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        }; // COLD ALLOC: Vector3[4] - immutable cockpit radar billboard quad vertices - owner: VehicleSubOsCockpitRuntime
-        private static readonly Vector2[] RadarQuadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(1f, 1f),
-            new Vector2(0f, 1f)
-        }; // COLD ALLOC: Vector2[4] - immutable cockpit radar billboard quad UVs - owner: VehicleSubOsCockpitRuntime
-        private static readonly int[] RadarQuadIndices =
-        {
-            0, 1, 2,
-            0, 2, 3
-        }; // COLD ALLOC: int[6] - immutable cockpit radar billboard quad indices - owner: VehicleSubOsCockpitRuntime
-        private static readonly Vector3[] DamageCubeVertices =
-        {
-            new Vector3(-0.5f, -0.5f, -0.5f),
-            new Vector3(0.5f, -0.5f, -0.5f),
-            new Vector3(0.5f, 0.5f, -0.5f),
-            new Vector3(-0.5f, 0.5f, -0.5f),
-            new Vector3(-0.5f, -0.5f, 0.5f),
-            new Vector3(0.5f, -0.5f, 0.5f),
-            new Vector3(0.5f, 0.5f, 0.5f),
-            new Vector3(-0.5f, 0.5f, 0.5f)
-        }; // COLD ALLOC: Vector3[8] - immutable hologram cube vertices - owner: VehicleSubOsCockpitRuntime
-        private static readonly int[] DamageCubeIndices =
-        {
-            0, 2, 1, 0, 3, 2,
-            4, 5, 6, 4, 6, 7,
-            0, 1, 5, 0, 5, 4,
-            2, 3, 7, 2, 7, 6,
-            1, 2, 6, 1, 6, 5,
-            0, 4, 7, 0, 7, 3
-        }; // COLD ALLOC: int[36] - immutable hologram cube indices - owner: VehicleSubOsCockpitRuntime
-        private static readonly Vector3[] FallbackDamageProxyVertices =
-        {
-            new Vector3(-0.62f, -0.1f, -0.08f),
-            new Vector3(-0.42f, 0.12f, -0.12f),
-            new Vector3(-0.18f, 0.18f, -0.16f),
-            new Vector3(0.18f, 0.18f, -0.16f),
-            new Vector3(0.42f, 0.12f, -0.12f),
-            new Vector3(0.62f, -0.1f, -0.08f),
-            new Vector3(-0.62f, -0.1f, 0.08f),
-            new Vector3(-0.42f, 0.12f, 0.12f),
-            new Vector3(-0.18f, 0.18f, 0.16f),
-            new Vector3(0.18f, 0.18f, 0.16f),
-            new Vector3(0.42f, 0.12f, 0.12f),
-            new Vector3(0.62f, -0.1f, 0.08f),
-            new Vector3(-0.5f, -0.28f, -0.06f),
-            new Vector3(-0.24f, -0.34f, -0.12f),
-            new Vector3(0.24f, -0.34f, -0.12f),
-            new Vector3(0.5f, -0.28f, -0.06f),
-            new Vector3(-0.5f, -0.28f, 0.06f),
-            new Vector3(-0.24f, -0.34f, 0.12f),
-            new Vector3(0.24f, -0.34f, 0.12f),
-            new Vector3(0.5f, -0.28f, 0.06f),
-            new Vector3(-0.36f, 0.0f, -0.2f),
-            new Vector3(0.0f, 0.05f, -0.24f),
-            new Vector3(0.36f, 0.0f, -0.2f),
-            new Vector3(-0.36f, 0.0f, 0.2f),
-            new Vector3(0.0f, 0.05f, 0.24f),
-            new Vector3(0.36f, 0.0f, 0.2f),
-            new Vector3(-0.08f, 0.32f, 0.0f),
-            new Vector3(0.08f, 0.32f, 0.0f),
-            new Vector3(-0.08f, -0.42f, 0.0f),
-            new Vector3(0.08f, -0.42f, 0.0f),
-            new Vector3(-0.74f, -0.12f, 0.0f),
-            new Vector3(0.74f, -0.12f, 0.0f)
-        }; // COLD ALLOC: Vector3[32] - fallback coarse submarine proxy when LOD3 mesh is not wired - owner: VehicleSubOsCockpitRuntime
-
         [Header("Radar")]
         [SerializeField] private Transform radarDomeAnchor;
         [SerializeField] private ComputeShader radarCompute;
@@ -212,6 +130,8 @@ namespace Hecton8.UI
         [SerializeField] private int damageHologramLayer;
 
         [Header("Physical Panel")]
+        [SerializeField] private GameObject _authoredCockpitPanelPrefab;
+        [SerializeField] private Material _sharedUiMaterial;
         [SerializeField] private Transform dashboardPanelPlane;
         [SerializeField] private Vector2 panelHalfExtents = new Vector2(0.72f, 0.36f);
         [SerializeField] private int buttonColumns = 4;
@@ -282,11 +202,9 @@ namespace Hecton8.UI
         private GraphicsBuffer _damageRoomWaterBufferA;
         private GraphicsBuffer _damageRoomWaterBufferB;
         private GraphicsBuffer _activeDamageRoomWaterBuffer;
-        private Material _radarRuntimeMaterial;
-        private Material _damageRuntimeMaterial;
-        private Mesh _runtimeRadarQuad;
-        private Mesh _runtimeDamageCube;
-        private readonly MaterialPropertyBlock _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime
+        private MaterialPropertyBlock _screenPropertyBlock;
+        private MaterialPropertyBlock _radarMaterialProperties;
+        private MaterialPropertyBlock _damageHologramProperties;
         private int _sonarTapUploadBufferIndex;
         private int _radarArgsUploadBufferIndex;
         private RenderTexture _uiRenderTexture;
@@ -298,7 +216,6 @@ namespace Hecton8.UI
         private IHabitatGraphService _cachedHabitatGraph;
         private IPowerGridService _cachedPowerGrid;
         private IDataVault _dataVault;
-        private IDataVault _telemetryWriteVault;
 
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
@@ -320,8 +237,6 @@ namespace Hecton8.UI
         private bool _damageHologramResourcesReady;
         private bool _presentationResourcesDirty = true;
         private bool _renderTargetsDirty = true;
-        private bool _radarMaterialBufferBound;
-        private bool _damageHologramMaterialBufferBound;
         private bool _damageHologramFallbackPointUploaded;
         private bool _damageHologramFallbackWarningActive;
         private bool _damageHologramUsingFallbackGlyph;
@@ -376,8 +291,6 @@ namespace Hecton8.UI
         private float _lastExternalFeedBlend = -1f;
         private float _screenUpdateAccumulator;
         private Texture _lastScreenTexture;
-        private GraphicsBuffer _lastRadarMaterialBlipBuffer;
-        private GraphicsBuffer _lastRadarMaterialGprBuffer;
         private Mesh _lastDamageProxyMesh;
         private Mesh _lastDamageArgsMesh;
         private Vector4 _damageProxyBounds = new Vector4(-0.75f, 0.75f, -0.45f, 0.35f);
@@ -417,25 +330,27 @@ namespace Hecton8.UI
         private void Awake()
         {
             InvalidateOffscreenTextCache();
-            ResolveColdAssetReferences();
             CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             RefreshQualityPolicy(allowGraphicsResourceMutation: true);
+            EnsureMaterialPropertyBlocksCold();
             EnsureNativeResources();
             EnsureGraphicsResources();
             EnsureRenderTargets();
+            BindAuthoredCockpitPanelCold();
         }
 
         private void OnEnable()
         {
             InvalidateOffscreenTextCache();
-            ResolveColdAssetReferences();
             CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             RefreshQualityPolicy(allowGraphicsResourceMutation: true);
+            EnsureMaterialPropertyBlocksCold();
             EnsureNativeResources();
             EnsureGraphicsResources();
             EnsureRenderTargets();
+            BindAuthoredCockpitPanelCold();
             HectonSubmarineOsEvents.Register(this);
             PowerGridTelemetryEvents.Register(this);
             TryRegisterHotSwapListener();
@@ -463,29 +378,6 @@ namespace Hecton8.UI
             DisposeGraphicsResources();
             DisposeNativeResources();
             ReleaseUiRenderTexture();
-            if (_radarRuntimeMaterial != null)
-            {
-                Destroy(_radarRuntimeMaterial);
-                _radarRuntimeMaterial = null;
-            }
-
-            if (_runtimeRadarQuad != null)
-            {
-                Destroy(_runtimeRadarQuad);
-                _runtimeRadarQuad = null;
-            }
-
-            if (_damageRuntimeMaterial != null)
-            {
-                Destroy(_damageRuntimeMaterial);
-                _damageRuntimeMaterial = null;
-            }
-
-            if (_runtimeDamageCube != null)
-            {
-                Destroy(_runtimeDamageCube);
-                _runtimeDamageCube = null;
-            }
         }
 
         private void AdvanceCockpitFrameState(float deltaTime)
@@ -759,18 +651,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
-        }
-
-        private void ResolveColdAssetReferences()
-        {
-#if UNITY_EDITOR
-            if (radarCompute == null)
-                radarCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeAssetPath);
-            if (damageHologramCompute == null)
-                damageHologramCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(DamageHologramComputeAssetPath);
-            if (damageHologramMaterial == null)
-                damageHologramMaterial = AssetDatabase.LoadAssetAtPath<Material>(DamageHologramMaterialAssetPath);
-#endif
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1121,18 +1001,15 @@ namespace Hecton8.UI
             }
         }
 
-        private bool TryAcquireTelemetryWriteBuffer(out NativeArray<CockpitTelemetryEntry> telemetryRing)
+        private bool TryWriteTelemetryEntry(int slot, in CockpitTelemetryEntry entry)
         {
-            telemetryRing = default;
-            if (_telemetryWriteVault != null)
-                return false;
-
             IDataVault vault = _dataVault;
+            NativeArray<CockpitTelemetryEntry> telemetryRing = default;
             bool locked = false;
-            bool success = false;
             try
             {
                 if (vault == null ||
+                    (uint)slot >= (uint)TelemetryCapacity ||
                     !IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId) ||
                     !vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwnerSystemId, out telemetryRing))
                 {
@@ -1143,26 +1020,14 @@ namespace Hecton8.UI
                 if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
                     return false;
 
-                _telemetryWriteVault = vault;
-                success = true;
+                telemetryRing[slot] = entry;
                 return true;
             }
             finally
             {
-                if (locked && !success)
-                {
+                if (locked)
                     vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
-                    telemetryRing = default;
-                }
             }
-        }
-
-        private void ReleaseTelemetryWriteBuffer()
-        {
-            IDataVault vault = _telemetryWriteVault;
-            _telemetryWriteVault = null;
-            if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId))
-                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
         }
 
         private bool TryReadButtonStates(int requiredButtonCount, out NativeArray<byte>.ReadOnly states)
@@ -1234,7 +1099,6 @@ namespace Hecton8.UI
 
         private void ReleaseCockpitVaultHandles(IDataVault vault)
         {
-            ReleaseTelemetryWriteBuffer();
             ReleaseCockpitVaultHandle(vault, ref _buttonStatesHandle, ButtonStatesBufferId);
             ReleaseCockpitVaultHandle(vault, ref _buttonTargetsHandle, ButtonTargetsBufferId);
             ReleaseCockpitVaultHandle(vault, ref _buttonProgressHandle, ButtonProgressBufferId);
@@ -1242,7 +1106,6 @@ namespace Hecton8.UI
             ReleaseCockpitVaultHandle(vault, ref _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId);
             ReleaseCockpitVaultHandle(vault, ref _buttonMatricesHandle, ButtonMatricesBufferId);
             ReleaseCockpitVaultHandle(vault, ref _telemetryRingHandle, TelemetryRingBufferId);
-            _telemetryWriteVault = null;
         }
 
         private static void ReleaseCockpitVaultHandle<T>(
@@ -1315,10 +1178,6 @@ namespace Hecton8.UI
             if (_activeRadarArgsBuffer == null)
                 _activeRadarArgsBuffer = _radarArgsBufferA;
 
-            if (_radarRuntimeMaterial == null && radarBlipMaterial != null)
-                _radarRuntimeMaterial = new Material(radarBlipMaterial); // COLD ALLOC: material instance prevents shared radar shader state bleed.
-            if (radarBlipMesh == null && _runtimeRadarQuad == null)
-                _runtimeRadarQuad = CreateRadarQuadMesh();
             if (radarArgsBufferCreated)
             {
                 InvalidateRadarArgsCache();
@@ -1341,8 +1200,55 @@ namespace Hecton8.UI
                                    _activeRadarArgsBuffer != null &&
                                    radarCompute != null &&
                                    _radarKernel >= 0 &&
-                                   _radarThreadGroupSizeX > 0;
+                                   _radarThreadGroupSizeX > 0 &&
+                                   radarBlipMaterial != null &&
+                                   ResolveRadarMesh() != null;
             _presentationResourcesDirty = false;
+        }
+
+        private void EnsureMaterialPropertyBlocksCold()
+        {
+            if (_screenPropertyBlock == null)
+                _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime.
+            if (_radarMaterialProperties == null)
+                _radarMaterialProperties = new MaterialPropertyBlock(); // COLD ALLOC: cockpit radar per-draw properties - owner: VehicleSubOsCockpitRuntime.
+            if (_damageHologramProperties == null)
+                _damageHologramProperties = new MaterialPropertyBlock(); // COLD ALLOC: cockpit damage hologram per-draw properties - owner: VehicleSubOsCockpitRuntime.
+        }
+
+        private void BindAuthoredCockpitPanelCold()
+        {
+            GameObject authoredPanel = _authoredCockpitPanelPrefab;
+            if (authoredPanel != null && authoredPanel.scene.IsValid())
+            {
+                Transform authoredPanelTransform = authoredPanel.transform;
+                if (dashboardPanelPlane == null)
+                    dashboardPanelPlane = authoredPanelTransform;
+                if (centralScreenRenderer == null)
+                    centralScreenRenderer = ResolveFirstRendererCold(authoredPanelTransform);
+            }
+
+            if (_sharedUiMaterial != null && centralScreenRenderer != null && centralScreenRenderer.sharedMaterial != _sharedUiMaterial)
+                centralScreenRenderer.sharedMaterial = _sharedUiMaterial;
+        }
+
+        private static Renderer ResolveFirstRendererCold(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            if (root.TryGetComponent(out Renderer renderer))
+                return renderer;
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Renderer childRenderer = ResolveFirstRendererCold(root.GetChild(i));
+                if (childRenderer != null)
+                    return childRenderer;
+            }
+
+            return null;
         }
 
         private void DisposeGraphicsResources()
@@ -1381,7 +1287,7 @@ namespace Hecton8.UI
             InvalidateRadarDispatchCache();
             InvalidateRadarArgsCache();
             InvalidateRadarMaterialBinding();
-            _damageHologramMaterialBufferBound = false;
+            _damageHologramProperties?.Clear();
             _damageHologramFallbackPointUploaded = false;
             _damageHologramFallbackWarningActive = false;
             _damageHologramUsingFallbackGlyph = false;
@@ -1447,7 +1353,7 @@ namespace Hecton8.UI
                     GraphicsBuffer.Target.Append | GraphicsBuffer.Target.CopyDestination,
                     MaxDamageHologramPoints,
                     16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
-                _damageHologramMaterialBufferBound = false;
+                _damageHologramProperties.Clear();
                 _damageHologramFallbackPointUploaded = false;
                 _damageHologramFallbackWarningActive = false;
             }
@@ -1484,12 +1390,6 @@ namespace Hecton8.UI
                 _damageRoomWaterUploadIndex = 0;
             }
 
-            if (_damageRuntimeMaterial == null && damageHologramMaterial != null)
-                _damageRuntimeMaterial = new Material(damageHologramMaterial); // COLD ALLOC: material instance prevents cockpit hologram shader state bleed.
-
-            if (damagePointMesh == null && _runtimeDamageCube == null)
-                _runtimeDamageCube = CreateDamageCubeMesh();
-
             EnsureDamageProxyVertexBuffer();
 
             if (damageHologramCompute != null && _damageHologramKernel < 0)
@@ -1500,13 +1400,14 @@ namespace Hecton8.UI
                     _damageHologramKernel);
             }
 
-            bool fallbackReady = _damagePointBuffer != null &&
+            bool fallbackReady = IsDamageHologramFallbackGlyphAllowed() &&
+                                 _damagePointBuffer != null &&
                                  _damageArgsBuffer != null &&
-                                 _damageRuntimeMaterial != null &&
+                                 damageHologramMaterial != null &&
                                  ResolveDamagePointMesh() != null;
             bool computeReady = _damagePointBuffer != null &&
                                 _damageArgsBuffer != null &&
-                                _damageRuntimeMaterial != null &&
+                                damageHologramMaterial != null &&
                                 _activeDamageProxyVertexBuffer != null &&
                                 _activeDamageRoomWaterBuffer != null &&
                                 damageHologramCompute != null &&
@@ -1535,13 +1436,15 @@ namespace Hecton8.UI
                 sourceCount = _damageProxySourceVertices.Count;
             }
 
-            bool useFallbackVertices = sourceCount < MinDamageProxyVertices;
             if (sourceCount < MinDamageProxyVertices)
             {
-                sourceCount = FallbackDamageProxyVertices.Length;
+                _damageProxyBounds = new Vector4(-0.75f, 0.75f, -0.45f, 0.35f);
+                _damageProxyVertexCount = 0;
+                _activeDamageProxyVertexBuffer = null;
+                return;
             }
 
-            int safeCount = math.clamp(sourceCount, MinDamageProxyVertices, MaxDamageHologramPoints);
+            int safeCount = math.min(sourceCount, MaxDamageHologramPoints);
             if (_damageProxyUploadVertices == null || _damageProxyUploadVertices.Length != safeCount)
                 _damageProxyUploadVertices = new Vector3[safeCount]; // COLD ALLOC: Vector3[safeCount] - stable proxy vertex upload copy capped at 512 - owner: VehicleSubOsCockpitRuntime
 
@@ -1551,7 +1454,7 @@ namespace Hecton8.UI
             float maxY = float.MinValue;
             for (int i = 0; i < safeCount; i++)
             {
-                Vector3 vertex = useFallbackVertices ? FallbackDamageProxyVertices[i] : _damageProxySourceVertices[i];
+                Vector3 vertex = _damageProxySourceVertices[i];
                 if (!IsFinite(vertex))
                     vertex = Vector3.zero;
 
@@ -1601,9 +1504,7 @@ namespace Hecton8.UI
             if (radarCompute == null)
                 return false;
 
-            return !_radarResourcesReady ||
-                   (_radarRuntimeMaterial == null && radarBlipMaterial != null) ||
-                   (radarBlipMesh == null && _runtimeRadarQuad == null);
+            return !_radarResourcesReady;
         }
 
         private bool HasRadarBufferCapacity(int requiredCapacity)
@@ -2293,9 +2194,7 @@ namespace Hecton8.UI
 
         private void InvalidateRadarMaterialBinding()
         {
-            _radarMaterialBufferBound = false;
-            _lastRadarMaterialBlipBuffer = null;
-            _lastRadarMaterialGprBuffer = null;
+            _radarMaterialProperties?.Clear();
         }
 
         private void RenderRadarPointCloud()
@@ -2303,7 +2202,8 @@ namespace Hecton8.UI
             if (_radarActivePoints <= 0 ||
                 !_radarPowered ||
                 !_radarResourcesReady ||
-                _radarRuntimeMaterial == null ||
+                radarBlipMaterial == null ||
+                _radarMaterialProperties == null ||
                 _radarBlipBuffer == null ||
                 _activeRadarArgsBuffer == null)
             {
@@ -2328,43 +2228,34 @@ namespace Hecton8.UI
 
             if (_radarUsingGpr)
             {
-                if (!_radarMaterialBufferBound || !ReferenceEquals(_lastRadarMaterialGprBuffer, groundRadarBuffer))
-                {
-                    _radarRuntimeMaterial.SetBuffer(HectonGroundRadarPingsId, groundRadarBuffer);
-                    _radarRuntimeMaterial.SetFloat(HectonRadarProceduralId, 1f);
-                    _radarRuntimeMaterial.SetFloat(HectonRadarGprProceduralId, 1f);
-                    _lastRadarMaterialGprBuffer = groundRadarBuffer;
-                    _radarMaterialBufferBound = true;
-                }
-
                 float3 origin = groundRadar.LastProbeOrigin;
-                _radarRuntimeMaterial.SetVector(
+                _radarMaterialProperties.Clear();
+                _radarMaterialProperties.SetBuffer(HectonGroundRadarPingsId, groundRadarBuffer);
+                _radarMaterialProperties.SetFloat(HectonRadarProceduralId, 1f);
+                _radarMaterialProperties.SetFloat(HectonRadarGprProceduralId, 1f);
+                _radarMaterialProperties.SetVector(
                     HectonRadarGprOriginRadiusId,
                     new Vector4(origin.x, origin.y, origin.z, math.max(1f, groundRadar.ScanRadiusMeters)));
             }
-            else if (!_radarMaterialBufferBound || !ReferenceEquals(_lastRadarMaterialBlipBuffer, _radarBlipBuffer))
-            {
-                _radarRuntimeMaterial.SetBuffer(HectonRadarBlipsId, _radarBlipBuffer);
-                _radarRuntimeMaterial.SetFloat(HectonRadarProceduralId, 1f);
-                _radarRuntimeMaterial.SetFloat(HectonRadarGprProceduralId, 0f);
-                _lastRadarMaterialBlipBuffer = _radarBlipBuffer;
-                _radarMaterialBufferBound = true;
-            }
             else
             {
-                _radarRuntimeMaterial.SetFloat(HectonRadarGprProceduralId, 0f);
+                _radarMaterialProperties.Clear();
+                _radarMaterialProperties.SetBuffer(HectonRadarBlipsId, _radarBlipBuffer);
+                _radarMaterialProperties.SetFloat(HectonRadarProceduralId, 1f);
+                _radarMaterialProperties.SetFloat(HectonRadarGprProceduralId, 0f);
             }
 
-            _radarRuntimeMaterial.SetMatrix(HectonRadarLocalToWorldId, radarLocalToWorld);
+            _radarMaterialProperties.SetMatrix(HectonRadarLocalToWorldId, radarLocalToWorld);
 
             Bounds bounds = new Bounds(anchorPosition, Vector3.one * ResolveRadarBoundsSize());
-            RenderParams renderParams = new RenderParams(_radarRuntimeMaterial)
+            RenderParams renderParams = new RenderParams(radarBlipMaterial)
             {
                 worldBounds = bounds,
                 layer = radarLayer,
                 shadowCastingMode = ShadowCastingMode.Off,
                 receiveShadows = false,
-                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
+                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion,
+                matProps = _radarMaterialProperties
             };
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _activeRadarArgsBuffer, 1, 0);
         }
@@ -2383,7 +2274,7 @@ namespace Hecton8.UI
             }
 
             Mesh mesh = ResolveDamagePointMesh();
-            if (mesh == null || _damageRuntimeMaterial == null || _damagePointBuffer == null || _damageArgsBuffer == null)
+            if (mesh == null || damageHologramMaterial == null || _damageHologramProperties == null || _damagePointBuffer == null || _damageArgsBuffer == null)
                 return;
 
             Transform anchor = damageHologramAnchor != null
@@ -2397,8 +2288,14 @@ namespace Hecton8.UI
 
             if (CanDispatchDamageHologramCompute())
                 DispatchDamageHologramCompute();
-            else
+            else if (IsDamageHologramFallbackGlyphAllowed())
                 UploadFallbackDamageHologramGlyph();
+            else
+            {
+                UpdateDamageHologramArgs(0, true);
+                _damageHologramEstimatedPoints = 0;
+                return;
+            }
 
             BindDamageHologramMaterial(hologramLocalToWorld);
             Vector4 anchorColumn = hologramLocalToWorld.GetColumn(3);
@@ -2407,11 +2304,11 @@ namespace Hecton8.UI
             UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 mesh,
                 0,
-                _damageRuntimeMaterial,
+                damageHologramMaterial,
                 bounds,
                 _damageArgsBuffer,
                 0,
-                null,
+                _damageHologramProperties,
                 ShadowCastingMode.Off,
                 false,
                 damageHologramLayer,
@@ -2476,6 +2373,15 @@ namespace Hecton8.UI
                    _activeDamageRoomWaterBuffer != null;
         }
 
+        private static bool IsDamageHologramFallbackGlyphAllowed()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+            return false;
+#endif
+        }
+
         private int ResolveDamageHologramPointBudget()
         {
             float curve = SmoothQuality(_qualityWeight01);
@@ -2537,22 +2443,22 @@ namespace Hecton8.UI
 
         private void BindDamageHologramMaterial(Matrix4x4 hologramLocalToWorld)
         {
-            if (!_damageHologramMaterialBufferBound)
-            {
-                _damageRuntimeMaterial.SetBuffer(DamageHologramPointsId, _damagePointBuffer);
-                _damageRuntimeMaterial.SetBuffer(DamageRoomWaterLevelsId, _activeDamageRoomWaterBuffer);
-                _damageHologramMaterialBufferBound = true;
-            }
+            if (_damageHologramProperties == null)
+                return;
 
-            _damageRuntimeMaterial.SetMatrix(DamageHologramLocalToWorldId, hologramLocalToWorld);
+            _damageHologramProperties.Clear();
+            _damageHologramProperties.SetBuffer(DamageHologramPointsId, _damagePointBuffer);
+            _damageHologramProperties.SetBuffer(DamageRoomWaterLevelsId, _activeDamageRoomWaterBuffer);
+
+            _damageHologramProperties.SetMatrix(DamageHologramLocalToWorldId, hologramLocalToWorld);
             Vector4 materialParams = default;
             materialParams.x = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             materialParams.y = ResolveDamageHologramAlpha();
             materialParams.z = _damageRoomCount;
             materialParams.w = _cheapVisualWeight01;
-            _damageRuntimeMaterial.SetVector(DamageHologramParamsId, materialParams);
-            _damageRuntimeMaterial.SetVector(DamageHologramBoundsId, _damageProxyBounds);
-            _damageRuntimeMaterial.SetFloat(DamageHologramFlickerId, ResolveDamageHologramFlicker());
+            _damageHologramProperties.SetVector(DamageHologramParamsId, materialParams);
+            _damageHologramProperties.SetVector(DamageHologramBoundsId, _damageProxyBounds);
+            _damageHologramProperties.SetFloat(DamageHologramFlickerId, ResolveDamageHologramFlicker());
         }
 
         private void UpdateDamageHologramArgs(int instanceCount, bool force)
@@ -2587,21 +2493,7 @@ namespace Hecton8.UI
 
         private Mesh ResolveDamagePointMesh()
         {
-            return damagePointMesh != null ? damagePointMesh : _runtimeDamageCube;
-        }
-
-        private static Mesh CreateDamageCubeMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "VSOS_DamageHologramCube"
-            };
-            mesh.SetVertices(DamageCubeVertices);
-            mesh.SetIndices(DamageCubeIndices, MeshTopology.Triangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(true);
-            return mesh;
+            return damagePointMesh;
         }
 
         private float ResolveDamageHologramAlpha()
@@ -2641,26 +2533,12 @@ namespace Hecton8.UI
 
         private Mesh ResolveRadarMesh()
         {
-            return radarBlipMesh != null ? radarBlipMesh : _runtimeRadarQuad;
+            return radarBlipMesh;
         }
 
         private bool IsRadarDrawableReady()
         {
-            return _radarRuntimeMaterial != null && ResolveRadarMesh() != null;
-        }
-
-        private static Mesh CreateRadarQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "VSOS_RadarBlipQuad"
-            };
-            mesh.SetVertices(RadarQuadVertices);
-            mesh.SetUVs(0, RadarQuadUvs);
-            mesh.SetIndices(RadarQuadIndices, MeshTopology.Triangles, 0);
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(true);
-            return mesh;
+            return radarBlipMaterial != null && ResolveRadarMesh() != null;
         }
 
         private void UpdateButtonKinematics(float deltaTime)
@@ -2885,9 +2763,6 @@ namespace Hecton8.UI
 
         private void RecordTelemetry()
         {
-            if (!TryAcquireTelemetryWriteBuffer(out NativeArray<CockpitTelemetryEntry> telemetryRing))
-                return;
-
             Transform anchor = radarDomeAnchor != null ? radarDomeAnchor : transform;
             Vector3 position = anchor.position;
             bool positionFinite = IsFinite(position);
@@ -2900,48 +2775,46 @@ namespace Hecton8.UI
                           math.isfinite(_damageHologramFlood01) &&
                           math.isfinite(holoFlicker);
             Vector3 safePosition = positionFinite ? position : Vector3.zero;
-            int slot = _telemetryWriteIndex;
+            int slot = (uint)_telemetryWriteIndex < (uint)TelemetryCapacity ? _telemetryWriteIndex : 0;
+            CockpitTelemetryEntry entry = new CockpitTelemetryEntry
+            {
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
+                RadarActivePoints = _radarActivePoints,
+                CockpitInteractions = _cockpitInteractions,
+                Flags = BuildTelemetryFlags(finite),
+                Power = SaturateFinite(_nodeVoltageSupplyRatio, 0f),
+                Oxygen = SaturateFinite(_latestOxygenNormalized, 0f),
+                Co2 = SaturateFinite(_latestCarbonDioxideNormalized, 0f),
+                SpeedKnots = math.isfinite(_latestSpeedKnots) ? _latestSpeedKnots : 0f,
+                AnchorPosition = safePosition,
+                HoloDamagePoints = _damageHologramEstimatedPoints,
+                HoloProxyVertices = _damageProxyVertexCount,
+                HoloFlicker = SaturateFinite(holoFlicker, 0f),
+                HoloFlood01 = SaturateFinite(_damageHologramFlood01, 0f),
+                HoloFlags = BuildDamageHologramTelemetryFlags()
+            };
+
+            if (!TryWriteTelemetryEntry(slot, in entry))
+                return;
+
             bool shouldDump = false;
             bool shouldPublish = false;
-            try
+
+            _telemetryCursor++;
+            _telemetryWriteIndex++;
+            if (_telemetryWriteIndex >= TelemetryCapacity)
+                _telemetryWriteIndex = 0;
+
+            if (!finite && _nanDumped == 0)
             {
-                telemetryRing[slot] = new CockpitTelemetryEntry
-                {
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
-                    RadarActivePoints = _radarActivePoints,
-                    CockpitInteractions = _cockpitInteractions,
-                    Flags = BuildTelemetryFlags(finite),
-                    Power = SaturateFinite(_nodeVoltageSupplyRatio, 0f),
-                    Oxygen = SaturateFinite(_latestOxygenNormalized, 0f),
-                    Co2 = SaturateFinite(_latestCarbonDioxideNormalized, 0f),
-                    SpeedKnots = math.isfinite(_latestSpeedKnots) ? _latestSpeedKnots : 0f,
-                    AnchorPosition = safePosition,
-                    HoloDamagePoints = _damageHologramEstimatedPoints,
-                    HoloProxyVertices = _damageProxyVertexCount,
-                    HoloFlicker = SaturateFinite(holoFlicker, 0f),
-                    HoloFlood01 = SaturateFinite(_damageHologramFlood01, 0f),
-                    HoloFlags = BuildDamageHologramTelemetryFlags()
-                };
-                _telemetryCursor++;
-                _telemetryWriteIndex++;
-                if (_telemetryWriteIndex >= TelemetryCapacity)
-                    _telemetryWriteIndex = 0;
-
-                if (!finite && _nanDumped == 0)
-                {
-                    _nanDumped = 1;
-                    shouldDump = true;
-                }
-
-                if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _telemetryPublishFrame)
-                {
-                    _telemetryPublishFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + 30;
-                    shouldPublish = true;
-                }
+                _nanDumped = 1;
+                shouldDump = true;
             }
-            finally
+
+            if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _telemetryPublishFrame)
             {
-                ReleaseTelemetryWriteBuffer();
+                _telemetryPublishFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + 30;
+                shouldPublish = true;
             }
 
             if (shouldDump)
@@ -3300,7 +3173,6 @@ namespace Hecton8.UI
 
         private void OnValidate()
         {
-            ResolveColdAssetReferences();
             buttonColumns = ResolveButtonColumns();
             buttonRows = ResolveButtonRows();
             buttonCount = math.clamp(buttonCount, 1, MaxButtons);
@@ -3317,6 +3189,10 @@ namespace Hecton8.UI
             uiRenderTextureHeight = math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
             externalRenderTextureWidth = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
             externalRenderTextureHeight = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
+            if (_authoredCockpitPanelPrefab == null && dashboardPanelPlane != null)
+                _authoredCockpitPanelPrefab = dashboardPanelPlane.gameObject;
+            if (_sharedUiMaterial == null && centralScreenRenderer != null)
+                _sharedUiMaterial = centralScreenRenderer.sharedMaterial;
             _buttonBasesInitialized = false;
         }
 

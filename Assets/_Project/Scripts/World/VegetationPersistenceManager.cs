@@ -197,6 +197,46 @@ namespace Hecton8.World
             return changed;
         }
 
+        private bool InvalidateChunksForNewPermanentEchoes(NativeArray<ThreatPropagationStagingPoint> staging)
+        {
+            if (!staging.IsCreated ||
+                _ecosystemThreatGridResolution <= 0)
+            {
+                return false;
+            }
+
+            bool changed = false;
+            ClearEvictionScratch();
+            FixedChunkPayloadMap.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
+            while (payloadEnumerator.MoveNext())
+            {
+                ChunkPayload payload = payloadEnumerator.Current.Value;
+                if (!HasNewPermanentEchoInBounds(
+                        payload.MinX,
+                        payload.MaxX,
+                        payload.MinZ,
+                        payload.MaxZ,
+                        staging))
+                    continue;
+
+                if (!TryAddEvictionScratch(payloadEnumerator.Current.Key))
+                    break;
+            }
+
+            for (int i = 0; i < _evictionKeyCount; i++)
+            {
+                ChunkKey key = _evictionKeys[i];
+                changed |= InvalidateChunkForCorruption(key);
+                if (TryGetDesiredChunkPriority(key, out float priority))
+                    EnqueuePendingChunk(key, Mathf.Min(-0.5f, priority - 0.5f));
+            }
+
+            if (changed)
+                _activeSetDirty = true;
+
+            return changed;
+        }
+
         private bool HasNewPermanentEchoInBounds(
             float minX,
             float maxX,
@@ -231,6 +271,45 @@ namespace Hecton8.World
                     {
                         continue;
                     }
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasNewPermanentEchoInBounds(
+            float minX,
+            float maxX,
+            float minZ,
+            float maxZ,
+            NativeArray<ThreatPropagationStagingPoint> staging)
+        {
+            if (!staging.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f)
+            {
+                return false;
+            }
+
+            int halfExtent = _ecosystemThreatGridResolution >> 1;
+            int minCellX = Mathf.Clamp(Mathf.FloorToInt((minX - _ecosystemThreatGridCenter.x) / threatGridCellSize) + halfExtent - 1, 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = Mathf.Clamp(Mathf.CeilToInt((maxX - _ecosystemThreatGridCenter.x) / threatGridCellSize) + halfExtent + 1, 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = Mathf.Clamp(Mathf.FloorToInt((minZ - _ecosystemThreatGridCenter.z) / threatGridCellSize) + halfExtent - 1, 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = Mathf.Clamp(Mathf.CeilToInt((maxZ - _ecosystemThreatGridCenter.z) / threatGridCellSize) + halfExtent + 1, 0, _ecosystemThreatGridResolution - 1);
+
+            for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+            {
+                for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                {
+                    int index = (cellZ * _ecosystemThreatGridResolution) + cellX;
+                    if ((uint)index >= (uint)staging.Length)
+                        continue;
+
+                    ThreatPropagationStagingPoint point = staging[index];
+                    if (point.NextEcho == 0 || point.PreviousEcho != 0)
+                        continue;
 
                     return true;
                 }

@@ -28,6 +28,8 @@ namespace Hecton8.Scavenging
         private const float MinimumYieldSampleSeconds = 0.016f;
         private const int DepletionLockFree = 0;
         private const int DepletionLockOwned = 1;
+        private const float QualityParticleEnableThreshold = 0.22f;
+        private const float QualityParticleInvRange = 1f / (1f - QualityParticleEnableThreshold);
         private static readonly int _SteamExplosionLayerMask = HectonLayerMasks.MountedSweepLayerMask;
         private static readonly SpatialQueryHit[] _steamExplosionContacts = new SpatialQueryHit[16];
         private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
@@ -40,7 +42,9 @@ namespace Hecton8.Scavenging
         private static IModularEquipmentService s_modularEquipmentService;
         private static IObjectPoolService s_objectPool;
         private static IPhysicsService s_physicsService;
+        private static bool s_registryCacheBootstrapped;
         private static bool s_registryCacheRegistered;
+        private static int s_registryCacheRefreshFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -52,7 +56,9 @@ namespace Hecton8.Scavenging
             s_modularEquipmentService = null;
             s_objectPool = null;
             s_physicsService = null;
+            s_registryCacheBootstrapped = false;
             s_registryCacheRegistered = false;
+            s_registryCacheRefreshFrame = -1;
         }
 
         private sealed class RegistryCacheListener : IGlobalRegistryHotSwapListener
@@ -143,17 +149,35 @@ namespace Hecton8.Scavenging
         [Tooltip("Optional explicit renderer receiving the melt property block.")]
         private Renderer targetRenderer;
 
+        [SerializeField]
+        [Tooltip("Optional cheap mesh used when GlobalQualityWeight is near minimum survival. Collider and economy truth stay unchanged.")]
+        private Mesh lowQualityNodeMesh;
+
+        [SerializeField]
+        [Tooltip("Optional authored ambient particle systems. Emission is continuously scaled by GlobalQualityWeight and disabled on weak devices.")]
+        private ParticleSystem[] qualityScaledParticleSystems;
+
+        [SerializeField, Range(0f, 128f)]
+        [Tooltip("Maximum ambient particle emission rate at GlobalQualityWeight 1.0.")]
+        private float maxQualityParticleRate = 18f;
+
+        [SerializeField, Range(0, 512)]
+        [Tooltip("Maximum ambient particle budget at GlobalQualityWeight 1.0.")]
+        private int maxQualityParticles = 96;
+
         private Transform _cachedTransform;
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
         private BoxCollider _boxCollider;
         private SphereCollider _sphereCollider;
+        private GameObject _cachedGameObject;
         private MaterialPropertyBlock _propertyBlock;
         private Vector4 _localHitPoint;
         private float _currentHealth;
         private bool _isDepleted;
         private bool _despawnRequested;
         private bool _lootSpawnBlockedLogged;
+        private bool _isKnownPooledInstance;
         private uint _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskAny;
         private GameObject _cachedLootOraclePrefab;
         private uint _cachedLootOracleItemHash;
@@ -220,22 +244,46 @@ namespace Hecton8.Scavenging
 
         private static void EnsureRegistryCache()
         {
+            if (!s_registryCacheRegistered && Application.isPlaying)
+            {
+                s_registryCacheRegistered =
+                    GlobalRegistry.IsHotSwapListenerRegistered(_registryCacheListener) ||
+                    GlobalRegistry.TryRegisterHotSwapListener(_registryCacheListener);
+            }
+
+            if (s_registryCacheBootstrapped && !ShouldRefreshRegistryCacheCold())
+                return;
+
+            s_registryCacheBootstrapped = true;
+            s_registryCacheRefreshFrame = Application.isPlaying ? Time.frameCount : -1;
             s_persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             s_worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_modularEquipmentService = GlobalRegistry.ModularEquipment;
             s_objectPool = GlobalRegistry.ObjectPoolService;
             s_physicsService = GlobalRegistry.Physics;
+        }
 
-            if (s_registryCacheRegistered || !Application.isPlaying)
-                return;
+        private static bool ShouldRefreshRegistryCacheCold()
+        {
+            if (!Application.isPlaying)
+                return false;
 
-            s_registryCacheRegistered = GlobalRegistry.TryRegisterHotSwapListener(_registryCacheListener);
+            if (s_registryCacheRefreshFrame == Time.frameCount)
+                return false;
+
+            return s_persistentWorldRegistry == null ||
+                   s_worldStateManager == null ||
+                   s_playerInventoryService == null ||
+                   s_modularEquipmentService == null ||
+                   s_objectPool == null ||
+                   s_physicsService == null;
         }
 
         private void Awake()
         {
             EnsureRegistryCache();
+            _cachedGameObject = gameObject;
             _cachedTransform = transform;
             TryGetComponent(out _meshFilter);
             TryGetComponent(out _meshRenderer);
@@ -276,6 +324,7 @@ namespace Hecton8.Scavenging
 
         public void OnSpawn()
         {
+            _isKnownPooledInstance = true;
             EnsureRegistryCache();
             ResetState();
             RegisterWorldStateRegistry();
@@ -860,7 +909,7 @@ namespace Hecton8.Scavenging
             _despawnRequested = true;
 
             IObjectPoolService pool = s_objectPool;
-            if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            if (pool != null && IsPooledInstance())
             {
                 pool.Despawn(gameObject);
                 return;
@@ -881,6 +930,7 @@ namespace Hecton8.Scavenging
             _yieldDropCount = 0;
             ResetDepletionLock();
             ResetMeltProperties();
+            ApplyQualityScaledParticles(0f);
         }
 
         private bool TryAcquireDepletionLock()
@@ -1208,9 +1258,15 @@ namespace Hecton8.Scavenging
 
             Vector3 physicalSize = template.PhysicalSize;
             _cachedTransform.localScale = physicalSize;
+            float qualityWeight = ScavengingLootOracleMath.SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
 
             if (_meshFilter != null)
-                _meshFilter.sharedMesh = template.NodeMesh != null ? template.NodeMesh : fallbackMesh;
+            {
+                Mesh authoredMesh = template.NodeMesh != null ? template.NodeMesh : fallbackMesh;
+                _meshFilter.sharedMesh = qualityWeight <= QualityParticleEnableThreshold && lowQualityNodeMesh != null
+                    ? lowQualityNodeMesh
+                    : authoredMesh;
+            }
 
             if (_meshRenderer != null)
             {
@@ -1222,7 +1278,46 @@ namespace Hecton8.Scavenging
             }
 
             ConfigurePrimitiveColliders(template.RuntimeColliderShape, physicalSize);
+            ApplyQualityScaledParticles(qualityWeight);
             ResetMeltProperties();
+        }
+
+        private void ApplyQualityScaledParticles(float qualityWeight)
+        {
+            ParticleSystem[] systems = qualityScaledParticleSystems;
+            if (systems == null || systems.Length == 0)
+                return;
+
+            float emissionWeight = math.saturate((qualityWeight - QualityParticleEnableThreshold) * QualityParticleInvRange);
+            bool enableEmission = emissionWeight > 0.001f;
+            int particleBudget = enableEmission
+                ? math.clamp((int)math.round(maxQualityParticles * emissionWeight), 1, math.max(1, maxQualityParticles))
+                : 0;
+            float emissionRate = math.max(0f, maxQualityParticleRate) * emissionWeight;
+
+            for (int i = 0; i < systems.Length; i++)
+            {
+                ParticleSystem particleSystem = systems[i];
+                if (particleSystem == null)
+                    continue;
+
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.maxParticles = particleBudget;
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = enableEmission;
+                emission.rateOverTimeMultiplier = emissionRate;
+
+                if (enableEmission)
+                {
+                    if (!particleSystem.isPlaying)
+                        particleSystem.Play(true);
+                }
+                else if (particleSystem.isPlaying)
+                {
+                    particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
+            }
         }
 
         private void ConfigurePrimitiveColliders(ResourceNodeTemplate.ColliderShape shape, Vector3 physicalSize)
@@ -1249,7 +1344,21 @@ namespace Hecton8.Scavenging
 
         private bool IsPooledInstance()
         {
-            return TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
+            if (_isKnownPooledInstance)
+                return true;
+
+            IObjectPoolService pool = s_objectPool;
+            if (pool != null && pool.CanDespawnWithoutDestroy(_cachedGameObject != null ? _cachedGameObject : gameObject))
+            {
+                _isKnownPooledInstance = true;
+                return true;
+            }
+
+            if (!TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+                return false;
+
+            _isKnownPooledInstance = true;
+            return true;
         }
 
 #if UNITY_EDITOR

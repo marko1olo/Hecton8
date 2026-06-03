@@ -1,10 +1,17 @@
 ---
 packet_id: P118_DEEP_REACH_PRESSURE_CERAMICS
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.deep_reach_pressure_ceramics
+unlock_id: unlock.first_deep_reach_pressure_ceramics
+poi_tags: poi.pressure_ceramic_tile;poi.deep_reach_kiln
+biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Deep Reach pressure ceramics

@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Editor.ColliderOptimization1716;
 using Hecton8.Core.Content;
 using UnityEditor;
 using UnityEngine;
@@ -108,6 +109,7 @@ namespace Hecton8.Core.Content.Editor
     public static class ContentPhysicsProxyBaker
     {
         private const string MeshAssetFolder = "Assets/_Project/Data/Generated/ContentPhysicsProxies";
+        private const string GeneratedHullName = "COL_ContentProxyHull_1716";
         private const float MinPhysicsProxyAxisMeters = 0.01f;
 
         [MenuItem("HECTON-8/Content/Bake Selected Physics Proxy")]
@@ -130,41 +132,56 @@ namespace Hecton8.Core.Content.Editor
                 return;
             }
 
-            Bounds bounds = boxes[0].bounds;
-            for (int i = 1; i < boxes.Length; i++)
-            {
-                if (!IsFinite(boxes[i].bounds))
-                {
-                    Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": non-finite BoxCollider bounds.");
-                    return;
-                }
-
-                bounds.Encapsulate(boxes[i].bounds);
-            }
-
-            if (!IsFinite(bounds) || !HasUsableHullSize(bounds.size))
+            if (!TryCollectLocalBoxBounds(root.transform, boxes, out Bounds localBounds) ||
+                !HasUsableHullSize(localBounds.size))
             {
                 Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": invalid convex hull bounds.");
                 return;
             }
 
-            GameObject proxy = new GameObject("GEN_PhysicsProxyHull");
-            Undo.RegisterCreatedObjectUndo(proxy, "Bake physics proxy");
-            proxy.transform.SetParent(root.transform, true);
-            proxy.transform.position = bounds.center;
-            proxy.transform.rotation = Quaternion.identity;
-            proxy.transform.localScale = Vector3.one;
-
-            Mesh mesh = BuildBoxHullMesh(bounds.size);
-            EnsureMeshAssetFolder();
             string safeName = SanitizeAssetFileStem(root.name);
-            string meshPath = AssetDatabase.GenerateUniqueAssetPath(
-                MeshAssetFolder + "/" + safeName + "_PhysicsProxyHull.asset");
-            AssetDatabase.CreateAsset(mesh, meshPath);
+            Mesh mesh = BuildBoxHullMesh(localBounds.size, "COL_" + safeName + "_ContentHull1716");
+            if (!ColliderOptimizerEngine1716.ValidateProxyMesh(mesh, out string proxyFailure))
+            {
+                Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": " + proxyFailure);
+                UnityEngine.Object.DestroyImmediate(mesh, true);
+                return;
+            }
 
-            MeshCollider hull = proxy.AddComponent<MeshCollider>();
+            Transform previousGeneratedRoot = root.transform.Find(ColliderOptimizerEngine1716.GeneratedConvexRootName);
+            if (previousGeneratedRoot != null)
+                Undo.DestroyObjectImmediate(previousGeneratedRoot.gameObject);
+
+            GameObject proxyRoot = new GameObject(ColliderOptimizerEngine1716.GeneratedConvexRootName);
+            Undo.RegisterCreatedObjectUndo(proxyRoot, "Bake physics proxy");
+            proxyRoot.transform.SetParent(root.transform, false);
+            proxyRoot.transform.localPosition = Vector3.zero;
+            proxyRoot.transform.localRotation = Quaternion.identity;
+            proxyRoot.transform.localScale = Vector3.one;
+
+            GameObject hullObject = new GameObject(GeneratedHullName);
+            Undo.RegisterCreatedObjectUndo(hullObject, "Bake physics proxy");
+            hullObject.transform.SetParent(proxyRoot.transform, false);
+            hullObject.transform.localPosition = localBounds.center;
+            hullObject.transform.localRotation = Quaternion.identity;
+            hullObject.transform.localScale = Vector3.one;
+
+            MeshCollider hull = hullObject.AddComponent<MeshCollider>();
             hull.sharedMesh = mesh;
             hull.convex = true;
+
+            if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string validationFailure))
+            {
+                Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": " + validationFailure);
+                UnityEngine.Object.DestroyImmediate(proxyRoot, true);
+                UnityEngine.Object.DestroyImmediate(mesh, true);
+                return;
+            }
+
+            EnsureMeshAssetFolder();
+            string meshPath = AssetDatabase.GenerateUniqueAssetPath(
+                MeshAssetFolder + "/" + safeName + "_COL_ContentHull1716.asset");
+            AssetDatabase.CreateAsset(mesh, meshPath);
 
             for (int i = 0; i < boxes.Length; i++)
             {
@@ -172,10 +189,11 @@ namespace Hecton8.Core.Content.Editor
                     UnityEngine.Object.DestroyImmediate(boxes[i], true);
             }
 
+            AssetDatabase.SaveAssets();
             EditorUtility.SetDirty(root);
         }
 
-        private static Mesh BuildBoxHullMesh(Vector3 size)
+        private static Mesh BuildBoxHullMesh(Vector3 size, string meshName)
         {
             Vector3 half = size * 0.5f;
             Vector3[] vertices =
@@ -202,13 +220,67 @@ namespace Hecton8.Core.Content.Editor
 
             Mesh mesh = new Mesh
             {
-                name = "GEN_PhysicsProxyHull"
+                name = meshName
             };
             mesh.SetVertices(vertices);
             mesh.SetTriangles(triangles, 0, false);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private static bool TryCollectLocalBoxBounds(Transform rootTransform, BoxCollider[] boxes, out Bounds bounds)
+        {
+            bounds = default;
+            if (rootTransform == null || boxes == null || boxes.Length == 0)
+                return false;
+
+            bool hasBounds = false;
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                BoxCollider box = boxes[i];
+                if (box == null || !IsFinite(box.center) || !IsFinite(box.size))
+                    return false;
+
+                EncapsulateBoxColliderLocalBounds(rootTransform, box, ref bounds, ref hasBounds);
+            }
+
+            return hasBounds && IsFinite(bounds);
+        }
+
+        private static void EncapsulateBoxColliderLocalBounds(
+            Transform rootTransform,
+            BoxCollider box,
+            ref Bounds bounds,
+            ref bool hasBounds)
+        {
+            Transform boxTransform = box.transform;
+            Vector3 center = box.center;
+            Vector3 half = box.size * 0.5f;
+
+            for (int x = 0; x < 2; x++)
+            {
+                float localX = x == 0 ? -half.x : half.x;
+                for (int y = 0; y < 2; y++)
+                {
+                    float localY = y == 0 ? -half.y : half.y;
+                    for (int z = 0; z < 2; z++)
+                    {
+                        float localZ = z == 0 ? -half.z : half.z;
+                        Vector3 boxPoint = center + new Vector3(localX, localY, localZ);
+                        Vector3 rootPoint = rootTransform.InverseTransformPoint(boxTransform.TransformPoint(boxPoint));
+                        if (!hasBounds)
+                        {
+                            bounds = new Bounds(rootPoint, Vector3.zero);
+                            hasBounds = true;
+                        }
+                        else
+                        {
+                            bounds.Encapsulate(rootPoint);
+                        }
+                    }
+                }
+            }
         }
 
         private static void EnsureMeshAssetFolder()
@@ -259,6 +331,11 @@ namespace Hecton8.Core.Content.Editor
             return IsFinite(center.x) && IsFinite(center.y) && IsFinite(center.z) &&
                    IsFinite(extents.x) && IsFinite(extents.y) && IsFinite(extents.z) &&
                    extents.x >= 0f && extents.y >= 0f && extents.z >= 0f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
         }
 
         private static bool IsFinite(float value)

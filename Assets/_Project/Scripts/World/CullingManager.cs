@@ -113,6 +113,7 @@ namespace Hecton8.World
         private static readonly int _terrainLayer = MissingLayerIndex;
         private const int MaxTrackedCullableObjects = 1000;
         private const int MaxRendererScratch = 64;
+        private const int MaxColliderScratch = 64;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -127,12 +128,16 @@ namespace Hecton8.World
             public Transform Transform;
             public Renderer[] ManagedRenderers;
             public bool[] OriginalForceRenderingOffStates;
+            public Collider[] ManagedCullColliders;
+            public bool[] OriginalColliderEnabledStates;
             public Bounds Bounds;
             public float CullDistanceSq;
             public float ReactivateDistanceSq;
             public bool IsActive;
             public bool ForceRenderingOffDirty;
             public bool PendingForceRenderingOff;
+            public bool ColliderStateDirty;
+            public bool PendingColliderEnabled;
         }
 
         // COLD ALLOC: CullableObject[1000] - registered cullable objects - owner: CullingManager
@@ -142,6 +147,10 @@ namespace Hecton8.World
         // COLD ALLOC: Renderer[64] - reusable renderer scan buffer for cold registration paths - owner: CullingManager
         private readonly Renderer[] _rendererScratch = new Renderer[MaxRendererScratch];
         private int _rendererScratchCount;
+
+        // COLD ALLOC: Collider[64] - reusable generated COL_ collider scan buffer for cold registration paths - owner: CullingManager
+        private readonly Collider[] _colliderScratch = new Collider[MaxColliderScratch];
+        private int _colliderScratchCount;
 
         // COLD ALLOC: Plane[6] — frustum planes — owner: CullingManager
         private readonly Plane[] _frustumPlanes = new Plane[6];
@@ -155,6 +164,7 @@ namespace Hecton8.World
         private bool _layerCullDistancesApplied;
         private bool _layerCullDistancesDirty;
         private bool _cullingEvaluationRequested;
+        private bool _cullStateApplyRequested;
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
@@ -240,6 +250,8 @@ namespace Hecton8.World
             _playerRuntimeContext = null;
             _playerSensoryService = null;
             _mainCamera = null;
+            _cullingEvaluationRequested = false;
+            _cullStateApplyRequested = false;
             _layerCullDistancesApplied = false;
         }
 
@@ -417,6 +429,7 @@ namespace Hecton8.World
             Vector3 camPos = _mainCamera.transform.position;
             int distanceCulled = 0;
             int frustumCulled = 0;
+            bool applyRequested = false;
 
             // Process distance culling with hysteresis
             for (int i = 0; i < _cullableObjectCount; i++)
@@ -424,6 +437,8 @@ namespace Hecton8.World
                 CullableObject obj = _cullableObjects[i];
                 Transform objTransform = obj.Transform;
                 if (obj.GameObject == null || objTransform == null) continue;
+
+                obj.Bounds = CalculateCachedRendererBounds(obj.GameObject, obj.ManagedRenderers);
 
                 // Calculate squared distance (avoid sqrt)
                 Vector3 delta = objTransform.position - camPos;
@@ -435,6 +450,7 @@ namespace Hecton8.World
                     if (sqrDist > obj.CullDistanceSq)
                     {
                         SetCullState(ref obj, true);
+                        applyRequested = true;
                         distanceCulled++;
                     }
                     else
@@ -452,6 +468,7 @@ namespace Hecton8.World
                     if (sqrDist < obj.ReactivateDistanceSq)
                     {
                         SetCullState(ref obj, false);
+                        applyRequested = true;
                     }
                 }
 
@@ -461,6 +478,7 @@ namespace Hecton8.World
 
             _distanceCulledCount = distanceCulled;
             _frustumCulledCount = frustumCulled;
+            _cullStateApplyRequested |= applyRequested;
 
             long endTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             _slowTickCPUTime = (endTicks - startTicks) / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
@@ -480,16 +498,23 @@ namespace Hecton8.World
                 ApplyLayerCullDistances();
             }
 
+            if (!_cullStateApplyRequested)
+                return;
+
+            _cullStateApplyRequested = false;
             for (int i = 0; i < _cullableObjectCount; i++)
             {
                 CullableObject obj = _cullableObjects[i];
-                if (obj.GameObject != null)
-                    obj.Bounds = CalculateCachedRendererBounds(obj.GameObject, obj.ManagedRenderers);
-
                 if (obj.ForceRenderingOffDirty)
                 {
                     ApplyCullVisualState(ref obj, obj.PendingForceRenderingOff);
                     obj.ForceRenderingOffDirty = false;
+                }
+
+                if (obj.ColliderStateDirty)
+                {
+                    ApplyCullColliderState(ref obj, obj.PendingColliderEnabled);
+                    obj.ColliderStateDirty = false;
                 }
 
                 _cullableObjects[i] = obj;
@@ -539,6 +564,8 @@ namespace Hecton8.World
                 return;
             }
 
+            TryCacheGeneratedColliders(obj, out Collider[] managedCullColliders, out bool[] originalColliderEnabledStates);
+
             // Validate Unity frustum culling is enabled
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             for (int i = 0; i < managedRenderers.Length; i++)
@@ -573,10 +600,13 @@ namespace Hecton8.World
                 Transform = obj.transform,
                 ManagedRenderers = managedRenderers,
                 OriginalForceRenderingOffStates = originalForceRenderingOffStates,
+                ManagedCullColliders = managedCullColliders,
+                OriginalColliderEnabledStates = originalColliderEnabledStates,
                 Bounds = CalculateBounds(obj, managedRenderers),
                 CullDistanceSq = cullDistanceSq,
                 ReactivateDistanceSq = reactivateDistanceSq,
-                IsActive = obj.activeSelf
+                IsActive = obj.activeSelf,
+                PendingColliderEnabled = obj.activeSelf
             };
 
             _cullableObjects[_cullableObjectCount] = cullableObj;
@@ -837,12 +867,45 @@ namespace Hecton8.World
             return true;
         }
 
+        private bool TryCacheGeneratedColliders(GameObject obj, out Collider[] managedCullColliders, out bool[] originalColliderEnabledStates)
+        {
+            managedCullColliders = null;
+            originalColliderEnabledStates = null;
+            if (obj == null)
+                return false;
+
+            ClearColliderScratch();
+            CollectGeneratedCollidersNonAlloc(obj.transform, obj.transform);
+            if (_colliderScratchCount == 0)
+                return false;
+
+            // COLD ALLOC: persistent per-object generated-collider state, allocated once during culling registration.
+            managedCullColliders = new Collider[_colliderScratchCount];
+            originalColliderEnabledStates = new bool[_colliderScratchCount];
+            for (int i = 0; i < _colliderScratchCount; i++)
+            {
+                Collider collider = _colliderScratch[i];
+                managedCullColliders[i] = collider;
+                originalColliderEnabledStates[i] = collider != null && collider.enabled;
+            }
+
+            return true;
+        }
+
         private void ClearRendererScratch()
         {
             for (int i = 0; i < _rendererScratchCount; i++)
                 _rendererScratch[i] = null;
 
             _rendererScratchCount = 0;
+        }
+
+        private void ClearColliderScratch()
+        {
+            for (int i = 0; i < _colliderScratchCount; i++)
+                _colliderScratch[i] = null;
+
+            _colliderScratchCount = 0;
         }
 
         private void CollectRenderersNonAlloc(Transform root)
@@ -873,6 +936,55 @@ namespace Hecton8.World
             _rendererScratchCount++;
         }
 
+        private void CollectGeneratedCollidersNonAlloc(Transform root, Transform registeredRoot)
+        {
+            if (root == null || _colliderScratchCount >= _colliderScratch.Length)
+                return;
+
+            if (IsGeneratedColliderTransform(root, registeredRoot) && root.TryGetComponent(out Collider collider))
+                AppendColliderScratch(collider);
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount && _colliderScratchCount < _colliderScratch.Length; i++)
+                CollectGeneratedCollidersNonAlloc(root.GetChild(i), registeredRoot);
+        }
+
+        private void AppendColliderScratch(Collider collider)
+        {
+            if (collider == null || _colliderScratchCount >= _colliderScratch.Length)
+                return;
+
+            for (int i = 0; i < _colliderScratchCount; i++)
+            {
+                if (ReferenceEquals(_colliderScratch[i], collider))
+                    return;
+            }
+
+            _colliderScratch[_colliderScratchCount] = collider;
+            _colliderScratchCount++;
+        }
+
+        private static bool IsGeneratedColliderTransform(Transform transform, Transform registeredRoot)
+        {
+            Transform cursor = transform;
+            while (cursor != null)
+            {
+                string name = cursor.name;
+                if (!string.IsNullOrEmpty(name) &&
+                    name.StartsWith("COL_", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (ReferenceEquals(cursor, registeredRoot))
+                    return false;
+
+                cursor = cursor.parent;
+            }
+
+            return false;
+        }
+
         private static void SetCullState(ref CullableObject obj, bool isCulled)
         {
             if (obj.ManagedRenderers == null)
@@ -880,6 +992,12 @@ namespace Hecton8.World
 
             obj.PendingForceRenderingOff = isCulled;
             obj.ForceRenderingOffDirty = true;
+            if (obj.ManagedCullColliders != null)
+            {
+                obj.PendingColliderEnabled = !isCulled;
+                obj.ColliderStateDirty = true;
+            }
+
             obj.IsActive = !isCulled;
         }
 
@@ -898,22 +1016,52 @@ namespace Hecton8.World
             }
         }
 
-        private static void RestoreCullState(ref CullableObject obj)
+        private static void ApplyCullColliderState(ref CullableObject obj, bool enabled)
         {
-            if (obj.ManagedRenderers == null || obj.OriginalForceRenderingOffStates == null)
+            if (obj.ManagedCullColliders == null)
                 return;
 
-            int restoreCount = Mathf.Min(obj.ManagedRenderers.Length, obj.OriginalForceRenderingOffStates.Length);
-            for (int i = 0; i < restoreCount; i++)
+            for (int i = 0; i < obj.ManagedCullColliders.Length; i++)
             {
-                Renderer renderer = obj.ManagedRenderers[i];
-                if (renderer == null)
+                Collider collider = obj.ManagedCullColliders[i];
+                if (collider == null)
                     continue;
 
-                renderer.forceRenderingOff = obj.OriginalForceRenderingOffStates[i];
+                collider.enabled = enabled;
+            }
+        }
+
+        private static void RestoreCullState(ref CullableObject obj)
+        {
+            if (obj.ManagedRenderers != null && obj.OriginalForceRenderingOffStates != null)
+            {
+                int restoreCount = Mathf.Min(obj.ManagedRenderers.Length, obj.OriginalForceRenderingOffStates.Length);
+                for (int i = 0; i < restoreCount; i++)
+                {
+                    Renderer renderer = obj.ManagedRenderers[i];
+                    if (renderer == null)
+                        continue;
+
+                    renderer.forceRenderingOff = obj.OriginalForceRenderingOffStates[i];
+                }
+            }
+
+            if (obj.ManagedCullColliders != null && obj.OriginalColliderEnabledStates != null)
+            {
+                int colliderRestoreCount = Mathf.Min(obj.ManagedCullColliders.Length, obj.OriginalColliderEnabledStates.Length);
+                for (int i = 0; i < colliderRestoreCount; i++)
+                {
+                    Collider collider = obj.ManagedCullColliders[i];
+                    if (collider == null)
+                        continue;
+
+                    collider.enabled = obj.OriginalColliderEnabledStates[i];
+                }
             }
 
             obj.IsActive = obj.GameObject != null && obj.GameObject.activeSelf;
+            obj.ForceRenderingOffDirty = false;
+            obj.ColliderStateDirty = false;
         }
 
         private void RestoreTrackedCullStates()

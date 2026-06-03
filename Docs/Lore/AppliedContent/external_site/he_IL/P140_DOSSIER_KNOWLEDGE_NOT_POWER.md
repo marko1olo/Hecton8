@@ -1,30 +1,37 @@
 ---
 packet_id: P140_DOSSIER_KNOWLEDGE_NOT_POWER
+release_set_id: RS028_REPLAY_CONTRACT_DOSSIER_RULES
 article_id: replay.dossier_knowledge_not_power
+unlock_id: unlock.dossier_knowledge_not_power
+poi_tags: poi.no_power_carryover_notice;poi.route_warning_card
+biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: he_IL
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Dossier Knowledge Not Power
 
-Draft HE localization pending native pass. Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
 
 ## Scanner
 
-Draft HE localization pending native pass. No inherited oxygen, guns, hull, or magic shortcuts.
+No inherited oxygen, guns, hull, or magic shortcuts.
 
 ## Terminal
 
-Draft HE localization pending native pass. META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
 
 ## Audio
 
-Draft HE localization pending native pass. Memory does not reinforce a cracked hull.
+Memory does not reinforce a cracked hull.
 
 ## Field Note
 
-Draft HE localization pending native pass. The player can become wiser. The ocean should not become smaller.
+The player can become wiser. The ocean should not become smaller.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/he_IL. -->

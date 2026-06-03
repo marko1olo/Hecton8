@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6890893905434255646}
   - component: {fileID: 8036154575818681940}
+  - component: {fileID: 5826967438171470552}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__frondcrest__s105-165
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7181791389240675386}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.5591108, y: 4.9745216, z: 0.13156974}
-  m_Size: 9.949043
+  m_LocalReferencePoint: {x: -0.4996866, y: 5.1251674, z: 0.14907837}
+  m_Size: 10.250335
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 4147097589233303562}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &5826967438171470552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7181791389240675386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: b87983588d8bf734bb4e7ac8b684c718, type: 2}

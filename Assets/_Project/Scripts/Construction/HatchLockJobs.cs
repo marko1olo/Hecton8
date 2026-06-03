@@ -163,64 +163,6 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct GenerateMockHatchPressureJob : IJobParallelFor
-    {
-        [NativeDisableUnsafePtrRestriction, NoAlias] public HatchStateDTO* Hatches;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public FluidCompartmentDTO* MockCompartments;
-        public int HatchCount;
-        public int CompartmentCount;
-        public uint Frame;
-        public uint Seed;
-
-        public void Execute(int index)
-        {
-            if ((uint)index >= (uint)HatchCount ||
-                Hatches == null ||
-                MockCompartments == null)
-            {
-                return;
-            }
-
-            int roomAIndex = index * HatchLockConstants.MockFluidRowsPerHatch;
-            int roomBIndex = roomAIndex + 1;
-            if ((uint)roomBIndex >= (uint)CompartmentCount)
-                return;
-
-            ref HatchStateDTO hatch = ref UnsafeUtility.AsRef<HatchStateDTO>(Hatches + index);
-            uint roomA = hatch.RoomAHashID != 0u ? hatch.RoomAHashID : HatchLockMath.Hash(Seed, (uint)index + 1u);
-            uint roomB = hatch.RoomBHashID != 0u ? hatch.RoomBHashID : HatchLockMath.Hash(roomA, 0xBADC0DEu);
-            float lowFill = 0.1f + ((Frame + (uint)index) & 3u) * 0.01f;
-            float highFill = 1f;
-            const float maxVolume = 10f;
-            MockCompartments[roomAIndex] = new FluidCompartmentDTO
-            {
-                LocalCenterOfMass = new double3(index * 3.0, 0.0, 0.0),
-                NodeHashID = roomA,
-                CurrentWaterVolume = maxVolume * highFill,
-                MaxWaterVolume = maxVolume,
-                WaterLevelHeight01 = highFill,
-                Flags = FluidCompartmentFlags.Flooded |
-                        FluidCompartmentFlags.Breached |
-                        FluidCompartmentFlags.MockBreach
-            };
-            MockCompartments[roomBIndex] = new FluidCompartmentDTO
-            {
-                LocalCenterOfMass = new double3(index * 3.0 + 1.0, 0.0, 0.0),
-                NodeHashID = roomB,
-                CurrentWaterVolume = maxVolume * lowFill,
-                MaxWaterVolume = maxVolume,
-                WaterLevelHeight01 = lowFill,
-                Flags = FluidCompartmentFlags.MockBreach
-            };
-
-            hatch.RoomAHashID = roomA;
-            hatch.RoomBHashID = roomB;
-            hatch.PressureDifferentialATM = math.abs((1f + highFill + 0.25f) - (1f + lowFill));
-            hatch.FsmStateMask |= HatchFsmStateMask.Active;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct EvaluateHatchPressureJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public HatchStateDTO* Hatches;
@@ -246,7 +188,7 @@ namespace Hecton8.Construction
             uint faultMaskB;
             bool foundA;
             bool foundB;
-            int pairedCompartmentIndex = index * HatchLockConstants.MockFluidRowsPerHatch;
+            int pairedCompartmentIndex = index * HatchLockConstants.PairedFluidRowsPerHatch;
             float pressureA = ResolvePressure(hatch.RoomAHashID, pairedCompartmentIndex, index, out foundA, out faultMaskA);
             float pressureB = ResolvePressure(hatch.RoomBHashID, pairedCompartmentIndex + 1, index + 1, out foundB, out faultMaskB);
             float delta = math.abs(pressureA - pressureB);

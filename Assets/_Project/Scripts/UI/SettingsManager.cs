@@ -42,6 +42,7 @@ namespace Hecton8.UI
         private const string MotionBlurKey = "Hecton_MotionBlur";
         private const string TextureQualityKey = "Hecton_TextureQuality";
         private const string GraphicsPresetKey = "Hecton_GraphicsPreset";
+        private const string QualityScaleVersionKey = "Hecton_QualityScaleVersion";
         private const string MenuVisualStyleKey = "Hecton_MenuVisualStyle";
         private const string MenuVisualConceptKey = "Hecton_MenuVisualConcept";
         private const string TextScaleKey = "Hecton_TextScale";
@@ -53,13 +54,15 @@ namespace Hecton8.UI
         private const string VrHeadRelativeSwimBiasKey = "Hecton_VRHeadRelativeSwimBias";
 
         private const float DefaultVolume = 0.8f;
-        private const int DefaultQualityLevel = 2; // Medium (Surface)
+        private const int DefaultQualityLevel = 4; // High user weight; Unity profile remains platform-owned.
         private const int DefaultGraphicsPreset = 2; // High
+        private const int CurrentQualityScaleVersion = 2;
         private const int DefaultMenuVisualStyleIndex = (int)MenuVisualStyle.PressureVesselNoir;
         private const int DefaultMenuVisualConceptIndex = (int)MenuVisualConcept.ModuleWindowOverlay;
         private const float DefaultFOV = 75f;
         private const float DefaultVrHeadRelativeSwimBias = 0.55f;
-        public const int MaxContinuousQualityLevel = 3;
+        public const int MaxContinuousQualityLevel = 6;
+        public const int MaxGraphicsPreset = 3;
 
         // ----------------------------------------------------------
         // REGISTRY CACHE
@@ -265,6 +268,7 @@ namespace Hecton8.UI
                 _cachedQualityLevel = clamped;
                 TryApplyQualityLevel(clamped);
                 SaveInt(QualityLevelKey, clamped);
+                SaveInt(QualityScaleVersionKey, CurrentQualityScaleVersion);
             }
         }
 
@@ -791,6 +795,7 @@ namespace Hecton8.UI
                 _persistence.DeleteKey(MotionBlurKey);
                 _persistence.DeleteKey(TextureQualityKey);
                 _persistence.DeleteKey(GraphicsPresetKey);
+                _persistence.DeleteKey(QualityScaleVersionKey);
                 _persistence.DeleteKey(MenuVisualStyleKey);
                 _persistence.DeleteKey(MenuVisualConceptKey);
                 _persistence.DeleteKey(TextScaleKey);
@@ -874,7 +879,7 @@ namespace Hecton8.UI
             switch (clampedPreset)
             {
                 case 0: // Low
-                    QualityLevel = 0;
+                    QualityLevel = 1;
                     ShadowQuality = 1;
                     ShadowDistance = 50f;
                     AntiAliasing = 1; // FXAA
@@ -885,7 +890,7 @@ namespace Hecton8.UI
                     break;
 
                 case 1: // Medium
-                    QualityLevel = 1;
+                    QualityLevel = 3;
                     ShadowQuality = 2;
                     ShadowDistance = 100f;
                     AntiAliasing = 2; // SMAA
@@ -896,7 +901,7 @@ namespace Hecton8.UI
                     break;
 
                 case 2: // High
-                    QualityLevel = 2;
+                    QualityLevel = 4;
                     ShadowQuality = 2;
                     ShadowDistance = 200f;
                     AntiAliasing = 2; // SMAA
@@ -943,7 +948,7 @@ namespace Hecton8.UI
         private void LoadAllSettings()
         {
             // Load with validation
-            _cachedQualityLevel = ValidateQualityLevel(LoadInt(QualityLevelKey, DefaultQualityLevel));
+            _cachedQualityLevel = LoadQualityLevelWithMigration();
             _cachedMasterVolume = ValidateVolume(LoadFloat(MasterVolumeKey, DefaultVolume));
             _cachedMusicVolume = ValidateVolume(LoadFloat(MusicVolumeKey, DefaultVolume));
             _cachedSfxVolume = ValidateVolume(LoadFloat(SfxVolumeKey, DefaultVolume));
@@ -979,6 +984,48 @@ namespace Hecton8.UI
         // ----------------------------------------------------------
         // VALIDATION HELPERS
         // ----------------------------------------------------------
+
+        private int LoadQualityLevelWithMigration()
+        {
+            if (!TryRefreshPersistenceReference(out _))
+                return DefaultQualityLevel;
+
+            bool hasStoredQuality = _persistence.HasKey(QualityLevelKey);
+            int storedQuality = _persistence.GetInt(QualityLevelKey, DefaultQualityLevel);
+            bool hasScaleVersion = _persistence.HasKey(QualityScaleVersionKey);
+            int scaleVersion = hasScaleVersion ? _persistence.GetInt(QualityScaleVersionKey, CurrentQualityScaleVersion) : 1;
+
+            if (hasStoredQuality && scaleVersion < CurrentQualityScaleVersion)
+            {
+                int migratedQuality = MigrateLegacyQualityLevel(storedQuality);
+                _persistence.SetInt(QualityLevelKey, migratedQuality);
+                _persistence.SetInt(QualityScaleVersionKey, CurrentQualityScaleVersion);
+                MarkPersistenceDirty();
+                return ValidateQualityLevel(migratedQuality);
+            }
+
+            if (!hasScaleVersion)
+            {
+                _persistence.SetInt(QualityScaleVersionKey, CurrentQualityScaleVersion);
+                MarkPersistenceDirty();
+            }
+
+            return ValidateQualityLevel(storedQuality);
+        }
+
+        private static int MigrateLegacyQualityLevel(int legacyLevel)
+        {
+            if (legacyLevel <= 0)
+                return 1;
+
+            if (legacyLevel == 1)
+                return 3;
+
+            if (legacyLevel == 2)
+                return 4;
+
+            return MaxContinuousQualityLevel;
+        }
 
         private static int ValidateQualityLevel(int value)
         {
@@ -1078,12 +1125,12 @@ namespace Hecton8.UI
 
         private static int ValidateGraphicsPreset(int value)
         {
-            if (value < 0 || value > 3)
+            if (value < 0 || value > MaxGraphicsPreset)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 H8Debug.LogWarning("[SettingsManager] Invalid graphics preset; clamping.");
 #endif
-                return Mathf.Clamp(value, 0, 3);
+                return Mathf.Clamp(value, 0, MaxGraphicsPreset);
             }
 
             return value;
@@ -1283,8 +1330,16 @@ namespace Hecton8.UI
 
         private static float ResolveQualityWeightFromLevel(int level)
         {
-            float normalized = Mathf.Clamp01(level / (float)MaxContinuousQualityLevel);
-            return normalized * normalized * (3f - 2f * normalized);
+            switch (ValidateQualityLevel(level))
+            {
+                case 0: return 0.00f;
+                case 1: return 0.16f;
+                case 2: return 0.32f;
+                case 3: return 0.50f;
+                case 4: return 0.68f;
+                case 5: return 0.84f;
+                default: return 1.00f;
+            }
         }
 
         private static bool TryApplyAccessibilityTextScale(float scale)

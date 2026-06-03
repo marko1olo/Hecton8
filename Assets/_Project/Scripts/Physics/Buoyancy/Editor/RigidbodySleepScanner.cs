@@ -197,7 +197,7 @@ namespace Hecton8.Physics.Editor
             Type configType = Type.GetType("Hecton8.Physics.KCC.KinematicSleepSdfConfigDTO, Assembly-CSharp", throwOnError: false);
             if (configType == null)
             {
-                foreach (System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (global::System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
                     configType = assembly.GetType("Hecton8.Physics.KCC.KinematicSleepSdfConfigDTO", throwOnError: false);
                     if (configType != null)

@@ -56,10 +56,10 @@ namespace Hecton8.Editor
         private static bool TryResolveDataMonolithType(string fullName, out Type type)
         {
             type = null;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
-                Assembly assembly = assemblies[i];
+                global::System.Reflection.Assembly assembly = assemblies[i];
                 if (!string.Equals(assembly.GetName().Name, DataMonolithAssemblyName, StringComparison.Ordinal))
                     continue;
 

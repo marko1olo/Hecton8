@@ -1,0 +1,58 @@
+#pragma kernel NormalizeSdfAlpha
+#pragma kernel DeriveMsdfFromSdf
+
+Texture2D<float4> _SdfSource;
+RWTexture2D<float4> _SdfOutput;
+
+float4 _SdfAtlasParams; // width, height, spread px, GlobalQualityWeight
+float _SdfEdgeCenter;
+
+float ReadSdfValue(int2 coord, uint width, uint height)
+{
+    int2 clampedCoord = clamp(coord, int2(0, 0), int2((int)width - 1, (int)height - 1));
+    float4 sampleValue = _SdfSource.Load(int3(clampedCoord, 0));
+    return saturate(max(sampleValue.a, sampleValue.r));
+}
+
+[numthreads(8, 8, 1)]
+void NormalizeSdfAlpha(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _SdfOutput.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float sdf = ReadSdfValue(int2(id.xy), width, height);
+    _SdfOutput[id.xy] = float4(sdf, sdf, sdf, sdf);
+}
+
+[numthreads(8, 8, 1)]
+void DeriveMsdfFromSdf(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _SdfOutput.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    int2 p = int2(id.xy);
+    float center = ReadSdfValue(p, width, height);
+    float left = ReadSdfValue(p + int2(-1, 0), width, height);
+    float right = ReadSdfValue(p + int2(1, 0), width, height);
+    float down = ReadSdfValue(p + int2(0, -1), width, height);
+    float up = ReadSdfValue(p + int2(0, 1), width, height);
+
+    float2 gradient = float2(right - left, up - down);
+    float gradientMagnitude = max(length(gradient), 0.0001);
+    float2 normal = gradient / gradientMagnitude;
+    float quality = saturate(_SdfAtlasParams.w);
+    float spread = max(1.0, _SdfAtlasParams.z);
+    float edgeOffset = lerp(0.18, 0.42, quality) / spread;
+
+    float red = center + normal.x * edgeOffset;
+    float green = center;
+    float blue = center + normal.y * edgeOffset;
+
+    _SdfOutput[id.xy] = float4(saturate(red), saturate(green), saturate(blue), center);
+}

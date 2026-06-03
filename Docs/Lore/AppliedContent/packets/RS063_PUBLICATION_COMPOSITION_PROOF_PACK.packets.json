@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P311_SITE_HOME_PAGE_COMPOSITION_LOCK",
+      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+      "article_id": "applied_lore.site_home_page_composition_lock",
+      "title_key": "applied_lore.site_home_page_composition_lock.title",
+      "unlock": {
+        "primary": "unlock.site_home_page_composition_lock",
+        "poi_tags": [
+          "poi.site_home_composition_card",
+          "poi.pressure_hero_image_brief",
+          "poi.bad_return_caption"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.site"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Site Home Page Composition Lock",
+          "scanner": "Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Show the route before the myth.",
+          "in_game_wiki": "Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "ru_RU": {
+          "title": "Lock композиции home page",
+          "scanner": "Site home lock: one real machine/route image before lore.",
+          "terminal": "PUBLIC COMPOSITION: home page starts with pressure, machinery, salvage and bad return path; no demo/platform/release claims without proof.",
+          "audio": "Сначала маршрут, потом миф.",
+          "in_game_wiki": "Site home lock держит public copy concrete and spoiler-safe.",
+          "external_site": "Публичное открытие HECTON-8 должно показывать pressure problem: hatch, gauge, bad signal, costly return route.",
+          "field_note": "Use textes.md: no hype, no wishlist/release/demo claim without proof."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft JA localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft JA localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft JA localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft JA localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft ZH localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft ZH localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft ZH localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft FR localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft FR localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft FR localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft FR localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft ES localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft ES localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft ES localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft ES localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft DE localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft DE localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft DE localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft DE localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft PL localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft PL localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft PL localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft PL localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft UK localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft UK localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft UK localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft UK localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft AR localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft AR localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft AR localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft AR localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft ID localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft ID localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft ID localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft ID localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft KO localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft KO localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft KO localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft KO localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft HE localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft HE localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft HE localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft HE localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft PT localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft PT localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft PT localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft PT localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Home Page Composition Lock",
+          "scanner": "Draft NL localization pending native pass. Site home lock: one real machine/route image before lore explanation.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC COMPOSITION: home page must lead with pressure, machinery, salvage and a bad return path; no demo, platform or release claims without proof.",
+          "audio": "Draft NL localization pending native pass. Show the route before the myth.",
+          "in_game_wiki": "Draft NL localization pending native pass. Site Home Page Composition Lock keeps public copy concrete and spoiler-safe.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+          "field_note": "Draft NL localization pending native pass. Use textes.md rules: no hype calendar, no wishlist/release/demo claim without proof."
+        }
+      }
+    },
+    {
+      "packet_id": "P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK",
+      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+      "article_id": "applied_lore.site_aegir_system_art_composition_lock",
+      "title_key": "applied_lore.site_aegir_system_art_composition_lock.title",
+      "unlock": {
+        "primary": "unlock.site_aegir_system_art_composition_lock",
+        "poi_tags": [
+          "poi.site_aegir_art_brief",
+          "poi.orbital_window_caption",
+          "poi.relay_shadow_label"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.aegir"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Site Aegir System Art Composition Lock",
+          "scanner": "Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "The sky is a timetable.",
+          "in_game_wiki": "Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "ru_RU": {
+          "title": "Lock art-композиции системы Aegir",
+          "scanner": "Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Небо - расписание.",
+          "in_game_wiki": "Aegir art lock makes orbital mechanics visible.",
+          "external_site": "Aegir должен читаться как route system: moons, relay shadows, charged windows, transfer debt, salvage timing.",
+          "field_note": "No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft JA localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft JA localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft JA localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft JA localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft JA localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft ZH localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft ZH localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft ZH localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft ZH localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft FR localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft FR localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft FR localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft FR localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft FR localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft ES localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft ES localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft ES localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft ES localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft ES localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft DE localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft DE localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft DE localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft DE localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft DE localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft PL localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft PL localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft PL localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft PL localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft PL localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft UK localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft UK localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft UK localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft UK localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft UK localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft AR localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft AR localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft AR localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft AR localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft AR localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft ID localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft ID localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft ID localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft ID localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft ID localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft KO localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft KO localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft KO localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft KO localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft KO localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft HE localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft HE localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft HE localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft HE localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft HE localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft PT localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft PT localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft PT localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft PT localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft PT localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Aegir System Art Composition Lock",
+          "scanner": "Draft NL localization pending native pass. Aegir art lock: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+          "audio": "Draft NL localization pending native pass. The sky is a timetable.",
+          "in_game_wiki": "Draft NL localization pending native pass. Site Aegir System Art Composition Lock makes orbital mechanics visible in public/wiki material.",
+          "external_site": "Draft NL localization pending native pass. Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+          "field_note": "Draft NL localization pending native pass. No brown dwarf, no Solar System framing, no FTL implication."
+        }
+      }
+    },
+    {
+      "packet_id": "P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK",
+      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+      "article_id": "applied_lore.site_deep_reach_evidence_composition_lock",
+      "title_key": "applied_lore.site_deep_reach_evidence_composition_lock.title",
+      "unlock": {
+        "primary": "unlock.site_deep_reach_evidence_composition_lock",
+        "poi_tags": [
+          "poi.site_deep_reach_evidence_pair",
+          "poi.sanitized_memo_image",
+          "poi.waterline_contradiction_caption"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.deep_reach"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Site Deep Reach Evidence Composition Lock",
+          "scanner": "Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "The memo is clean because the room is not.",
+          "in_game_wiki": "Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Public page can state accountability without spoiling final payload receivers."
+        },
+        "ru_RU": {
+          "title": "Lock композиции Deep Reach evidence",
+          "scanner": "Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "PUBLIC EVIDENCE: Deep Reach pages show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Мемо чистое, потому что комната грязная.",
+          "in_game_wiki": "Deep Reach evidence lock keeps guilt procedural and evidence-led.",
+          "external_site": "Deep Reach не нужна злодейская речь. Нужны risk memo, delayed rescue и waterline, который ломает memo.",
+          "field_note": "Public page can state accountability without final payload spoilers."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft JA localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft JA localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft JA localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft JA localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft ZH localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft ZH localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft ZH localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft FR localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft FR localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft FR localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft FR localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft ES localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft ES localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft ES localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft ES localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft DE localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft DE localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft DE localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft DE localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft PL localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft PL localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft PL localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft PL localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft UK localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft UK localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft UK localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft UK localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft AR localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft AR localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft AR localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft AR localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft ID localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft ID localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft ID localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft ID localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft KO localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft KO localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft KO localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft KO localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft HE localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft HE localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft HE localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft HE localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft PT localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft PT localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft PT localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft PT localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Deep Reach Evidence Composition Lock",
+          "scanner": "Draft NL localization pending native pass. Deep Reach site lock: procedure, memo, damage, not cartoon villainy.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+          "audio": "Draft NL localization pending native pass. The memo is clean because the room is not.",
+          "in_game_wiki": "Draft NL localization pending native pass. Site Deep Reach Evidence Composition Lock keeps corporate guilt procedural and evidence-led.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+          "field_note": "Draft NL localization pending native pass. Public page can state accountability without spoiling final payload receivers."
+        }
+      }
+    },
+    {
+      "packet_id": "P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK",
+      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+      "article_id": "applied_lore.site_atlas_spoiler_composition_lock",
+      "title_key": "applied_lore.site_atlas_spoiler_composition_lock.title",
+      "unlock": {
+        "primary": "unlock.site_atlas_spoiler_composition_lock",
+        "poi_tags": [
+          "poi.site_atlas_spoiler_gate_layout",
+          "poi.redacted_factory_temple_image",
+          "poi.payload_warning_toggle"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.atlas"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Site Atlas Spoiler Composition Lock",
+          "scanner": "Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "ru_RU": {
+          "title": "Lock Atlas spoiler composition",
+          "scanner": "Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "SPOILER COMPOSITION: public Atlas pages split failed industrial AI, repair ecology, factory-temple and ending payload into gated tiers.",
+          "audio": "Не называй дно до заработанной глубины.",
+          "in_game_wiki": "Atlas spoiler lock protects final-basin meaning.",
+          "external_site": "Atlas-6 можно publicly назвать failed industrial governor; ocean-machine ecology and payloads stay gated.",
+          "field_note": "For public wiki spoiler toggles and press-kit redaction."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft JA localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft JA localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft JA localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft JA localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft JA localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft JA localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft ZH localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft ZH localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft ZH localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft ZH localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft ZH localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft FR localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft FR localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft FR localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft FR localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft FR localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft FR localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft ES localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft ES localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft ES localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft ES localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft ES localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft ES localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft DE localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft DE localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft DE localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft DE localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft DE localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft DE localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft PL localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft PL localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft PL localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft PL localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft PL localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft PL localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft UK localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft UK localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft UK localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft UK localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft UK localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft UK localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft AR localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft AR localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft AR localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft AR localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft AR localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft AR localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft ID localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft ID localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft ID localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft ID localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft ID localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft ID localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft KO localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft KO localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft KO localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft KO localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft KO localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft KO localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft HE localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft HE localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft HE localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft HE localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft HE localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft HE localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft PT localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft PT localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft PT localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft PT localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft PT localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft PT localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Atlas Spoiler Composition Lock",
+          "scanner": "Draft NL localization pending native pass. Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+          "terminal": "Draft NL localization pending native pass. SPOILER COMPOSITION: public Atlas pages must split failed industrial AI, repair ecology, factory-temple and ending payload into separate gated tiers.",
+          "audio": "Draft NL localization pending native pass. Do not name the bottom before the player earns depth.",
+          "in_game_wiki": "Draft NL localization pending native pass. Site Atlas Spoiler Composition Lock protects final-basin meaning while still allowing public explanation.",
+          "external_site": "Draft NL localization pending native pass. Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+          "field_note": "Draft NL localization pending native pass. Use for public wiki spoiler toggles and press-kit image redaction."
+        }
+      }
+    },
+    {
+      "packet_id": "P315_SOCIAL_DEV_NOTE_COPY_LOCK",
+      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+      "article_id": "applied_lore.social_dev_note_copy_lock",
+      "title_key": "applied_lore.social_dev_note_copy_lock.title",
+      "unlock": {
+        "primary": "unlock.social_dev_note_copy_lock",
+        "poi_tags": [
+          "poi.social_dev_note_card",
+          "poi.caption_asset_match_label",
+          "poi.no_claim_warning_stamp"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.copy"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Social Dev Note Copy Lock",
+          "scanner": "Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "One real thing. No chorus.",
+          "in_game_wiki": "Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "ru_RU": {
+          "title": "Lock social dev note copy",
+          "scanner": "Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "PUBLIC COPY: social/dev notes name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Одна реальная вещь. Без хора.",
+          "in_game_wiki": "Social dev note lock keeps public fragments grounded.",
+          "external_site": "Хороший dev note: pump works, gauge lies, return route got worse.",
+          "field_note": "For captions only after matching visual asset exists."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft JA localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft JA localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft JA localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft JA localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft JA localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft ZH localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft ZH localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft ZH localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft ZH localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft FR localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft FR localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft FR localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft FR localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft FR localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft ES localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft ES localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft ES localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft ES localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft ES localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft DE localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft DE localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft DE localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft DE localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft DE localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft PL localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft PL localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft PL localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft PL localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft PL localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft UK localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft UK localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft UK localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft UK localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft UK localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft AR localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft AR localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft AR localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft AR localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft AR localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft ID localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft ID localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft ID localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft ID localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft ID localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft KO localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft KO localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft KO localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft KO localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft KO localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft HE localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft HE localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft HE localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft HE localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft HE localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft PT localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft PT localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft PT localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft PT localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft PT localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Social Dev Note Copy Lock",
+          "scanner": "Draft NL localization pending native pass. Public note lock: one concrete build fact, no fake hype.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC COPY: social/dev notes should name one physical problem, one visible detail and no unsupported demo/platform/release claim.",
+          "audio": "Draft NL localization pending native pass. One real thing. No chorus.",
+          "in_game_wiki": "Draft NL localization pending native pass. Social Dev Note Copy Lock keeps public fragments grounded in current build evidence.",
+          "external_site": "Draft NL localization pending native pass. A good HECTON-8 dev note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+          "field_note": "Draft NL localization pending native pass. Use for captions and creator-facing snippets only after matching visual asset exists."
+        }
+      }
+    }
+  ]
+}

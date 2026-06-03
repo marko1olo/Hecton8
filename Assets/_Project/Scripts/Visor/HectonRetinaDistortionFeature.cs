@@ -8,10 +8,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine.Serialization;
 
 namespace Hecton8.Visor
 {
@@ -24,15 +21,12 @@ namespace Hecton8.Visor
             private const int RetinaSurvivalGraphicsMemoryMb = 1536;
             private const int RetinaVisualOverkillGraphicsMemoryMb = 4096;
 
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader";
-#endif
-
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Hidden fullscreen shader used for health-critical retina distortion.")]
-            public Shader shader = null;
+            [Tooltip("Authored fullscreen material used for health-critical retina distortion.")]
+            [FormerlySerializedAs("shader")]
+            public Material material = null;
 
             [Tooltip("Injection point for health-critical retina distortion. Before post-processing keeps the effect inside the noir stack.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
@@ -403,23 +397,15 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
-
             _pass ??= new RetinaDistortionPass();
-            Shader shader = settings != null ? settings.shader : null;
-            if (shader == null)
+            _material = settings != null ? settings.material : null;
+            if (_material == null)
             {
-                CoreUtils.Destroy(_material);
-                _material = null;
+                _pass.Dispose();
                 return;
             }
 
-            RecreateMaterial(ref _material, shader);
             CacheGraphicsCapabilitiesCold();
-            _pass.PrepareResources();
             TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
@@ -429,11 +415,18 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (settings == null || _pass == null || _material == null)
+            if (settings == null || _pass == null)
+                return;
+
+            _material = settings.material;
+            if (_material == null)
                 return;
 
             Camera renderCamera = renderingData.cameraData.camera;
             if (!TryBuildRuntimeState(renderCamera, settings, out RuntimeState runtimeState))
+                return;
+
+            if (!_pass.PrepareResources())
                 return;
 
             _pass.Setup(settings, _material, runtimeState);
@@ -444,7 +437,6 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
-            CoreUtils.Destroy(_material);
             _material = null;
             _cachedPlayerContext = null;
             TryUnregisterLateFrameTickable();
@@ -594,20 +586,5 @@ namespace Hecton8.Visor
             return hardwareWeight * globalWeight;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                CoreUtils.Destroy(material);
-                material = null;
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
     }
 }

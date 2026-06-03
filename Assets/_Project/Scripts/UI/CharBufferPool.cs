@@ -1,10 +1,7 @@
 using System;
-using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -24,7 +21,6 @@ namespace Hecton8.UI
         private const int SlotLength = RequiredVrTextCapacity;
         private const int EncyclopediaPageSlotCount = 4;
         private const int BabelArenaLength = SlotCount * RequiredBabelTextCapacity;
-        private const BufferID BabelArenaBufferId = (BufferID)70540;
 
         // COLD ALLOC: char[500][256] - legacy VR HUD TMP staging pool - owner: CharBufferPool
         private static readonly char[][] s_slots = CreateSlots(SlotLength);
@@ -35,16 +31,12 @@ namespace Hecton8.UI
         // COLD ALLOC: ulong[8] - fixed free-slot bitmap for CharBufferPool - owner: CharBufferPool
         private static readonly ulong[] s_freeMasks = CreateFreeMasks();
         private static ulong s_encyclopediaFreeMask = CreateEncyclopediaFreeMask();
-        private static IDataVault s_babelArenaVault;
-        private static VaultGenerationHandle<char> s_babelArenaHandle;
-        private static bool s_babelArenaVaultBacked;
-        private static bool s_babelArenaProbeCompleted;
         private static int s_activeLeaseCount;
 
         internal static int AvailableSlotCount => SlotCount - s_activeLeaseCount;
         internal static int AvailableEncyclopediaPageCount => CountBits(s_encyclopediaFreeMask);
         internal static int SlotCapacity => SlotLength;
-        internal static int BabelNativeArenaLength => BabelArenaLength;
+        internal static int BabelScratchArenaLength => BabelArenaLength;
 
         internal readonly struct Lease
         {
@@ -77,7 +69,7 @@ namespace Hecton8.UI
 
             public int CopyToTmpBuffer(int length)
             {
-                return CopyBabelNativeToTmp(SlotIndex, TmpBuffer, length);
+                return FinalizeBabelTmpBuffer(SlotIndex, TmpBuffer, length);
             }
         }
 
@@ -100,8 +92,6 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            ReleaseBabelArenaHandle();
-            s_babelArenaProbeCompleted = false;
             ResetFreeMasks();
             ResetEncyclopediaFreeMask();
             s_activeLeaseCount = 0;
@@ -111,8 +101,6 @@ namespace Hecton8.UI
 
         public static void Prewarm()
         {
-            EnsureBabelArena(forceProbe: true);
-            bool hasNativeArena = TryResolveBabelArena(out NativeArray<char> babelArena);
             for (int slotIndex = 0; slotIndex < SlotCount; slotIndex++)
             {
                 char[] buffer = s_slots[slotIndex];
@@ -122,13 +110,6 @@ namespace Hecton8.UI
                 char[] babelBridge = s_babelTmpBridges[slotIndex];
                 babelBridge[0] = '\0';
                 babelBridge[RequiredBabelTextCapacity - 1] = '\0';
-
-                if (hasNativeArena)
-                {
-                    int nativeBase = slotIndex * RequiredBabelTextCapacity;
-                    babelArena[nativeBase] = '\0';
-                    babelArena[nativeBase + RequiredBabelTextCapacity - 1] = '\0';
-                }
             }
 
             for (int slotIndex = 0; slotIndex < EncyclopediaPageSlotCount; slotIndex++)
@@ -141,15 +122,8 @@ namespace Hecton8.UI
 
         public static void BindDataVaultCold(IDataVault vault)
         {
-            s_babelArenaProbeCompleted = true;
-
-            if (ReferenceEquals(s_babelArenaVault, vault))
-                return;
-
-            ReleaseBabelArenaHandle();
-
-            if (vault != null)
-                TryAcquireVaultBabelArena(vault);
+            // Babel text staging is transient UI scratch. Keeping it outside GlobalDataVault
+            // prevents hot language swaps from resolving vault handles per glyph write.
         }
 
         public static bool TryAcquire(out Lease lease)
@@ -308,30 +282,15 @@ namespace Hecton8.UI
             if ((uint)slotIndex >= SlotCount)
                 return Span<char>.Empty;
 
-            if (TryResolveBabelArena(out NativeArray<char> babelArena))
-            {
-                unsafe
-                {
-                    char* basePtr = (char*)NativeArrayUnsafeUtility.GetUnsafePtr(babelArena);
-                    return MemoryMarshal.CreateSpan(
-                        ref UnsafeUtility.AsRef<char>(basePtr + (slotIndex * RequiredBabelTextCapacity)),
-                        RequiredBabelTextCapacity);
-                }
-            }
-
             return s_babelTmpBridges[slotIndex].AsSpan();
         }
 
-        private static int CopyBabelNativeToTmp(int slotIndex, char[] tmpBuffer, int length)
+        private static int FinalizeBabelTmpBuffer(int slotIndex, char[] tmpBuffer, int length)
         {
             if ((uint)slotIndex >= SlotCount || tmpBuffer == null)
                 return 0;
 
             int safeLength = math.clamp(length, 0, math.min(RequiredBabelTextCapacity, tmpBuffer.Length));
-            Span<char> source = GetBabelSpan(slotIndex);
-            for (int i = 0; i < safeLength; i++)
-                tmpBuffer[i] = source[i];
-
             if (safeLength < tmpBuffer.Length)
                 tmpBuffer[safeLength] = '\0';
 
@@ -399,102 +358,5 @@ namespace Hecton8.UI
             return count;
         }
 
-        private static bool EnsureBabelArena(bool forceProbe = false)
-        {
-            if (s_babelArenaVaultBacked)
-            {
-                if (TryResolveCurrentVaultArena(out _))
-                    return true;
-
-                ClearBabelArenaHandle();
-            }
-
-            if (s_babelArenaProbeCompleted && !forceProbe)
-                return false;
-
-            s_babelArenaProbeCompleted = true;
-            return false;
-        }
-
-        private static bool TryResolveBabelArena(out NativeArray<char> arena)
-        {
-            arena = default;
-            if (!s_babelArenaVaultBacked && !EnsureBabelArena())
-                return false;
-
-            if (TryResolveCurrentVaultArena(out arena))
-                return true;
-
-            ClearBabelArenaHandle();
-            arena = default;
-            return false;
-        }
-
-        private static bool TryResolveCurrentVaultArena(out NativeArray<char> arena)
-        {
-            arena = default;
-            if (!s_babelArenaVaultBacked ||
-                s_babelArenaVault == null ||
-                !IsBabelArenaHandle(in s_babelArenaHandle))
-                return false;
-
-            return s_babelArenaVault.TryResolveHandle(in s_babelArenaHandle, out arena) &&
-                   arena.IsCreated &&
-                   arena.Length >= BabelArenaLength;
-        }
-
-        private static bool TryAcquireVaultBabelArena(IDataVault vault)
-        {
-            if (vault == null)
-                return false;
-
-            VaultGenerationHandle<char> acquired = vault.EnsureGenerationHandle<char>(
-                BabelArenaBufferId,
-                BabelArenaLength,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            if (!IsBabelArenaHandle(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out NativeArray<char> resolved) ||
-                !resolved.IsCreated ||
-                resolved.Length < BabelArenaLength)
-            {
-                return false;
-            }
-
-            s_babelArenaHandle = acquired;
-            s_babelArenaVault = vault;
-            s_babelArenaVaultBacked = true;
-            return true;
-        }
-
-        private static bool IsBabelArenaHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
-        {
-            return handle.BufferID == (uint)BabelArenaBufferId &&
-                   handle.SystemID == (uint)SystemID.UI &&
-                   handle.Generation != 0u;
-        }
-
-        private static void ReleaseBabelArenaHandle()
-        {
-            ReleaseVaultBuffer(s_babelArenaVault, ref s_babelArenaHandle);
-            s_babelArenaVault = null;
-            s_babelArenaVaultBacked = false;
-        }
-
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
-            where T : unmanaged
-        {
-            if (vault != null && IsBabelArenaHandle(in handle))
-                vault.ReleaseBuffer(in handle);
-
-            handle = default;
-        }
-
-        private static void ClearBabelArenaHandle()
-        {
-            s_babelArenaHandle = default;
-            s_babelArenaVault = null;
-            s_babelArenaVaultBacked = false;
-        }
     }
 }

@@ -119,8 +119,12 @@ namespace Hecton8.Animation.Locomotion
             if (!Application.isPlaying)
                 return null;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameObject runtimeRoot = new GameObject("[ProceduralLadderClimbRuntime]"); // COLD ALLOC: GameObject[1] - scene-local animation locomotion runtime root - owner: ProceduralLadderClimbRuntime
             return runtimeRoot.AddComponent<ProceduralLadderClimbRuntime>();
+#else
+            return null;
+#endif
         }
 
         internal static bool TryBeginClimb(

@@ -67,10 +67,10 @@ namespace Hecton8.Editor
             _rows.Clear();
             _typeScratch.Clear();
             _ghostCount = 0;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
-                Assembly assembly = assemblies[i];
+                global::System.Reflection.Assembly assembly = assemblies[i];
                 if (!IsFirstPartyAssembly(assembly))
                     continue;
 
@@ -111,7 +111,7 @@ namespace Hecton8.Editor
             Repaint();
         }
 
-        private static bool IsFirstPartyAssembly(Assembly assembly)
+        private static bool IsFirstPartyAssembly(global::System.Reflection.Assembly assembly)
         {
             string assemblyName = assembly.GetName().Name;
             return assemblyName == "Assembly-CSharp" ||

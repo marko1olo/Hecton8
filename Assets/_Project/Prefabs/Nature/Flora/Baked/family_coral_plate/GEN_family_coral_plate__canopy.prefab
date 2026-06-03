@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1027969464589250737}
   - component: {fileID: 8156817268016144417}
+  - component: {fileID: 9156163965223486603}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__canopy
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4806858721466108184}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.38314617, y: 0.5043008, z: 0.35133177}
-  m_Size: 2.4677925
+  m_LocalReferencePoint: {x: -0.38401914, y: 0.5039505, z: 0.35072535}
+  m_Size: 2.4663029
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 4116993646650770151}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &9156163965223486603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4806858721466108184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 0f03e41a38a50c241ab2bfe3e3be3c16, type: 2}
 --- !u!1 &6349970440748803728
 GameObject:
   m_ObjectHideFlags: 0

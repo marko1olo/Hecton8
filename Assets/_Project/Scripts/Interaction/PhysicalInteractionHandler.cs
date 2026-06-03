@@ -831,7 +831,9 @@ namespace Hecton8.Interaction
             if (TryGetComponent(out _physicalHandController))
                 return true;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _physicalHandController = gameObject.AddComponent<PhysicalHandController>(); // COLD ALLOC: PhysicalHandController[1] — heavy-object articulation grab proxy — owner: PhysicalInteractionHandler
+#endif
             return _physicalHandController != null;
         }
 

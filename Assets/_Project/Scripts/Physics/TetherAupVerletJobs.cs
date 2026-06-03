@@ -46,8 +46,8 @@ namespace Hecton8.Physics
         public static int ResolveIterationCount(float globalQualityWeight)
         {
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            int iterations = (int)math.lerp(2f, 15f, q);
-            return math.clamp(iterations, 2, 15);
+            int iterations = (int)math.lerp(2f, 8f, q);
+            return math.clamp(iterations, 2, 8);
         }
 
         public static JobHandle Schedule(
@@ -483,7 +483,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct SolveTetherConstraintsJob : IJob
     {
         [NoAlias] public NativeArray<TetherNodeDTO> Nodes;
@@ -500,13 +500,14 @@ namespace Hecton8.Physics
         public void Execute()
         {
             int constraintCount = math.clamp(ActiveConstraintCount, 0, Constraints.IsCreated ? Constraints.Length : 0);
-            int iterations = math.clamp(IterationCount, 1, 15);
+            int iterations = math.clamp(IterationCount, 2, 8);
             float peakTension = 0f;
             float maxError = 0f;
             int faultFlags = 0;
 
             for (int iteration = 0; iteration < iterations; iteration++)
             {
+                bool emitOutputs = iteration == iterations - 1;
                 for (int i = 0; i < constraintCount; i++)
                 {
                     TetherConstraintDTO constraint = Constraints[i];
@@ -514,8 +515,11 @@ namespace Hecton8.Physics
                         (uint)constraint.NodeA >= (uint)Nodes.Length ||
                         (uint)constraint.NodeB >= (uint)Nodes.Length)
                     {
-                        WriteTension(i, 0f);
-                        ClearEndpointForces(i);
+                        if (emitOutputs)
+                        {
+                            WriteTension(i, 0f);
+                            ClearEndpointForces(i);
+                        }
                         continue;
                     }
 
@@ -527,13 +531,16 @@ namespace Hecton8.Physics
                     if (!math.isfinite(lenSq) || lenSq <= VerletCableLayout.MinConstraintLengthSq)
                     {
                         faultFlags |= (int)TetherNodeRuntimeFlags.ConstraintFault;
-                        WriteTension(i, 0f);
-                        ClearEndpointForces(i);
+                        if (emitOutputs)
+                        {
+                            WriteTension(i, 0f);
+                            ClearEndpointForces(i);
+                        }
                         continue;
                     }
 
-                    float distance = math.max(lenSq * math.rsqrt(math.max(lenSq, 0.0001f)), 0.0001f);
-                    float invDistance = math.rcp(distance);
+                    float invDistance = math.rsqrt(math.max(lenSq, 0.0001f));
+                    float distance = math.max(lenSq * invDistance, 0.0001f);
                     float restLength = math.max(VerletCableLayout.MinConstraintLength, constraint.RestLength);
                     float error = distance - restLength;
                     float stretch = math.max(0f, error);
@@ -541,10 +548,14 @@ namespace Hecton8.Physics
                     float tension = ClampTension(stretch * stiffness * SanitizeNonNegative(TensionScale));
                     peakTension = math.max(peakTension, tension);
                     maxError = math.max(maxError, math.abs(error));
-                    WriteTension(i, tension);
 
                     float3 direction = SanitizeDirection(delta * invDistance);
-                    WriteEndpointForces(i, constraint, a.CurrentAUP, b.CurrentAUP, direction, tension);
+                    if (emitOutputs)
+                    {
+                        WriteTension(i, tension);
+                        WriteEndpointForces(i, constraint, a.CurrentAUP, b.CurrentAUP, direction, tension);
+                    }
+
                     if (math.abs(error) <= VerletCableLayout.MinConstraintLength)
                         continue;
 
@@ -554,10 +565,11 @@ namespace Hecton8.Physics
                     if (invMassSum <= 0.000001f)
                         continue;
 
+                    float invMassRcp = math.rcp(math.max(invMassSum, 0.000001f));
                     float3 correction = direction * (error * stiffness);
                     if (invMassA > 0f)
                     {
-                        float3 weightedCorrection = correction * (invMassA * math.rcp(math.max(invMassSum, 0.000001f)));
+                        float3 weightedCorrection = correction * (invMassA * invMassRcp);
                         a.CurrentAUP += new double3(weightedCorrection.x, weightedCorrection.y, weightedCorrection.z);
                         a.Flags |= nodeFlags;
                         Nodes[constraint.NodeA] = a;
@@ -565,7 +577,7 @@ namespace Hecton8.Physics
 
                     if (invMassB > 0f)
                     {
-                        float3 weightedCorrection = correction * (invMassB * math.rcp(math.max(invMassSum, 0.000001f)));
+                        float3 weightedCorrection = correction * (invMassB * invMassRcp);
                         b.CurrentAUP -= new double3(weightedCorrection.x, weightedCorrection.y, weightedCorrection.z);
                         b.Flags |= nodeFlags;
                         Nodes[constraint.NodeB] = b;
@@ -1152,14 +1164,13 @@ namespace Hecton8.Physics
             string legacyPath = Path.Combine(projectRoot, LegacyDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
             string h8Path = Path.Combine(projectRoot, H8DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
             NativeArray<TetherAupTelemetryEntry> slice = ring.GetSubArray(0, capacity);
-            TetherBlackBoxDumpWriter.WritePrimaryAndLegacy(
+            return TetherBlackBoxDumpWriter.TryWritePrimaryAndLegacy(
                 h8Path,
                 legacyPath,
                 DumpMagic,
                 slice,
                 normalizedHead,
                 reasonFlags);
-            return true;
         }
 
         private static bool TryOpenExistingBuffer<T>(

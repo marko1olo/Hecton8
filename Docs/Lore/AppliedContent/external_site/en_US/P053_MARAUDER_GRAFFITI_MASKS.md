@@ -1,10 +1,17 @@
 ---
 packet_id: P053_MARAUDER_GRAFFITI_MASKS
+release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.marauder_graffiti_masks
+unlock_id: unlock.first_marauder_graffiti_masks
+poi_tags: poi.graffiti_mask;poi.pressure_arrow
+biome_tags: biome.scrap_canyon;biome.marauder_route
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Marauder Graffiti Masks

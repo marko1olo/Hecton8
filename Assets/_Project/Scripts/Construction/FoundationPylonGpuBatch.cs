@@ -1,8 +1,10 @@
 using System;
 using System.Diagnostics;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -11,18 +13,15 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     public sealed class FoundationPylonGpuBatch : MonoBehaviour, IRenderable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private static int s_x001FoundationPylonGpuBatchSignalPushDropCount;
-        private const string PylonShaderPath = "Assets/_Project/Shaders/Hecton_FoundationPylon.shader";
-        private const uint WarningMask = FoundationPylonFlags.ExtensionCulled | FoundationPylonFlags.OutOfSdfBounds | FoundationPylonFlags.NonFinite;
+        private const string NoSubstrateWarningMessage = "FOUNDATION SNAP FAILED: VOXEL SDF SUBSTRATE MISSING";
+        private const uint NoSubstrateWarningCadenceFrames = 30u;
+        private const uint WarningMask = FoundationPylonFlags.ExtensionCulled | FoundationPylonFlags.OutOfSdfBounds | FoundationPylonFlags.NonFinite | FoundationPylonFlags.SnapFailed_NoSubstrate;
         private const ulong FoundationPylonJobCoreMutationGuardMask =
             (1UL << ((int)FoundationSnappingCalculatorRuntime.ModuleBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.PylonMatrixBufferId & 31)) |
@@ -32,7 +31,6 @@ namespace Hecton8.Construction
             (1UL << ((int)FoundationSnappingCalculatorRuntime.TelemetryBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.TelemetryCursorBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.TuningBufferId & 31)) |
-            (1UL << ((int)FoundationSnappingCalculatorRuntime.MockSdfDistanceBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.SdfConfigBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.RayOriginBufferId & 31)) |
             (1UL << ((int)FoundationSnappingCalculatorRuntime.ProfileRangeBufferId & 31)) |
@@ -42,10 +40,10 @@ namespace Hecton8.Construction
             (1UL << ((int)BufferID.ConstructionSocketModules & 31)) |
             (1UL << ((int)BufferID.ConstructionSocketCounters & 31));
         private const ulong FoundationPylonEncodedSdfMutationGuardMask =
-            1UL << ((int)BufferID.VoxelSdfTexture3D & 31);
+            (1UL << ((int)BufferID.VoxelSdfPayloadDescriptor & 31)) |
+            (1UL << ((int)BufferID.VoxelSdfTexture3D & 31));
 
         [SerializeField] private Material pylonMaterial;
-        [SerializeField] private Shader pylonShader;
         [SerializeField] private Camera targetCamera;
         [SerializeField, Min(1)] private int maxModules = FoundationSnappingCalculatorRuntime.ModuleCapacity;
         [SerializeField] private Color baseColor = new Color(0.04f, 0.72f, 0.86f, 0.86f);
@@ -61,6 +59,7 @@ namespace Hecton8.Construction
         private GraphicsBuffer _boundMatrixBuffer;
         private GraphicsBuffer _boundSurfaceBuffer;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> _encodedSdfDescriptorHandle;
         private VaultGenerationHandle<byte> _encodedSdfHandle;
         private JobHandle _pendingHandle;
         private IDataVault _pendingVaultGuardVault;
@@ -79,8 +78,8 @@ namespace Hecton8.Construction
         private bool _pendingSocketModuleReadFence;
         private bool _drawBoundsValid;
         private bool _vaultInitialized;
+        private bool _encodedSdfDescriptorHandleValid;
         private bool _encodedSdfHandleValid;
-        private bool _mockSdfGenerated;
         private bool _originSnapshotValid;
         private ulong _pendingVaultGuardMask;
         private int _pendingSlotCount;
@@ -88,10 +87,12 @@ namespace Hecton8.Construction
         private int _capacityResolved;
         private int _writeBufferIndex;
         private uint _frameCounter;
+        private uint _lastNoSubstrateWarningFrame;
         private long _pendingScheduleTicks;
         private Color _lastBaseColor;
         private Color _lastEmbeddedColor;
         private bool _materialColorsApplied;
+        private bool _pylonMaterialFaultLogged;
 
         private static readonly int PylonMatricesId = Shader.PropertyToID("_H8FoundationPylonMatrices");
         private static readonly int PylonSurfacesId = Shader.PropertyToID("_H8FoundationPylonSurfaces");
@@ -172,9 +173,6 @@ namespace Hecton8.Construction
             _boundMatrixBuffer = null;
             _boundSurfaceBuffer = null;
             ClearVaultCacheCold();
-
-            if (pylonMaterial != null && pylonMaterial.hideFlags == HideFlags.DontSave)
-                Destroy(pylonMaterial);
         }
 
 #if UNITY_EDITOR
@@ -197,7 +195,8 @@ namespace Hecton8.Construction
                 FoundationDebugRayDTO ray = views.DebugRays[i];
                 if ((ray.Flags & FoundationPylonFlags.Active) == 0u &&
                     (ray.Flags & FoundationPylonFlags.ExtensionCulled) == 0u &&
-                    (ray.Flags & FoundationPylonFlags.OutOfSdfBounds) == 0u)
+                    (ray.Flags & FoundationPylonFlags.OutOfSdfBounds) == 0u &&
+                    (ray.Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) == 0u)
                 {
                     continue;
                 }
@@ -257,15 +256,10 @@ namespace Hecton8.Construction
             if (!TryResolveCameraAup(out double3 cameraAup, out Vector3 cameraWorldOffset))
                 return false;
 
-            FoundationSdfConfigDTO sdfConfig = foundationViews.SdfConfig.IsCreated && foundationViews.SdfConfig.Length > 0
-                ? foundationViews.SdfConfig[0]
-                : FoundationSnappingCalculatorRuntime.CreateDefaultMockSdfConfig(cameraAup);
-            sdfConfig = FoundationSnappingCalculatorRuntime.SanitizeSdfConfig(sdfConfig);
-            bool usingRealSdf = TryResolveEncodedVoxelSdf(sdfConfig, out NativeArray<byte> encodedSdf);
             if (!TryBeginSocketModuleReadFenceForSchedule(out useSocketInputs))
                 return false;
 
-            if (!TryBeginVaultJobGuard(useSocketInputs, usingRealSdf))
+            if (!TryBeginVaultJobGuard(useSocketInputs, includeEncodedSdf: true))
             {
                 ReleasePendingSocketModuleReadFence();
                 return false;
@@ -284,135 +278,114 @@ namespace Hecton8.Construction
             JobHandle lastScheduledHandle = default;
             try
             {
-            bool lockedSocketInputs = useSocketInputs;
-            if (!FoundationSnappingCalculatorRuntime.TryReadVaultViews(_vault, out foundationViews) ||
-                !TryPrepareModuleInputs(
-                    foundationViews,
-                    lockedSocketInputs,
-                    out moduleCount,
-                    out useSocketInputs,
-                    out ConstructionSocketVaultViews socketViews))
-            {
-                ReleasePendingProfileReadFence();
-                ReleasePendingVaultJobGuard();
-                return false;
-            }
-
-            if (moduleCount <= 0)
-            {
-                ClearUploadedBatch();
-                ReleasePendingProfileReadFence();
-                ReleasePendingVaultJobGuard();
-                return false;
-            }
-
-            FoundationTuningDTO tuning = foundationViews.Tuning.IsCreated && foundationViews.Tuning.Length > 0
-                ? foundationViews.Tuning[0]
-                : FoundationSnappingCalculatorRuntime.CreateDefaultTuning(FoundationSnappingCalculatorRuntime.ResolveGlobalQualityWeight());
-            tuning = FoundationSnappingCalculatorRuntime.SanitizeTuning(
-                tuning,
-                FoundationSnappingCalculatorRuntime.ResolveGlobalQualityWeight());
-            tuning.Frame = CaptureFrameId();
-            if (foundationViews.Tuning.IsCreated && foundationViews.Tuning.Length > 0)
-                foundationViews.Tuning[0] = tuning;
-
-            sdfConfig = foundationViews.SdfConfig.IsCreated && foundationViews.SdfConfig.Length > 0
-                ? FoundationSnappingCalculatorRuntime.SanitizeSdfConfig(foundationViews.SdfConfig[0])
-                : FoundationSnappingCalculatorRuntime.CreateDefaultMockSdfConfig(cameraAup);
-            if (usingRealSdf && !TryResolveEncodedVoxelSdf(sdfConfig, out encodedSdf))
-            {
-                usingRealSdf = false;
-                encodedSdf = default;
-            }
-
-            JobHandle dependency = default;
-            if (useSocketInputs)
-            {
-                dependency = new BuildFoundationModulesFromSocketModulesJob
+                bool lockedSocketInputs = useSocketInputs;
+                if (!FoundationSnappingCalculatorRuntime.TryReadVaultViews(_vault, out foundationViews) ||
+                    !TryPrepareModuleInputs(
+                        foundationViews,
+                        lockedSocketInputs,
+                        out moduleCount,
+                        out useSocketInputs,
+                        out ConstructionSocketVaultViews socketViews))
                 {
-                    SocketModules = socketViews.Modules,
-                    FoundationModules = foundationViews.Modules,
-                    ModuleCount = moduleCount
-                }.Schedule(moduleCount, 32);
-                lastScheduledHandle = dependency;
-                hasScheduledHandle = true;
-            }
+                    return false;
+                }
 
-            if (!usingRealSdf)
-            {
-                sdfConfig = FoundationSnappingCalculatorRuntime.CreateDefaultMockSdfConfig(cameraAup);
+                if (moduleCount <= 0)
+                {
+                    ClearUploadedBatch();
+                    return false;
+                }
+
+                if (!TryResolveEncodedVoxelSdf(out FoundationSdfConfigDTO sdfConfig, out NativeArray<byte> encodedSdf))
+                {
+                    ReleasePendingProfileReadFence();
+                    ReleasePendingSocketModuleReadFence();
+                    ReleasePendingVaultJobGuard();
+                    ClearUploadedBatch();
+                    PublishNoSubstrateWarning(cameraAup);
+                    return false;
+                }
+
                 if (foundationViews.SdfConfig.IsCreated && foundationViews.SdfConfig.Length > 0)
                     foundationViews.SdfConfig[0] = sdfConfig;
 
-                if (!_mockSdfGenerated && foundationViews.MockSdfDistances.IsCreated)
+                FoundationTuningDTO tuning = foundationViews.Tuning.IsCreated && foundationViews.Tuning.Length > 0
+                    ? foundationViews.Tuning[0]
+                    : FoundationSnappingCalculatorRuntime.CreateDefaultTuning(FoundationSnappingCalculatorRuntime.ResolveGlobalQualityWeight());
+                tuning = FoundationSnappingCalculatorRuntime.SanitizeTuning(
+                    tuning,
+                    FoundationSnappingCalculatorRuntime.ResolveGlobalQualityWeight());
+                tuning.Frame = CaptureFrameId();
+                if (foundationViews.Tuning.IsCreated && foundationViews.Tuning.Length > 0)
+                    foundationViews.Tuning[0] = tuning;
+
+                JobHandle dependency = default;
+                if (useSocketInputs)
                 {
-                    dependency = new GenerateMockSeafloorSDFJob
+                    dependency = new BuildFoundationModulesFromSocketModulesJob
                     {
-                        Distances = foundationViews.MockSdfDistances,
-                        Config = sdfConfig
-                    }.Schedule(foundationViews.MockSdfDistances.Length, 128, dependency);
+                        SocketModules = socketViews.Modules,
+                        FoundationModules = foundationViews.Modules,
+                        ModuleCount = moduleCount
+                    }.Schedule(moduleCount, 32);
                     lastScheduledHandle = dependency;
                     hasScheduledHandle = true;
-                    _mockSdfGenerated = true;
                 }
-            }
 
-            int slotCount = math.min(
-                moduleCount * FoundationSnappingCalculatorRuntime.MaxRaysPerModule,
-                FoundationSnappingCalculatorRuntime.PylonCapacity);
-            JobHandle pylonHandle = new CalculateFoundationPylonsJob
-            {
-                Modules = foundationViews.Modules,
-                MockSdfDistances = foundationViews.MockSdfDistances,
-                EncodedVoxelSdfTexture3D = encodedSdf,
-                RayOrigins = foundationViews.RayOrigins,
-                ProfileRanges = foundationViews.ProfileRanges,
-                PylonMatrices = foundationViews.PylonMatrices,
-                PylonSurfaces = foundationViews.PylonSurfaces,
-                PerModuleCounters = foundationViews.PerModuleCounters,
-                DebugRays = foundationViews.DebugRays,
-                SdfConfig = sdfConfig,
-                Tuning = tuning,
-                CameraAup = cameraAup,
-                ModuleCount = moduleCount,
-                ProfileCount = FoundationSnappingCalculatorRuntime.GetLoadedProfileCount(),
-                RayOriginCount = FoundationSnappingCalculatorRuntime.GetLoadedRayOriginCount(),
-                UseEncodedByteSdf = usingRealSdf ? 1 : 0
-            }.Schedule(moduleCount, 16, dependency);
-            lastScheduledHandle = pylonHandle;
-            hasScheduledHandle = true;
+                int slotCount = math.min(
+                    moduleCount * FoundationSnappingCalculatorRuntime.MaxRaysPerModule,
+                    FoundationSnappingCalculatorRuntime.PylonCapacity);
+                JobHandle pylonHandle = new CalculateFoundationPylonsJob
+                {
+                    Modules = foundationViews.Modules,
+                    EncodedVoxelSdfTexture3D = encodedSdf,
+                    RayOrigins = foundationViews.RayOrigins,
+                    ProfileRanges = foundationViews.ProfileRanges,
+                    PylonMatrices = foundationViews.PylonMatrices,
+                    PylonSurfaces = foundationViews.PylonSurfaces,
+                    PerModuleCounters = foundationViews.PerModuleCounters,
+                    DebugRays = foundationViews.DebugRays,
+                    SdfConfig = sdfConfig,
+                    Tuning = tuning,
+                    CameraAup = cameraAup,
+                    ModuleCount = moduleCount,
+                    ProfileCount = FoundationSnappingCalculatorRuntime.GetLoadedProfileCount(),
+                    RayOriginCount = FoundationSnappingCalculatorRuntime.GetLoadedRayOriginCount()
+                }.Schedule(moduleCount, 16, dependency);
+                lastScheduledHandle = pylonHandle;
+                hasScheduledHandle = true;
 
-            JobHandle reduceHandle = new ReduceFoundationPylonCountersJob
-            {
-                PerModuleCounters = foundationViews.PerModuleCounters,
-                FrameCounters = foundationViews.FrameCounters,
-                ModuleCount = moduleCount
-            }.Schedule(pylonHandle);
-            lastScheduledHandle = reduceHandle;
+                JobHandle reduceHandle = new ReduceFoundationPylonCountersJob
+                {
+                    PerModuleCounters = foundationViews.PerModuleCounters,
+                    FrameCounters = foundationViews.FrameCounters,
+                    ModuleCount = moduleCount
+                }.Schedule(pylonHandle);
+                lastScheduledHandle = reduceHandle;
 
-            JobHandle compactHandle = new CompactFoundationPylonDrawListJob
-            {
-                PylonMatrices = foundationViews.PylonMatrices,
-                PylonSurfaces = foundationViews.PylonSurfaces,
-                FrameCounters = foundationViews.FrameCounters,
-                SlotCount = slotCount
-            }.Schedule(reduceHandle);
-            lastScheduledHandle = compactHandle;
+                JobHandle compactHandle = new CompactFoundationPylonDrawListJob
+                {
+                    PylonMatrices = foundationViews.PylonMatrices,
+                    PylonSurfaces = foundationViews.PylonSurfaces,
+                    FrameCounters = foundationViews.FrameCounters,
+                    SlotCount = slotCount
+                }.Schedule(reduceHandle);
+                lastScheduledHandle = compactHandle;
 
-            _pendingHandle = new BuildFoundationPylonIndirectArgsJob
-            {
-                FrameCounters = foundationViews.FrameCounters,
-                Args = foundationViews.IndirectArgs,
-                SlotCount = slotCount
-            }.Schedule(compactHandle);
-            lastScheduledHandle = _pendingHandle;
-            _pendingScheduled = true;
-            _pendingDiscard = false;
-            _pendingSlotCount = slotCount;
-            _pendingCameraWorldOffset = cameraWorldOffset;
-            _pendingScheduleTicks = Stopwatch.GetTimestamp();
-            scheduleCommitted = true;
-            return true;
+                _pendingHandle = new BuildFoundationPylonIndirectArgsJob
+                {
+                    FrameCounters = foundationViews.FrameCounters,
+                    Args = foundationViews.IndirectArgs,
+                    SlotCount = slotCount
+                }.Schedule(compactHandle);
+                lastScheduledHandle = _pendingHandle;
+                _pendingScheduled = true;
+                _pendingDiscard = false;
+                _pendingSlotCount = slotCount;
+                _pendingCameraWorldOffset = cameraWorldOffset;
+                _pendingScheduleTicks = Stopwatch.GetTimestamp();
+                scheduleCommitted = true;
+                return true;
             }
             finally
             {
@@ -448,61 +421,72 @@ namespace Hecton8.Construction
             _pendingDiscard = false;
             _pendingSlotCount = 0;
             _pendingCameraWorldOffset = Vector3.zero;
-            if (uploadSlots <= 0)
+            try
             {
-                ClearUploadedBatch();
+                if (uploadSlots <= 0)
+                {
+                    ClearUploadedBatch();
+                    return true;
+                }
+
+                if (_vault == null ||
+                    !FoundationSnappingCalculatorRuntime.TryReadVaultViews(_vault, out FoundationSnappingVaultViews views) ||
+                    !HasGraphicsBuffers())
+                {
+                    ClearUploadedBatch();
+                    return false;
+                }
+
+                FoundationPylonFrameCounters counters = views.FrameCounters.IsCreated && views.FrameCounters.Length > 0
+                    ? views.FrameCounters[0]
+                    : default;
+                int activeUploadSlots = math.min(uploadSlots, math.max(0, counters.SlotCount));
+                int writeCount = math.min(activeUploadSlots, math.min(views.PylonMatrices.Length, views.PylonSurfaces.Length));
+                _uploadedCameraWorldOffset = cameraWorldOffset;
+                UpdateDrawBounds(views.PylonMatrices, views.PylonSurfaces, writeCount, cameraWorldOffset);
+                if (!_drawBoundsValid)
+                {
+                    _uploadedSlotCount = 0;
+                    return true;
+                }
+
+                GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteMatrixBuffer(), views.PylonMatrices, writeCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteSurfaceBuffer(), views.PylonSurfaces, writeCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteArgsBuffer(), views.IndirectArgs, 1);
+                _uploadedSlotCount = writeCount;
+                _writeBufferIndex ^= 1;
+
+                double3 firstAup = views.Modules.IsCreated && views.Modules.Length > 0 ? views.Modules[0].CenterAup : double3.zero;
+                float elapsedUs = ResolveElapsedMicroseconds(_pendingScheduleTicks);
+                FoundationTuningDTO tuningForWarning = views.Tuning.IsCreated && views.Tuning.Length > 0
+                    ? views.Tuning[0]
+                    : FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f);
+                FoundationSnappingCalculatorRuntime.WriteTelemetry(
+                    views.Telemetry,
+                    views.TelemetryCursor,
+                    firstAup,
+                    CaptureFrameId(),
+                    in counters,
+                    elapsedUs,
+                    tuningForWarning.GlobalQualityWeight);
+
+                bool dumpTelemetry = (counters.Flags & FoundationPylonFlags.NonFinite) != 0u && views.Telemetry.IsCreated;
+                NativeArray<FoundationTelemetryEntry> telemetryForDump = dumpTelemetry ? views.Telemetry : default;
+                bool publishWarning = (counters.Flags & WarningMask) != 0u;
                 ReleasePendingVaultJobGuard();
+
+                if (dumpTelemetry)
+                    FoundationSnappingCalculatorRuntime.DumpTelemetry(telemetryForDump);
+
+                if (publishWarning)
+                    PublishStructuralWarning(firstAup, in counters, tuningForWarning);
+
                 return true;
             }
-
-            if (_vault == null ||
-                !FoundationSnappingCalculatorRuntime.TryReadVaultViews(_vault, out FoundationSnappingVaultViews views) ||
-                !HasGraphicsBuffers())
+            finally
             {
-                ClearUploadedBatch();
                 ReleasePendingVaultJobGuard();
-                return false;
             }
-
-            FoundationPylonFrameCounters counters = views.FrameCounters.IsCreated && views.FrameCounters.Length > 0
-                ? views.FrameCounters[0]
-                : default;
-            int activeUploadSlots = math.min(uploadSlots, math.max(0, counters.SlotCount));
-            int writeCount = math.min(activeUploadSlots, math.min(views.PylonMatrices.Length, views.PylonSurfaces.Length));
-            _uploadedCameraWorldOffset = cameraWorldOffset;
-            UpdateDrawBounds(views.PylonMatrices, views.PylonSurfaces, writeCount, cameraWorldOffset);
-            if (!_drawBoundsValid)
-            {
-                _uploadedSlotCount = 0;
-                ReleasePendingVaultJobGuard();
-                return true;
-            }
-
-            GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteMatrixBuffer(), views.PylonMatrices, writeCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteSurfaceBuffer(), views.PylonSurfaces, writeCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteArgsBuffer(), views.IndirectArgs, 1);
-            _uploadedSlotCount = writeCount;
-            _writeBufferIndex ^= 1;
-
-            double3 firstAup = views.Modules.IsCreated && views.Modules.Length > 0 ? views.Modules[0].CenterAup : double3.zero;
-            float elapsedUs = ResolveElapsedMicroseconds(_pendingScheduleTicks);
-            FoundationSnappingCalculatorRuntime.WriteTelemetry(
-                views.Telemetry,
-                views.TelemetryCursor,
-                firstAup,
-                CaptureFrameId(),
-                in counters,
-                elapsedUs,
-                views.Tuning.IsCreated && views.Tuning.Length > 0 ? views.Tuning[0].GlobalQualityWeight : 1f);
-
-            if ((counters.Flags & FoundationPylonFlags.NonFinite) != 0u)
-                FoundationSnappingCalculatorRuntime.DumpTelemetry(views.Telemetry);
-
-            if ((counters.Flags & WarningMask) != 0u)
-                PublishStructuralWarning(firstAup, in counters, views.Tuning.IsCreated && views.Tuning.Length > 0 ? views.Tuning[0] : FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f));
-
-            ReleasePendingVaultJobGuard();
-            return true;
         }
 
         private bool TryPrepareModuleInputs(
@@ -521,14 +505,11 @@ namespace Hecton8.Construction
                 !socketViews.Counters.IsCreated ||
                 socketViews.Counters.Length <= 0)
             {
-                return TryPopulatePreviewFallback(foundationViews.Modules, out moduleCount);
+                return true;
             }
 
             moduleCount = math.clamp(socketViews.Counters[0], 0, math.min(socketViews.Modules.Length, math.min(foundationViews.Modules.Length, ResolveMaxModules())));
-            if (moduleCount <= 0)
-                return TryPopulatePreviewFallback(foundationViews.Modules, out moduleCount);
-
-            useSocketInputs = true;
+            useSocketInputs = moduleCount > 0;
             return true;
         }
 
@@ -556,62 +537,71 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private bool TryPopulatePreviewFallback(NativeArray<FoundationModuleAupDTO> modules, out int moduleCount)
+        private bool TryResolveEncodedVoxelSdf(out FoundationSdfConfigDTO config, out NativeArray<byte> encodedSdf)
         {
-            moduleCount = 0;
-            if (!modules.IsCreated || modules.Length <= 0)
-                return false;
-
-            ReadOnlySpan<ConstructionPreviewSignal> signals = SignalBus<ConstructionPreviewSignal>.GetFrameSnapshot();
-            for (int i = 0; i < signals.Length; i++)
-            {
-                ConstructionPreviewSignal signal = signals[i];
-                if ((signal.Flags & ConstructionPreviewSignal.FlagActive) == 0 ||
-                    !AbsoluteUniversePosition.IsFinite(in signal.CenterAup))
-                {
-                    continue;
-                }
-
-                FoundationModuleAupDTO module;
-                module.CenterAup = signal.CenterAup.ToAbsoluteDouble3();
-                module.Rotation = new quaternion(signal.Rotation.x, signal.Rotation.y, signal.Rotation.z, signal.Rotation.w);
-                module.BoundsExtents = math.max(math.abs(signal.Scale) * 0.5f, new float3(0.5f));
-                module.GroundClearanceMeters = 0.05f;
-                module.ModuleHash = signal.ModuleHash;
-                module.Flags = FoundationPylonFlags.Active | FoundationPylonFlags.PresentationOnly | FoundationPylonFlags.RollbackExcluded;
-                modules[0] = module;
-                moduleCount = 1;
-                return true;
-            }
-
-            return true;
-        }
-
-        private bool TryResolveEncodedVoxelSdf(FoundationSdfConfigDTO config, out NativeArray<byte> encodedSdf)
-        {
+            config = default;
             encodedSdf = default;
+            if (_vault != null && (!_encodedSdfDescriptorHandleValid || !_encodedSdfHandleValid))
+                TryCacheEncodedVoxelSdfHandleCold();
+
             if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !_encodedSdfDescriptorHandleValid ||
                 !_encodedSdfHandleValid ||
+                !_vault.TryReadHandle(in _encodedSdfDescriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors) ||
+                !descriptors.IsCreated ||
+                descriptors.Length <= 0 ||
                 !_vault.TryReadHandle(in _encodedSdfHandle, out encodedSdf) ||
                 !encodedSdf.IsCreated)
             {
                 return false;
             }
 
-            long sx = math.max(1, config.SizeX);
-            long sy = math.max(1, config.SizeY);
-            long sz = math.max(1, config.SizeZ);
-            if (sx > int.MaxValue / sy)
+            VoxelSdfPayloadDescriptorDTO descriptor = descriptors[0];
+            if ((descriptor.Flags & VoxelSdfPayloadDescriptorDTO.FlagValid) == 0u ||
+                descriptor.BufferId != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
+                descriptor.BufferGeneration != _encodedSdfHandle.Generation ||
+                descriptor.OwnerSystemId != (uint)SystemID.WorldStreaming ||
+                descriptor.ByteCount <= 0 ||
+                !TryResolveSdfVoxelCount(descriptor.GridDimensions, out int expectedLength) ||
+                descriptor.ByteCount != expectedLength ||
+                encodedSdf.Length < expectedLength)
+            {
                 return false;
+            }
 
-            long slice = sx * sy;
-            if (slice > int.MaxValue / sz)
+            float3 cell = descriptor.VoxelCellSize;
+            float cellX = math.abs(cell.x);
+            float cellY = math.abs(cell.y);
+            float cellZ = math.abs(cell.z);
+            float minCell = math.min(cellX, math.min(cellY, cellZ));
+            float maxCell = math.max(cellX, math.max(cellY, cellZ));
+            if (!math.all(math.isfinite(descriptor.VolumeOrigin)) ||
+                !math.all(math.isfinite(cell)) ||
+                !math.isfinite(descriptor.SdfRangeMeters) ||
+                descriptor.SdfRangeMeters <= 0.0001f ||
+                minCell <= 0.0001f ||
+                maxCell <= 0.0001f ||
+                math.abs(maxCell - minCell) > 0.0001f)
+            {
                 return false;
+            }
 
-            long expected = slice * sz;
-            return expected > 0L &&
-                   expected <= int.MaxValue &&
-                   encodedSdf.Length >= expected;
+            config.OriginAup = _cachedOriginAup + new double3(
+                descriptor.VolumeOrigin.x,
+                descriptor.VolumeOrigin.y,
+                descriptor.VolumeOrigin.z);
+            config.VoxelSizeMeters = maxCell;
+            config.SizeX = descriptor.GridDimensions.x;
+            config.SizeY = descriptor.GridDimensions.y;
+            config.SizeZ = descriptor.GridDimensions.z;
+            config.SdfRangeMeters = descriptor.SdfRangeMeters;
+            config.IsoSurface = 0f;
+            config.Reserved0 = 0f;
+            config.Reserved1 = 0f;
+            config.Reserved2 = 0f;
+            config.Flags = FoundationPylonFlags.RealVoxelSdf;
+            return math.all(math.isfinite(config.OriginAup));
         }
 
         private void DrawPreparedBatch()
@@ -672,9 +662,14 @@ namespace Hecton8.Construction
 
         private void TryCacheEncodedVoxelSdfHandleCold()
         {
+            _encodedSdfDescriptorHandle = default;
             _encodedSdfHandle = default;
+            _encodedSdfDescriptorHandleValid = _vault != null &&
+                                               _vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(BufferID.VoxelSdfPayloadDescriptor, out _encodedSdfDescriptorHandle) &&
+                                               _encodedSdfDescriptorHandle.BufferID == unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor);
             _encodedSdfHandleValid = _vault != null &&
-                                     _vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out _encodedSdfHandle);
+                                     _vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out _encodedSdfHandle) &&
+                                     _encodedSdfHandle.BufferID == unchecked((uint)(int)BufferID.VoxelSdfTexture3D);
         }
 
         private void EnsureGraphicsBuffers()
@@ -712,22 +707,16 @@ namespace Hecton8.Construction
         private void EnsureMaterial()
         {
             if (pylonMaterial != null)
-                return;
-
-#if UNITY_EDITOR
-            if (pylonShader == null)
-                pylonShader = AssetDatabase.LoadAssetAtPath<Shader>(PylonShaderPath);
-#endif
-
-            if (pylonShader == null)
-                return;
-
-            // COLD ALLOC: Material[1] - runtime pylon shader material fallback - owner: FoundationPylonGpuBatch
-            pylonMaterial = new Material(pylonShader)
             {
-                enableInstancing = false,
-                hideFlags = HideFlags.DontSave
-            };
+                _pylonMaterialFaultLogged = false;
+                return;
+            }
+
+            if (_pylonMaterialFaultLogged)
+                return;
+
+            _pylonMaterialFaultLogged = true;
+            H8Debug.LogError("[FoundationPylonGpuBatch] Missing authored pylon material. Runtime material synthesis is forbidden.", this);
         }
 
         private void EnsureCameraCold()
@@ -854,6 +843,28 @@ namespace Hecton8.Construction
             SignalBus<FoundationStructuralWarningSignal>.TryPushTracked(in signal, ref s_x001FoundationPylonGpuBatchSignalPushDropCount);
         }
 
+        private void PublishNoSubstrateWarning(double3 cameraAup)
+        {
+            uint frame = CaptureFrameId();
+            if (_lastNoSubstrateWarningFrame != 0u &&
+                unchecked(frame - _lastNoSubstrateWarningFrame) < NoSubstrateWarningCadenceFrames)
+            {
+                return;
+            }
+
+            _lastNoSubstrateWarningFrame = frame;
+            FoundationStructuralWarningSignal signal = default;
+            signal.ModuleAup = cameraAup;
+            signal.ModuleHash = 0u;
+            signal.WarningFlags = FoundationPylonFlags.SnapFailed_NoSubstrate;
+            signal.RequestedLengthMeters = 0f;
+            signal.MaxLengthMeters = 0f;
+            signal.Frame = frame;
+            signal.ResultHash = FoundationPylonFlags.SnapFailed_NoSubstrate;
+            SignalBus<FoundationStructuralWarningSignal>.TryPushTracked(in signal, ref s_x001FoundationPylonGpuBatchSignalPushDropCount);
+            NotificationEvents.TryPushWarning(NoSubstrateWarningMessage.AsSpan());
+        }
+
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             _cachedOriginAup = shiftData.NewTotalOffsetDouble;
@@ -902,8 +913,10 @@ namespace Hecton8.Construction
         {
             FoundationSnappingCalculatorRuntime.UnbindDataVault(_vault);
             _vault = null;
+            _encodedSdfDescriptorHandle = default;
             _encodedSdfHandle = default;
             _vaultInitialized = false;
+            _encodedSdfDescriptorHandleValid = false;
             _encodedSdfHandleValid = false;
             _pendingDiscard = false;
         }
@@ -1089,6 +1102,34 @@ namespace Hecton8.Construction
             }
 
             return new Vector3((float)local.x, (float)local.y, (float)local.z);
+        }
+
+        private static bool TryResolveSdfVoxelCount(int3 dimensions, out int voxelCount)
+        {
+            voxelCount = 0;
+            if (dimensions.x <= 1 ||
+                dimensions.y <= 1 ||
+                dimensions.z <= 1)
+            {
+                return false;
+            }
+
+            long sx = dimensions.x;
+            long sy = dimensions.y;
+            long sz = dimensions.z;
+            if (sx > int.MaxValue / sy)
+                return false;
+
+            long slice = sx * sy;
+            if (slice > int.MaxValue / sz)
+                return false;
+
+            long resolved = slice * sz;
+            if (resolved <= 0L || resolved > int.MaxValue)
+                return false;
+
+            voxelCount = (int)resolved;
+            return true;
         }
     }
 }

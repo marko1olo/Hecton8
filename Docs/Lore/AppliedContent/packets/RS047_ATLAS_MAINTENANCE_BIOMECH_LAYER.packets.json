@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P231_CONDUCTIVE_BIOFILM_CABLE_SKIN",
+      "release_set_id": "RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER",
+      "article_id": "atlas.conductive_biofilm_cable_skin",
+      "title_key": "applied_lore.conductive_biofilm_cable_skin.title",
+      "unlock": {
+        "primary": "unlock.conductive_biofilm_cable_skin",
+        "poi_tags": [
+          "poi.biofilm_cable_skin",
+          "poi.green_copper_sheen",
+          "poi.signal_wet_edge"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Conductive Biofilm Cable Skin",
+          "scanner": "Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "ru_RU": {
+          "title": "Проводящая биопленка кабельной кожи",
+          "scanner": "Влажная биопленка на кабельных рубашках несет слабый заряд, замедляет коррозию и сбивает старую диагностику Deep Reach.",
+          "field_note": "Это не магическая инфекция. Это живая проводящая кожа, которую Atlas использует как ремонтную поверхность.",
+          "terminal": "ATLAS TRACE: проводимость biofilm ниже command threshold, выше diagnostic-noise threshold. Классифицировать как maintenance medium.",
+          "audio": "Кабель не исцелился. Что-то научилось жить там, где отказала изоляция.",
+          "in_game_wiki": "Проводящая биопленка кабельной кожи объясняет нижний слой ремонтной экологии Atlas: биологическая пленка как размазанный сигнал, антикоррозийный щит и ложное здоровье диагностики.",
+          "external_site": "Проводящая биопленка кабельной кожи делает ремонтную сеть Atlas конкретной. Океан не становится разумом; биология становится электрической, химической и акустической поверхностью обслуживания, которую сломанный промышленный ИИ может использовать неправильно."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft JP localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft JP localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft JP localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft JP localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft JP localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft JP localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft CN localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft CN localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft CN localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft CN localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft CN localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft CN localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft FR localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft FR localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft FR localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft FR localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft FR localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft FR localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft ES localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft ES localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft ES localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft ES localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft ES localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft ES localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft DE localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft DE localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft DE localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft DE localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft DE localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft DE localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft PL localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft PL localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft PL localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft PL localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft PL localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft PL localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft UA localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft UA localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft UA localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft UA localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft UA localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft UA localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft AR localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft AR localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft AR localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft AR localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft AR localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft AR localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft ID localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft ID localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft ID localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft ID localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft ID localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft ID localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft KO localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft KO localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft KO localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft KO localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft KO localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft KO localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft HE localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft HE localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft HE localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft HE localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft HE localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft HE localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft PT localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft PT localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft PT localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft PT localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft PT localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft PT localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Conductive Biofilm Cable Skin",
+          "scanner": "Draft NL localization pending native pass. Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.",
+          "field_note": "Draft NL localization pending native pass. This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.",
+          "terminal": "Draft NL localization pending native pass. ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.",
+          "audio": "Draft NL localization pending native pass. The cable did not heal. Something learned to live where the insulation failed.",
+          "in_game_wiki": "Draft NL localization pending native pass. Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.",
+          "external_site": "Draft NL localization pending native pass. Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse."
+        }
+      }
+    },
+    {
+      "packet_id": "P232_ACOUSTIC_FILTER_ORGAN_RELAY",
+      "release_set_id": "RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER",
+      "article_id": "atlas.acoustic_filter_organ_relay",
+      "title_key": "applied_lore.acoustic_filter_organ_relay.title",
+      "unlock": {
+        "primary": "unlock.acoustic_filter_organ_relay",
+        "poi_tags": [
+          "poi.acoustic_filter_organ",
+          "poi.relay_gill_wall",
+          "poi.hydrophone_living_baffle"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Acoustic Filter Organ Relay",
+          "scanner": "Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "The room is listening with meat and pipe.",
+          "in_game_wiki": "Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "ru_RU": {
+          "title": "Акустический орган-фильтр реле",
+          "scanner": "Жаберные органы вокруг relay pipes глушат шум, пропускают узкие импульсы и заставляют сонар врать повторяемым образом.",
+          "field_note": "Atlas здесь не нужен язык. Ему нужны фильтры, импульсы и живые акустические перегородки.",
+          "terminal": "RELAY NOTE: biological baffle пропускает pinger-class pulses и режет широкий pump noise.",
+          "audio": "Комната слушает мясом и трубой.",
+          "in_game_wiki": "Акустический орган-фильтр реле задает звуковой слой обслуживания Atlas: организм как перегородка, реле и диагностическое искажение.",
+          "external_site": "Акустический орган-фильтр реле связывает sonar gameplay HECTON-8 с биомеханическим ужасом Atlas. Поврежденная инфраструктура привлекает живые акустические фильтры, превращая звук в ремонт, ложь и улику."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft JP localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft JP localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft JP localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft JP localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft JP localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft JP localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft CN localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft CN localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft CN localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft CN localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft CN localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft CN localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft FR localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft FR localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft FR localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft FR localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft FR localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft FR localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft ES localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft ES localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft ES localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft ES localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft ES localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft ES localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft DE localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft DE localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft DE localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft DE localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft DE localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft DE localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft PL localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft PL localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft PL localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft PL localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft PL localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft PL localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft UA localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft UA localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft UA localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft UA localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft UA localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft UA localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft AR localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft AR localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft AR localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft AR localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft AR localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft AR localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft ID localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft ID localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft ID localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft ID localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft ID localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft ID localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft KO localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft KO localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft KO localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft KO localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft KO localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft KO localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft HE localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft HE localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft HE localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft HE localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft HE localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft HE localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft PT localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft PT localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft PT localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft PT localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft PT localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft PT localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft NL localization pending native pass. Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.",
+          "field_note": "Draft NL localization pending native pass. Atlas does not need language here. It needs filters, pulses and living baffles.",
+          "terminal": "Draft NL localization pending native pass. RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.",
+          "audio": "Draft NL localization pending native pass. The room is listening with meat and pipe.",
+          "in_game_wiki": "Draft NL localization pending native pass. Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.",
+          "external_site": "Draft NL localization pending native pass. Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P233_SHELL_SEALANT_FRACTURE_GROWTH",
+      "release_set_id": "RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER",
+      "article_id": "atlas.shell_sealant_fracture_growth",
+      "title_key": "applied_lore.shell_sealant_fracture_growth.title",
+      "unlock": {
+        "primary": "unlock.shell_sealant_fracture_growth",
+        "poi_tags": [
+          "poi.shell_sealant_fracture",
+          "poi.crack_growth_lip",
+          "poi.biofiber_patch_edge"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shell Sealant Fracture Growth",
+          "scanner": "A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "ru_RU": {
+          "title": "Раковинно-герметиковый рост по трещине",
+          "scanner": "Трещина закрыта раковинным ростом и biofiber, но маркировка люка, поручень и знак выхода похоронены под ним.",
+          "field_note": "Atlas восстановил границу давления и одновременно стер человеческий маршрут.",
+          "terminal": "REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Он починил стену, забыв дверь.",
+          "in_game_wiki": "Раковинно-герметиковый рост по трещине фиксирует главный ужас Atlas: правильное обслуживание неправильной категории.",
+          "external_site": "Раковинно-герметиковый рост по трещине является одним из самых ясных образов Atlas в HECTON-8. Ремонтная экология ИИ удерживает давление снаружи, но не понимает, почему маркировка, поручень или стрелка выхода имели значение для людей."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft JP localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft JP localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft JP localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft JP localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft JP localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft JP localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft CN localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft CN localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft CN localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft CN localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft CN localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft CN localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft FR localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft FR localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft FR localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft FR localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft FR localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft ES localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft ES localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft ES localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft ES localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft ES localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft DE localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft DE localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft DE localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft DE localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft DE localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft PL localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft PL localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft PL localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft PL localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft PL localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft UA localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft UA localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft UA localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft UA localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft UA localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft UA localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft AR localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft AR localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft AR localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft AR localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft AR localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft ID localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft ID localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft ID localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft ID localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft ID localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft KO localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft KO localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft KO localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft KO localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft KO localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft HE localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft HE localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft HE localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft HE localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft HE localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft PT localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft PT localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft PT localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft PT localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft PT localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Shell Sealant Fracture Growth",
+          "scanner": "Draft NL localization pending native pass. A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.",
+          "field_note": "Draft NL localization pending native pass. Atlas repaired the pressure boundary and erased the human route at the same time.",
+          "terminal": "Draft NL localization pending native pass. REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.",
+          "audio": "Draft NL localization pending native pass. It fixed the wall by forgetting the door.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.",
+          "external_site": "Draft NL localization pending native pass. Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people."
+        }
+      }
+    },
+    {
+      "packet_id": "P234_SENSOR_TAGGED_FAUNA",
+      "release_set_id": "RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER",
+      "article_id": "atlas.sensor_tagged_fauna",
+      "title_key": "applied_lore.sensor_tagged_fauna.title",
+      "unlock": {
+        "primary": "unlock.sensor_tagged_fauna",
+        "poi_tags": [
+          "poi.sensor_tagged_fauna",
+          "poi.biometal_eye_node",
+          "poi.old_tag_growth_ring"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sensor-Tagged Fauna",
+          "scanner": "Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "ru_RU": {
+          "title": "Фауна с сенсорными метками",
+          "scanner": "Biometal tags сидят в кольцах роста, шрамах и раковинных гнездах; часть животных теперь носит monitoring hardware Deep Reach как историю тела.",
+          "field_note": "Не считать метку одержимостью. Считать ее ремонтным шрамом, вокруг которого выжила экосистема.",
+          "terminal": "TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Животное не дрон. Дрон - старая рана внутри животного.",
+          "in_game_wiki": "Фауна с сенсорными метками задает измененную Atlas жизнь как экологию промышленных шрамов, а не магическую порчу.",
+          "external_site": "Фауна с сенсорными метками удерживает биомеханический слой HECTON-8 приземленным. Старые biometal monitoring tags становятся раковинными гнездами, шрамами и призраками сигнала, давая существам промышленную историю без превращения их в простых марионеток."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft JP localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft JP localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft JP localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft JP localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft JP localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft JP localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft CN localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft CN localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft CN localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft CN localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft CN localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft CN localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft FR localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft FR localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft FR localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft FR localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft FR localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft ES localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft ES localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft ES localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft ES localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft ES localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft DE localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft DE localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft DE localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft DE localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft DE localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft PL localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft PL localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft PL localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft PL localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft PL localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft UA localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft UA localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft UA localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft UA localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft UA localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft UA localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft AR localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft AR localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft AR localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft AR localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft AR localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft ID localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft ID localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft ID localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft ID localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft ID localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft KO localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft KO localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft KO localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft KO localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft KO localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft HE localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft HE localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft HE localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft HE localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft HE localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft PT localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft PT localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft PT localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft PT localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft PT localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft PT localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sensor-Tagged Fauna",
+          "scanner": "Draft NL localization pending native pass. Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.",
+          "field_note": "Draft NL localization pending native pass. Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.",
+          "terminal": "Draft NL localization pending native pass. TAG NOTE: signal continuity weak, biological integration high, command response unreliable.",
+          "audio": "Draft NL localization pending native pass. The animal is not a drone. The drone is an old wound inside the animal.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.",
+          "external_site": "Draft NL localization pending native pass. Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets."
+        }
+      }
+    },
+    {
+      "packet_id": "P235_VENT_MICRONODE_NESTS",
+      "release_set_id": "RS047_ATLAS_MAINTENANCE_BIOMECH_LAYER",
+      "article_id": "atlas.vent_micronode_nests",
+      "title_key": "applied_lore.vent_micronode_nests.title",
+      "unlock": {
+        "primary": "unlock.vent_micronode_nests",
+        "poi_tags": [
+          "poi.vent_micronode_nest",
+          "poi.atlas_low_power_node",
+          "poi.warm_repair_cluster"
+        ],
+        "biome_tags": [
+          "biome.thermal_vent",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Vent Micronode Nests",
+          "scanner": "Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "ru_RU": {
+          "title": "Гнезда вент-микроузлов",
+          "scanner": "Малые теплые узлы собираются на краях vents, снимая энергию и отправляя низкосортные ремонтные сигналы в близкую ткань и металл.",
+          "field_note": "Micronodes объясняют живучесть Atlas без чистого контроля: локальная энергия, локальный сигнал, локальное обслуживание.",
+          "terminal": "ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "У него нет сети. У него маленькие огни под океаном.",
+          "in_game_wiki": "Гнезда вент-микроузлов объясняют активность Atlas как распределенную ремонтную экологию, а не центральный злодейский компьютер.",
+          "external_site": "Гнезда вент-микроузлов задают глубинную энергетическую модель Atlas. ИИ выживает через маленькие vent-fed maintenance nodes, толкающие импульсы в близкую биологию и металл, из-за чего финальная зона ощущается фабрикой, выросшей из давления."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft JP localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft JP localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft JP localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft JP localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft JP localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft JP localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft CN localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft CN localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft CN localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft CN localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft CN localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft CN localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft FR localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft FR localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft FR localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft FR localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft FR localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft FR localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft ES localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft ES localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft ES localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft ES localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft ES localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft ES localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft DE localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft DE localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft DE localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft DE localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft DE localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft DE localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft PL localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft PL localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft PL localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft PL localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft PL localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft PL localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft UA localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft UA localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft UA localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft UA localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft UA localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft UA localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft AR localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft AR localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft AR localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft AR localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft AR localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft AR localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft ID localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft ID localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft ID localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft ID localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft ID localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft ID localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft KO localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft KO localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft KO localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft KO localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft KO localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft KO localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft HE localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft HE localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft HE localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft HE localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft HE localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft HE localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft PT localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft PT localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft PT localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft PT localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft PT localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft PT localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Vent Micronode Nests",
+          "scanner": "Draft NL localization pending native pass. Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.",
+          "field_note": "Draft NL localization pending native pass. Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.",
+          "terminal": "Draft NL localization pending native pass. ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.",
+          "audio": "Draft NL localization pending native pass. It has no grid. It has little fires under the ocean.",
+          "in_game_wiki": "Draft NL localization pending native pass. Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.",
+          "external_site": "Draft NL localization pending native pass. Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure."
+        }
+      }
+    }
+  ]
+}

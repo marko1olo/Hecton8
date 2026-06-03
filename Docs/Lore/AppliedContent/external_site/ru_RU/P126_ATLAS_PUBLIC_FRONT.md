@@ -1,10 +1,17 @@
 ---
 packet_id: P126_ATLAS_PUBLIC_FRONT
+release_set_id: RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION
 article_id: atlas.public_front
+unlock_id: unlock.atlas_public_front
+poi_tags: poi.atlas_public_plaque;poi.habitat_continuity_poster
+biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Публичная витрина Atlas

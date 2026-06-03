@@ -262,7 +262,7 @@ namespace Hecton8.Editor
             {
                 if (run.CurrentTypes == null)
                 {
-                    Assembly assembly = run.Assemblies[run.AssemblyIndex];
+                    global::System.Reflection.Assembly assembly = run.Assemblies[run.AssemblyIndex];
                     if (!ShouldScanAssembly(assembly))
                     {
                         run.AssemblyIndex++;
@@ -430,10 +430,10 @@ namespace Hecton8.Editor
         private static void ValidateBurstContracts(ComplianceReport report)
         {
             int violationCount = 0;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
             {
-                Assembly assembly = assemblies[assemblyIndex];
+                global::System.Reflection.Assembly assembly = assemblies[assemblyIndex];
                 if (!ShouldScanAssembly(assembly))
                     continue;
 
@@ -665,9 +665,9 @@ namespace Hecton8.Editor
             throw new BuildFailedException(message);
         }
 
-        private static bool ShouldScanAssembly(Assembly assembly)
+        private static bool ShouldScanAssembly(global::System.Reflection.Assembly assembly)
         {
-            AssemblyName assemblyName = assembly.GetName();
+            global::System.Reflection.AssemblyName assemblyName = assembly.GetName();
             string name = assemblyName.Name;
             return name.StartsWith("Hecton8", StringComparison.Ordinal) ||
                    name == "Assembly-CSharp";
@@ -883,7 +883,7 @@ namespace Hecton8.Editor
             return line;
         }
 
-        private static Type[] GetTypesSafe(Assembly assembly)
+        private static Type[] GetTypesSafe(global::System.Reflection.Assembly assembly)
         {
             try
             {
@@ -1059,7 +1059,7 @@ namespace Hecton8.Editor
         {
             public readonly ComplianceReport Report = new ComplianceReport();
             public DeferredValidationPhase Phase;
-            public Assembly[] Assemblies;
+            public global::System.Reflection.Assembly[] Assemblies;
             public Type[] CurrentTypes;
             public string[] RuntimeScriptPaths;
             public string[] CurrentLines;

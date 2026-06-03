@@ -1,10 +1,17 @@
 ---
 packet_id: P096_ATLAS_PERSON_BOUNDARY
+release_set_id: RS020_ATLAS_ENDING_AGENCY_DOSSIER
 article_id: atlas.atlas_person_boundary
+unlock_id: unlock.first_atlas_person_boundary
+poi_tags: poi.atlas_recognition_fault;poi.old_credential_echo
+biome_tags: biome.factory_temple;biome.atlas_basin
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Atlas Person Boundary

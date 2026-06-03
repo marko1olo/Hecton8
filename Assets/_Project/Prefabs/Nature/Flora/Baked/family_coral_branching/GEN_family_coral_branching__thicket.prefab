@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1055264618919981818}
   - component: {fileID: 5758195086510340005}
+  - component: {fileID: 8872157503981072821}
   m_Layer: 0
   m_Name: GEN_family_coral_branching__thicket
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2878728777871458324}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.005815923, y: 0.9207202, z: -0.13230532}
-  m_Size: 1.8414404
+  m_LocalReferencePoint: {x: 0.0058127046, y: 0.92072076, z: -0.13239348}
+  m_Size: 1.8414415
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 205631269628856504}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8872157503981072821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2878728777871458324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 4045c7f5c49b37e47b27ae439eb1c23c, type: 2}
 --- !u!1 &4299852913048476280
 GameObject:
   m_ObjectHideFlags: 0

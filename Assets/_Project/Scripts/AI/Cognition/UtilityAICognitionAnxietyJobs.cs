@@ -24,8 +24,8 @@ namespace Hecton8.AI.Cognition
             AnxietyRuntimeTuningDTO tuning = AnxietyDecayJobMath.ReadTuning(Tuning);
             float quality = AnxietyDecayJobMath.Sanitize01(tuning.GlobalQualityWeight);
             uint hash = UtilityAICognitionJobMath.Hash(index, Frame ^ AnxietyDecayConstants.AgentHash);
-            float phase = (hash & 2047u) * (1f / 2047f);
-            float alt = ((hash >> 11) & 2047u) * (1f / 2047f);
+            float phase = (hash & 2047u) * UtilityAICognitionConstants.Inverse2047;
+            float alt = ((hash >> 11) & 2047u) * UtilityAICognitionConstants.Inverse2047;
             bool inSpikeBudget = index < math.max(0, SpikeCount);
             bool spike = inSpikeBudget | ((hash & 7u) == 0u);
 
@@ -84,7 +84,7 @@ namespace Hecton8.AI.Cognition
             int x = rem - (y * math.max(1, dims.x));
             float3 center = new float3(dims) * 0.5f;
             float3 local = new float3(x, y, z) - center;
-            float tube = math.length(local.xz) - math.lerp(5f, 10f, math.saturate((local.y + 12f) * (1f / 24f)));
+            float tube = UtilityAICognitionJobMath.FastLengthFromSq(math.lengthsq(local.xz)) - math.lerp(5f, 10f, math.saturate((local.y + 12f) * UtilityAICognitionConstants.Inverse24));
             float ceiling = math.abs(local.y) - 10f;
             ShelterSdf[index] = math.max(tube, ceiling) * header.VoxelSizeMeters * 0.25f;
         }
@@ -311,8 +311,8 @@ namespace Hecton8.AI.Cognition
             float x = safe * 0.25f;
             float x2 = x * x;
             float x3 = x2 * x;
-            float numerator = 1f - (0.5f * x) + (0.1f * x2) - ((1f / 120f) * x3);
-            float denominator = 1f + (0.5f * x) + (0.1f * x2) + ((1f / 120f) * x3);
+            float numerator = 1f - (0.5f * x) + (0.1f * x2) - (UtilityAICognitionConstants.Inverse120 * x3);
+            float denominator = 1f + (0.5f * x) + (0.1f * x2) + (UtilityAICognitionConstants.Inverse120 * x3);
             float baseDecay = numerator * math.rcp(math.max(denominator, UtilityAICognitionConstants.Epsilon));
             float decay2 = baseDecay * baseDecay;
             float decay4 = decay2 * decay2;

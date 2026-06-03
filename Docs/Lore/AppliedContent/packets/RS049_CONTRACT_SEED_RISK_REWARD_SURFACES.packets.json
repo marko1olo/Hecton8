@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P241_LIEN_SEVERITY_SEED_CLASS",
+      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+      "article_id": "applied_lore.lien_severity_seed_class",
+      "title_key": "applied_lore.lien_severity_seed_class.title",
+      "unlock": {
+        "primary": "unlock.lien_severity_seed_class",
+        "poi_tags": [
+          "poi.claim_card_lien_strip",
+          "poi.black_keel_tariff_stamp",
+          "poi.contract_seed_panel"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.carrier_interface"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Lien Severity Seed Class",
+          "scanner": "The contract has a debt class before it has a destination.",
+          "field_note": "Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Debt picks the weather before you see the water.",
+          "in_game_wiki": "Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "ru_RU": {
+          "title": "Класс долгового давления seed",
+          "scanner": "Сканер: The contract has a debt class before it has a destination.",
+          "field_note": "Полевая заметка: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Терминал: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Аудио: Debt picks the weather before you see the water.",
+          "in_game_wiki": "Внутриигровая вики: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Публичная статья: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft JP localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft JP localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft JP localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft JP localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft JP localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft JP localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft CN localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft CN localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft CN localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft CN localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft CN localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft CN localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft FR localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft FR localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft FR localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft FR localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft FR localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft FR localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft ES localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft ES localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft ES localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft ES localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft ES localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft ES localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft DE localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft DE localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft DE localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft DE localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft DE localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft DE localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft PL localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft PL localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft PL localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft PL localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft PL localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft PL localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft UA localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft UA localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft UA localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft UA localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft UA localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft UA localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft AR localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft AR localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft AR localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft AR localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft AR localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft AR localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft ID localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft ID localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft ID localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft ID localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft ID localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft ID localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft KR localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft KR localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft KR localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft KR localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft KR localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft KR localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft HE localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft HE localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft HE localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft HE localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft HE localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft HE localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft PT-BR localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft PT-BR localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft PT-BR localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft PT-BR localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft PT-BR localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Lien Severity Seed Class",
+          "scanner": "Draft NL localization pending native pass. The contract has a debt class before it has a destination.",
+          "field_note": "Draft NL localization pending native pass. Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+          "terminal": "Draft NL localization pending native pass. SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+          "audio": "Draft NL localization pending native pass. Debt picks the weather before you see the water.",
+          "in_game_wiki": "Draft NL localization pending native pass. Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+          "external_site": "Draft NL localization pending native pass. Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+        }
+      }
+    },
+    {
+      "packet_id": "P242_STORM_WINDOW_RISK_CARD",
+      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+      "article_id": "applied_lore.storm_window_risk_card",
+      "title_key": "applied_lore.storm_window_risk_card.title",
+      "unlock": {
+        "primary": "unlock.storm_window_risk_card",
+        "poi_tags": [
+          "poi.aegir_window_timer",
+          "poi.storm_clause_card",
+          "poi.relay_weather_ledger"
+        ],
+        "biome_tags": [
+          "biome.aegir_orbital_pressure",
+          "biome.surface_storm"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Storm Window Risk Card",
+          "scanner": "The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "You signed for the cheap sky.",
+          "in_game_wiki": "Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "ru_RU": {
+          "title": "Карта риска штормового окна",
+          "scanner": "Сканер: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Полевая заметка: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Терминал: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Аудио: You signed for the cheap sky.",
+          "in_game_wiki": "Внутриигровая вики: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Публичная статья: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft JP localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft JP localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft JP localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft JP localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft JP localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft JP localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft CN localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft CN localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft CN localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft CN localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft CN localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft CN localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft FR localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft FR localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft FR localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft FR localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft FR localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft FR localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft ES localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft ES localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft ES localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft ES localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft ES localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft ES localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft DE localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft DE localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft DE localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft DE localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft DE localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft DE localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft PL localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft PL localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft PL localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft PL localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft PL localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft PL localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft UA localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft UA localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft UA localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft UA localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft UA localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft UA localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft AR localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft AR localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft AR localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft AR localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft AR localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft AR localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft ID localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft ID localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft ID localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft ID localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft ID localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft ID localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft KR localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft KR localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft KR localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft KR localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft KR localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft KR localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft HE localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft HE localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft HE localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft HE localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft HE localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft HE localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft PT-BR localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft PT-BR localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft PT-BR localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft PT-BR localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft PT-BR localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Storm Window Risk Card",
+          "scanner": "Draft NL localization pending native pass. The storm card marks what the carrier can hear and what it will pretend not to hear.",
+          "field_note": "Draft NL localization pending native pass. Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+          "terminal": "Draft NL localization pending native pass. WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+          "audio": "Draft NL localization pending native pass. You signed for the cheap sky.",
+          "in_game_wiki": "Draft NL localization pending native pass. Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+          "external_site": "Draft NL localization pending native pass. Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+        }
+      }
+    },
+    {
+      "packet_id": "P243_SAMPLE_CUSTODY_GRADE_CARD",
+      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+      "article_id": "applied_lore.sample_custody_grade_card",
+      "title_key": "applied_lore.sample_custody_grade_card.title",
+      "unlock": {
+        "primary": "unlock.sample_custody_grade_card",
+        "poi_tags": [
+          "poi.sample_custody_tag",
+          "poi.blue_debt_case",
+          "poi.keelmark_evidence_seal"
+        ],
+        "biome_tags": [
+          "biome.resource_custody",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sample Custody Grade Card",
+          "scanner": "The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Do not call it loot on a recorded line.",
+          "in_game_wiki": "Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "ru_RU": {
+          "title": "Карта класса хранения образцов",
+          "scanner": "Сканер: The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Полевая заметка: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Терминал: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Аудио: Do not call it loot on a recorded line.",
+          "in_game_wiki": "Внутриигровая вики: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Публичная статья: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft JP localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft JP localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft JP localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft JP localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft JP localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft JP localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft CN localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft CN localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft CN localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft CN localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft CN localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft CN localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft FR localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft FR localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft FR localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft FR localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft FR localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft ES localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft ES localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft ES localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft ES localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft ES localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft DE localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft DE localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft DE localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft DE localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft DE localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft PL localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft PL localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft PL localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft PL localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft PL localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft UA localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft UA localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft UA localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft UA localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft UA localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft UA localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft AR localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft AR localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft AR localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft AR localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft AR localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft ID localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft ID localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft ID localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft ID localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft ID localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft KR localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft KR localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft KR localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft KR localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft KR localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft KR localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft HE localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft HE localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft HE localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft HE localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft HE localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft PT-BR localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft PT-BR localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft PT-BR localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft PT-BR localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft PT-BR localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sample Custody Grade Card",
+          "scanner": "Draft NL localization pending native pass. The label decides whether the sample is cargo, evidence or debt.",
+          "field_note": "Draft NL localization pending native pass. Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+          "terminal": "Draft NL localization pending native pass. CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+          "audio": "Draft NL localization pending native pass. Do not call it loot on a recorded line.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+          "external_site": "Draft NL localization pending native pass. Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+        }
+      }
+    },
+    {
+      "packet_id": "P244_EVIDENCE_ORDER_DEPTH_CARD",
+      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+      "article_id": "applied_lore.evidence_order_depth_card",
+      "title_key": "applied_lore.evidence_order_depth_card.title",
+      "unlock": {
+        "primary": "unlock.evidence_order_depth_card",
+        "poi_tags": [
+          "poi.evidence_order_card",
+          "poi.dossier_route_strip",
+          "poi.dead_claim_index"
+        ],
+        "biome_tags": [
+          "biome.dossier",
+          "biome.colony_ruins"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Evidence Order Depth Card",
+          "scanner": "The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Same drowning. Different first name.",
+          "in_game_wiki": "Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "ru_RU": {
+          "title": "Карта глубины цепочки доказательств",
+          "scanner": "Сканер: The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Полевая заметка: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Терминал: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Аудио: Same drowning. Different first name.",
+          "in_game_wiki": "Внутриигровая вики: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Публичная статья: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft JP localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft JP localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft JP localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft JP localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft JP localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft JP localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft CN localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft CN localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft CN localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft CN localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft CN localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft CN localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft FR localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft FR localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft FR localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft FR localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft FR localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft FR localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft ES localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft ES localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft ES localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft ES localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft ES localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft ES localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft DE localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft DE localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft DE localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft DE localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft DE localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft DE localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft PL localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft PL localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft PL localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft PL localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft PL localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft PL localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft UA localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft UA localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft UA localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft UA localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft UA localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft UA localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft AR localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft AR localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft AR localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft AR localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft AR localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft AR localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft ID localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft ID localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft ID localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft ID localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft ID localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft ID localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft KR localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft KR localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft KR localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft KR localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft KR localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft KR localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft HE localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft HE localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft HE localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft HE localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft HE localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft HE localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft PT-BR localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft PT-BR localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft PT-BR localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft PT-BR localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft PT-BR localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Evidence Order Depth Card",
+          "scanner": "Draft NL localization pending native pass. The card does not change the crime. It changes the first proof you can afford to believe.",
+          "field_note": "Draft NL localization pending native pass. Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+          "terminal": "Draft NL localization pending native pass. DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+          "audio": "Draft NL localization pending native pass. Same drowning. Different first name.",
+          "in_game_wiki": "Draft NL localization pending native pass. Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+          "external_site": "Draft NL localization pending native pass. Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+        }
+      }
+    },
+    {
+      "packet_id": "P245_DEEP_REACH_CLAUSE_WEIGHT_CARD",
+      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+      "article_id": "applied_lore.deep_reach_clause_weight_card",
+      "title_key": "applied_lore.deep_reach_clause_weight_card.title",
+      "unlock": {
+        "primary": "unlock.deep_reach_clause_weight_card",
+        "poi_tags": [
+          "poi.deep_reach_clause_stamp",
+          "poi.recovery_compliance_packet",
+          "poi.quarantine_bargain_card"
+        ],
+        "biome_tags": [
+          "biome.deep_reach_pressure",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Clause Weight Card",
+          "scanner": "The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "ru_RU": {
+          "title": "Карта веса условий Deep Reach",
+          "scanner": "Сканер: The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Полевая заметка: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Терминал: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Аудио: They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Внутриигровая вики: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Публичная статья: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft JP localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft JP localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft JP localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft JP localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft JP localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft CN localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft CN localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft CN localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft CN localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft CN localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft FR localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft FR localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft FR localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft FR localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft ES localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft ES localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft ES localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft ES localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft DE localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft DE localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft DE localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft DE localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft PL localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft PL localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft PL localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft PL localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft UA localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft UA localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft UA localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft UA localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft UA localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft UA localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft AR localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft AR localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft AR localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft AR localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft ID localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft ID localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft ID localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft ID localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft KR localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft KR localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft KR localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft KR localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft KR localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft KR localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft HE localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft HE localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft HE localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft HE localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft PT-BR localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft PT-BR localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft PT-BR localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft PT-BR localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft PT-BR localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Deep Reach Clause Weight Card",
+          "scanner": "Draft NL localization pending native pass. The clause is not a message. It is a hand on the airlock.",
+          "field_note": "Draft NL localization pending native pass. Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+          "terminal": "Draft NL localization pending native pass. CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+          "audio": "Draft NL localization pending native pass. They do not need to answer you if the clause already did.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+        }
+      }
+    }
+  ]
+}

@@ -1,30 +1,37 @@
 ---
 packet_id: P110_VERA_SATO_REN_RETURN_ACTION
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.vera_sato_ren_return_action
+unlock_id: unlock.first_vera_sato_ren_return_action
+poi_tags: poi.recovery_compliance_signature;poi.return_action_notice
+biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: zh_CN
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Vera Sato-Ren Return Action
 
-Draft CN localization pending native pass. Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
 
 ## Scanner
 
-Draft CN localization pending native pass. Return-action packet. V. Sato-Ren wants recovery before rescue.
+Return-action packet. V. Sato-Ren wants recovery before rescue.
 
 ## Terminal
 
-Draft CN localization pending native pass. SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
 
 ## Audio
 
-Draft CN localization pending native pass. She does not need to threaten you. The window already does.
+She does not need to threaten you. The window already does.
 
 ## Field Note
 
-Draft CN localization pending native pass. Present Deep Reach should arrive as leverage, not a villain monologue.
+Present Deep Reach should arrive as leverage, not a villain monologue.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/zh_CN. -->

@@ -1,0 +1,21 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE",
+  "title": "Deep Reach True Cause Knowledge",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE.packets.json"
+  ],
+  "packets": [
+    "P186_TRUE_CAUSE_KNOWLEDGE_TIERS",
+    "P187_LIABILITY_MEMO_FRAGMENT_CHAIN",
+    "P188_SIGNOFF_WITNESS_CONFLICT",
+    "P189_SUBOFFICE_PERSONNEL_SEEDS",
+    "P190_FALSE_PUBLIC_REPORT_PACKET"
+  ],
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  }
+}

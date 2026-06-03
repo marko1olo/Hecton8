@@ -146,7 +146,8 @@ namespace Hecton8.Atmosphere
             float pulseMultiplier = 1f + biolum * math.lerp(0.18f, 0.72f, ShinobuStormPropagationMath.Smooth01(quality));
             float4 biolumScalar = new float4(biolum, pulseMultiplier, energy, depth);
             float fogMultiplier = math.clamp(turbidity, 1f, maxTurbidity);
-            float flowAdvection = math.clamp(tuning.FogBaseDensityExtinction.w + math.length(surge) * 0.08f, 0f, 8f);
+            float surgeSpeed = ShinobuStormPropagationMath.FastLengthFromSq(math.lengthsq(surge));
+            float flowAdvection = math.clamp(tuning.FogBaseDensityExtinction.w + surgeSpeed * 0.08f, 0f, 8f);
             float4 fogScalar = new float4(fogMultiplier, fogMultiplier, flowAdvection, energy);
 
             StormPropagationWriteSnapshotDTO snapshot = new StormPropagationWriteSnapshotDTO

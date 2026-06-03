@@ -1,0 +1,167 @@
+#pragma kernel KScreenMeshProject1721
+
+struct ScreenProjectorBakeParams1721
+{
+    uint AlbedoResolution;
+    uint LutResolution;
+    uint OutputMode;
+    uint Seed;
+    float GlobalQualityWeight;
+    float K1;
+    float K2;
+    float DistortionStrength;
+    float BurnInStrength;
+    float ScanlineDensity;
+    float GlitchStrength;
+    float GlassWear;
+    float PhosphorGain;
+    float Metallic;
+    float RoughnessBase;
+    float AoBase;
+    float ScreenAspect;
+    float MeshCurvatureWeight;
+};
+
+StructuredBuffer<ScreenProjectorBakeParams1721> _ScreenProjectorParams1721;
+RWTexture2D<float4> _ProjectionLut;
+RWTexture2D<float4> _AlbedoAtlas;
+RWTexture2D<float4> _PackedMrao;
+int _OutputMode;
+
+static const float H8_PI_1721 = 3.14159265358979323846;
+static const float H8_TWO_PI_1721 = 6.28318530717958647692;
+
+float H8Hash1721(float2 p, uint seed)
+{
+    float3 h = frac(float3(p.x, p.y, p.x + p.y) * float3(0.1031, 0.11369, 0.13787) + (float)seed * 0.0000137);
+    h += dot(h, h.yzx + 19.19);
+    return frac((h.x + h.y) * h.z);
+}
+
+float H8PeriodicValueNoise1721(float2 uv, uint period, uint seed)
+{
+    period = max(period, 2u);
+    float2 p = uv * (float)period;
+    int2 i0 = (int2)floor(p);
+    int2 i1 = i0 + 1;
+    float2 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    uint2 w0 = (uint2)((i0 % (int)period + (int)period) % (int)period);
+    uint2 w1 = (uint2)((i1 % (int)period + (int)period) % (int)period);
+    float a = H8Hash1721((float2)w0, seed);
+    float b = H8Hash1721(float2((float)w1.x, (float)w0.y), seed);
+    float c = H8Hash1721(float2((float)w0.x, (float)w1.y), seed);
+    float d = H8Hash1721((float2)w1, seed);
+    return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+}
+
+float H8LineMask1721(float value, float center, float width)
+{
+    return saturate(1.0 - abs(value - center) / max(width, 0.00001));
+}
+
+float H8RectFrame1721(float2 uv, float2 minUv, float2 maxUv, float width)
+{
+    float inside = step(minUv.x, uv.x) * step(minUv.y, uv.y) * step(uv.x, maxUv.x) * step(uv.y, maxUv.y);
+    float left = H8LineMask1721(uv.x, minUv.x, width);
+    float right = H8LineMask1721(uv.x, maxUv.x, width);
+    float bottom = H8LineMask1721(uv.y, minUv.y, width);
+    float top = H8LineMask1721(uv.y, maxUv.y, width);
+    return inside * saturate(max(max(left, right), max(bottom, top)));
+}
+
+float H8StaticUiTemplate1721(float2 uv)
+{
+    float border = H8RectFrame1721(uv, float2(0.035, 0.045), float2(0.965, 0.955), 0.0065);
+    float header = H8LineMask1721(uv.y, 0.185, 0.0035) * smoothstep(0.04, 0.12, uv.x) * smoothstep(0.96, 0.88, uv.x);
+    float warning = H8RectFrame1721(uv, float2(0.625, 0.685), float2(0.925, 0.875), 0.005);
+    float dataBox = H8RectFrame1721(uv, float2(0.075, 0.245), float2(0.43, 0.64), 0.004);
+    float2 compassDelta = uv - float2(0.50, 0.49);
+    compassDelta.x *= 1.24;
+    float compass = H8LineMask1721(length(compassDelta), 0.185, 0.006);
+    float tick = 0.0;
+    [unroll]
+    for (int i = 0; i < 8; i++)
+    {
+        float angle = (float)i * 0.78539816339;
+        float2 dir = float2(cos(angle), sin(angle));
+        float radial = abs(dot(compassDelta, dir));
+        float tangent = abs(dot(compassDelta, float2(-dir.y, dir.x)));
+        tick = max(tick, smoothstep(0.19, 0.17, radial) * smoothstep(0.004, 0.0, tangent));
+    }
+    return saturate(max(max(border, header), max(max(warning, dataBox), max(compass, tick))));
+}
+
+float2 H8BarrelUv1721(float2 uv, float k1, float k2, float strength, float screenAspect)
+{
+    float aspect = max(screenAspect, 0.25);
+    float2 centered = uv * 2.0 - 1.0;
+    float2 metricCentered = centered;
+    metricCentered.x *= aspect;
+    float r2 = dot(metricCentered, metricCentered);
+    float radial = 1.0 + k1 * r2 + k2 * r2 * r2;
+    float2 distortedMetric = metricCentered * radial;
+    distortedMetric.x /= aspect;
+    float cornerAspect = max(aspect, rcp(aspect));
+    float cornerR2 = 1.0 + cornerAspect * cornerAspect;
+    float cornerRadial = max(1.0 + k1 * cornerR2 + k2 * cornerR2 * cornerR2, 0.25);
+    float2 distorted = distortedMetric * rcp(cornerRadial);
+    float2 mapped = distorted * 0.5 + 0.5;
+    return saturate(lerp(uv, mapped, saturate(strength)));
+}
+
+float H8LoopedScanNoise1721(float2 uv, ScreenProjectorBakeParams1721 p)
+{
+    float scan = 0.5 + 0.5 * sin((uv.y * max(8.0, p.ScanlineDensity)) * H8_TWO_PI_1721);
+    float n0 = H8PeriodicValueNoise1721(float2(uv.x, uv.y), 64u, p.Seed);
+    float n1 = H8PeriodicValueNoise1721(float2(uv.x * 0.25 + uv.y, uv.y), 16u, p.Seed ^ 0x9E3779B9u);
+    float tear = smoothstep(0.70, 1.0, n1) * (0.35 + n0 * 0.65);
+    return saturate((scan * 0.55 + tear * 0.45) * saturate(p.GlitchStrength));
+}
+
+[numthreads(8, 8, 1)]
+void KScreenMeshProject1721(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    ScreenProjectorBakeParams1721 p = _ScreenProjectorParams1721[0];
+    uint targetResolution = _OutputMode == 0 ? p.LutResolution : p.AlbedoResolution;
+    if (dispatchThreadID.x >= targetResolution || dispatchThreadID.y >= targetResolution)
+        return;
+
+    float2 uv = (float2(dispatchThreadID.xy) + 0.5) / max((float)targetResolution, 1.0);
+    float staticUi = H8StaticUiTemplate1721(uv);
+    float q = saturate(p.GlobalQualityWeight);
+    float meshDistortionBoost = saturate(p.MeshCurvatureWeight) * lerp(0.12, 0.38, q);
+    float2 projectedUv = H8BarrelUv1721(uv, p.K1, p.K2, saturate(p.DistortionStrength + meshDistortionBoost), p.ScreenAspect);
+
+    if (_OutputMode == 0)
+    {
+        float burn = saturate(staticUi * p.BurnInStrength + H8PeriodicValueNoise1721(uv, 32u, p.Seed ^ 0xA53C9E2Du) * 0.055);
+        float scan = H8LoopedScanNoise1721(uv, p);
+        _ProjectionLut[dispatchThreadID.xy] = float4(projectedUv, burn, scan);
+        return;
+    }
+
+    if (_OutputMode == 1)
+    {
+        float vignette = smoothstep(0.0, 0.18, uv.x) * smoothstep(0.0, 0.18, uv.y) *
+            smoothstep(0.0, 0.18, 1.0 - uv.x) * smoothstep(0.0, 0.18, 1.0 - uv.y);
+        float grid = max(H8LineMask1721(frac(uv.x * 32.0), 0.0, 0.025), H8LineMask1721(frac(uv.y * 18.0), 0.0, 0.025)) * 0.15;
+        float3 coldGreen = float3(0.12, 0.78, 0.46);
+        float3 amberFault = float3(1.0, 0.34, 0.08);
+        float alert = H8RectFrame1721(uv, float2(0.625, 0.685), float2(0.925, 0.875), 0.014);
+        float3 color = lerp(coldGreen, amberFault, alert * 0.55) * (staticUi + grid) * lerp(0.55, 1.0, q);
+        color *= lerp(0.42, 1.0, vignette);
+        _AlbedoAtlas[dispatchThreadID.xy] = float4(saturate(color), saturate(staticUi + grid));
+        return;
+    }
+
+    float scratchA = H8PeriodicValueNoise1721(float2(uv.x * 0.18 + uv.y * 0.92, uv.y * 6.0), 128u, p.Seed ^ 0xC2B2AE35u);
+    float scratchB = H8PeriodicValueNoise1721(float2(uv.x * 8.0, uv.y * 0.22 + uv.x), 64u, p.Seed ^ 0x7FEB352Du);
+    float scratch = smoothstep(0.78, 1.0, max(scratchA, scratchB)) * saturate(p.GlassWear);
+    float2 center = uv * 2.0 - 1.0;
+    float ao = saturate(p.AoBase - dot(center, center) * 0.18);
+    float emission = saturate(staticUi * p.PhosphorGain);
+    float roughness = saturate(p.RoughnessBase + scratch * 0.42);
+    _PackedMrao[dispatchThreadID.xy] = float4(saturate(p.Metallic), roughness, ao, emission);
+}

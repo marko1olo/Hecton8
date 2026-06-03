@@ -142,7 +142,9 @@ namespace Hecton8.Interaction
 
             float radiusSq = radius * radius;
             int count = 0;
-            for (int i = 0; i < MaxReceivers && count < results.Length; i++)
+            int farthestIndex = -1;
+            float farthestDistanceSq = -1f;
+            for (int i = 0; i < MaxReceivers; i++)
             {
                 if (s_receiverStates[i] != CacheSlotOccupied)
                     continue;
@@ -157,10 +159,44 @@ namespace Hecton8.Interaction
                 }
 
                 Bounds bounds = collider.bounds;
-                if (!IsFinite(bounds.center) || !IsFinite(bounds.extents) || bounds.SqrDistance(center) > radiusSq)
+                if (!IsFinite(bounds.center) || !IsFinite(bounds.extents))
                     continue;
 
-                results[count++] = collider;
+                float distanceSq = bounds.SqrDistance(center);
+                if (distanceSq > radiusSq)
+                    continue;
+
+                if (count < results.Length)
+                {
+                    results[count] = collider;
+                    if (distanceSq > farthestDistanceSq)
+                    {
+                        farthestDistanceSq = distanceSq;
+                        farthestIndex = count;
+                    }
+
+                    count++;
+                    continue;
+                }
+
+                if (farthestIndex < 0 || distanceSq >= farthestDistanceSq)
+                    continue;
+
+                results[farthestIndex] = collider;
+                farthestDistanceSq = distanceSq;
+                for (int resultIndex = 0; resultIndex < results.Length; resultIndex++)
+                {
+                    Collider storedCollider = results[resultIndex];
+                    if (storedCollider == null)
+                        continue;
+
+                    float storedDistanceSq = storedCollider.bounds.SqrDistance(center);
+                    if (storedDistanceSq >= farthestDistanceSq)
+                    {
+                        farthestDistanceSq = storedDistanceSq;
+                        farthestIndex = resultIndex;
+                    }
+                }
             }
 
             return count;

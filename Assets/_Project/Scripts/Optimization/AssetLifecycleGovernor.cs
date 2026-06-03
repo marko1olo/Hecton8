@@ -59,23 +59,6 @@ namespace Hecton8.Optimization
         private static readonly uint _HardReaperSweepWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.HardReaperSweep"));
         private static readonly uint _ShaderFallbackWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ShaderFallback"));
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
-        private static readonly Vector3[] FallbackImpostorCubeVertices =
-        {
-            new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f),
-            new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
-            new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f),
-            new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
-        }; // COLD ALLOC: Vector3[8] - immutable fallback impostor cube vertices - owner: AssetLifecycleGovernor
-        private static readonly int[] FallbackImpostorCubeIndices =
-        {
-            0, 2, 1, 0, 3, 2,
-            4, 5, 6, 4, 6, 7,
-            0, 1, 5, 0, 5, 4,
-            2, 3, 7, 2, 7, 6,
-            0, 4, 7, 0, 7, 3,
-            1, 2, 6, 1, 6, 5
-        }; // COLD ALLOC: int[36] - immutable fallback impostor cube indices - owner: AssetLifecycleGovernor
-
         private static float RuntimeNowSeconds()
         {
             return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
@@ -99,6 +82,13 @@ namespace Hecton8.Optimization
         [SerializeField, Range(0.5f, 0.99f)]
         private float vramPanicThreshold = 0.9f;
 
+        [Header("Authored Fallback Assets")]
+        [Tooltip("Authored impostor mesh used when an Addressables visual dependency cannot resolve. Runtime cube synthesis is forbidden.")]
+        [SerializeField] private Mesh authoredFallbackImpostorMesh;
+
+        [Tooltip("Authored material assigned when a tracked material resolves to a failed shader. Runtime checkerboard material synthesis is forbidden.")]
+        [SerializeField] private Material authoredCheckerboardMaterial;
+
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
@@ -110,7 +100,6 @@ namespace Hecton8.Optimization
         private float _nextColdReleaseTime;
         private float _nextColdTickWarningTime;
         private float _nextHardReaperTime;
-        private Texture2D _checkerboardTexture;
         private Material _checkerboardMaterial;
         private AsyncOperation _hardReaperUnloadOperation;
         private System.Action<AsyncOperation> _hardReaperUnloadCompletedCallback;
@@ -1156,11 +1145,7 @@ namespace Hecton8.Optimization
             _ttlEvaluationFlagsMirrored = false;
             _nativeRefSyncRequired = false;
 
-            if (_fallbackImpostorMesh != null)
-            {
-                Destroy(_fallbackImpostorMesh);
-                _fallbackImpostorMesh = null;
-            }
+            _fallbackImpostorMesh = null;
 
             return true;
         }
@@ -3060,24 +3045,7 @@ namespace Hecton8.Optimization
 
         private void EnsureFallbackImpostorMesh()
         {
-            if (_fallbackImpostorMesh != null)
-                return;
-
-            _fallbackImpostorMesh = CreateFallbackCubeMesh();
-        }
-
-        private static Mesh CreateFallbackCubeMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "__AddressablesFallbackImpostor_MESH",
-                hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Mesh[1] - fallback impostor mesh for unresolved Addressables - owner: AssetLifecycleGovernor
-
-            mesh.SetVertices(FallbackImpostorCubeVertices);
-            mesh.SetTriangles(FallbackImpostorCubeIndices, 0, false);
-            mesh.RecalculateBounds();
-            return mesh;
+            _fallbackImpostorMesh = authoredFallbackImpostorMesh;
         }
 
         public bool TryGetFallbackImpostorMesh(out Mesh mesh)
@@ -5136,75 +5104,12 @@ namespace Hecton8.Optimization
 
         private void EnsureFallbackAssets()
         {
-            if (_checkerboardTexture == null)
-            {
-                // COLD ALLOC: Color32[4] - checkerboard fallback pixel payload - owner: AssetLifecycleGovernor
-                Color32[] pixels =
-                {
-                    new Color32(255, 0, 255, 255),
-                    new Color32(16, 16, 16, 255),
-                    new Color32(16, 16, 16, 255),
-                    new Color32(255, 0, 255, 255)
-                };
-
-                _checkerboardTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false)
-                {
-                    name = "__AssetFailCheckerboard_TEX",
-                    filterMode = FilterMode.Point,
-                    wrapMode = TextureWrapMode.Repeat,
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Texture2D[1] - persistent checkerboard fallback texture - owner: AssetLifecycleGovernor
-                _checkerboardTexture.SetPixels32(pixels);
-                _checkerboardTexture.Apply(false, true);
-            }
-
-            if (_checkerboardMaterial != null)
-                return;
-
-            RuntimeShaderReferenceCatalog.TryGetRuntimeCheckerboardUnlitShader(out Shader shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                shader = Shader.Find("Unlit/Texture");
-            if (shader == null)
-                shader = Shader.Find("Sprites/Default");
-            if (shader == null)
-                shader = Shader.Find("Unlit/Color");
-#endif
-
-            if (shader == null)
-                return;
-
-            _checkerboardMaterial = new Material(shader)
-            {
-                name = "__AssetFailCheckerboard_MAT",
-                hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Material[1] - persistent checkerboard fallback material - owner: AssetLifecycleGovernor
-
-            if (_checkerboardMaterial.HasProperty("_BaseMap"))
-                _checkerboardMaterial.SetTexture("_BaseMap", _checkerboardTexture);
-            if (_checkerboardMaterial.HasProperty("_MainTex"))
-                _checkerboardMaterial.SetTexture("_MainTex", _checkerboardTexture);
-            if (_checkerboardMaterial.HasProperty("_BaseColor"))
-                _checkerboardMaterial.SetColor("_BaseColor", Color.white);
-            if (_checkerboardMaterial.HasProperty("_Color"))
-                _checkerboardMaterial.SetColor("_Color", Color.white);
+            _checkerboardMaterial = authoredCheckerboardMaterial;
         }
 
         private void DisposeFallbackAssets()
         {
-            if (_checkerboardMaterial != null)
-            {
-                Destroy(_checkerboardMaterial);
-                _checkerboardMaterial = null;
-            }
-
-            if (_checkerboardTexture != null)
-            {
-                Destroy(_checkerboardTexture);
-                _checkerboardTexture = null;
-            }
+            _checkerboardMaterial = null;
         }
 
         private static long ClampNonNegative(long value)

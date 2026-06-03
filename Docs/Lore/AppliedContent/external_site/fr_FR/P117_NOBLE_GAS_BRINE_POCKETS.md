@@ -1,30 +1,37 @@
 ---
 packet_id: P117_NOBLE_GAS_BRINE_POCKETS
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.noble_gas_brine_pockets
+unlock_id: unlock.first_noble_gas_brine_pockets
+poi_tags: poi.noble_gas_bubble_trap;poi.brine_pocket_vent
+biome_tags: biome.brine_canyon;biome.vent_forge
 locale: fr_FR
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Noble Gas Brine Pockets
 
-Draft FR localization pending native pass. Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
+Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
 
 ## Scanner
 
-Draft FR localization pending native pass. Natural-to-process resource. Valuable only if pressure history survives extraction.
+Natural-to-process resource. Valuable only if pressure history survives extraction.
 
 ## Terminal
 
-Draft FR localization pending native pass. RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
 
 ## Audio
 
-Draft FR localization pending native pass. Open it wrong and the fortune becomes weather.
+Open it wrong and the fortune becomes weather.
 
 ## Field Note
 
-Draft FR localization pending native pass. This is where Xenon-Omega begins as chemistry, not magic.
+This is where Xenon-Omega begins as chemistry, not magic.
 
 <!-- External Site; generated from P117_NOBLE_GAS_BRINE_POCKETS/fr_FR. -->

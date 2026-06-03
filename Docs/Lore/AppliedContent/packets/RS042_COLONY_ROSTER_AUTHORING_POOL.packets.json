@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P206_WORKER_ROSTER_SIZE_RULE",
+      "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+      "article_id": "colony.worker_roster_size_rule",
+      "title_key": "applied_lore.worker_roster_size_rule.title",
+      "unlock": {
+        "primary": "unlock.worker_roster_size_rule",
+        "poi_tags": [
+          "poi.roster_size_sheet",
+          "poi.shift_board_frame",
+          "poi.name_pool_card"
+        ],
+        "biome_tags": [
+          "biome.worker_locker",
+          "biome.p63_shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "ru_RU": {
+          "title": "Правило размера worker roster",
+          "scanner": "Список колонии достаточно большой, чтобы место было населенным, и достаточно малый, чтобы остаться авторским.",
+          "field_note": "Фикс: 72 worker identities. 24 anchor names для повторяющихся evidence, 48 seed-role names для replay variation.",
+          "terminal": "ROSTER RULE: 72 authored worker identities. Anchor names могут повторяться в lockers, ledgers и audio. Seed-role identities меняют связку объектов по run.",
+          "audio": "Имя становится доказательством только когда комната доказывает работу.",
+          "in_game_wiki": "Правило размера worker roster защищает от анонимных руин и неконтролируемого name spam.",
+          "external_site": "Правило размера worker roster задает пул имен колонии HECTON-8 для wiki, игры и props."
+        },
+        "ja_JP": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft JP localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft JP localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft JP localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft JP localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft JP localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "zh_CN": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft CN localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft CN localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft CN localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft CN localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft CN localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "fr_FR": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft FR localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft FR localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft FR localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft FR localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft FR localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "es_ES": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft ES localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft ES localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft ES localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft ES localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft ES localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "de_DE": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft DE localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft DE localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft DE localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft DE localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft DE localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "pl_PL": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft PL localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft PL localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft PL localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft PL localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft PL localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "uk_UA": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft UA localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft UA localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft UA localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft UA localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft UA localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft UA localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "ar_SA": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft AR localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft AR localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft AR localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft AR localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft AR localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "id_ID": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft ID localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft ID localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft ID localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft ID localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft ID localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "ko_KR": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft KO localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft KO localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft KO localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft KO localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft KO localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "he_IL": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft HE localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft HE localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft HE localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft HE localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft HE localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "pt_BR": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft PT localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft PT localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft PT localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft PT localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft PT localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft PT localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        },
+        "nl_NL": {
+          "title": "Worker Roster Size Rule",
+          "scanner": "Draft NL localization pending native pass. The colony roster is large enough to feel inhabited and small enough to stay authored.",
+          "field_note": "Draft NL localization pending native pass. Lock 72 worker identities: 24 anchor names for recurring evidence, 48 seed-role names for replay variation.",
+          "terminal": "Draft NL localization pending native pass. ROSTER RULE: 72 authored worker identities. Anchor names may recur across lockers, ledgers and audio. Seed-role identities vary object pairing by run.",
+          "audio": "Draft NL localization pending native pass. A name is evidence only when the room can prove the job.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.",
+          "external_site": "Draft NL localization pending native pass. Worker Roster Size Rule defines the HECTON-8 colony name pool for wiki, game and prop writing."
+        }
+      }
+    },
+    {
+      "packet_id": "P207_PRESSURE_CREW_ARCHETYPE_TABLE",
+      "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+      "article_id": "colony.pressure_crew_archetype_table",
+      "title_key": "applied_lore.pressure_crew_archetype_table.title",
+      "unlock": {
+        "primary": "unlock.pressure_crew_archetype_table",
+        "poi_tags": [
+          "poi.pressure_crew_board",
+          "poi.crew_color_strips",
+          "poi.route_job_tabs"
+        ],
+        "biome_tags": [
+          "biome.worker_locker",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "ru_RU": {
+          "title": "Таблица pressure crew archetypes",
+          "scanner": "Бригады это verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Используй восемь crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany и Payload Witness.",
+          "terminal": "CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Имена сначала крепятся к route function.",
+          "audio": "Сначала работа. Потом память. Так колония выживает.",
+          "in_game_wiki": "Pressure crew archetypes держат worker evidence привязанным к системам, которые игрок понимает и чинит.",
+          "external_site": "Таблица pressure crew archetypes дает колонии HECTON-8 практическую структуру труда."
+        },
+        "ja_JP": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft JP localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft JP localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft JP localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft JP localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft JP localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft JP localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "zh_CN": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft CN localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft CN localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft CN localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft CN localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft CN localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft CN localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "fr_FR": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft FR localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft FR localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft FR localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft FR localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft FR localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "es_ES": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft ES localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft ES localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft ES localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft ES localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft ES localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "de_DE": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft DE localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft DE localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft DE localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft DE localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft DE localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "pl_PL": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft PL localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft PL localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft PL localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft PL localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft PL localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "uk_UA": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft UA localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft UA localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft UA localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft UA localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft UA localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft UA localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "ar_SA": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft AR localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft AR localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft AR localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft AR localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft AR localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "id_ID": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft ID localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft ID localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft ID localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft ID localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft ID localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "ko_KR": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft KO localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft KO localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft KO localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft KO localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft KO localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "he_IL": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft HE localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft HE localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft HE localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft HE localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft HE localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "pt_BR": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft PT localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft PT localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft PT localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft PT localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft PT localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft PT localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        },
+        "nl_NL": {
+          "title": "Pressure Crew Archetype Table",
+          "scanner": "Draft NL localization pending native pass. Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.",
+          "field_note": "Draft NL localization pending native pass. Use eight crew families: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany and Payload Witness.",
+          "terminal": "Draft NL localization pending native pass. CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.",
+          "audio": "Draft NL localization pending native pass. Job first. Memory second. That is how the colony survives.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.",
+          "external_site": "Draft NL localization pending native pass. Pressure Crew Archetype Table gives HECTON-8 colony writing a practical labor structure."
+        }
+      }
+    },
+    {
+      "packet_id": "P208_ANCHOR_WORKER_NAME_SET_A",
+      "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+      "article_id": "colony.anchor_worker_name_set_a",
+      "title_key": "applied_lore.anchor_worker_name_set_a.title",
+      "unlock": {
+        "primary": "unlock.anchor_worker_name_set_a",
+        "poi_tags": [
+          "poi.anchor_name_sheet_a",
+          "poi.locker_name_strip",
+          "poi.shift_photo_backplate"
+        ],
+        "biome_tags": [
+          "biome.worker_locker",
+          "biome.p63_shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Anchor names должны возвращаться через работу, а не через личную экспозицию.",
+          "field_note": "Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "ANCHOR SET A: shallow и industrial-shelf recurrence. Каждое имя связывать с одним инструментом, одним route permission и одним поврежденным work object.",
+          "audio": "Не оплакивай имя, пока инструмент не сказал зачем.",
+          "in_game_wiki": "Anchor Worker Name Set A держит ранние имена колонии стабильными в lockers, ledgers и первых evidence chains.",
+          "external_site": "Anchor Worker Name Set A дает publication-ready ранние имена колонии для HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft JP localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft JP localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft JP localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft JP localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft JP localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft JP localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft CN localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft CN localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft CN localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft CN localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft CN localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft CN localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft FR localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft FR localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft FR localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft FR localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft FR localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft FR localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "es_ES": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft ES localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft ES localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft ES localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft ES localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft ES localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft ES localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "de_DE": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft DE localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft DE localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft DE localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft DE localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft DE localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft DE localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft PL localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft PL localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft PL localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft PL localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft PL localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft PL localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft UA localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft UA localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft UA localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft UA localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft UA localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft UA localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft AR localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft AR localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft AR localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft AR localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft AR localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft AR localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "id_ID": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft ID localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft ID localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft ID localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft ID localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft ID localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft ID localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft KO localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft KO localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft KO localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft KO localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft KO localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft KO localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "he_IL": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft HE localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft HE localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft HE localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft HE localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft HE localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft HE localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft PT localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft PT localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft PT localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft PT localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft PT localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft PT localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Anchor Worker Name Set A",
+          "scanner": "Draft NL localization pending native pass. Anchor names should reappear through work, not personal exposition.",
+          "field_note": "Draft NL localization pending native pass. Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
+          "terminal": "Draft NL localization pending native pass. ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.",
+          "audio": "Draft NL localization pending native pass. Do not mourn the name until the tool tells you why.",
+          "in_game_wiki": "Draft NL localization pending native pass. Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.",
+          "external_site": "Draft NL localization pending native pass. Anchor Worker Name Set A provides publication-ready early colony names for HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P209_ANCHOR_WORKER_NAME_SET_B",
+      "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+      "article_id": "colony.anchor_worker_name_set_b",
+      "title_key": "applied_lore.anchor_worker_name_set_b.title",
+      "unlock": {
+        "primary": "unlock.anchor_worker_name_set_b",
+        "poi_tags": [
+          "poi.anchor_name_sheet_b",
+          "poi.deep_shift_ledger",
+          "poi.witness_name_strip"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Deep names should arrive with damage the player already understands.",
+          "field_note": "Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "ru_RU": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Глубокие имена должны приходить с damage, который игрок уже понимает.",
+          "field_note": "Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "ANCHOR SET B: brine и abyssal recurrence. Использовать для witness hashes, route holds, triage exceptions и Atlas repair contradictions.",
+          "audio": "Глубокое имя должно стоить больше мелкого.",
+          "in_game_wiki": "Anchor Worker Name Set B несет colony evidence в brine canyon и abyssal machine field layers.",
+          "external_site": "Anchor Worker Name Set B дает HECTON-8 глубокие worker identities для spoiler-gated pages."
+        },
+        "ja_JP": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft JP localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft JP localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft JP localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft JP localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft JP localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft JP localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "zh_CN": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft CN localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft CN localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft CN localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft CN localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft CN localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft CN localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "fr_FR": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft FR localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft FR localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft FR localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft FR localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft FR localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft FR localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "es_ES": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft ES localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft ES localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft ES localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft ES localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft ES localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft ES localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "de_DE": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft DE localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft DE localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft DE localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft DE localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft DE localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft DE localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "pl_PL": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft PL localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft PL localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft PL localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft PL localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft PL localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft PL localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "uk_UA": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft UA localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft UA localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft UA localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft UA localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft UA localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft UA localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "ar_SA": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft AR localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft AR localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft AR localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft AR localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft AR localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft AR localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "id_ID": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft ID localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft ID localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft ID localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft ID localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft ID localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft ID localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "ko_KR": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft KO localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft KO localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft KO localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft KO localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft KO localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft KO localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "he_IL": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft HE localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft HE localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft HE localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft HE localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft HE localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft HE localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "pt_BR": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft PT localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft PT localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft PT localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft PT localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft PT localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft PT localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        },
+        "nl_NL": {
+          "title": "Anchor Worker Name Set B",
+          "scanner": "Draft NL localization pending native pass. Deep names should arrive with damage the player already understands.",
+          "field_note": "Draft NL localization pending native pass. Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.",
+          "terminal": "Draft NL localization pending native pass. ANCHOR SET B: brine and abyssal recurrence. Use for witness hashes, route holds, triage exceptions and Atlas repair contradictions.",
+          "audio": "Draft NL localization pending native pass. The deeper name should cost more than the shallow one.",
+          "in_game_wiki": "Draft NL localization pending native pass. Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.",
+          "external_site": "Draft NL localization pending native pass. Anchor Worker Name Set B gives HECTON-8 deeper worker identities for spoiler-gated pages."
+        }
+      }
+    },
+    {
+      "packet_id": "P210_SEED_ROLE_NAME_GRAMMAR",
+      "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+      "article_id": "colony.seed_role_name_grammar",
+      "title_key": "applied_lore.seed_role_name_grammar.title",
+      "unlock": {
+        "primary": "unlock.seed_role_name_grammar",
+        "poi_tags": [
+          "poi.seed_role_name_card",
+          "poi.proc_roster_rule",
+          "poi.localization_identity_stamp"
+        ],
+        "biome_tags": [
+          "biome.worker_locker",
+          "biome.dossier_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "ru_RU": {
+          "title": "Грамматика seed-role имен",
+          "scanner": "Seed может менять порядок evidence, но не превращать человека в disposable text.",
+          "field_note": "Seed-role identities собираются из stable personal name, crew family, route permission, last task и object variant.",
+          "terminal": "SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Локализация может annotate; она не должна переписывать identity.",
+          "audio": "Random не авторство. Привяжи имя к работе.",
+          "in_game_wiki": "Грамматика seed-role имен дает replay менять worker evidence, сохраняя authored human texture.",
+          "external_site": "Грамматика seed-role имен определяет, как HECTON-8 работает с replay-safe colony names."
+        },
+        "ja_JP": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft JP localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft JP localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft JP localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft JP localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft JP localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft JP localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "zh_CN": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft CN localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft CN localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft CN localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft CN localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft CN localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft CN localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "fr_FR": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft FR localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft FR localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft FR localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft FR localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft FR localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft FR localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "es_ES": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft ES localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft ES localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft ES localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft ES localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft ES localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft ES localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "de_DE": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft DE localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft DE localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft DE localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft DE localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft DE localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft DE localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "pl_PL": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft PL localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft PL localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft PL localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft PL localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft PL localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft PL localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "uk_UA": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft UA localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft UA localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft UA localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft UA localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft UA localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft UA localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "ar_SA": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft AR localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft AR localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft AR localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft AR localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft AR localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft AR localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "id_ID": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft ID localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft ID localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft ID localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft ID localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft ID localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft ID localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "ko_KR": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft KO localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft KO localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft KO localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft KO localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft KO localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft KO localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "he_IL": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft HE localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft HE localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft HE localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft HE localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft HE localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft HE localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "pt_BR": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft PT localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft PT localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft PT localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft PT localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft PT localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft PT localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        },
+        "nl_NL": {
+          "title": "Seed Role Name Grammar",
+          "scanner": "Draft NL localization pending native pass. A seed can move a worker's evidence order, not turn them into disposable text.",
+          "field_note": "Draft NL localization pending native pass. Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.",
+          "terminal": "Draft NL localization pending native pass. SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.",
+          "audio": "Draft NL localization pending native pass. Random is not authorship. Bind the name to a job.",
+          "in_game_wiki": "Draft NL localization pending native pass. Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.",
+          "external_site": "Draft NL localization pending native pass. Seed Role Name Grammar defines how HECTON-8 handles replay-safe colony names."
+        }
+      }
+    }
+  ]
+}

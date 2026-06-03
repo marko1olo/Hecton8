@@ -44,16 +44,12 @@ namespace Hecton8.UI
         private const int MaxHudDynamicTextBufferChars = 4096;
         private static readonly char[] s_sharedOversizedHudTextBuffer = new char[MaxHudDynamicTextBufferChars]; // COLD ALLOC: char[4096] - editor/no-GC fallback for oversized HUD text staging - owner: SuitHUDV4CanvasOverlay
         private static bool s_stencilRenderGraphRuntimeActive;
-        // COLD ALLOC: Vector3[8] - threat chevron mesh build scratch - owner: SuitHUDV4CanvasOverlay
-        private static readonly Vector3[] s_threatChevronMeshVertices = new Vector3[8];
-        // COLD ALLOC: Vector2[8] - threat chevron mesh UV scratch - owner: SuitHUDV4CanvasOverlay
-        private static readonly Vector2[] s_threatChevronMeshUvs = new Vector2[8];
-        // COLD ALLOC: int[12] - threat chevron mesh index scratch - owner: SuitHUDV4CanvasOverlay
-        private static readonly int[] s_threatChevronMeshTriangles = new int[12];
         private const int ThreatChevronRollRight = 0;
         private const int ThreatChevronRollUp = 1;
         private const int ThreatChevronRollLeft = 2;
         private const int ThreatChevronRollDown = 3;
+        private const AdditionalCanvasShaderChannels AcousticRadarCanvasShaderChannels =
+            AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2;
         // COLD ALLOC: Quaternion[4] - threat chevron cardinal roll LUT - owner: SuitHUDV4CanvasOverlay
         private static readonly Quaternion[] s_threatChevronRollByDominantAxis =
         {
@@ -151,12 +147,6 @@ namespace Hecton8.UI
         private const float ScannerHologramMaterialSignalFloor = 0.24f;
         private const float ScannerHologramTraceSignalFloor = 0.32f;
         private const float ScannerHologramFaunaSignalFloor = 0.85f;
-        private const string AcousticRadarShaderPath = "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader";
-        private const string ThreatChevronShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
-        private const string DitheredUiBackgroundShaderPath = "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader";
-        private const string DitheredUiBackgroundShaderName = "Hecton8/UI/IGNDitheredBackground";
-        private const string DataRecPulseShaderPath = "Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader";
-        private const string DataRecPulseShaderName = "Hecton8/UI/DataRecPulse";
         private const int HudPerformanceWarningCooldownFrames = 300;
         private const int SystemHealthWarningStaleFrames = 120;
         private const string WorldGeometrySortingLayer = "WorldGeometry";
@@ -174,16 +164,6 @@ namespace Hecton8.UI
         private static readonly int _ThreatChevronFlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         private static readonly int _ThreatChevronFillAlphaId = Shader.PropertyToID("_FillAlpha");
         private static readonly int _ThreatChevronInstanceDataId = Shader.PropertyToID("_InstanceData");
-        private static readonly int _AcousticRadarTexId = Shader.PropertyToID("_AcousticRadarTex");
-        private static readonly int _AcousticRadarPrimaryColorId = Shader.PropertyToID("_PrimaryColor");
-        private static readonly int _AcousticRadarWarningColorId = Shader.PropertyToID("_WarningColor");
-        private static readonly int _AcousticRadarOpacityId = Shader.PropertyToID("_OverlayOpacity");
-        private static readonly int _AcousticRadarGlitchId = Shader.PropertyToID("_GlitchAmount");
-        private static readonly int _AcousticRadarInnerEdgeId = Shader.PropertyToID("_InnerEdge");
-        private static readonly int _AcousticRadarWaveAmplitudeId = Shader.PropertyToID("_WaveAmplitude");
-        private static readonly int _AcousticRadarBandThicknessId = Shader.PropertyToID("_BandThickness");
-        private static readonly int _AcousticRadarPulseFrequencyId = Shader.PropertyToID("_PulseFrequency");
-        private static readonly int _AcousticRadarRadarIntensityId = Shader.PropertyToID("_RadarIntensity");
         private static readonly uint _HudSolveBudgetWarningHash = unchecked((uint)LocHash.Compute("HUD_CANVAS_SOLVE_OVER_BUDGET"));
         private static readonly uint _HudSolveBudgetContextHash = unchecked((uint)LocHash.Compute("SuitHUDV4CanvasOverlay.Tick"));
         private static readonly long _HudSolveBudgetWarningTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
@@ -474,8 +454,8 @@ namespace Hecton8.UI
 
         [Header("Acoustic Radar")]
         [SerializeField]
-        [Tooltip("UI shader used to visualize the 360-bin passive acoustic ring on the visor edges.")]
-        private Shader acousticRadarShader;
+        [Tooltip("Authored UI material used to visualize the 360-bin passive acoustic ring on the visor edges.")]
+        private Material acousticRadarMaterial;
         [SerializeField, Range(0f, 1f)]
         [Tooltip("Base opacity of the acoustic radar overlay when the audio ring contains valid energy.")]
         private float acousticRadarOpacity = 0.18f;
@@ -497,16 +477,19 @@ namespace Hecton8.UI
 
         [Header("Dithered UI Backgrounds")]
         [SerializeField]
-        [Tooltip("Alpha-clip IGN shader used for HUD background panels that must avoid alpha blending.")]
-        private Shader ditheredUiBackgroundShader;
+        [Tooltip("Authored alpha-clip IGN material used for HUD background panels that must avoid alpha blending.")]
+        private Material ditheredUiBackgroundMaterial;
         [SerializeField]
-        [Tooltip("Pulse shader used by the diegetic save/data-recording lamp.")]
-        private Shader dataRecPulseShader;
+        [Tooltip("Authored pulse material used by the diegetic save/data-recording lamp.")]
+        private Material dataRecPulseMaterial;
 
         [Header("Threat AR")]
         [SerializeField]
-        [Tooltip("Instanced shader used by diegetic threat chevrons on the visor plane.")]
-        private Shader threatChevronShader;
+        [Tooltip("Authored instanced material used by diegetic threat chevrons on the visor plane.")]
+        private Material threatChevronMaterial;
+        [SerializeField]
+        [Tooltip("Offline-baked chevron mesh authored in the editor. Runtime mesh generation is forbidden for this HUD path.")]
+        private Mesh _threatChevronStaticMesh;
         [SerializeField]
         [Tooltip("Base color used by high-threat diegetic warning chevrons.")]
         private Color threatChevronColor = new Color(1f, 0.18f, 0.2f, 0.88f);
@@ -577,7 +560,7 @@ namespace Hecton8.UI
         private CanvasGroup _savingProgressCanvasGroup;
         private CanvasGroup _scannerFlatHologramCanvasGroup;
         private Image _biosBackdrop;
-        private Image _acousticRadarOverlay;
+        private AcousticRadarRawImage _acousticRadarOverlay;
         private Image _topVeil;
         private Image _bottomVeil;
         private Image _leftVeil;
@@ -637,6 +620,7 @@ namespace Hecton8.UI
             if (canvas == null)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!canvas.TryGetComponent(out HectonUIScaler _))
                 // COLD ALLOC: HectonUIScaler[1] - primary HUD canvas bootstrap binding - owner: SuitHUDV4CanvasOverlay
                 canvas.gameObject.AddComponent<HectonUIScaler>();
@@ -644,6 +628,7 @@ namespace Hecton8.UI
             if (!canvas.TryGetComponent(out SuitHUDV4CanvasOverlay _))
                 // COLD ALLOC: SuitHUDV4CanvasOverlay[1] - primary HUD canvas bootstrap binding - owner: SuitHUDV4CanvasOverlay
                 canvas.gameObject.AddComponent<SuitHUDV4CanvasOverlay>();
+#endif
         }
 
         private SuitData _activeSuit;
@@ -836,9 +821,6 @@ namespace Hecton8.UI
         private TMP_FontAsset _cachedFontMaterialAsset1;
         private Material _cachedFontSharedMaterial0;
         private Material _cachedFontSharedMaterial1;
-        private Material _ditheredUiBackgroundMaterial;
-        private Material _acousticRadarMaterial;
-        private Material _savingProgressDataPulseMaterial;
         private bool _acousticRadarOverlayMaterialBound;
         private bool _savingProgressDataLampPulseMaterialBound;
         private bool _savingProgressDataNeedlePulseMaterialBound;
@@ -848,26 +830,9 @@ namespace Hecton8.UI
         private float _acousticRadarPeakIntensity;
         private bool _pendingAcousticRadarTextureRefresh;
         private bool _acousticRadarTextureBindingDirty = true;
-        private bool _hasAppliedAcousticRadarPrimaryColor;
-        private bool _hasAppliedAcousticRadarWarningColor;
-        private bool _hasAppliedAcousticRadarOpacity;
-        private bool _hasAppliedAcousticRadarGlitch;
-        private bool _hasAppliedAcousticRadarInnerEdge;
-        private bool _hasAppliedAcousticRadarWaveAmplitude;
-        private bool _hasAppliedAcousticRadarBandThickness;
-        private bool _hasAppliedAcousticRadarPulseFrequency;
-        private bool _hasAppliedAcousticRadarIntensity;
-        private Color _appliedAcousticRadarPrimaryColor;
-        private Color _appliedAcousticRadarWarningColor;
-        private float _appliedAcousticRadarOpacity;
-        private float _appliedAcousticRadarGlitch;
-        private float _appliedAcousticRadarInnerEdge;
-        private float _appliedAcousticRadarWaveAmplitude;
-        private float _appliedAcousticRadarBandThickness;
-        private float _appliedAcousticRadarPulseFrequency;
-        private float _appliedAcousticRadarIntensity;
+        private bool _hasAppliedAcousticRadarOverlayColor;
+        private Color _appliedAcousticRadarOverlayColor;
         private Mesh _threatChevronMesh;
-        private Material _threatChevronMaterial;
         // COLD ALLOC: Matrix4x4[4] - instanced threat-chevron draw mirror - owner: SuitHUDV4CanvasOverlay
         private readonly Matrix4x4[] _threatChevronMatrixMirror = new Matrix4x4[MaxThreatChevronCount];
         // COLD ALLOC: float[4] - per-chevron alpha cache for alpha-faded threat warnings - owner: SuitHUDV4CanvasOverlay
@@ -1115,6 +1080,45 @@ namespace Hecton8.UI
             }
         }
 
+        private sealed class AcousticRadarRawImage : RawImage
+        {
+            private Vector4 _tuning0;
+            private Vector4 _tuning1;
+            private bool _hasTuning;
+
+            public void SetTuning(Vector4 tuning0, Vector4 tuning1)
+            {
+                if (_hasTuning &&
+                    _tuning0 == tuning0 &&
+                    _tuning1 == tuning1)
+                {
+                    return;
+                }
+
+                _tuning0 = tuning0;
+                _tuning1 = tuning1;
+                _hasTuning = true;
+                SetVerticesDirty();
+            }
+
+            protected override void OnPopulateMesh(VertexHelper vertexHelper)
+            {
+                base.OnPopulateMesh(vertexHelper);
+                int vertexCount = vertexHelper.currentVertCount;
+                if (vertexCount <= 0)
+                    return;
+
+                UIVertex vertex = default;
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    vertexHelper.PopulateUIVertex(ref vertex, i);
+                    vertex.uv1 = _tuning0;
+                    vertex.uv2 = _tuning1;
+                    vertexHelper.SetUIVertex(vertex, i);
+                }
+            }
+        }
+
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ThreatChevronState
         {
@@ -1210,7 +1214,6 @@ namespace Hecton8.UI
                 _hudProxyLightKey = 0x48445544;
 
             ResolveGraphicRaycasterCold();
-            EnsureDitheredUiBackgroundRuntimeResources();
         }
 
         private void OnEnable()
@@ -1256,7 +1259,6 @@ namespace Hecton8.UI
             ToolHapticsRuntime.EnsureRuntimeInstance();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
-            EnsureDitheredUiBackgroundRuntimeResources();
             EnsureAcousticRadarRuntimeResources();
             EnsureSavingProgressPulseRuntimeResources();
             EnsureThreatChevronRuntimeResources();
@@ -1312,7 +1314,6 @@ namespace Hecton8.UI
                 _root.anchoredPosition = _rootBaseAnchoredPosition;
             _rootBaseAnchoredPositionCaptured = false;
             _threatChevronVisibleCount = 0;
-            DisposeDitheredUiBackgroundRuntimeResources();
             DisposeAcousticRadarRuntimeResources();
             DisposeSavingProgressPulseRuntimeResources();
             DisposeThreatChevronRuntimeResources();
@@ -1329,7 +1330,6 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             UnregisterUiService();
             UnregisterHudProxyLight();
-            DisposeDitheredUiBackgroundRuntimeResources();
             DisposeAcousticRadarRuntimeResources();
             DisposeSavingProgressPulseRuntimeResources();
             DisposeThreatChevronRuntimeResources();
@@ -2371,7 +2371,7 @@ namespace Hecton8.UI
                     return false;
                 if (targetCanvas.overrideSorting)
                     return false;
-                if (targetCanvas.additionalShaderChannels != AdditionalCanvasShaderChannels.None)
+                if (targetCanvas.additionalShaderChannels != AcousticRadarCanvasShaderChannels)
                     return false;
                 if (targetCanvas.sortingLayerName != WorldGeometrySortingLayer)
                     return false;
@@ -2503,7 +2503,7 @@ namespace Hecton8.UI
             canvas.overrideSorting = false;
             canvas.sortingLayerName = WorldGeometrySortingLayer;
             canvas.sortingOrder = 0;
-            canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.None;
+            canvas.additionalShaderChannels = AcousticRadarCanvasShaderChannels;
             EnforceProjectionCameraVisibilityContract(projectionCamera);
             ApplyProjectionCanvasLayer(canvas.gameObject, projectionCamera);
 
@@ -2655,25 +2655,13 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-#if UNITY_EDITOR
-            if (threatChevronShader == null)
-                threatChevronShader = AssetDatabase.LoadAssetAtPath<Shader>(ThreatChevronShaderPath);
-#endif
+            _threatChevronMesh = _threatChevronStaticMesh;
+            EnsureThreatChevronPropertyBlockCold();
+        }
 
-            if (_threatChevronMesh == null)
-                _threatChevronMesh = BuildThreatChevronMesh();
-
-            if (_threatChevronMaterial == null && threatChevronShader != null)
-            {
-                _threatChevronMaterial = new Material(threatChevronShader)
-                {
-                    name = "HUD_ThreatChevron_Runtime"
-                }; // COLD ALLOC: Material[1] — instanced HUD threat-chevron material — owner: SuitHUDV4CanvasOverlay
-                InvalidateThreatChevronMaterialState();
-            }
-
-            _threatChevronPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — threat chevron instanced alpha payload — owner: SuitHUDV4CanvasOverlay
-
+        private void EnsureThreatChevronPropertyBlockCold()
+        {
+            _threatChevronPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - threat chevron instanced alpha payload - owner: SuitHUDV4CanvasOverlay
         }
 
         private void EnsureScannerHologramRuntimeResources()
@@ -2681,71 +2669,21 @@ namespace Hecton8.UI
             // Flat canvas scanner fake has no runtime mesh, material, or TRS buffer.
         }
 
-        private void EnsureDitheredUiBackgroundRuntimeResources()
-        {
-            if (!Application.isPlaying)
-                return;
-
-#if UNITY_EDITOR
-            if (ditheredUiBackgroundShader == null)
-                ditheredUiBackgroundShader = AssetDatabase.LoadAssetAtPath<Shader>(DitheredUiBackgroundShaderPath);
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (ditheredUiBackgroundShader == null)
-                ditheredUiBackgroundShader = Shader.Find(DitheredUiBackgroundShaderName);
-#endif
-
-            if (_ditheredUiBackgroundMaterial == null && ditheredUiBackgroundShader != null)
-            {
-                _ditheredUiBackgroundMaterial = new Material(ditheredUiBackgroundShader)
-                {
-                    name = "HUD_IGNDitheredBackground_Runtime"
-                }; // COLD ALLOC: Material[1] — instanced alpha-clip HUD backdrop material — owner: SuitHUDV4CanvasOverlay
-            }
-        }
-
-        private void DisposeDitheredUiBackgroundRuntimeResources()
-        {
-            if (_ditheredUiBackgroundMaterial != null)
-            {
-                Destroy(_ditheredUiBackgroundMaterial);
-                _ditheredUiBackgroundMaterial = null;
-            }
-        }
-
         private void ApplyDitheredBackgroundMaterial(Graphic image)
         {
             if (image == null)
                 return;
 
-            EnsureDitheredUiBackgroundRuntimeResources();
             if (image is MaskableGraphic maskableGraphic)
                 maskableGraphic.maskable = true;
-            if (_ditheredUiBackgroundMaterial != null)
-                image.material = _ditheredUiBackgroundMaterial;
+            if (ditheredUiBackgroundMaterial != null)
+                image.material = ditheredUiBackgroundMaterial;
         }
 
         private void EnsureSavingProgressPulseRuntimeResources()
         {
             if (!Application.isPlaying)
                 return;
-
-#if UNITY_EDITOR
-            if (dataRecPulseShader == null)
-                dataRecPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(DataRecPulseShaderPath);
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (dataRecPulseShader == null)
-                dataRecPulseShader = Shader.Find(DataRecPulseShaderName);
-#endif
-
-            if (_savingProgressDataPulseMaterial == null && dataRecPulseShader != null)
-            {
-                _savingProgressDataPulseMaterial = new Material(dataRecPulseShader)
-                {
-                    name = "HUD_DataRecPulse_Runtime"
-                }; // COLD ALLOC: Material[1] — shader-time DATA save lamp pulse — owner: SuitHUDV4CanvasOverlay
-            }
 
             BindSavingProgressPulseMaterials();
         }
@@ -2760,27 +2698,22 @@ namespace Hecton8.UI
                 _savingProgressDataNeedle.material = null;
             _savingProgressDataNeedlePulseMaterialBound = false;
 
-            if (_savingProgressDataPulseMaterial != null)
-            {
-                Destroy(_savingProgressDataPulseMaterial);
-                _savingProgressDataPulseMaterial = null;
-            }
         }
 
         private void BindSavingProgressPulseMaterials()
         {
-            if (_savingProgressDataPulseMaterial == null)
+            if (dataRecPulseMaterial == null)
                 return;
 
             if (_savingProgressDataLamp != null && !_savingProgressDataLampPulseMaterialBound)
             {
-                _savingProgressDataLamp.material = _savingProgressDataPulseMaterial;
+                _savingProgressDataLamp.material = dataRecPulseMaterial;
                 _savingProgressDataLampPulseMaterialBound = true;
             }
 
             if (_savingProgressDataNeedle != null && !_savingProgressDataNeedlePulseMaterialBound)
             {
-                _savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;
+                _savingProgressDataNeedle.material = dataRecPulseMaterial;
                 _savingProgressDataNeedlePulseMaterialBound = true;
             }
         }
@@ -2790,19 +2723,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-#if UNITY_EDITOR
-            if (acousticRadarShader == null)
-                acousticRadarShader = AssetDatabase.LoadAssetAtPath<Shader>(AcousticRadarShaderPath);
-#endif
-
-            if (_acousticRadarMaterial == null && acousticRadarShader != null)
-            {
-                _acousticRadarMaterial = new Material(acousticRadarShader)
-                {
-                    name = "HUD_AcousticRadar_Runtime"
-                }; // COLD ALLOC: Material[1] — passive acoustic visor overlay material — owner: SuitHUDV4CanvasOverlay
-                InvalidateAcousticRadarMaterialState();
-            }
 
             BindAcousticRadarOverlayMaterial();
         }
@@ -2810,15 +2730,13 @@ namespace Hecton8.UI
         private void DisposeAcousticRadarRuntimeResources()
         {
             if (_acousticRadarOverlay != null && _acousticRadarOverlayMaterialBound)
+            {
                 _acousticRadarOverlay.material = null;
+                _acousticRadarOverlay.texture = null;
+            }
             _acousticRadarOverlayMaterialBound = false;
 
-            if (_acousticRadarMaterial != null)
-            {
-                Destroy(_acousticRadarMaterial);
-                _acousticRadarMaterial = null;
-                InvalidateAcousticRadarMaterialState();
-            }
+            InvalidateAcousticRadarOverlayState();
 
             if (_acousticRadarTexture != null)
             {
@@ -2841,25 +2759,15 @@ namespace Hecton8.UI
             if (IsStencilRenderGraphSuppressedRuntime())
                 return;
 
-            if (_acousticRadarMaterial == null)
+            if (acousticRadarMaterial == null)
                 return;
 
             NativeArray<float>.ReadOnly radarSamples = default;
             int radarResolution = 0;
-            bool hasSpatialDensityFallback = false;
             bool hasRadarPayload = _spatialAudioManager != null &&
                                    _spatialAudioManager.TryGetAcousticRadarPayload(out radarSamples, out radarResolution) &&
                                    radarSamples.Length > 0 &&
                                    radarResolution > 0;
-
-            if (!hasRadarPayload &&
-                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float>.ReadOnly densityMap, out Vector3Int densityDimensions))
-            {
-                int densityCellCount = densityDimensions.x * densityDimensions.y * densityDimensions.z;
-                radarResolution = densityMap.IsCreated ? math.min(densityMap.Length, densityCellCount) : 0;
-                hasRadarPayload = radarResolution > 0;
-                hasSpatialDensityFallback = hasRadarPayload;
-            }
 
             if (!hasRadarPayload)
             {
@@ -2874,43 +2782,20 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!hasSpatialDensityFallback)
+            if (_spatialAudioManager == null ||
+                !_spatialAudioManager.TryUploadAcousticRadarPayload(
+                    _acousticRadarTexture,
+                    out int uploadedSampleCount,
+                    out float uploadedPeakIntensity) ||
+                uploadedSampleCount <= 0)
             {
-                if (_spatialAudioManager == null ||
-                    !_spatialAudioManager.TryUploadAcousticRadarPayload(
-                        _acousticRadarTexture,
-                        out int uploadedSampleCount,
-                        out float uploadedPeakIntensity) ||
-                    uploadedSampleCount <= 0)
-                {
-                    _acousticRadarPeakIntensity = 0f;
-                    return;
-                }
-
-                _acousticRadarTexture.Apply(false, false);
-                ApplyAcousticRadarTextureBindingIfNeeded();
-                _acousticRadarPeakIntensity = uploadedPeakIntensity;
+                _acousticRadarPeakIntensity = 0f;
                 return;
             }
 
-            if (hasSpatialDensityFallback)
-            {
-                if (!WorldSpatialHashGrid.TryUploadAcousticDensityMap(
-                        _acousticRadarTexture,
-                        radarResolution,
-                        out int uploadedSampleCount,
-                        out float uploadedPeakIntensity) ||
-                    uploadedSampleCount <= 0)
-                {
-                    _acousticRadarPeakIntensity = 0f;
-                    return;
-                }
-
-                _acousticRadarTexture.Apply(false, false);
-                ApplyAcousticRadarTextureBindingIfNeeded();
-                _acousticRadarPeakIntensity = uploadedPeakIntensity;
-                return;
-            }
+            _acousticRadarTexture.Apply(false, false);
+            ApplyAcousticRadarTextureBindingIfNeeded();
+            _acousticRadarPeakIntensity = uploadedPeakIntensity;
         }
 
         private bool IsAcousticRadarTextureReady(int radialResolution)
@@ -2969,18 +2854,8 @@ namespace Hecton8.UI
 
         private void DisposeThreatChevronRuntimeResources()
         {
-            if (_threatChevronMaterial != null)
-            {
-                Destroy(_threatChevronMaterial);
-                _threatChevronMaterial = null;
-                InvalidateThreatChevronMaterialState();
-            }
-
-            if (_threatChevronMesh != null)
-            {
-                Destroy(_threatChevronMesh);
-                _threatChevronMesh = null;
-            }
+            _threatChevronMesh = null;
+            InvalidateThreatChevronMaterialState();
         }
 
         private void DisposeScannerHologramRuntimeResources()
@@ -3276,7 +3151,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_threatChevronMaterial == null || _threatChevronMesh == null)
+            MaterialPropertyBlock threatChevronPropertyBlock = _threatChevronPropertyBlock;
+            if (threatChevronMaterial == null || _threatChevronMesh == null || threatChevronPropertyBlock == null)
                 return;
 
             int visibleCount = BuildThreatChevronMatrices();
@@ -3298,15 +3174,15 @@ namespace Hecton8.UI
             }
 
             ApplyThreatChevronMaterialProperties();
-            _threatChevronPropertyBlock.SetVectorArray(_ThreatChevronInstanceDataId, _threatChevronInstanceDataMirror);
+            threatChevronPropertyBlock.SetVectorArray(_ThreatChevronInstanceDataId, _threatChevronInstanceDataMirror);
 
             UnityEngine.Graphics.DrawMeshInstanced(
                 _threatChevronMesh,
                 0,
-                _threatChevronMaterial,
+                threatChevronMaterial,
                 _threatChevronMatrixMirror,
                 visibleCount,
-                _threatChevronPropertyBlock,
+                threatChevronPropertyBlock,
                 ShadowCastingMode.Off,
                 false,
                 HudInternalLayerIndex,
@@ -3317,7 +3193,7 @@ namespace Hecton8.UI
 
         private void ApplyThreatChevronMaterialProperties()
         {
-            if (_threatChevronMaterial == null)
+            if (threatChevronMaterial == null)
                 return;
 
             ApplyThreatChevronColor(
@@ -3347,7 +3223,11 @@ namespace Hecton8.UI
             if (hasCachedValue && cachedValue == value)
                 return;
 
-            _threatChevronMaterial.SetColor(propertyId, value);
+            MaterialPropertyBlock threatChevronPropertyBlock = _threatChevronPropertyBlock;
+            if (threatChevronPropertyBlock == null)
+                return;
+
+            threatChevronPropertyBlock.SetColor(propertyId, value);
             cachedValue = value;
             hasCachedValue = true;
         }
@@ -3357,7 +3237,11 @@ namespace Hecton8.UI
             if (hasCachedValue && math.abs(cachedValue - value) <= MaterialFloatWriteEpsilon)
                 return;
 
-            _threatChevronMaterial.SetFloat(propertyId, value);
+            MaterialPropertyBlock threatChevronPropertyBlock = _threatChevronPropertyBlock;
+            if (threatChevronPropertyBlock == null)
+                return;
+
+            threatChevronPropertyBlock.SetFloat(propertyId, value);
             cachedValue = value;
             hasCachedValue = true;
         }
@@ -3377,6 +3261,10 @@ namespace Hecton8.UI
                 return 0;
 
             Transform cameraTransform = projectionCamera.transform;
+            Vector3 cameraPosition = cameraTransform.position;
+            if (!TryResolveRuntimeAup(cameraPosition, out AbsoluteUniversePosition cameraAup))
+                return 0;
+
             float projectionDistance = ResolveProjectionPlaneDistance() + ThreatChevronPlaneBiasMeters;
             float halfFovRadians = math.max(0.001f, projectionCamera.fieldOfView * DegreesToHalfRadians);
             float frustumHalfHeight = ApproximateTanPositive(halfFovRadians) * projectionDistance;
@@ -3396,6 +3284,8 @@ namespace Hecton8.UI
 
                 if (!TryBuildThreatChevronMatrix(
                     cameraTransform,
+                    cameraPosition,
+                    in cameraAup,
                     projectionDistance,
                     safeHalfWidth,
                     safeHalfHeight,
@@ -3417,6 +3307,8 @@ namespace Hecton8.UI
 
         private bool TryBuildThreatChevronMatrix(
             Transform cameraTransform,
+            Vector3 cameraPosition,
+            in AbsoluteUniversePosition cameraAup,
             float projectionDistance,
             float safeHalfWidth,
             float safeHalfHeight,
@@ -3427,10 +3319,6 @@ namespace Hecton8.UI
         {
             matrix = default;
             alpha01 = 0f;
-            Vector3 cameraPosition = cameraTransform.position;
-            if (!TryResolveRuntimeAup(cameraPosition, out AbsoluteUniversePosition cameraAup))
-                return false;
-
             float3 threatRelative = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 threatState.PositionAup.ToAbsoluteDouble3(),
                 cameraAup.ToAbsoluteDouble3(),
@@ -3516,7 +3404,7 @@ namespace Hecton8.UI
             if (_acousticRadarOverlay == null)
                 return;
 
-            if (_acousticRadarMaterial == null)
+            if (acousticRadarMaterial == null)
             {
                 _acousticRadarOverlay.enabled = false;
                 return;
@@ -3530,103 +3418,49 @@ namespace Hecton8.UI
             if (!visible)
                 return;
 
-            ApplyAcousticRadarColor(
-                _AcousticRadarPrimaryColorId,
-                Alpha(primary, 0.92f),
-                ref _appliedAcousticRadarPrimaryColor,
-                ref _hasAppliedAcousticRadarPrimaryColor);
-            ApplyAcousticRadarColor(
-                _AcousticRadarWarningColorId,
-                Alpha(warning, 0.98f),
-                ref _appliedAcousticRadarWarningColor,
-                ref _hasAppliedAcousticRadarWarningColor);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarOpacityId,
-                overlayOpacity,
-                ref _appliedAcousticRadarOpacity,
-                ref _hasAppliedAcousticRadarOpacity);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarGlitchId,
-                math.saturate(acousticRadarGlitchStrength + corruptionIntensity * 0.42f),
-                ref _appliedAcousticRadarGlitch,
-                ref _hasAppliedAcousticRadarGlitch);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarInnerEdgeId,
-                math.clamp(acousticRadarInnerEdge, 0.05f, 0.95f),
-                ref _appliedAcousticRadarInnerEdge,
-                ref _hasAppliedAcousticRadarInnerEdge);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarWaveAmplitudeId,
-                math.max(0f, acousticRadarWaveAmplitude),
-                ref _appliedAcousticRadarWaveAmplitude,
-                ref _hasAppliedAcousticRadarWaveAmplitude);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarBandThicknessId,
-                math.clamp(acousticRadarBandThickness, 0.01f, 0.49f),
-                ref _appliedAcousticRadarBandThickness,
-                ref _hasAppliedAcousticRadarBandThickness);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarPulseFrequencyId,
-                math.max(0f, acousticRadarPulseFrequency),
-                ref _appliedAcousticRadarPulseFrequency,
-                ref _hasAppliedAcousticRadarPulseFrequency);
-            ApplyAcousticRadarFloat(
-                _AcousticRadarRadarIntensityId,
-                _acousticRadarPeakIntensity,
-                ref _appliedAcousticRadarIntensity,
-                ref _hasAppliedAcousticRadarIntensity);
+            Color overlayColor = Alpha(primary, overlayOpacity);
+            if (!_hasAppliedAcousticRadarOverlayColor || _appliedAcousticRadarOverlayColor != overlayColor)
+            {
+                _acousticRadarOverlay.color = overlayColor;
+                _appliedAcousticRadarOverlayColor = overlayColor;
+                _hasAppliedAcousticRadarOverlayColor = true;
+            }
+
+            Vector4 tuning0 = new Vector4(
+                math.clamp(FiniteOr(acousticRadarInnerEdge, 0.74f), 0.05f, 0.95f),
+                math.clamp(FiniteOr(acousticRadarBandThickness, 0.18f), 0.01f, 0.49f),
+                math.max(0f, FiniteOr(acousticRadarWaveAmplitude, 2.4f)),
+                math.max(0f, FiniteOr(acousticRadarPulseFrequency, 3.2f)));
+            Vector4 tuning1 = new Vector4(
+                math.saturate(FiniteOr(acousticRadarGlitchStrength, 0.2f) + FiniteOr(corruptionIntensity, 0f) * 0.42f),
+                math.saturate(_acousticRadarPeakIntensity),
+                math.saturate(warning.r),
+                math.saturate(warning.g));
+            _acousticRadarOverlay.SetTuning(tuning0, tuning1);
         }
 
         private void ApplyAcousticRadarTextureBindingIfNeeded()
         {
-            if (!_acousticRadarTextureBindingDirty || _acousticRadarMaterial == null)
+            if (!_acousticRadarTextureBindingDirty || _acousticRadarOverlay == null)
                 return;
 
-            _acousticRadarMaterial.SetTexture(_AcousticRadarTexId, _acousticRadarTexture);
+            _acousticRadarOverlay.texture = _acousticRadarTexture;
             _acousticRadarTextureBindingDirty = false;
         }
 
         private void BindAcousticRadarOverlayMaterial()
         {
-            if (_acousticRadarOverlay == null || _acousticRadarMaterial == null || _acousticRadarOverlayMaterialBound)
+            if (_acousticRadarOverlay == null || acousticRadarMaterial == null || _acousticRadarOverlayMaterialBound)
                 return;
 
-            _acousticRadarOverlay.material = _acousticRadarMaterial;
+            _acousticRadarOverlay.material = acousticRadarMaterial;
             _acousticRadarOverlayMaterialBound = true;
         }
 
-        private void ApplyAcousticRadarColor(int propertyId, Color value, ref Color cachedValue, ref bool hasCachedValue)
-        {
-            if (hasCachedValue && cachedValue == value)
-                return;
-
-            _acousticRadarMaterial.SetColor(propertyId, value);
-            cachedValue = value;
-            hasCachedValue = true;
-        }
-
-        private void ApplyAcousticRadarFloat(int propertyId, float value, ref float cachedValue, ref bool hasCachedValue)
-        {
-            if (hasCachedValue && math.abs(cachedValue - value) <= MaterialFloatWriteEpsilon)
-                return;
-
-            _acousticRadarMaterial.SetFloat(propertyId, value);
-            cachedValue = value;
-            hasCachedValue = true;
-        }
-
-        private void InvalidateAcousticRadarMaterialState()
+        private void InvalidateAcousticRadarOverlayState()
         {
             _acousticRadarTextureBindingDirty = true;
-            _hasAppliedAcousticRadarPrimaryColor = false;
-            _hasAppliedAcousticRadarWarningColor = false;
-            _hasAppliedAcousticRadarOpacity = false;
-            _hasAppliedAcousticRadarGlitch = false;
-            _hasAppliedAcousticRadarInnerEdge = false;
-            _hasAppliedAcousticRadarWaveAmplitude = false;
-            _hasAppliedAcousticRadarBandThickness = false;
-            _hasAppliedAcousticRadarPulseFrequency = false;
-            _hasAppliedAcousticRadarIntensity = false;
+            _hasAppliedAcousticRadarOverlayColor = false;
         }
 
         private static Vector2 ClampToThreatBounds(Vector2 projectedPlanePosition, float safeHalfWidth, float safeHalfHeight)
@@ -3640,76 +3474,6 @@ namespace Hecton8.UI
             float tx = safeHalfWidth * math.rcp(math.max(0.0001f, math.abs(projectedPlanePosition.x)));
             float ty = safeHalfHeight * math.rcp(math.max(0.0001f, math.abs(projectedPlanePosition.y)));
             return projectedPlanePosition * math.min(tx, ty);
-        }
-
-        private static Mesh BuildThreatChevronMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "HUD_ThreatChevron_Mesh"
-            };
-
-            Vector3[] vertices = s_threatChevronMeshVertices;
-            Vector2[] uvs = s_threatChevronMeshUvs;
-            int[] triangles = s_threatChevronMeshTriangles;
-
-            AppendThreatChevronBar(new Vector2(-0.48f, 0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 0, triangles, 0);
-            AppendThreatChevronBar(new Vector2(-0.48f, -0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 4, triangles, 6);
-
-            mesh.SetVertices(vertices);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
-        private static void AppendThreatChevronBar(
-            Vector2 start,
-            Vector2 end,
-            float thickness,
-            Vector3[] vertices,
-            Vector2[] uvs,
-            int vertexOffset,
-            int[] triangles,
-            int triangleOffset)
-        {
-            Vector2 direction = ResolveApproxUnitDirection2D(end - start);
-            Vector2 normal = new Vector2(-direction.y, direction.x) * (thickness * 0.5f);
-
-            vertices[vertexOffset + 0] = start + normal;
-            vertices[vertexOffset + 1] = start - normal;
-            vertices[vertexOffset + 2] = end + normal;
-            vertices[vertexOffset + 3] = end - normal;
-
-            uvs[vertexOffset + 0] = new Vector2(0f, 1f);
-            uvs[vertexOffset + 1] = new Vector2(0f, 0f);
-            uvs[vertexOffset + 2] = new Vector2(1f, 1f);
-            uvs[vertexOffset + 3] = new Vector2(1f, 0f);
-
-            triangles[triangleOffset + 0] = vertexOffset + 0;
-            triangles[triangleOffset + 1] = vertexOffset + 2;
-            triangles[triangleOffset + 2] = vertexOffset + 1;
-            triangles[triangleOffset + 3] = vertexOffset + 2;
-            triangles[triangleOffset + 4] = vertexOffset + 3;
-            triangles[triangleOffset + 5] = vertexOffset + 1;
-        }
-
-        private static Vector2 ResolveApproxUnitDirection2D(Vector2 delta)
-        {
-            float absX = math.abs(delta.x);
-            float absY = math.abs(delta.y);
-            if (absX <= 0.000001f && absY <= 0.000001f)
-                return Vector2.zero;
-
-            float signX = delta.x >= 0f ? 1f : -1f;
-            float signY = delta.y >= 0f ? 1f : -1f;
-            if (absX > absY * 2.41421356f)
-                return new Vector2(signX, 0f);
-
-            if (absY > absX * 2.41421356f)
-                return new Vector2(0f, signY);
-
-            return new Vector2(signX * 0.70710678f, signY * 0.70710678f);
         }
 
         private void EnsureHierarchy()
@@ -3769,7 +3533,7 @@ namespace Hecton8.UI
             _hasAppliedBiosBackdropColor = true;
             ApplyDitheredBackgroundMaterial(_biosBackdrop);
 
-            _acousticRadarOverlay = CreateImage("AcousticRadarOverlay", _root, Color.white);
+            _acousticRadarOverlay = CreateAcousticRadarImage("AcousticRadarOverlay", _root, Color.white);
             Stretch(_acousticRadarOverlay.rectTransform, 0f, 0f, 0f, 0f);
             _acousticRadarOverlay.raycastTarget = false;
             _acousticRadarOverlay.enabled = false;
@@ -4228,8 +3992,9 @@ namespace Hecton8.UI
 
             bool hasSurvivalStats = survival != null && survival.Stats != null;
             float oxygenFallback = hasSurvivalStats ? FiniteSaturate01(survival.OxygenNormalized, 1f) : 1f;
-            float oxygen = FiniteSaturate01(ReadHeadlessUIValue(UIValueSlotId.Oxygen01, oxygenFallback), oxygenFallback);
-            oxygen = math.min(oxygen, ResolveAtmosphereRoomOxygen01(oxygen));
+            float realOxygen = FiniteSaturate01(ReadHeadlessUIValue(UIValueSlotId.Oxygen01, oxygenFallback), oxygenFallback);
+            realOxygen = math.min(realOxygen, ResolveAtmosphereRoomOxygen01(realOxygen));
+            float oxygen = ResolveDearLieOxygenDisplay01(realOxygen);
             float powerFallback = hasSurvivalStats ? FiniteSaturate01(survival.EnergyNormalized, 1f) : 1f;
             float power = _biosRecoveryMode
                 ? FiniteSaturate01(_traumaTransportPower01, powerFallback)
@@ -4252,6 +4017,7 @@ namespace Hecton8.UI
             float oxygenCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.OxygenCurrent, oxygenCurrentFallback), oxygenCurrentFallback);
             float energyCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.EnergyCurrent, energyCurrentFallback), energyCurrentFallback);
             float healthCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, healthCurrentFallback), healthCurrentFallback);
+            float oxygenCurrentDisplay = ResolveDearLieOxygenCurrentDisplay(oxygenCurrent, realOxygen, oxygen);
             uint survivalStatusMask = ReadHeadlessSurvivalStatusMask(survival);
             float stressPulse = _biosRecoveryMode ? 0f : UpdateStressPulse(dt);
             if (_playerStateSignalDirty &&
@@ -4278,7 +4044,7 @@ namespace Hecton8.UI
 
             bool corruptedMode = !_biosRecoveryMode && displayCorruptionIntensity > 0f;
             bool toolDepletedWarningActive = !_biosRecoveryMode && _toolDepletedWarningTimer > 0f;
-            EvaluateCriticalHapticCoupling(oxygen, power, health);
+            EvaluateCriticalHapticCoupling(realOxygen, power, health);
             HectonUnderwaterVisuals.TryPublishHudAverageLuminance(ResolveHudFogLuminance(oxygen, power, health, toolDepletedWarningActive, displayCorruptionIntensity));
             if (corruptedMode)
                 _corruptionFrameVersion++;
@@ -4456,7 +4222,7 @@ namespace Hecton8.UI
             else
             {
                 _appliedStatusWhisperVersion = int.MinValue;
-                int statusKeyHash = ResolveStatusKeyHash(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta, survivalStatusMask);
+                int statusKeyHash = ResolveStatusKeyHash(realOxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta, survivalStatusMask);
                 if (statusKeyHash == _StatusOxygenReserveLowKeyHash)
                     statusColor = Alpha(statusColor, statusColor.a * ResolveOxygenWarningBlinkAlpha());
 
@@ -4477,7 +4243,7 @@ namespace Hecton8.UI
             Color energyAccent = LerpColor(pulsedPrimary, pulsedWarning, 0.28f);
 
             bool hasLocalizationRuntime = manager != null;
-            UpdateGauge(ref _oxygenGauge, _displayOxygen01, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401, dt, OxygenGaugeDamping, shouldRefreshGaugeText);
+            UpdateGauge(ref _oxygenGauge, _displayOxygen01, oxygenCurrentDisplay, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401, dt, OxygenGaugeDamping, shouldRefreshGaugeText);
             UpdateGauge(ref _healthGauge, _displayHealth01, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503, dt, HealthGaugeDamping, shouldRefreshGaugeText);
             UpdateGauge(ref _powerGauge, _displayPower01, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 607, dt, BatteryGaugeDamping, shouldRefreshGaugeText);
             if (shouldRefreshGaugeText)
@@ -4607,6 +4373,23 @@ namespace Hecton8.UI
                 return fallback;
 
             return math.isfinite(valueSlot.Value) ? valueSlot.Value : fallback;
+        }
+
+        private static float ResolveDearLieOxygenDisplay01(float realOxygen01)
+        {
+            float real = math.saturate(math.select(0f, realOxygen01, math.isfinite(realOxygen01)));
+            float lowBandPhase = math.smoothstep(0f, 0.15f, real);
+            float lowBand = real * (2f - lowBandPhase);
+            return math.select(lowBand, real, real >= 0.15f);
+        }
+
+        private static float ResolveDearLieOxygenCurrentDisplay(float realOxygenCurrent, float realOxygen01, float displayOxygen01)
+        {
+            float current = FiniteNonNegative(realOxygenCurrent, 0f);
+            float real = FiniteSaturate01(realOxygen01, 0f);
+            float display = FiniteSaturate01(displayOxygen01, real);
+            float scale = math.select(0f, display * math.rcp(math.max(real, 0.0001f)), real > 0.0001f);
+            return current * scale;
         }
 
         private static uint ReadHeadlessSurvivalStatusMask(HectonSurvivalSystem survival)
@@ -5808,6 +5591,17 @@ namespace Hecton8.UI
             RectTransform rect = CreateRect(name, parent);
             // COLD ALLOC: Image[1] - HUD image hierarchy bootstrap factory - owner: SuitHUDV4CanvasOverlay
             Image image = rect.gameObject.AddComponent<Image>();
+            image.color = color;
+            image.material = null;
+            image.maskable = false;
+            return image;
+        }
+
+        private AcousticRadarRawImage CreateAcousticRadarImage(string name, RectTransform parent, Color color)
+        {
+            RectTransform rect = CreateRect(name, parent);
+            // COLD ALLOC: AcousticRadarRawImage[1] - HUD texture hierarchy bootstrap factory - owner: SuitHUDV4CanvasOverlay
+            AcousticRadarRawImage image = rect.gameObject.AddComponent<AcousticRadarRawImage>();
             image.color = color;
             image.material = null;
             image.maskable = false;
@@ -7291,8 +7085,12 @@ namespace Hecton8.UI
                 if (!allowCreation)
                     return null;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 // COLD ALLOC: HectonUIScaler[1] - canvas matrix scaler bootstrap - owner: SuitHUDV4CanvasOverlay
                 _cachedUiScaler = canvas.gameObject.AddComponent<HectonUIScaler>();
+#else
+                return null;
+#endif
             }
 
             return _cachedUiScaler;
@@ -7341,10 +7139,11 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Image image) && image.name == "AcousticRadarOverlay")
+            if (root.TryGetComponent(out RawImage image) && image.name == "AcousticRadarOverlay")
             {
                 image.enabled = false;
                 image.material = null;
+                image.texture = null;
                 if (ReferenceEquals(image, _acousticRadarOverlay))
                     _acousticRadarOverlayMaterialBound = false;
                 return;
@@ -7435,10 +7234,17 @@ namespace Hecton8.UI
             flashlight = source.flashlight;
             underwaterVisuals = source.underwaterVisuals;
             defaultHudProfile = source.defaultHudProfile;
-            ditheredUiBackgroundShader = source.ditheredUiBackgroundShader;
-            dataRecPulseShader = source.dataRecPulseShader;
-            acousticRadarShader = source.acousticRadarShader;
-            threatChevronShader = source.threatChevronShader;
+            ditheredUiBackgroundMaterial = source.ditheredUiBackgroundMaterial;
+            dataRecPulseMaterial = source.dataRecPulseMaterial;
+            acousticRadarMaterial = source.acousticRadarMaterial;
+            acousticRadarOpacity = source.acousticRadarOpacity;
+            acousticRadarInnerEdge = source.acousticRadarInnerEdge;
+            acousticRadarBandThickness = source.acousticRadarBandThickness;
+            acousticRadarWaveAmplitude = source.acousticRadarWaveAmplitude;
+            acousticRadarPulseFrequency = source.acousticRadarPulseFrequency;
+            acousticRadarGlitchStrength = source.acousticRadarGlitchStrength;
+            threatChevronMaterial = source.threatChevronMaterial;
+            _threatChevronStaticMesh = source._threatChevronStaticMesh;
             keepVisibleInEditMode = source.keepVisibleInEditMode;
             overallScale = source.overallScale;
             chromeAlpha = source.chromeAlpha;

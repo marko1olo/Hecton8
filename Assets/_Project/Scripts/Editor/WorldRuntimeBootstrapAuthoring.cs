@@ -33,6 +33,9 @@ namespace Hecton8.EditorTools
         private const string WorldProceduralPatternCatalogPath = "Assets/_Project/Data/World/ProceduralPatternCatalog.asset";
         private const string WorldProceduralBiomeContextCatalogPath = "Assets/_Project/Data/World/ProceduralBiomeFamilyContextCatalog.asset";
         private const string WorldChunkStreamingProfilePath = "Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset";
+        private const string WorldGeneratedMeshFolder = "Assets/_Project/Art/Meshes/Generated";
+        private const string SeamDitherMaterialPath = "Assets/_Project/Art/Materials/VFX/Mat_LeakPlume.mat";
+        private const string SeamDitherQuadMeshPath = WorldGeneratedMeshFolder + "/MESH_SeamDitherQuad_1428.asset";
         private const string BiomeFamilyProfileFolder = "Assets/_Project/Data/Biomes/FamilyProfiles";
         private const string BiomeMatrixCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string BiomeBoundarySdfRuntimeTypeName = "Hecton8.World.Biomes.BiomeBoundarySdfRuntime, Hecton8.Core";
@@ -93,9 +96,13 @@ namespace Hecton8.EditorTools
             if (player != null)
                 playerBody = player.TryGetComponent(out Rigidbody resolvedPlayerBody) ? resolvedPlayerBody : null;
 
+            EnsureWorldRouteSkeleton(playerTransform);
+
             MapMagicBridge bridge = FindSceneObjectIncludingInactive<MapMagicBridge>();
             MapMagic.Core.MapMagicObject mapMagicObject = FindSceneObjectIncludingInactive<MapMagic.Core.MapMagicObject>();
             ScavengePopulator scavengePopulator = FindSceneObjectIncludingInactive<ScavengePopulator>();
+            if (scavengePopulator == null)
+                scavengePopulator = GetOrAddComponent<ScavengePopulator>(managersRoot);
             FaunaDirector faunaDirector = FindSceneObjectIncludingInactive<FaunaDirector>();
             ObjectPoolManager objectPoolManager = FindSceneObjectIncludingInactive<ObjectPoolManager>();
 
@@ -115,7 +122,9 @@ namespace Hecton8.EditorTools
             WorldGenerativeGeologyTerrainSeamApplier geologyTerrainSeamApplier = GetOrAddComponent<WorldGenerativeGeologyTerrainSeamApplier>(managersRoot);
             WorldGenerativeGeologyVoxelBridgeDirector geologyVoxelBridgeDirector = GetOrAddComponent<WorldGenerativeGeologyVoxelBridgeDirector>(managersRoot);
             SedimentAccumulationManager sedimentAccumulationManager = GetOrAddComponent<SedimentAccumulationManager>(managersRoot);
-            GetOrAddComponent<SeamRegistry>(managersRoot);
+            SeamRegistry seamRegistry = GetOrAddComponent<SeamRegistry>(managersRoot);
+            SeamGapDitherRenderer seamGapDitherRenderer = GetOrAddComponent<SeamGapDitherRenderer>(managersRoot);
+            seamGapDitherRenderer.SetSeamRegistry(seamRegistry);
             WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
@@ -128,6 +137,7 @@ namespace Hecton8.EditorTools
             HectonBiomeMatrixCatalog biomeMatrixCatalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeMatrixCatalogPath);
             WorldChunkStreamingProfile chunkStreamingProfile = AssetDatabase.LoadAssetAtPath<WorldChunkStreamingProfile>(WorldChunkStreamingProfilePath);
 
+            ConfigureMapMagicObject(mapMagicObject);
             ConfigureMapMagicBridge(bridge, mapMagicObject, playerTransform);
             ConfigureBiomeSamplerCache(biomeCache, bridge, playerTransform);
             ConfigureScavengePopulator(scavengePopulator, chunkStreamingProfile);
@@ -174,6 +184,11 @@ namespace Hecton8.EditorTools
                 chunkStreamingProfile);
             ConfigureWorldGenerativeGeologySeamExecutionDirector(
                 geologySeamExecutionDirector,
+                geologyIntegrationDirector,
+                playerTransform);
+            ConfigureSeamGapDitherRenderer(
+                seamGapDitherRenderer,
+                seamRegistry,
                 geologyIntegrationDirector,
                 playerTransform);
             ConfigureWorldGenerativeGeologyTerrainSeamApplier(
@@ -284,6 +299,45 @@ namespace Hecton8.EditorTools
 
             if (playerTransform != null)
                 bridge.SetPlayerTransform(playerTransform);
+        }
+
+        private static void ConfigureMapMagicObject(MapMagic.Core.MapMagicObject mapMagicObject)
+        {
+            if (mapMagicObject == null)
+                return;
+
+            SerializedObject so = new SerializedObject(mapMagicObject);
+            SerializedProperty draftsInPlaymode = so.FindProperty("draftsInPlaymode");
+            SerializedProperty draftResolution = so.FindProperty("draftResolution");
+            SerializedProperty tileResolution = so.FindProperty("tileResolution");
+            SerializedProperty instantGenerate = so.FindProperty("instantGenerate");
+            SerializedProperty hideFarTerrains = so.FindProperty("hideFarTerrains");
+            SerializedProperty mainRange = so.FindProperty("mainRange");
+
+            if (instantGenerate != null)
+                instantGenerate.boolValue = false;
+            if (hideFarTerrains != null)
+                hideFarTerrains.boolValue = true;
+            if (mainRange != null)
+                mainRange.intValue = Mathf.Clamp(mainRange.intValue, 1, 2);
+            if (draftsInPlaymode != null)
+                draftsInPlaymode.boolValue = true;
+            if (draftResolution != null && tileResolution != null)
+                draftResolution.enumValueIndex = tileResolution.enumValueIndex;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            mapMagicObject.instantGenerate = false;
+            mapMagicObject.hideFarTerrains = true;
+            mapMagicObject.mainRange = Mathf.Clamp(mapMagicObject.mainRange, 1, 2);
+            mapMagicObject.tiles.generateLimited = true;
+            mapMagicObject.tiles.generateInfinite = true;
+            mapMagicObject.tiles.generateRange = Mathf.Max(mapMagicObject.tiles.generateRange, mapMagicObject.mainRange);
+            mapMagicObject.draftsInPlaymode = true;
+            mapMagicObject.draftResolution = mapMagicObject.tileResolution;
+            mapMagicObject.terrainSettings.drawInstanced = true;
+            mapMagicObject.globals.objectsNumPerFrame = Mathf.Min(mapMagicObject.globals.objectsNumPerFrame, 128);
+
+            EditorUtility.SetDirty(mapMagicObject);
         }
 
         private static void ConfigureProximityColliderSystem(
@@ -716,10 +770,91 @@ namespace Hecton8.EditorTools
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("integrationDirector").objectReferenceValue = integrationDirector;
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            SerializedProperty gapDitherMaterial = so.FindProperty("gapDitherMaterial");
+            if (gapDitherMaterial != null)
+                gapDitherMaterial.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(SeamDitherMaterialPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             director.SetIntegrationDirector(integrationDirector);
             director.SetPlayerTransform(playerTransform);
             EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureSeamGapDitherRenderer(
+            SeamGapDitherRenderer renderer,
+            SeamRegistry seamRegistry,
+            WorldGenerativeGeologyIntegrationDirector integrationDirector,
+            Transform playerTransform)
+        {
+            if (renderer == null)
+                return;
+
+            SerializedObject so = new SerializedObject(renderer);
+            SetObjectReference(so, "seamRegistry", seamRegistry);
+            SetObjectReference(so, "playerTransform", playerTransform);
+            SetObjectReference(so, "targetCamera", ResolveSceneCamera());
+            SetObjectReference(so, "integrationDirector", integrationDirector);
+            SetObjectReference(so, "seamDitherMaterial", AssetDatabase.LoadAssetAtPath<Material>(SeamDitherMaterialPath));
+            SetObjectReference(so, "seamDitherQuadMesh", ResolveSeamDitherQuadMesh());
+            so.ApplyModifiedPropertiesWithoutUndo();
+            renderer.SetSeamRegistry(seamRegistry);
+            EditorUtility.SetDirty(renderer);
+        }
+
+        private static Camera ResolveSceneCamera()
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+                return mainCamera;
+
+            return FindSceneObjectIncludingInactive<Camera>();
+        }
+
+        private static Mesh ResolveSeamDitherQuadMesh()
+        {
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(SeamDitherQuadMeshPath);
+            if (mesh != null)
+                return mesh;
+
+            EnsureFolder(WorldGeneratedMeshFolder);
+
+            mesh = new Mesh
+            {
+                name = "MESH_SeamDitherQuad_1428",
+                vertices = new[]
+                {
+                    new Vector3(-0.5f, -0.5f, 0f),
+                    new Vector3(-0.5f, 0.5f, 0f),
+                    new Vector3(0.5f, 0.5f, 0f),
+                    new Vector3(0.5f, -0.5f, 0f)
+                },
+                uv = new[]
+                {
+                    new Vector2(0f, 0f),
+                    new Vector2(0f, 1f),
+                    new Vector2(1f, 1f),
+                    new Vector2(1f, 0f)
+                },
+                triangles = new[] { 0, 1, 2, 2, 3, 0 },
+                normals = new[]
+                {
+                    Vector3.back,
+                    Vector3.back,
+                    Vector3.back,
+                    Vector3.back
+                },
+                bounds = new Bounds(Vector3.zero, Vector3.one)
+            };
+            mesh.UploadMeshData(false);
+            AssetDatabase.CreateAsset(mesh, SeamDitherQuadMeshPath);
+            AssetDatabase.SaveAssets();
+            return mesh;
+        }
+
+        private static void SetObjectReference(SerializedObject so, string propertyName, UnityEngine.Object value)
+        {
+            SerializedProperty property = so.FindProperty(propertyName);
+            if (property != null)
+                property.objectReferenceValue = value;
         }
 
         private static void ConfigureWorldGenerativeGeologyTerrainSeamApplier(
@@ -976,6 +1111,56 @@ namespace Hecton8.EditorTools
             reefField.transform.position = anchorPosition;
             reefField.transform.rotation = Quaternion.identity;
             reefField.transform.localScale = Vector3.one;
+        }
+
+        private static void EnsureWorldRouteSkeleton(Transform playerTransform)
+        {
+            GameObject worldRoot = GameObject.Find(WorldRootName);
+            if (worldRoot == null)
+                worldRoot = new GameObject(WorldRootName);
+
+            Vector3 anchorOrigin = playerTransform != null
+                ? playerTransform.position
+                : new Vector3(-1567f, 4900f, 2600f);
+
+            worldRoot.transform.position = anchorOrigin;
+            worldRoot.transform.rotation = Quaternion.identity;
+            worldRoot.transform.localScale = Vector3.one;
+
+            EnsureRoutePath(worldRoot.transform, "Resource_FieldSources/Scrap_Field/Scrap_A", new Vector3(18f, 0f, 28f));
+            EnsureRoutePath(worldRoot.transform, "Resource_FieldSources/Mineral_Pocket/Node_Copper_A", new Vector3(34f, -4f, 42f));
+            EnsureRoutePath(worldRoot.transform, "Resource_FieldSources/Mineral_Pocket/Node_Silver_A", new Vector3(46f, -5f, 58f));
+            EnsureRoutePath(worldRoot.transform, "Fabrication_Outpost/Forward_Fabricator", new Vector3(-28f, 0f, 62f));
+            EnsureRoutePath(worldRoot.transform, "Fabrication_Trial", new Vector3(-42f, 0f, 92f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_ConstructionOps/Construct_SocketBase", new Vector3(68f, 0f, 112f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_PowerOps/Power_CurrentTurbine", new Vector3(92f, -8f, 132f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_PowerOps/Power_ServicePump", new Vector3(114f, -4f, 138f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_ServiceModules/Trial_Module_Corridor_Flooded", new Vector3(46f, -2f, 146f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_BeaconRoute/Route_Anchor", new Vector3(0f, 0f, 118f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_BeaconRoute/Route_Frontier", new Vector3(0f, -10f, 210f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_DarkRoute/DarkRoute_HazardProbe", new Vector3(-96f, -16f, 184f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_CombatContacts/Combat_Aggressive", new Vector3(-72f, -6f, 126f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_EndgameOps/Ops_Hazard", new Vector3(-122f, -18f, 218f));
+            EnsureRoutePath(worldRoot.transform, "Tool_Staging/Tool_TrialRange/Lane_EndgameOps/Ops_Frontier", new Vector3(-154f, -26f, 282f));
+
+            EditorUtility.SetDirty(worldRoot);
+        }
+
+        private static GameObject EnsureRoutePath(Transform root, string relativePath, Vector3 localPosition)
+        {
+            string[] segments = relativePath.Split('/');
+            Transform current = root;
+            for (int i = 0; i < segments.Length; i++)
+            {
+                GameObject child = EnsureChild(current, segments[i]);
+                current = child.transform;
+            }
+
+            current.localPosition = localPosition;
+            current.localRotation = Quaternion.identity;
+            current.localScale = Vector3.one;
+            EditorUtility.SetDirty(current.gameObject);
+            return current.gameObject;
         }
 
         private static void ConfigurePopulationRules(WorldPopulationDirector director)

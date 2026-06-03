@@ -1,10 +1,17 @@
 ---
 packet_id: P067_OSKAR_NEUMANN_PRESSURE_FORGE
+release_set_id: RS014_COLONY_RETURN_WINDOWS
 article_id: hecton8.oskar_neumann_pressure_forge
+unlock_id: unlock.first_oskar_neumann_pressure_forge
+poi_tags: poi.pressure_forge;poi.clamp_ring_jig
+biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Oskar Neumann Pressure Forge

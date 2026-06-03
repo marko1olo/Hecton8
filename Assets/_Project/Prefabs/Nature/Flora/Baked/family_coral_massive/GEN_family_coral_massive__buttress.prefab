@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 54367180161356257}
   - component: {fileID: 8691768811658420629}
+  - component: {fileID: 6573169093029792072}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__buttress
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7098468589754430588}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.04151535, y: 0.5976219, z: -0.016563296}
-  m_Size: 3.1665306
+  m_LocalReferencePoint: {x: 0.041417837, y: 0.597549, z: -0.016554236}
+  m_Size: 3.164738
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 913812112412230395}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &6573169093029792072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7098468589754430588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 0be21dde09ab8214bab94a323c79acc9, type: 2}

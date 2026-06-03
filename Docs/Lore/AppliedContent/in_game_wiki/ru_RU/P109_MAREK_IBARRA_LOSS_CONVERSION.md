@@ -1,10 +1,17 @@
 ---
 packet_id: P109_MAREK_IBARRA_LOSS_CONVERSION
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.marek_ibarra_loss_conversion
+unlock_id: unlock.first_marek_ibarra_loss_conversion
+poi_tags: poi.loss_conversion_table;poi.keelmark_adjuster_log
+biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Marek Ibarra: loss conversion

@@ -113,6 +113,7 @@ Assets\_Project\Tests\Editor\BootstrapShaderWarmupEditTests.cs
 Assets\_Project\Tests\Editor\BuildPlaytestEntryTests.cs
 Assets\_Project\Tests\Editor\BulkheadContainmentLayoutTests.cs
 Assets\_Project\Tests\Editor\ColliderOptimization1609EditTests.cs
+Assets\_Project\Tests\Editor\ColliderOptimizer1716EditTests.cs
 Assets\_Project\Tests\Editor\CombatDamageRuntime1417StressHarnessEditTests.cs
 Assets\_Project\Tests\Editor\ComputeDispatchSizingEditTests.cs
 Assets\_Project\Tests\Editor\ConcurrencyPhaseLifecycle1426EditTests.cs

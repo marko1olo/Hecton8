@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 
@@ -22,6 +23,16 @@ namespace Hecton8.AI.Pathfinding
         public const float MaximumRadiusMeters = 32f;
         public const float LineSampleEpsilon = 0.0001f;
         public const uint SourceHash = 0x53333034u; // S304
+        internal const float LengthEpsilonSq = 0.000000000001f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float FastLengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return float.NaN;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, LengthEpsilonSq));
+        }
     }
 
     /// <summary>

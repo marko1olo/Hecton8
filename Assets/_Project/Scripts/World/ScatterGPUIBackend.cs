@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.World
 {
     /// <summary>
-    /// GraphicsBuffer-only indirect scatter submission backend. Draw-specific payloads bind through MaterialPropertyBlock.
+    /// GraphicsBuffer-only indirect scatter submission backend. Draw payloads bind on the authored material before submission.
     /// </summary>
     internal sealed class ScatterGPUIBackend : IDisposable
     {
@@ -83,16 +83,6 @@ namespace Hecton8.World
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, source, safeCount);
             _activeInstanceBuffer = writeBuffer;
             _instanceUploadBufferIndex ^= 1;
-            return true;
-        }
-
-        public bool BindInstanceBuffer(MaterialPropertyBlock properties, int propertyId)
-        {
-            GraphicsBuffer activeBuffer = _activeInstanceBuffer;
-            if (properties == null || activeBuffer == null)
-                return false;
-
-            properties.SetBuffer(propertyId, activeBuffer);
             return true;
         }
 

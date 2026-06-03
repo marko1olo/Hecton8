@@ -1,10 +1,17 @@
 ---
 packet_id: P061_MAINTENANCE_ECOLOGY
+release_set_id: RS013_COLONY_ATLAS_MAINTENANCE
 article_id: hecton8.maintenance_ecology
+unlock_id: unlock.first_maintenance_ecology
+poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
+biome_tags: biome.cable_reef;biome.repair_fauna
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Maintenance Ecology

@@ -106,8 +106,9 @@ Telemetry flags match the current route vocabulary.
 - `HectonDeferredCausticsFeature` injects a URP RenderGraph full-screen pass.
 - The pass binds private `_HectonDeferredCausticsSource` and `_HectonDeferredCausticsDepth` textures instead of rebinding URP-owned global color/depth names.
 - The active caustics CBuffer is imported with `renderGraph.ImportBuffer` and declared through `builder.UseBuffer(..., AccessFlags.Read)` before `RasterCommandBuffer.SetGlobalConstantBuffer` binds it inside the render function.
-- Shader reconstructs world position from bound depth, projects procedural Voronoi caustics, samples the World-owned cave SDF bridge, and composites into camera color.
-- No Unity Projector, light cookie, caustic atlas RenderTexture, or per-object redraw is part of this route.
+- Shader reconstructs world position from bound depth, projects optional 1719-baked RGB flipbook caustics when a precompressed atlas is bound, samples inside each atlas cell with a CPU-authored texel inset vector to reduce mip/cell bleed, falls back to procedural Voronoi caustics when the atlas is absent, samples the World-owned cave SDF bridge, and composites into camera color.
+- No Unity Projector, runtime-generated caustic RenderTexture, or per-object redraw is part of this route. The optional atlas is an offline asset bound through cold material setup, not a runtime texture generator. The 1719 baker also emits a static `TX_CausticLightCookie_*` derivative imported as a Unity Cookie texture and exposes an explicit selected-light assignment button for Directional/Spot `Light.cookie` fallback when a scene author wants a non-animated cookie path.
+- 1719 importer configuration is fail-fast. After `SaveAndReimport`, the baker verifies texture type, 2D shape, sRGB state, mip state, wrap/filter modes, max texture size, and Standalone/Android platform compression overrides before reporting a successful bake.
 
 
 
@@ -222,7 +223,7 @@ Alias proof depends on `Unity.Burst.CompilerServices`.
   - no active CBuffer publish;
   - `FaultConstantBufferUnavailable` recorded when telemetry is available.
 - The RenderGraph feature fails closed through `TryGetActiveConstantBuffer`.
-- No projector, cookie, or material-caustic fallback is used for unsupported platforms.
+- No projector, cookie, runtime texture bake, or per-object material-caustic fallback is used for unsupported platforms.
 - Quest now has explicit depth-texture asset support for this pass; runtime CBuffer capability, XR import state, RenderGraph Viewer output, and device frame cost still require Unity/device capture.
 
 
@@ -233,7 +234,7 @@ The interface is now only the registry identity marker for the caustics service 
 
 
 
-- BlackBox telemetry is Vault-owned and seeded to zero once when the ring is acquired.
+- BlackBox telemetry is Vault-owned and seeded to zero once when the ring is acquired. The active caustics fault dump route is `Docs/AgentLogs/Dump_1719.bin`.
 - The dump path and directory are resolved and created from lifecycle/cold setup before faults.
 - `DumpBlackBox()` does not call the path resolver; if lifecycle setup failed, fault export fails closed instead of doing directory work in the fault route.
 - Telemetry cursor normalization uses modulo plus negative correction rather than `math.abs`, so `int.MinValue` cannot become a negative ring index.

@@ -37,7 +37,9 @@ namespace Hecton8.SaveSystem
         private const int ReadPrefetchQueueCapacity = 16;
         private const int OsAllocationGranularityBytes = 64 * 1024;
         private const int NativeReadChunkBytes = 1024 * 1024;
-        private const int NativeWriteChunkBytes = 1024 * 1024;
+        private const int NativeWriteThreadYieldPageBytes = OsAllocationGranularityBytes;
+        private const int NativeWriteChunkBytes = NativeWriteThreadYieldPageBytes;
+        private const int NativeWritePagePaceMilliseconds = 1;
         private const string NativeMemoryOwner = nameof(AsyncWriteManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
@@ -800,7 +802,22 @@ namespace Hecton8.SaveSystem
                 byteCount,
                 null,
                 0,
-                suppressDiagnosticDumpPath: false);
+                suppressDiagnosticDumpPath: false,
+                paceWrites: false);
+            error = result.Error;
+            return result.Success;
+        }
+
+        public static bool WriteAllPaged(string absolutePath, void* buffer, int byteCount, out string error)
+        {
+            NativeWriteResult result = WriteAllSynchronous(
+                absolutePath,
+                buffer,
+                byteCount,
+                null,
+                0,
+                suppressDiagnosticDumpPath: true,
+                paceWrites: true);
             error = result.Error;
             return result.Success;
         }
@@ -819,7 +836,8 @@ namespace Hecton8.SaveSystem
                 firstByteCount,
                 secondBuffer,
                 secondByteCount,
-                suppressDiagnosticDumpPath: true);
+                suppressDiagnosticDumpPath: true,
+                paceWrites: false);
             error = result.Error;
             return result.Success;
         }
@@ -830,7 +848,8 @@ namespace Hecton8.SaveSystem
             int firstByteCount,
             void* secondBuffer,
             int secondByteCount,
-            bool suppressDiagnosticDumpPath)
+            bool suppressDiagnosticDumpPath,
+            bool paceWrites)
         {
             if (string.IsNullOrEmpty(absolutePath))
             {
@@ -856,7 +875,7 @@ namespace Hecton8.SaveSystem
             {
                 InvalidateCachedReadWindows(absolutePath);
 
-                if (!TryWriteAllNative(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways: true, out string writeError))
+                if (!TryWriteAllNative(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways: true, paceWrites, out string writeError))
                     return new NativeWriteResult(false, writeError);
 
                 if (!QueueThrottledFlush(absolutePath, totalBytes, out string flushError))
@@ -885,7 +904,7 @@ namespace Hecton8.SaveSystem
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                if (!TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, out error))
+                if (!TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, paceWrites: false, out error))
                     return false;
 
                 if (!QueueThrottledFlush(absolutePath, byteCount, out error))
@@ -925,6 +944,7 @@ namespace Hecton8.SaveSystem
             int secondByteCount,
             int totalBytes,
             bool createAlways,
+            bool paceWrites,
             out string error)
         {
             error = string.Empty;
@@ -935,13 +955,20 @@ namespace Hecton8.SaveSystem
             }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            return TryWriteAllNativeWindows(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, out error);
+            return TryWriteAllNativeWindows(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, paceWrites, out error);
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
-            return TryWriteAllNativeUnix(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, out error);
+            return TryWriteAllNativeUnix(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, paceWrites, out error);
 #else
             error = "Native write is unsupported on this platform.";
             return false;
 #endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void PaceAfterNativeWritePage(int bytesWritten, int remainingBytes)
+        {
+            if (remainingBytes > 0 && bytesWritten > 0)
+                Thread.Sleep(NativeWritePagePaceMilliseconds);
         }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
@@ -953,6 +980,7 @@ namespace Hecton8.SaveSystem
             int secondByteCount,
             int totalBytes,
             bool createAlways,
+            bool paceWrites,
             out string error)
         {
             error = string.Empty;
@@ -979,10 +1007,10 @@ namespace Hecton8.SaveSystem
                     if (!TrySeekWindowsHandle(handle, 0L, out error))
                         return false;
 
-                    if (!TryWriteWindowsSegment(handle, firstBuffer, math.max(firstByteCount, 0), ref cursor, out error))
+                    if (!TryWriteWindowsSegment(handle, firstBuffer, math.max(firstByteCount, 0), ref cursor, paceWrites, out error))
                         return false;
 
-                    if (!TryWriteWindowsSegment(handle, secondBuffer, math.max(secondByteCount, 0), ref cursor, out error))
+                    if (!TryWriteWindowsSegment(handle, secondBuffer, math.max(secondByteCount, 0), ref cursor, paceWrites, out error))
                         return false;
 
                     if (!TrySeekWindowsHandle(handle, totalBytes, out error) || !SetEndOfFileNative(handle))
@@ -1012,7 +1040,7 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryWriteWindowsSegment(IntPtr handle, void* source, int byteCount, ref long cursor, out string error)
+        private static bool TryWriteWindowsSegment(IntPtr handle, void* source, int byteCount, ref long cursor, bool paceWrites, out string error)
         {
             error = string.Empty;
             if (byteCount <= 0)
@@ -1043,6 +1071,8 @@ namespace Hecton8.SaveSystem
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
+                if (paceWrites)
+                    PaceAfterNativeWritePage((int)bytesWritten, byteCount - offset);
             }
 
             return true;
@@ -1083,6 +1113,7 @@ namespace Hecton8.SaveSystem
             int secondByteCount,
             int totalBytes,
             bool createAlways,
+            bool paceWrites,
             out string error)
         {
             error = string.Empty;
@@ -1122,10 +1153,10 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                if (!TryWriteUnixSegment(fd, firstBuffer, math.max(firstByteCount, 0), ref cursor, out error))
+                if (!TryWriteUnixSegment(fd, firstBuffer, math.max(firstByteCount, 0), ref cursor, paceWrites, out error))
                     return false;
 
-                if (!TryWriteUnixSegment(fd, secondBuffer, math.max(secondByteCount, 0), ref cursor, out error))
+                if (!TryWriteUnixSegment(fd, secondBuffer, math.max(secondByteCount, 0), ref cursor, paceWrites, out error))
                     return false;
 
                 if (FTruncateUnix(fd, totalBytes) != 0)
@@ -1142,7 +1173,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool TryWriteUnixSegment(int fd, void* source, int byteCount, ref long cursor, out string error)
+        private static bool TryWriteUnixSegment(int fd, void* source, int byteCount, ref long cursor, bool paceWrites, out string error)
         {
             error = string.Empty;
             if (byteCount <= 0)
@@ -1180,6 +1211,8 @@ namespace Hecton8.SaveSystem
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
+                if (paceWrites)
+                    PaceAfterNativeWritePage((int)bytesWritten, byteCount - offset);
             }
 
             return true;
@@ -1842,6 +1875,8 @@ namespace Hecton8.SaveSystem
         internal const byte FlagProtectedLz4Blocks = 0x08;
         internal const int CurrentHeaderSize = 56;
         internal const int LegacyHeaderSize = 44;
+        internal const int SavePageSizeBytes = 64 * 1024;
+        internal const int DialogueChoiceFlagCapacity = 16;
         internal const int BlockSizeBytes = 256 * 1024;
         internal const int RawPayloadCapacityBytes = 64 * 1024 * 1024;
         internal const int MaxCompressedPayloadBytes = 68 * 1024 * 1024;
@@ -1858,6 +1893,12 @@ namespace Hecton8.SaveSystem
         private const int IndexedHeaderV8Size = 52;
         private const int IndexedHeaderV8HashSizeBytes = 44;
         private const int CurrentHeaderHashSizeBytes = 48;
+        private const int HeaderPackedQuestWordCountBits = 16;
+        private const uint HeaderPackedQuestWordCountMask = (1u << HeaderPackedQuestWordCountBits) - 1u;
+        private const uint HeaderDialogueChoiceFlagsMask = 0xFFFF0000u;
+        private const int HeaderDialogueChoiceFlagsShift = HeaderPackedQuestWordCountBits;
+        private const int HeaderDialogueChoiceSourceWordIndex = QuestRuntimeLayout.NarrativeWordStart;
+        private const int MaxPackedQuestStateWordCount = QuestRuntimeLayout.WordCapacity;
         private const ushort First64BitHashVersion = 0x0004;
         private const ushort CompactPersistentWorldSectionVersion = 0x0005;
         private const ushort EcosystemSectionVersion = 0x0006;
@@ -2735,6 +2776,160 @@ namespace Hecton8.SaveSystem
             [FieldOffset(120)] public ulong Reserved9;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ushort ExtractPlayerDialogueChoiceFlags(NativeArray<uint> packedQuestStateWords)
+        {
+            if (!packedQuestStateWords.IsCreated ||
+                packedQuestStateWords.Length <= HeaderDialogueChoiceSourceWordIndex)
+                return 0;
+
+            return (ushort)(packedQuestStateWords[HeaderDialogueChoiceSourceWordIndex] & HeaderPackedQuestWordCountMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ushort ExtractPlayerDialogueChoiceFlags(uint[] packedQuestStateWords)
+        {
+            if (packedQuestStateWords == null ||
+                packedQuestStateWords.Length <= HeaderDialogueChoiceSourceWordIndex)
+                return 0;
+
+            return (ushort)(packedQuestStateWords[HeaderDialogueChoiceSourceWordIndex] & HeaderPackedQuestWordCountMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ushort DecodePlayerDialogueChoiceFlags(in SaveFileHeader header)
+        {
+            if (header.Version < AlignedSectionHeaderVersion)
+                return 0;
+
+            return (ushort)((header.DeltaCount & HeaderDialogueChoiceFlagsMask) >> HeaderDialogueChoiceFlagsShift);
+        }
+
+        private static bool TryEncodeHeaderDeltaCount(
+            int packedQuestWordCount,
+            ushort playerDialogueChoiceFlags,
+            out uint encodedDeltaCount,
+            out string error)
+        {
+            encodedDeltaCount = 0u;
+            error = string.Empty;
+
+            if ((uint)packedQuestWordCount > (uint)MaxPackedQuestStateWordCount)
+            {
+                error = "Packed quest-state count exceeds the quest runtime word capacity.";
+                return false;
+            }
+
+            if ((uint)packedQuestWordCount > HeaderPackedQuestWordCountMask)
+            {
+                error = "Packed quest-state count exceeds the v0x000B 16-bit header field.";
+                return false;
+            }
+
+            encodedDeltaCount =
+                ((uint)playerDialogueChoiceFlags << HeaderDialogueChoiceFlagsShift) |
+                (uint)packedQuestWordCount;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int DecodePackedQuestWordCount(in SaveFileHeader header)
+        {
+            uint encodedCount = header.Version >= AlignedSectionHeaderVersion
+                ? header.DeltaCount & HeaderPackedQuestWordCountMask
+                : header.DeltaCount;
+            return encodedCount <= int.MaxValue ? (int)encodedCount : MaxPackedQuestStateWordCount + 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryDecodePackedQuestWordCount(in SaveFileHeader header, out int packedQuestWordCount, out string error)
+        {
+            packedQuestWordCount = DecodePackedQuestWordCount(in header);
+            if ((uint)packedQuestWordCount > (uint)MaxPackedQuestStateWordCount)
+            {
+                error = "Save packed quest-state count exceeds the quest runtime word capacity.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryValidatePackedQuestSectionHeader(
+            in QuestSaveHeader packedQuestHeader,
+            int expectedPackedQuestWordCount,
+            out string error)
+        {
+            if ((uint)expectedPackedQuestWordCount > (uint)MaxPackedQuestStateWordCount)
+            {
+                error = "Packed quest-state word count exceeds runtime capacity.";
+                return false;
+            }
+
+            if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
+            {
+                error = "Packed quest-state header magic mismatch.";
+                return false;
+            }
+
+            if (packedQuestHeader.FlagCount != (uint)expectedPackedQuestWordCount ||
+                packedQuestHeader.FlagCount > (uint)MaxPackedQuestStateWordCount)
+            {
+                error = "Packed quest-state word count header mismatch.";
+                return false;
+            }
+
+            uint schemaVersion = packedQuestHeader.ReadSchemaVersion();
+            if (schemaVersion != 0u && schemaVersion != QuestSaveHeader.CurrentSchemaVersion)
+            {
+                error = "Packed quest-state schema version mismatch.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryValidateCurrentBinaryLayouts(out string error)
+        {
+            int currentHeaderSize = UnsafeUtility.SizeOf<SaveFileHeader>();
+            if (currentHeaderSize != CurrentHeaderSize || (currentHeaderSize & 7) != 0)
+            {
+                error = "Save header layout drift detected.";
+                return false;
+            }
+
+            int questSaveHeaderSize = UnsafeUtility.SizeOf<QuestSaveHeader>();
+            if (questSaveHeaderSize != PackedQuestStateSectionHeaderSize || (questSaveHeaderSize & 7) != 0)
+            {
+                error = "Quest save header layout drift detected.";
+                return false;
+            }
+
+            int dialogueChoiceFlagCapacity = DialogueChoiceFlagCapacity;
+            int headerPackedQuestWordCountBits = HeaderPackedQuestWordCountBits;
+            uint headerPackedQuestWordCountMask = HeaderPackedQuestWordCountMask;
+            uint headerDialogueChoiceFlagsMask = HeaderDialogueChoiceFlagsMask;
+            int headerDialogueChoiceFlagsShift = HeaderDialogueChoiceFlagsShift;
+            int headerDialogueChoiceSourceWordIndex = HeaderDialogueChoiceSourceWordIndex;
+            int narrativeWordStart = QuestRuntimeLayout.NarrativeWordStart;
+            int narrativeWordEnd = narrativeWordStart + QuestRuntimeLayout.NarrativeWordCount;
+            int maxPackedQuestStateWordCount = MaxPackedQuestStateWordCount;
+            if (dialogueChoiceFlagCapacity != headerPackedQuestWordCountBits ||
+                headerDialogueChoiceFlagsMask != (headerPackedQuestWordCountMask << headerDialogueChoiceFlagsShift) ||
+                headerDialogueChoiceSourceWordIndex < narrativeWordStart ||
+                headerDialogueChoiceSourceWordIndex >= narrativeWordEnd ||
+                narrativeWordEnd > maxPackedQuestStateWordCount ||
+                (uint)maxPackedQuestStateWordCount > headerPackedQuestWordCountMask)
+            {
+                error = "Save header dialogue-choice bit-pack contract drift detected.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
         [StructLayout(LayoutKind.Explicit, Size = LegacyHeaderSize)]
         private struct LegacySaveFileHeader
         {
@@ -3146,6 +3341,7 @@ namespace Hecton8.SaveSystem
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
+            ushort playerDialogueChoiceFlags,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
@@ -3161,6 +3357,7 @@ namespace Hecton8.SaveSystem
                 ecosystemSectorStates,
                 packedQuestHeader,
                 packedQuestStateWords,
+                playerDialogueChoiceFlags,
                 voxelDeltaSnapshot,
                 rawBuffer,
                 compressedBuffer,
@@ -3245,6 +3442,7 @@ namespace Hecton8.SaveSystem
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
+            ushort playerDialogueChoiceFlagsSnapshot,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
@@ -3275,6 +3473,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!TryValidateCurrentBinaryLayouts(out error))
+                return false;
+
             if (chunkSizeMeters <= 0)
             {
                 error = "Indexed persistent-world chunk size is invalid.";
@@ -3297,6 +3498,11 @@ namespace Hecton8.SaveSystem
             UnsafeUtility.MemClear(filePtr, compressedBuffer.Length);
 
             int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
+            ushort playerDialogueChoiceFlags =
+                (ushort)(playerDialogueChoiceFlagsSnapshot | ExtractPlayerDialogueChoiceFlags(packedQuestStateWords));
+            if (!TryEncodeHeaderDeltaCount(packedQuestWordCount, playerDialogueChoiceFlags, out uint headerDeltaCount, out error))
+                return false;
+
             int ecosystemSectorCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
             int voxelDeltaByteLength = voxelDeltaSnapshot.IsCreated ? voxelDeltaSnapshot.Length : 0;
             int packedQuestSectionLength = packedQuestWordCount > 0
@@ -3340,6 +3546,7 @@ namespace Hecton8.SaveSystem
                 QuestSaveHeader serializedQuestHeader = packedQuestHeader;
                 serializedQuestHeader.Magic = QuestSaveHeader.HeaderMagic;
                 serializedQuestHeader.FlagCount = (uint)packedQuestWordCount;
+                serializedQuestHeader.WriteSchemaVersion();
                 serializedQuestHeader.Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords);
                 UnsafeUtility.CopyStructureToPtr(ref serializedQuestHeader, AddByteOffset(rawPtr, metadataCursor));
                 metadataCursor += PackedQuestStateSectionHeaderSize;
@@ -3546,7 +3753,7 @@ namespace Hecton8.SaveSystem
                 Flags = (byte)(FlagLz4Blocks | FlagIndexedSectorBlocks | FlagProtectedLz4Blocks),
                 TimestampUnixMs = timestampUnixMs,
                 Checksum = checksumRoot,
-                DeltaCount = (uint)packedQuestWordCount,
+                DeltaCount = headerDeltaCount,
                 EntityCount = (uint)math.max(totalEntityCount, 0),
                 PlayerOffset = (uint)metadataBlockOffset,
                 DeltaOffset = (uint)(metadataBlockOffset + packedQuestOffsetInMetadataPayload),
@@ -3565,7 +3772,7 @@ namespace Hecton8.SaveSystem
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            if (!AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error))
+            if (!AsyncWriteManager.WriteAllPaged(absolutePath, filePtr, fileCursor, out error))
                 return false;
 
             metadata.Checksum = FormatPayloadChecksum(in header);
@@ -3711,7 +3918,8 @@ namespace Hecton8.SaveSystem
                 HashHeader64 = header.HashHeader64,
                 PlayerOffset = header.PlayerOffset,
                 DeltaOffset = header.DeltaOffset,
-                EntityOffset = header.EntityOffset
+                EntityOffset = header.EntityOffset,
+                Reserved0 = DecodePlayerDialogueChoiceFlags(in header)
             };
             return true;
         }
@@ -4353,6 +4561,7 @@ namespace Hecton8.SaveSystem
             out PersistentWorldDeltaRecord[] persistentWorldDeltas,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out int voxelDeltaSnapshotBytes,
+            out ushort playerDialogueChoiceFlags,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -4366,6 +4575,7 @@ namespace Hecton8.SaveSystem
             persistentWorldDeltas = null;
             ecosystemSectorStates = null;
             voxelDeltaSnapshotBytes = 0;
+            playerDialogueChoiceFlags = DecodePlayerDialogueChoiceFlags(in header);
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -4428,7 +4638,8 @@ namespace Hecton8.SaveSystem
             }
 
             int payloadCursor = cursor + saveDataLength;
-            if (header.DeltaCount > 0)
+            int packedQuestWordCount = DecodePackedQuestWordCount(in header);
+            if (packedQuestWordCount > 0)
             {
                 if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
                 {
@@ -4437,25 +4648,16 @@ namespace Hecton8.SaveSystem
                 }
 
                 packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
-                if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
-                {
-                    error = "Indexed packed quest section magic mismatch.";
+                if (!TryValidatePackedQuestSectionHeader(in packedQuestHeader, packedQuestWordCount, out error))
                     return false;
-                }
 
-                if (packedQuestHeader.FlagCount != header.DeltaCount)
-                {
-                    error = "Indexed packed quest section count mismatch.";
-                    return false;
-                }
-
-                packedQuestStateWords = new uint[packedQuestHeader.FlagCount];
+                packedQuestStateWords = new uint[packedQuestWordCount];
                 payloadCursor += PackedQuestStateSectionHeaderSize;
                 if (packedQuestHeader.FlagCount > 0)
                 {
                     fixed (uint* destinationPtr = packedQuestStateWords)
                     {
-                        int packedQuestBytes = checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
+                        int packedQuestBytes = packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
                         if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
                         {
                             error = "Indexed packed quest section exceeds the metadata payload bounds.";
@@ -4476,7 +4678,7 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
-                payloadCursor += checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
+                payloadCursor += packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
             }
             else
             {
@@ -6738,7 +6940,8 @@ namespace Hecton8.SaveSystem
             }
 
             payloadCursor += saveDataLength;
-            if (header.DeltaCount > 0)
+            int packedQuestWordCount = DecodePackedQuestWordCount(in header);
+            if (packedQuestWordCount > 0)
             {
                 if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
                 {
@@ -6747,19 +6950,10 @@ namespace Hecton8.SaveSystem
                 }
 
                 QuestSaveHeader packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
-                if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
-                {
-                    error = "Indexed packed quest section magic mismatch.";
+                if (!TryValidatePackedQuestSectionHeader(in packedQuestHeader, packedQuestWordCount, out error))
                     return false;
-                }
 
-                if (packedQuestHeader.FlagCount != header.DeltaCount)
-                {
-                    error = "Indexed packed quest section count mismatch.";
-                    return false;
-                }
-
-                int packedQuestBytes = checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
+                int packedQuestBytes = packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
                 payloadCursor += PackedQuestStateSectionHeaderSize;
                 if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
                 {
@@ -6808,6 +7002,7 @@ namespace Hecton8.SaveSystem
             out PersistentWorldDeltaRecord[] persistentWorldDeltas,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out int voxelDeltaSnapshotBytes,
+            out ushort playerDialogueChoiceFlags,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -6821,6 +7016,7 @@ namespace Hecton8.SaveSystem
             persistentWorldDeltas = null;
             ecosystemSectorStates = null;
             voxelDeltaSnapshotBytes = 0;
+            playerDialogueChoiceFlags = 0;
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -6846,6 +7042,7 @@ namespace Hecton8.SaveSystem
                             out persistentWorldDeltas,
                             out ecosystemSectorStates,
                             out voxelDeltaSnapshotBytes,
+                            out playerDialogueChoiceFlags,
                             out metadata,
                             out payloadHash64,
                             out rawPayloadLength,
@@ -6872,6 +7069,7 @@ namespace Hecton8.SaveSystem
             }
 
             payloadHash64 = header.HashPayload64;
+            playerDialogueChoiceFlags = DecodePlayerDialogueChoiceFlags(in header);
 
             int cursor = prefix.PrefixSizeBytes;
             if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))
@@ -8189,7 +8387,7 @@ namespace Hecton8.SaveSystem
             packedQuestStateWords = null;
             error = string.Empty;
 
-            int packedQuestWordCount = checked((int)header.DeltaCount);
+            int packedQuestWordCount = DecodePackedQuestWordCount(in header);
             int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
             int packedQuestSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
             int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
@@ -8218,17 +8416,8 @@ namespace Hecton8.SaveSystem
             }
 
             packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, packedQuestSectionOffset), 0);
-            if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
-            {
-                error = "Packed quest-state header magic mismatch.";
+            if (!TryValidatePackedQuestSectionHeader(in packedQuestHeader, packedQuestWordCount, out error))
                 return false;
-            }
-
-            if (packedQuestHeader.FlagCount != header.DeltaCount)
-            {
-                error = "Packed quest-state word count header mismatch.";
-                return false;
-            }
 
             int expectedSectionLength = PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
             if (sectionLength != expectedSectionLength)
@@ -9288,6 +9477,9 @@ namespace Hecton8.SaveSystem
 
         private static bool TryValidateHeader(SaveFileHeader header, out string error)
         {
+            if (!TryValidateCurrentBinaryLayouts(out error))
+                return false;
+
             if (header.Version < MinimumSupportedVersion || header.Version > CurrentVersion)
             {
                 error = $"Unsupported save header version {header.Version}.";
@@ -9351,11 +9543,8 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (header.DeltaCount > (uint)(RawPayloadCapacityBytes / UnsafeUtility.SizeOf<uint>()))
-            {
-                error = "Save packed quest-state count exceeds the decoder budget.";
+            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
                 return false;
-            }
 
             int maxEntityRecordSize = header.Version >= CompactPersistentWorldSectionVersion
                 ? UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>()

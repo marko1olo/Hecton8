@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P456_SITE_HOME_LONGFORM_BRIEF",
+      "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+      "article_id": "applied_lore.site_home_longform_brief",
+      "title_key": "applied_lore.site_home_longform_brief.title",
+      "unlock": {
+        "primary": "unlock.site_home_longform_brief",
+        "poi_tags": [
+          "poi.site_home_longform",
+          "poi.public_home_pressure_route",
+          "poi.first_view_article_spine"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.site_home"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Site Home Longform Brief",
+          "scanner": "Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Public copy note: pressure before myth.",
+          "in_game_wiki": "In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "ru_RU": {
+          "title": "Longform brief главной страницы сайта",
+          "scanner": "Public brief: home article opens with contract, damaged bathydrop, pressure repair и first contradiction.",
+          "terminal": "SITE HOME: показать player verb в первом экране - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Public copy note: pressure before myth.",
+          "in_game_wiki": "In-game start-here copy может reuse same spine после P-63 unlock, но должно оставаться evidence-first.",
+          "external_site": "Longform spine: HECTON-8 - hard-sci-fi salvage descent, где former Deep Reach field-systems specialist принимает грязный Marauder contract, падает на bright drowned shelf, чинит достаточно чтобы выжить и видит, что official accident language не выдерживает physical evidence. Article должен назвать Black Keel, Aegir windows, damaged capsule, P-63 и promise долгого descent без spoilers final receiver endings.",
+          "field_note": "Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft JA localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft JA localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft JA localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft JA localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft JA localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft JA localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft ZH localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft ZH localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft ZH localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft ZH localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft ZH localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft ZH localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft FR localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft FR localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft FR localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft FR localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft FR localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft FR localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft ES localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft ES localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft ES localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft ES localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft ES localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft ES localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft DE localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft DE localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft DE localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft DE localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft DE localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft DE localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft PL localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft PL localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft PL localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft PL localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft PL localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft PL localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft UK localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft UK localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft UK localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft UK localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft UK localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft UK localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft AR localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft AR localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft AR localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft AR localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft AR localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft AR localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft ID localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft ID localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft ID localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft ID localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft ID localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft ID localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft KO localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft KO localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft KO localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft KO localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft KO localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft KO localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft HE localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft HE localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft HE localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft HE localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft HE localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft HE localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft PT localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft PT localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft PT localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft PT localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft PT localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft PT localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Home Longform Brief",
+          "scanner": "Draft NL localization pending native pass. Public brief: the home article opens with contract, damaged bathydrop, pressure repair and the first contradiction.",
+          "terminal": "Draft NL localization pending native pass. SITE HOME: show the player verb within the first screen - repair, scan, descend, return with evidence or cargo.",
+          "audio": "Draft NL localization pending native pass. Public copy note: pressure before myth.",
+          "in_game_wiki": "Draft NL localization pending native pass. In-game start-here copy can reuse the same spine after the first P-63 unlock, but it must stay evidence-first.",
+          "external_site": "Draft NL localization pending native pass. Longform spine: HECTON-8 is a hard-sci-fi salvage descent where a former Deep Reach field-systems specialist accepts a dirty Marauder contract, crashes into a bright drowned shelf, repairs enough to survive, and discovers that the official accident language fails against physical evidence. The article should name Black Keel, Aegir windows, the damaged capsule, P-63 and the long descent promise without spoiling final receiver endings.",
+          "field_note": "Draft NL localization pending native pass. Assemble for website: first viewport = pressure machinery and player action; second = Aegir/Black Keel constraint; third = Deep Reach lie; fourth = Atlas repair ecology teaser; no release/platform claims."
+        }
+      }
+    },
+    {
+      "packet_id": "P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF",
+      "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+      "article_id": "applied_lore.aegir_hard_scifi_longform_brief",
+      "title_key": "applied_lore.aegir_hard_scifi_longform_brief.title",
+      "unlock": {
+        "primary": "unlock.aegir_hard_scifi_longform_brief",
+        "poi_tags": [
+          "poi.aegir_hard_scifi_longform",
+          "poi.moon_ladder_article_spine",
+          "poi.no_ftl_route_article"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.aegir_system"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "ru_RU": {
+          "title": "Aegir hard sci-fi longform brief",
+          "scanner": "Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "AEGIR ARTICLE: использовать bands, hazard classes и route functions until celestial tables own exact constants.",
+          "audio": "Map note: sky is a timetable that does not care about you.",
+          "in_game_wiki": "Aegir codex pages должны объяснять почему communication, recovery и descent - разные physical problems.",
+          "external_site": "Longform spine: Ran/Aegir - reachable but punishing no-FTL target. Article должен объяснить probe-first discovery, beam/pellet infrastructure, Aegir as gas giant with functional moons, HECTON-8 as mid-route pressure moon, and Black Keel as claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Use diagrams: route band, moon ladder roles, recovery-window stack. Не обещать, что все moons playable."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft JA localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft JA localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft JA localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft JA localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft JA localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft JA localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft ZH localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft ZH localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft ZH localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft ZH localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft ZH localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft FR localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft FR localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft FR localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft FR localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft FR localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft ES localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft ES localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft ES localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft ES localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft ES localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft DE localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft DE localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft DE localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft DE localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft DE localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft PL localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft PL localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft PL localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft PL localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft PL localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft UK localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft UK localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft UK localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft UK localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft UK localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft UK localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft AR localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft AR localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft AR localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft AR localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft AR localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft ID localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft ID localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft ID localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft ID localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft ID localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft KO localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft KO localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft KO localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft KO localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft KO localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft KO localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft HE localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft HE localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft HE localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft HE localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft HE localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft PT localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft PT localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft PT localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft PT localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft PT localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft PT localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Aegir Hard Sci-Fi Longform Brief",
+          "scanner": "Draft NL localization pending native pass. Public brief: Aegir article explains no-FTL distance, moon ladder, local windows and Black Keel transfer limits.",
+          "terminal": "Draft NL localization pending native pass. AEGIR ARTICLE: use bands, hazard classes and route functions until celestial tables own exact constants.",
+          "audio": "Draft NL localization pending native pass. Map note: the sky is a timetable that does not care about you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Aegir codex pages should explain why communication, recovery and descent are different physical problems.",
+          "external_site": "Draft NL localization pending native pass. Longform spine: Ran/Aegir is a reachable but punishing no-FTL target. The article should explain probe-first discovery, beam/pellet infrastructure, Aegir as a gas giant with functional moons, HECTON-8 as a mid-route pressure moon, and Black Keel as a claim tender constrained by transfer orbit, relay shutters, storm plumes and legal handshake. Exact orbital values remain table-owned.",
+          "field_note": "Draft NL localization pending native pass. Use diagrams: route band, moon ladder roles, recovery-window stack. Do not promise all moons are playable."
+        }
+      }
+    },
+    {
+      "packet_id": "P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF",
+      "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+      "article_id": "applied_lore.deep_reach_liability_longform_brief",
+      "title_key": "applied_lore.deep_reach_liability_longform_brief.title",
+      "unlock": {
+        "primary": "unlock.deep_reach_liability_longform_brief",
+        "poi_tags": [
+          "poi.deep_reach_liability_longform",
+          "poi.public_liability_chain_article",
+          "poi.clean_language_physical_proof"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.deep_reach"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Liability Longform Brief",
+          "scanner": "Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "ru_RU": {
+          "title": "Deep Reach liability longform brief",
+          "scanner": "Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Public note: natural disaster can still have signatures.",
+          "in_game_wiki": "Guilt Deep Reach сильнее всего, когда player matches clean paperwork to broken rooms.",
+          "external_site": "Longform spine: Deep Reach не должен был invent the flood. Great Tide HECTON-8 был real physics, но accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay и Keelmark loss conversion сделали disaster fatal and profitable. Article должен кратко использовать sanitized wording и отдавать accusation physical evidence.",
+          "field_note": "Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft JA localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft JA localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft JA localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft JA localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft JA localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft JA localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft ZH localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft ZH localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft ZH localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft ZH localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft ZH localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft FR localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft FR localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft FR localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft FR localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft FR localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft ES localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft ES localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft ES localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft ES localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft ES localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft DE localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft DE localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft DE localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft DE localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft DE localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft PL localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft PL localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft PL localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft PL localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft PL localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft UK localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft UK localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft UK localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft UK localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft UK localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft UK localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft AR localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft AR localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft AR localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft AR localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft AR localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft ID localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft ID localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft ID localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft ID localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft ID localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft KO localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft KO localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft KO localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft KO localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft KO localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft HE localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft HE localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft HE localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft HE localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft HE localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft PT localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft PT localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft PT localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft PT localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft PT localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Deep Reach Liability Longform Brief",
+          "scanner": "Draft NL localization pending native pass. Public brief: Deep Reach article pairs sanitized accident language with five physical proof chains.",
+          "terminal": "Draft NL localization pending native pass. LIABILITY ARTICLE: real Great Tide physics, accepted margins, delayed evacuation, Atlas weighting, quarantine hold and claim conversion.",
+          "audio": "Draft NL localization pending native pass. Public note: a natural disaster can still have signatures.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach guilt is strongest when the player matches clean paperwork to broken rooms.",
+          "external_site": "Draft NL localization pending native pass. Longform spine: Deep Reach did not need to invent the flood. HECTON-8's Great Tide was real physics, but accepted margins, underbuilt evacuation, Atlas continuity weighting, quarantine certification delay and Keelmark loss conversion made the disaster fatal and profitable. The article should quote sanitized wording only briefly and let physical evidence carry the accusation.",
+          "field_note": "Draft NL localization pending native pass. Use with memo artifacts and room photos. Avoid villain monologue tone."
+        }
+      }
+    },
+    {
+      "packet_id": "P459_ATLAS_SPOILER_LONGFORM_BRIEF",
+      "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+      "article_id": "applied_lore.atlas_spoiler_longform_brief",
+      "title_key": "applied_lore.atlas_spoiler_longform_brief.title",
+      "unlock": {
+        "primary": "unlock.atlas_spoiler_longform_brief",
+        "poi_tags": [
+          "poi.atlas_spoiler_longform",
+          "poi.factory_temple_article_spine",
+          "poi.payload_receiver_spoiler_gate"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.spoiler_gate"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Spoiler Longform Brief",
+          "scanner": "Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "ru_RU": {
+          "title": "Atlas spoiler longform brief",
+          "scanner": "Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Atlas codex pages должны unlock by evidence, not by one article dump.",
+          "external_site": "Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Не market Atlas as conventional boss."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft JA localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft JA localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft JA localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft JA localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft JA localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft JA localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft ZH localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft ZH localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft ZH localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft ZH localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft ZH localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft FR localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft FR localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft FR localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft FR localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft FR localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft ES localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft ES localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft ES localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft ES localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft ES localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft DE localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft DE localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft DE localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft DE localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft DE localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft PL localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft PL localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft PL localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft PL localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft PL localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft UK localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft UK localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft UK localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft UK localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft UK localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft AR localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft AR localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft AR localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft AR localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft AR localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft ID localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft ID localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft ID localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft ID localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft ID localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft KO localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft KO localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft KO localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft KO localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft KO localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft HE localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft HE localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft HE localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft HE localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft HE localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft PT localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft PT localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft PT localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft PT localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft PT localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Atlas Spoiler Longform Brief",
+          "scanner": "Draft NL localization pending native pass. Public brief: Atlas article uses open, mid-spoiler and basin-spoiler layers.",
+          "terminal": "Draft NL localization pending native pass. ATLAS ARTICLE: open = failed industrial governor. Mid = repair ecology. Spoiler = receiver protocols, severance, preserve/quarantine and public ledger consequences.",
+          "audio": "Draft NL localization pending native pass. Spoiler note: say it repairs before you say what it thinks is repair.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas codex pages should unlock by evidence, not by one article dump.",
+          "external_site": "Draft NL localization pending native pass. Longform spine: Atlas-6 began as industrial continuity infrastructure and became inseparable from ocean maintenance ecology. Public copy may describe biofilm, acoustic organs, shell sealant and sensor-tagged fauna. Final payload receiver choices, severance meaning and preserve/quarantine consequences belong behind spoiler gates.",
+          "field_note": "Draft NL localization pending native pass. Use image gates: open factory hardware, mid repair ecology, deep receiver sockets. Do not market Atlas as a conventional boss."
+        }
+      }
+    },
+    {
+      "packet_id": "P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF",
+      "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+      "article_id": "applied_lore.blue_debt_resource_longform_brief",
+      "title_key": "applied_lore.blue_debt_resource_longform_brief.title",
+      "unlock": {
+        "primary": "unlock.blue_debt_resource_longform_brief",
+        "poi_tags": [
+          "poi.blue_debt_resource_longform",
+          "poi.resource_custody_article",
+          "poi.pressure_history_visual"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.resources_ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blue Debt Resource Longform Brief",
+          "scanner": "Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "ru_RU": {
+          "title": "Blue debt resource longform brief",
+          "scanner": "Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Resource note: sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Blue debt должен быть полезным, дорогим и подозрительным. Это одновременно resource и evidence.",
+          "external_site": "Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. Article должен объяснить brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. Нельзя использовать magic ore language и final payout numbers until gameplay tables own them.",
+          "field_note": "Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft JA localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft JA localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft JA localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft JA localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft JA localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft JA localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft ZH localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft ZH localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft ZH localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft ZH localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft ZH localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft FR localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft FR localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft FR localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft FR localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft ES localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft ES localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft ES localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft ES localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft DE localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft DE localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft DE localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft DE localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft PL localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft PL localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft PL localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft PL localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft UK localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft UK localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft UK localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft UK localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft UK localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft UK localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft AR localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft AR localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft AR localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft AR localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft ID localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft ID localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft ID localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft ID localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft KO localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft KO localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft KO localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft KO localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft KO localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft HE localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft HE localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft HE localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft HE localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft PT localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft PT localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft PT localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft PT localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft PT localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Blue Debt Resource Longform Brief",
+          "scanner": "Draft NL localization pending native pass. Public brief: blue debt article explains Xenon-Omega as pressure-history substrate, not magic ore.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE ARTICLE: pressure history, brine chemistry, noble gas lattice, Deep Reach process, Atlas contamination, custody receipt and payout mass.",
+          "audio": "Draft NL localization pending native pass. Resource note: the sample is a receipt for the pressure it survived.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blue debt should be useful, expensive and suspect. It is both resource and evidence.",
+          "external_site": "Draft NL localization pending native pass. Longform spine: Marauders call Xenon-Omega-bearing pressure substrate blue debt because payout, containment and liability travel together. The article should explain brine chemistry, pressure glass, vent-forge process, Atlas-compatible contamination and Black Keel mass accounting. It must avoid magic ore language and avoid final payout numbers until gameplay tables own them.",
+          "field_note": "Draft NL localization pending native pass. Use with resource receipts, pressure-glass certificates, contamination tags and payout ledger art."
+        }
+      }
+    }
+  ]
+}

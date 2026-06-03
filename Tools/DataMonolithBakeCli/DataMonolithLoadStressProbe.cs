@@ -350,7 +350,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 ReadUInt32(bytes, 20) != H8DataLayoutConstants.HeaderSizeBytes ||
                 ReadUInt32(bytes, 24) != H8DataLayoutConstants.DirectorySizeBytes ||
                 ReadUInt32(bytes, 28) != H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes ||
-                ReadUInt32(bytes, 32) != (uint)H8DataSectionId.PhysicsConstants ||
+                ReadUInt32(bytes, 32) != (uint)H8DataSectionId.AppliedLoreRoutes ||
                 ReadUInt32(bytes, 36) != H8DataLayoutConstants.BlobFlagLittleEndian ||
                 ReadUInt32(bytes, 48) != H8DataLayoutConstants.SchemaHash ||
                 ReadUInt32(bytes, 52) != 0u ||
@@ -379,7 +379,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             uint localizationBytes = ReadUInt32(bytes, directoryOffset + 28);
             if (ReadUInt32(bytes, directoryOffset) != H8DataLayoutConstants.BlobMagic ||
                 ReadUInt16(bytes, directoryOffset + 4) != H8DataLayoutConstants.FormatVersion ||
-                directorySectionCount != (ushort)H8DataSectionId.PhysicsConstants ||
+                directorySectionCount != (ushort)H8DataSectionId.AppliedLoreRoutes ||
                 sectionTableOffset != ReadUInt32(bytes, 28) ||
                 sectionTableOffset != H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes ||
                 sectionTableBytes != directorySectionCount * 16u ||

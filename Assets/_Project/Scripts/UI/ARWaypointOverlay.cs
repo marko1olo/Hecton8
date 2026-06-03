@@ -43,6 +43,9 @@ namespace Hecton8.UI
         private const int WaypointPerformanceWarningCooldownFrames = 90;
         private const int WaypointSolveTelemetryCadenceFrames = 16;
         private const string RootName = "ARWaypointOverlay";
+        private const string SlotFillName = "Fill";
+        private const string SlotOutlineName = "Outline";
+        private const string SlotLabelName = "Label";
         private const string DefaultExternalLabel = "WAYPOINT";
         private const int EdgeRotationUp = 0;
         private const int EdgeRotationRight = 1;
@@ -227,6 +230,8 @@ namespace Hecton8.UI
         private RectTransform _root;
         private Camera _viewCamera;
         private Transform _playerTransform;
+        [SerializeField]
+        private RectTransform _authoredRoot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -648,15 +653,9 @@ namespace Hecton8.UI
             if (canvasRoot == null)
                 return false;
 
-            _root = FindExistingChild(canvasRoot, RootName);
+            _root = _authoredRoot != null ? _authoredRoot : FindExistingChild(canvasRoot, RootName);
             if (_root == null)
-            {
-                // COLD ALLOC: GameObject[1] - AR waypoint root canvas-space owner - owner: ARWaypointOverlay
-                GameObject rootObject = new GameObject(RootName, typeof(RectTransform));
-                rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _root);
-                _root.SetParent(canvasRoot, false);
-            }
+                return false;
 
             _root.anchorMin = Vector2.zero;
             _root.anchorMax = Vector2.one;
@@ -665,11 +664,17 @@ namespace Hecton8.UI
             _root.pivot = new Vector2(0.5f, 0.5f);
             _root.SetAsLastSibling();
 
-            ClearChildren(_root);
             for (int i = 0; i < _slots.Length; i++)
-                _slots[i] = CreateSlot(i, _root, _viewCamera);
+            {
+                if (!TryBindSlot(i, _root, _viewCamera, out _slots[i]))
+                {
+                    ResetBoundSlots();
+                    return false;
+                }
+            }
 
             _uiBuilt = true;
+            HideAllSlots();
             return true;
         }
 
@@ -1354,28 +1359,37 @@ namespace Hecton8.UI
                 : null;
         }
 
-        private static WaypointSlot CreateSlot(int index, RectTransform parent, Camera camera)
+        private static bool TryBindSlot(int index, RectTransform parent, Camera camera, out WaypointSlot slot)
         {
-            GameObject rootObject = new GameObject(s_waypointSlotNames[index], typeof(RectTransform), typeof(CanvasGroup));
-            rootObject.layer = parent.gameObject.layer;
-            rootObject.TryGetComponent(out RectTransform root);
-            root.SetParent(parent, false);
+            slot = default;
+            if (parent == null || (uint)index >= MaxWaypoints)
+                return false;
+
+            RectTransform root = FindExistingChild(parent, s_waypointSlotNames[index]);
+            if (root == null || !root.TryGetComponent(out CanvasGroup group))
+                return false;
+
             root.anchorMin = new Vector2(0.5f, 0.5f);
             root.anchorMax = new Vector2(0.5f, 0.5f);
             root.pivot = new Vector2(0.5f, 0.5f);
             root.sizeDelta = new Vector2(120f, 42f);
 
-            rootObject.TryGetComponent(out CanvasGroup group);
             group.alpha = HiddenAlpha;
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            Image fill = CreateImage(root, "Fill", MarkerSize, MarkerSize, RelayColor, out RectTransform fillRect);
-            Image outline = CreateImage(root, "Outline", OutlineSize, OutlineSize, OccludedColor, out RectTransform outlineRect);
+            if (!TryBindImage(root, SlotFillName, MarkerSize, MarkerSize, RelayColor, out Image fill, out RectTransform fillRect))
+                return false;
+
+            if (!TryBindImage(root, SlotOutlineName, OutlineSize, OutlineSize, OccludedColor, out Image outline, out RectTransform outlineRect))
+                return false;
+
             outline.enabled = true;
 
-            TextMeshProUGUI label = CreateLabel(root, camera);
-            return new WaypointSlot
+            if (!TryBindLabel(root, camera, out TextMeshProUGUI label))
+                return false;
+
+            slot = new WaypointSlot
             {
                 Root = root,
                 Group = group,
@@ -1394,46 +1408,55 @@ namespace Hecton8.UI
                 CachedFillColor = RelayColor,
                 CachedOutlineColor = OccludedColor
             };
+            return true;
         }
 
-        private static Image CreateImage(
+        private static bool TryBindImage(
             RectTransform parent,
             string name,
             float width,
             float height,
             Color color,
+            out Image image,
             out RectTransform rect)
         {
-            GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image));
-            go.layer = parent.gameObject.layer;
-            go.TryGetComponent(out rect);
-            rect.SetParent(parent, false);
+            image = null;
+            rect = null;
+            if (parent == null)
+                return false;
+
+            rect = FindExistingChild(parent, name);
+            if (rect == null || !rect.TryGetComponent(out image))
+                return false;
+
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(width, height);
 
-            go.TryGetComponent(out Image image);
-            image.sprite = null;
             image.color = color;
             image.raycastTarget = false;
-            return image;
+            return true;
         }
 
-        private static TextMeshProUGUI CreateLabel(RectTransform parent, Camera camera)
+        private static bool TryBindLabel(RectTransform parent, Camera camera, out TextMeshProUGUI label)
         {
-            GameObject go = new GameObject("Label", typeof(RectTransform));
-            go.layer = parent.gameObject.layer;
-            go.TryGetComponent(out RectTransform rect);
-            rect.SetParent(parent, false);
+            label = null;
+            if (parent == null)
+                return false;
+
+            RectTransform rect = FindExistingChild(parent, SlotLabelName);
+            if (rect == null || !rect.TryGetComponent(out label))
+                return false;
+
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0f);
             rect.anchoredPosition = new Vector2(0f, 14f);
             rect.sizeDelta = new Vector2(176f, 20f);
 
-            TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] - AR waypoint label owner - owner: ARWaypointOverlay
-            label.font = LocalizedFontResolver.ResolveReadableFont(null);
+            if (label.font == null)
+                label.font = LocalizedFontResolver.ResolveReadableFont(null);
             label.fontSize = 11f;
             label.alignment = TextAlignmentOptions.Bottom;
             label.color = new Color(0.90f, 0.96f, 0.94f, 0.92f);
@@ -1442,9 +1465,10 @@ namespace Hecton8.UI
             label.raycastTarget = false;
             TMP_TextRegistry.EnsureRegistered(label);
 
-            WorldSpaceTMPSharpnessController sharpnessController = go.AddComponent<WorldSpaceTMPSharpnessController>(); // COLD ALLOC: WorldSpaceTMPSharpnessController[1] - per-label world-space SDF sharpness owner - owner: ARWaypointOverlay
-            sharpnessController.Bind(label, camera);
-            return label;
+            if (rect.TryGetComponent(out WorldSpaceTMPSharpnessController sharpnessController))
+                sharpnessController.Bind(label, camera);
+
+            return true;
         }
 
         private void ApplyLabelText(TextMeshProUGUI label, ReadOnlySpan<char> value)
@@ -1661,22 +1685,16 @@ namespace Hecton8.UI
             return null;
         }
 
-        private static void ClearChildren(Transform parent)
+        private void ResetBoundSlots()
         {
-            if (parent == null)
-                return;
-
-            for (int i = parent.childCount - 1; i >= 0; i--)
+            HideAllSlots();
+            for (int i = 0; i < _slots.Length; i++)
             {
-                Transform child = parent.GetChild(i);
-                if (child == null)
-                    continue;
-
-                if (Application.isPlaying)
-                    Destroy(child.gameObject);
-                else
-                    DestroyImmediate(child.gameObject);
+                _slots[i] = default;
             }
+
+            _renderedSlotCount = 0;
+            _uiBuilt = false;
         }
 
     }

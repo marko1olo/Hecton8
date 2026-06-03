@@ -34,6 +34,8 @@ namespace Hecton8.Atmosphere
         private const float ExponentialBlendRateScale = 4.6051702f;
         private const float ResolveRetryInterval = 2f;
         private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
+        private const float KilometersPerHourToMetersPerSecond = 0.27777778f;
+        private const float InverseHash24Max = 0.000000059604648f;
         private const float ThunderAcousticShockMinRadiusMeters = 72f;
         private const float ThunderAcousticShockMaxRadiusMeters = 240f;
         private const float ThunderAcousticShockLifetimeSeconds = 8f;
@@ -44,6 +46,7 @@ namespace Hecton8.Atmosphere
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
         private const uint SurfaceWeatherSolveBudgetContextHash = 0x53574654u;
         private static readonly long SurfaceWeatherSolveBudgetWarningTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
+        private static readonly double StopwatchTicksToMilliseconds = 1000.0d / Stopwatch.Frequency;
         private static int s_x001SurfaceWeatherDirectorSignalPushDropCount;
 
         private enum SurfaceExecutionMode : byte
@@ -1456,7 +1459,7 @@ namespace Hecton8.Atmosphere
             if (electricalActivity <= stormInterferenceElectricalThreshold)
                 return 0f;
 
-            float electricalT = math.saturate((electricalActivity - stormInterferenceElectricalThreshold) / math.max(1f - stormInterferenceElectricalThreshold, 0.0001f));
+            float electricalT = math.saturate((electricalActivity - stormInterferenceElectricalThreshold) * math.rcp(math.max(1f - stormInterferenceElectricalThreshold, 0.0001f)));
             float precipitationT = math.lerp(0.7f, 1f, math.saturate(_currentState.precipitationIntensity));
             return electricalT * precipitationT;
         }
@@ -1559,7 +1562,7 @@ namespace Hecton8.Atmosphere
             float thunderDistance = ResolveAupThunderDistanceMeters(strikePosition, listenerPosition);
             float minDistance = math.max(10f, _currentState.lightningStrikeDistanceMin);
             float maxDistance = math.max(minDistance, _currentState.lightningStrikeDistanceMax);
-            float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
+            float distanceT = math.saturate((thunderDistance - minDistance) * math.rcp(math.max(maxDistance - minDistance, 0.0001f)));
             float loudness = math.lerp(_currentState.thunderVolumeNear, _currentState.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
 
@@ -1669,7 +1672,7 @@ namespace Hecton8.Atmosphere
         {
             float clampedDeltaTime = math.max(0f, deltaTime);
             float duration = math.max(0.0001f, durationSeconds);
-            return ApproximateOneMinusExpNegPositive((ExponentialBlendRateScale / duration) * clampedDeltaTime);
+            return ApproximateOneMinusExpNegPositive(ExponentialBlendRateScale * math.rcp(duration) * clampedDeltaTime);
         }
 
         private static float ApproximateOneMinusExpNegPositive(float x)
@@ -1684,7 +1687,7 @@ namespace Hecton8.Atmosphere
             float x3 = x2 * clamped;
             float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
             float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
-            return math.saturate(numerator / math.max(denominator, 0.0001f));
+            return math.saturate(numerator * math.rcp(math.max(denominator, 0.0001f)));
         }
 
         private void UpdateDiagnostics()
@@ -1704,7 +1707,7 @@ namespace Hecton8.Atmosphere
         private void UpdateLocalRainExposure(float deltaTime)
         {
             float blendTime = math.max(0.05f, shelterExposureBlendTime);
-            float blendT = math.saturate(deltaTime / blendTime);
+            float blendT = math.saturate(deltaTime * math.rcp(blendTime));
             _currentLocalRainExposure = math.lerp(_currentLocalRainExposure, _targetLocalRainExposure, blendT);
         }
 
@@ -1915,7 +1918,7 @@ namespace Hecton8.Atmosphere
             float frameDeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             bool shedScreenSpaceRain = frameDeltaTime > 0f && frameDeltaTime * 1000f > ScreenSpaceRainFrameTimeShedMs;
             float rainIntensity = surfaceVfxActive && !shedScreenSpaceRain ? math.saturate(bindings.vfxPrecipitation) : 0f;
-            float windSpeedMps = math.max(0f, bindings.targetWindSpeed / 3.6f);
+            float windSpeedMps = math.max(0f, bindings.targetWindSpeed * KilometersPerHourToMetersPerSecond);
             Vector2 windDirection = _currentState.windDirection;
             float windMagnitudeSq = windDirection.sqrMagnitude;
             if (windMagnitudeSq > 0.0001f)
@@ -1958,7 +1961,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            double elapsedMilliseconds = elapsedTicks * StopwatchTicksToMilliseconds;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 SurfaceWeatherSolveBudgetWarningHash,
                 SurfaceWeatherSolveBudgetContextHash,
@@ -2307,7 +2310,7 @@ namespace Hecton8.Atmosphere
             _rngState ^= _rngState << 13;
             _rngState ^= _rngState >> 17;
             _rngState ^= _rngState << 5;
-            return (_rngState & 0x00FFFFFFu) / 16777215f;
+            return (_rngState & 0x00FFFFFFu) * InverseHash24Max;
         }
 
         private void BuildFallbackProfiles()
@@ -2317,26 +2320,26 @@ namespace Hecton8.Atmosphere
                 1.35f,
                 180f,
                 320f,
-                0.38f,
                 0.24f,
-                0.55f,
+                0.32f,
+                0.42f,
                 new Vector2(1f, 0.15f),
-                1.08f,
+                1.18f,
                 1f,
                 0.95f,
                 new Color(0.95f, 0.98f, 1f, 1f),
-                new Color(0.58f, 0.62f, 0.72f, 1f),
+                new Color(0.62f, 0.66f, 0.76f, 1f),
                 new Color(1.18f, 0.63f, 0.31f, 1f),
-                new Color(0.08f, 0.09f, 0.12f, 1f),
+                new Color(0.16f, 0.18f, 0.24f, 1f),
                 new Color(0.77f, 0.82f, 0.88f, 1f),
-                0.0008f,
+                0.0011f,
                 new Color(0.57f, 0.6f, 0.64f, 1f),
                 1.08f,
                 1.05f,
                 1.05f,
                 8f,
-                0.75f,
-                0.8f,
+                0.95f,
+                0.92f,
                 1f,
                 0f,
                 0f,
@@ -2368,23 +2371,23 @@ namespace Hecton8.Atmosphere
                 1.15f,
                 140f,
                 260f,
-                0.28f,
-                0.24f,
-                1f,
+                0.2f,
+                0.32f,
+                1.12f,
                 new Vector2(1f, 0.35f),
                 1f,
                 0.9f,
                 1f,
                 new Color(0.9f, 0.93f, 0.98f, 1f),
-                new Color(0.5f, 0.56f, 0.66f, 1f),
+                new Color(0.58f, 0.63f, 0.74f, 1f),
                 new Color(1.14f, 0.58f, 0.28f, 1f),
-                new Color(0.07f, 0.08f, 0.11f, 1f),
+                new Color(0.13f, 0.16f, 0.22f, 1f),
                 new Color(0.72f, 0.78f, 0.84f, 1f),
                 0.0012f,
                 new Color(0.52f, 0.55f, 0.6f, 1f),
                 0.96f,
-                1f,
-                1f,
+                1.18f,
+                1.12f,
                 18f,
                 1f,
                 1f,

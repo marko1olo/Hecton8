@@ -78,7 +78,7 @@ Current static evidence points to MicroSplat/Texture2DArray terrain paths.
 
 [UPDATED] Compute shader group sizing is capture-driven. 64-thread kernels remain MX350/Pascal portable default; 256-thread assumptions are forbidden without target capture.
 
-[BROKEN] "Pentarchy" is an incomplete architecture model. The authoritative project model is 9 echelons / 85 domains in `Docs/Actual Domains of Project.txt`.
+[BROKEN] "Pentarchy" is an incomplete architecture model. `Docs/PROJECT_ATLAS.md` carries the 9-echelons / 85-domains index; five-pillar language is legacy unless it maps the enforcement echelons explicitly.
 
 [UPDATED] Batch 007 adds execution phase authority: PRE_SIMULATION, SIMULATION, POST_SIMULATION, and VISUAL_SYNC. Runtime systems must name their phase and stop using private Unity loop schedulers.
 

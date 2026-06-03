@@ -258,23 +258,29 @@ namespace Hecton8.AI.Pathfinding
             int3 c = IndexToCoord(index, dims);
             float3 p = (new float3(c.x, c.y, c.z) + 0.5f) * voxelSize;
             float3 extents = new float3(dims.x, dims.y, dims.z) * voxelSize;
-            float t = dims.x > 1 ? (c.x + 0.5f) / dims.x : 0f;
+            float t = dims.x > 1 ? (c.x + 0.5f) * math.rcp((float)dims.x) : 0f;
 
             float triA = TriangleWave(t * 3.0f);
             float triB = TriangleWave(t * 5.0f + 0.25f);
             float centerY = extents.y * math.lerp(0.34f, 0.66f, triA);
             float centerZ = extents.z * math.lerp(0.38f, 0.62f, triB);
             float radius = math.max(voxelSize, FiniteOrFallback(MainTunnelRadiusMeters, 5.5f));
-            float tubeDistance = math.length(new float2(p.y - centerY, p.z - centerZ));
+            float tubeDeltaY = p.y - centerY;
+            float tubeDeltaZ = p.z - centerZ;
+            float tubeDistance = VoxelAStarConstants.FastLengthFromSq((tubeDeltaY * tubeDeltaY) + (tubeDeltaZ * tubeDeltaZ));
             float tunnelClearance = radius - tubeDistance;
 
             float midX = extents.x * 0.5f;
             float midZ = extents.z * 0.5f;
             float shaftRadius = math.max(voxelSize, FiniteOrFallback(ShaftRadiusMeters, radius * 0.72f));
-            float shaftDistance = math.length(new float2(p.x - midX, p.z - midZ));
+            float shaftDeltaX = p.x - midX;
+            float shaftDeltaZ = p.z - midZ;
+            float shaftDistance = VoxelAStarConstants.FastLengthFromSq((shaftDeltaX * shaftDeltaX) + (shaftDeltaZ * shaftDeltaZ));
             float shaftClearance = shaftRadius - shaftDistance;
 
-            float chamberDistance = math.length((p - extents * 0.5f) / math.max(voxelSize, radius * 1.35f));
+            float chamberScale = math.rcp(math.max(voxelSize, radius * 1.35f));
+            float3 chamberDelta = (p - (extents * 0.5f)) * chamberScale;
+            float chamberDistance = VoxelAStarConstants.FastLengthFromSq(math.lengthsq(chamberDelta));
             float chamberClearance = (1.18f - chamberDistance) * radius;
 
             float clearance = math.max(tunnelClearance, math.max(shaftClearance, chamberClearance));
@@ -731,9 +737,10 @@ namespace Hecton8.AI.Pathfinding
             int samples = math.clamp((int)math.round(math.lerp(1f, 3f, q)), 1, 3);
             float3 a = (new float3(from.x, from.y, from.z) + 0.5f) * state.VoxelSizeMeters;
             float3 b = (new float3(to.x, to.y, to.z) + 0.5f) * state.VoxelSizeMeters;
+            float invSampleCount = math.rcp((float)(samples + 1));
             for (int i = 1; i <= samples; i++)
             {
-                float t = (float)i / (samples + 1);
+                float t = i * invSampleCount;
                 float3 p = math.lerp(a, b, t);
                 if (!TryPointToIndex(p, state.Dimensions, state.VoxelSizeMeters, out int sampleIndex))
                     return false;
@@ -1001,8 +1008,8 @@ namespace Hecton8.AI.Pathfinding
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float MovementCost(int dx, int dy, int dz, float voxelSize, float verticalPenalty)
         {
-            float3 d = new float3(dx, dy, dz);
-            float cost = math.length(d) * voxelSize;
+            float lengthSq = (dx * dx) + (dy * dy) + (dz * dz);
+            float cost = VoxelAStarConstants.FastLengthFromSq(lengthSq) * voxelSize;
             float vertical = 1f + (math.max(1f, verticalPenalty) - 1f) * math.abs(dy);
             return cost * vertical;
         }
@@ -1013,7 +1020,7 @@ namespace Hecton8.AI.Pathfinding
             int3 gridDelta = a - b;
             float3 delta = new float3(gridDelta.x, gridDelta.y, gridDelta.z);
             delta.y *= math.max(1f, tuning.VerticalPenalty);
-            return math.length(delta) * state.VoxelSizeMeters;
+            return VoxelAStarConstants.FastLengthFromSq(math.lengthsq(delta)) * state.VoxelSizeMeters;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1030,10 +1037,11 @@ namespace Hecton8.AI.Pathfinding
             if (!math.all(math.isfinite(local)) || voxelSize < VoxelAStarConstants.MinimumVoxelSizeMeters)
                 return false;
 
+            float invVoxelSize = math.rcp(voxelSize);
             int3 coord = new int3(
-                (int)math.floor(local.x / voxelSize),
-                (int)math.floor(local.y / voxelSize),
-                (int)math.floor(local.z / voxelSize));
+                (int)math.floor(local.x * invVoxelSize),
+                (int)math.floor(local.y * invVoxelSize),
+                (int)math.floor(local.z * invVoxelSize));
             if (!IsCoordValid(coord, dims))
                 return false;
 
@@ -1213,17 +1221,19 @@ namespace Hecton8.AI.Pathfinding
         {
             float3 a = NodeCenter(startIndex, header.Dimensions, header.VoxelSizeMeters);
             float3 b = NodeCenter(endIndex, header.Dimensions, header.VoxelSizeMeters);
-            float distance = math.length(b - a);
+            float distance = VoxelAStarConstants.FastLengthFromSq(math.lengthsq(b - a));
             if (!math.isfinite(distance))
                 return false;
 
+            float invSampleSpacing = math.rcp(math.max(VoxelAStarConstants.LineSampleEpsilon, tuning.SmoothingSampleSpacingMeters));
             int samples = math.clamp(
-                (int)math.ceil(distance / math.max(VoxelAStarConstants.LineSampleEpsilon, tuning.SmoothingSampleSpacingMeters)),
+                (int)math.ceil(distance * invSampleSpacing),
                 1,
                 math.max(1, tuning.MaxLineSamplesPerSegment));
+            float invSampleCount = math.rcp((float)(samples + 1));
             for (int i = 1; i <= samples; i++)
             {
-                float t = (float)i / (samples + 1);
+                float t = i * invSampleCount;
                 float3 p = math.lerp(a, b, t);
                 if (!TryPointToIndex(p, header.Dimensions, header.VoxelSizeMeters, out int sampleIndex))
                     return false;
@@ -1375,10 +1385,11 @@ namespace Hecton8.AI.Pathfinding
             if (!math.all(math.isfinite(local)) || voxelSize < VoxelAStarConstants.MinimumVoxelSizeMeters)
                 return false;
 
+            float invVoxelSize = math.rcp(voxelSize);
             int3 coord = new int3(
-                (int)math.floor(local.x / voxelSize),
-                (int)math.floor(local.y / voxelSize),
-                (int)math.floor(local.z / voxelSize));
+                (int)math.floor(local.x * invVoxelSize),
+                (int)math.floor(local.y * invVoxelSize),
+                (int)math.floor(local.z * invVoxelSize));
             if (coord.x < 0 || coord.y < 0 || coord.z < 0 || coord.x >= dims.x || coord.y >= dims.y || coord.z >= dims.z)
                 return false;
 

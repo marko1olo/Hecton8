@@ -32,6 +32,16 @@ Forbidden runtime promises:
 
 Legacy managed API material in older documents is source-audit context only unless it explicitly agrees with the envelope-only quarantine and passes the runtime verification playbook. A public C# type existing in source is not a public modding right.
 
+## Legacy Quarantine And Raw Asset Boundary
+
+Legacy classes such as `ModAssetManager`, `IModResourceProxy`, `HectonEventBus`, `ModEventProjectionBridge`, `ModCommandDispatcher`, and managed mod loading code are not a production permission surface. They are quarantine context for compatibility audits, static validation, and controlled internal tests unless the release packet proves a deliberate non-envelope route with owner approval, platform proof, memory proof, security proof, and rollback behavior.
+
+The hard rule is simple: while envelope-only mode is active, legacy bundle loading, raw PNG loading, managed mod factories, managed projected callbacks, legacy command kernels, and direct resource proxy resolution must return false, return null, or remain uninstalled. If a future edit makes any of those paths reachable in release gameplay, the edit must add a release blocker until the path is removed or proven with the full runtime verification playbook.
+
+Raw asset caps and path checks are defensive measures, not permission. A code path that checks 8 MB PNG size, 2048 px dimensions, mod-directory containment, or project-prefab allowlists is still not a gameplay-safe content pipeline if it performs `File.ReadAllBytes`, `AssetBundle.LoadFromFile`, `new Texture2D`, `ImageConversion.LoadImage`, material creation, mesh creation, or prefab loading during play. Approved content enters as reviewed package data, CRC/hash/byte proof, preimported assets, Addressables or project-owned content records, and owner-applied command envelopes. Loose runtime files never become first-party truth.
+
+Managed event callbacks are also quarantine-only. `HectonEventBus` may isolate mod/API/cold callbacks behind watchdogs, recursion caps, and culling telemetry, but first-party hot gameplay must use `SignalBus<T>`, native queues, or owner snapshots. If a first-party system uses `HectonEventBus` as its normal gameplay bus, the implementation is rejected until rewritten or formally waived with profiler, GC, and black-box evidence.
+
 ## SDK Authoring Contract
 
 The SDK must feel usable to creators without weakening runtime authority. The authoring layer may be friendly, graphical, and managed. The runtime layer must remain validated data.

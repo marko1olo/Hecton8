@@ -27,7 +27,6 @@ namespace Hecton8.Construction
         private const float LockedSimulationTickDeltaSeconds = 1f / 60f;
         private const float SimulationAuthorityDeltaCeilingSeconds = 0.2f;
         private const float AuthoritativeQualityWeight = 1f;
-        private const uint MockSeed = 0x53484E42u;
         private const SystemID OwnerSystemId = SystemID.Construction;
         private const int BulkheadProfileCsvMaxBytes = 8192;
         private const ulong BulkheadProfileImportMutationGuardMask = 1UL << 58;
@@ -47,9 +46,8 @@ namespace Hecton8.Construction
         private const uint BulkheadJobPinHatchTelemetry = 1u << 11;
         private const uint BulkheadJobPinHatchTelemetryCursor = 1u << 12;
         private const uint BulkheadJobPinHatchTuning = 1u << 13;
-        private const uint BulkheadJobPinHatchMockFluid = 1u << 14;
-        private const uint BulkheadJobPinHatchFluidFront = 1u << 15;
-        private const uint BulkheadJobPinHatchStructural = 1u << 16;
+        private const uint BulkheadJobPinHatchFluidFront = 1u << 14;
+        private const uint BulkheadJobPinHatchStructural = 1u << 15;
         private const uint BulkheadRequiredJobPinMask =
             BulkheadJobPinStates |
             BulkheadJobPinAups |
@@ -64,8 +62,7 @@ namespace Hecton8.Construction
             BulkheadJobPinHatchStates |
             BulkheadJobPinHatchTelemetry |
             BulkheadJobPinHatchTelemetryCursor |
-            BulkheadJobPinHatchTuning |
-            BulkheadJobPinHatchMockFluid;
+            BulkheadJobPinHatchTuning;
 
         private static readonly int GlobalBulkheadStatesId = Shader.PropertyToID("_GlobalBulkheadStates");
         private static readonly int GlobalBulkheadParamsId = Shader.PropertyToID("_GlobalBulkheadParams");
@@ -78,7 +75,6 @@ namespace Hecton8.Construction
         [SerializeField, Min(0.05f)] private float openSpeedPerSecond = DefaultOpenSpeed;
         [SerializeField, Min(0.5f)] private float overrideDistanceMeters = DefaultOverrideDistance;
         [SerializeField, Range(0.01f, 0.99f)] private float catastrophicIntegrity01 = DefaultCatastrophicIntegrity;
-        [SerializeField] private bool generateMockBulkheads;
         [SerializeField] private bool uploadShaderBuffer = true;
 
         private IDataVault _vault;
@@ -115,7 +111,6 @@ namespace Hecton8.Construction
         private bool _layoutChecked;
         private bool _layoutValid;
         private bool _layoutFaultTelemetryWritten;
-        private bool _mockGenerated;
         private int _activeCount;
         private uint _lastFrame;
         private float _authorityAccumulator;
@@ -473,7 +468,6 @@ namespace Hecton8.Construction
         {
             _vaultInitialized = false;
             _defaultsInitialized = false;
-            _mockGenerated = false;
             _activeCount = 0;
             _authorityAccumulator = 0f;
             _lastFrame = 0u;
@@ -677,8 +671,7 @@ namespace Hecton8.Construction
                     !TryLockBulkheadJobPin(BufferID.Shinobu343HatchStates, BulkheadJobPinHatchStates) ||
                     !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTelemetryRing, BulkheadJobPinHatchTelemetry) ||
                     !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTelemetryCursor, BulkheadJobPinHatchTelemetryCursor) ||
-                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTuning, BulkheadJobPinHatchTuning) ||
-                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchMockFluidCompartments, BulkheadJobPinHatchMockFluid))
+                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTuning, BulkheadJobPinHatchTuning))
                     return false;
 
                 return (_bulkheadJobPinMask & BulkheadRequiredJobPinMask) == BulkheadRequiredJobPinMask;
@@ -732,7 +725,6 @@ namespace Hecton8.Construction
 
             TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchStructural, BufferID.StructuralIntegrityStates);
             TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchFluidFront, BufferID.ShinobuFluidCompartmentFront);
-            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchMockFluid, BufferID.Shinobu343HatchMockFluidCompartments);
             TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchTuning, BufferID.Shinobu343HatchTuning);
             TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchTelemetryCursor, BufferID.Shinobu343HatchTelemetryCursor);
             TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchTelemetry, BufferID.Shinobu343HatchTelemetryRing);
@@ -991,45 +983,6 @@ namespace Hecton8.Construction
                 ActiveCount = (uint)math.clamp(_activeCount, 0, capacity),
                 Flags = uploadShaderBuffer ? 1u : 0u
             };
-        }
-
-        private JobHandle ScheduleMockDataIfRequired(
-            NativeArray<BulkheadStateDTO> states,
-            NativeArray<double3> aups,
-            NativeArray<BulkheadPlaneDTO> planes,
-            NativeArray<BulkheadCsrEdgeDTO> csrEdges,
-            JobHandle dependency)
-        {
-            if ((!generateMockBulkheads && !generateMockHatchPressure) ||
-                _mockGenerated ||
-                _activeCount > 0 ||
-                !states.IsCreated ||
-                !aups.IsCreated ||
-                !planes.IsCreated ||
-                !csrEdges.IsCreated)
-            {
-                return dependency;
-            }
-
-            int count = math.min(8, math.min(states.Length, math.min(aups.Length, math.min(planes.Length, csrEdges.Length))));
-            if (count <= 0)
-                return dependency;
-
-            GenerateMockBulkheadsJob job = new GenerateMockBulkheadsJob
-            {
-                States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(states),
-                Aups = (double3*)NativeArrayUnsafeUtility.GetUnsafePtr(aups),
-                Planes = (BulkheadPlaneDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(planes),
-                CsrEdges = (BulkheadCsrEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(csrEdges),
-                Count = count,
-                OriginAup = double3.zero,
-                Seed = MockSeed
-            };
-            JobHandle handle = job.Schedule(count, 32, dependency);
-            TrackScheduledSimulationJob(handle);
-            _activeCount = math.max(_activeCount, count);
-            _mockGenerated = true;
-            return handle;
         }
 
         private static int CreatedLength<T>(NativeArray<T> buffer) where T : struct
@@ -1410,24 +1363,6 @@ namespace Hecton8.Construction
                 cursor.Length <= 0)
             {
                 return FailSimulationSchedule(dependency);
-            }
-
-            if (generateMockBulkheads && !_mockGenerated && _activeCount <= 0)
-            {
-                if (!Resolve(in _aupsHandle, BufferID.Shinobu220BulkheadAups, out NativeArray<double3> mockAups) ||
-                    !Resolve(in _planesHandle, BufferID.Shinobu220BulkheadPlanes, out NativeArray<BulkheadPlaneDTO> planes) ||
-                    !Resolve(in _csrEdgesHandle, BufferID.Shinobu220BulkheadCsrEdges, out NativeArray<BulkheadCsrEdgeDTO> mockCsrEdges) ||
-                    !mockAups.IsCreated ||
-                    !planes.IsCreated ||
-                    !mockCsrEdges.IsCreated ||
-                    mockAups.Length <= 0 ||
-                    planes.Length <= 0 ||
-                    mockCsrEdges.Length <= 0)
-                {
-                    return FailSimulationSchedule(dependency);
-                }
-
-                dependency = ScheduleMockDataIfRequired(states, mockAups, planes, mockCsrEdges, dependency);
             }
 
             int count = math.clamp(_activeCount, 0, CreatedLength(states));

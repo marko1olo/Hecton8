@@ -11,11 +11,9 @@ Use this before changing an assigned domain.
 
 This is not runtime proof.
 
-This does not replace `Actual Domains of Project.txt`.
-
 ## Use Rule
 
-1. Identify the assigned domain in `Docs/Actual Domains of Project.txt`.
+1. Identify the assigned domain from the current task owner, prompt, route card, or `Docs/PROJECT_ATLAS.md`.
 2. Read `PROJECT_RUNTIME_TOPOLOGY.md`.
 3. Read `SOURCE_SYSTEMS_REALITY_MAP.md`.
 4. Read `GLOBAL_AUTHORITY_BOUNDARIES.md`.

@@ -20,7 +20,7 @@ Domain owners decide what matters. Performance decides whether the chosen route 
 Every runtime feature must name:
 
 - owner phase;
-- expected cost in microseconds;
+- expected budget or estimate in microseconds, explicitly marked as estimate until profiled;
 - target hardware tier;
 - profiler marker;
 - update cadence;
@@ -28,7 +28,7 @@ Every runtime feature must name:
 - failure behavior;
 - proof artifact.
 
-Frame time must be treated as a shared resource. No system may assume spare time because it looks small in isolation. The compact hardware lane is mandatory, not optional.
+Frame time must be treated as a shared resource. No system may assume spare time because it looks small in isolation. The compact hardware lane is mandatory, not optional. Measured microseconds require a current profiler artifact; do not invent exact numbers for reports, rationale, or status files.
 
 ## Zero-GC Law
 

@@ -1367,13 +1367,13 @@ namespace Hecton8.UI
 
         private void SetCachedQualityPreset(int preset)
         {
-            int clampedPreset = Mathf.Clamp(preset, 0, SettingsManager.MaxContinuousQualityLevel);
+            int clampedPreset = Mathf.Clamp(preset, 0, SettingsManager.MaxGraphicsPreset);
             _cachedGraphicsPreset = clampedPreset;
 
             switch (clampedPreset)
             {
                 case 0:
-                    _cachedQualityLevel = 0;
+                    _cachedQualityLevel = 1;
                     _cachedShadowQuality = 1;
                     _cachedShadowDistance = 50f;
                     _cachedAntiAliasing = 1;
@@ -1384,7 +1384,7 @@ namespace Hecton8.UI
                     break;
 
                 case 1:
-                    _cachedQualityLevel = 1;
+                    _cachedQualityLevel = 3;
                     _cachedShadowQuality = 2;
                     _cachedShadowDistance = 100f;
                     _cachedAntiAliasing = 2;
@@ -1395,7 +1395,7 @@ namespace Hecton8.UI
                     break;
 
                 case 2:
-                    _cachedQualityLevel = 2;
+                    _cachedQualityLevel = 4;
                     _cachedShadowQuality = 2;
                     _cachedShadowDistance = 200f;
                     _cachedAntiAliasing = 2;
@@ -1722,8 +1722,8 @@ namespace Hecton8.UI
             if (!target.TryGetComponent(out TMP_Text label))
                 return;
 
-            LocalizedTMPAutoSizer.Configure(label, label.fontSize * 0.72f, label.fontSize, TextOverflowModes.Ellipsis, TextWrappingModes.NoWrap);
             SetTextIfChanged(label, ResolveLocalizedSpan(keyHash, fallback));
+            LocalizedTMPAutoSizer.Configure(label, label.fontSize * 0.72f, label.fontSize, TextOverflowModes.Ellipsis, TextWrappingModes.NoWrap);
         }
 
         private static void SetValueTextIfChanged(TMP_Text label, ReadOnlySpan<char> text, ref uint previousHash)
@@ -1877,10 +1877,13 @@ namespace Hecton8.UI
         {
             return qualityIndex switch
             {
-                0 => ResolveLocalizedSpan(SettingsPresetLowKeyHash, "LOW"),
-                1 => ResolveLocalizedSpan(SettingsPresetMediumKeyHash, "MEDIUM"),
-                2 => ResolveLocalizedSpan(SettingsPresetHighKeyHash, "HIGH"),
-                3 => ResolveLocalizedSpan(SettingsPresetUltraKeyHash, "ULTRA"),
+                0 => "SURVIVAL".AsSpan(),
+                1 => ResolveLocalizedSpan(SettingsPresetLowKeyHash, "LOW"),
+                2 => "LEAN".AsSpan(),
+                3 => ResolveLocalizedSpan(SettingsPresetMediumKeyHash, "MEDIUM"),
+                4 => ResolveLocalizedSpan(SettingsPresetHighKeyHash, "HIGH"),
+                5 => ResolveLocalizedSpan(SettingsPresetUltraKeyHash, "ULTRA"),
+                6 => "OVERKILL".AsSpan(),
                 _ => "--".AsSpan()
             };
         }
@@ -1989,6 +1992,68 @@ namespace Hecton8.UI
                 return;
             }
 
+            OnCancel();
+        }
+
+        public int ReadableCachedQualityLevel => Mathf.Clamp(_cachedQualityLevel, 0, SettingsManager.MaxContinuousQualityLevel);
+
+        public int ReadableCachedGraphicsPreset => Mathf.Clamp(_cachedGraphicsPreset, 0, SettingsManager.MaxGraphicsPreset);
+
+        public int ReadableCachedMenuVisualStyleIndex => MenuVisualStyleCatalog.ClampStyleIndex(_cachedMenuVisualStyleIndex);
+
+        public int ReadableCachedMenuVisualConceptIndex => MenuVisualConceptCatalog.ClampConceptIndex(_cachedMenuVisualConceptIndex);
+
+        public float ReadableCachedTextScale => SanitizeTextScale(_cachedTextScale);
+
+        public float ReadableCachedUiMotionScale => SanitizeUiMotionScale(_cachedUiMotionScale);
+
+        public void ReadableSelectGraphicsPreset(int preset)
+        {
+            SetCachedQualityPreset(preset);
+        }
+
+        public void ReadableQualityDecrease()
+        {
+            OnQualityDecrease();
+        }
+
+        public void ReadableQualityIncrease()
+        {
+            OnQualityIncrease();
+        }
+
+        public void ReadableMenuStyleDecrease()
+        {
+            OnMenuStyleDecrease();
+        }
+
+        public void ReadableMenuStyleIncrease()
+        {
+            OnMenuStyleIncrease();
+        }
+
+        public void ReadableMenuConceptDecrease()
+        {
+            OnMenuConceptDecrease();
+        }
+
+        public void ReadableMenuConceptIncrease()
+        {
+            OnMenuConceptIncrease();
+        }
+
+        public void ReadableResetDefaults()
+        {
+            OnResetDefaults();
+        }
+
+        public void ReadableApply()
+        {
+            OnApply();
+        }
+
+        public void ReadableCancel()
+        {
             OnCancel();
         }
 

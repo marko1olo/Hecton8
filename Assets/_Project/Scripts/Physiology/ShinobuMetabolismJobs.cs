@@ -32,6 +32,15 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return 0f;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, Epsilon));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveCadenceSeconds(float globalQualityWeight)
         {
             float q = math.saturate(SanitizeFinite(globalQualityWeight, 1f));
@@ -239,7 +248,9 @@ namespace Hecton8.Physiology
             state.EntityHashID = 0xA5000000u | (uint)index;
             state.Flags = ShinobuMetabolismFlags.MockEntity;
             state.Fatigue01 = 0f;
-            state._pad1 = 0u;
+            state.RealO2 = 1f;
+            state.AgonyTimeRemaining = 0f;
+            state.IsInHypoxia = 0;
 
             double3 entityAup = default;
             entityAup.x = ((int)(index % 100) - 50) * 12.5;
@@ -377,7 +388,9 @@ namespace Hecton8.Physiology
             state.EntityHashID = 0u;
             state.Flags = 0u;
             state.Fatigue01 = 0f;
-            state._pad1 = 0u;
+            state.RealO2 = 0f;
+            state.AgonyTimeRemaining = 0f;
+            state.IsInHypoxia = 0;
 
             EntityAups[index] = double3.zero;
             ExertionSpeedSq[index] = 0f;
@@ -450,7 +463,7 @@ namespace Hecton8.Physiology
                 HotspotLocalMeters,
                 math.all(math.isfinite(HotspotLocalMeters)));
             float radius = math.max(cellSize, ShinobuMetabolismJobMath.SanitizeFinite(HotspotRadiusMeters, cellSize * 6f));
-            float dist01 = math.saturate(math.length(local - hotspot) * math.rcp(radius));
+            float dist01 = math.saturate(ShinobuMetabolismJobMath.FastLengthFromSq(math.lengthsq(local - hotspot)) * math.rcp(radius));
             float falloff = 1f - dist01;
             falloff = falloff * falloff * (3f - 2f * falloff);
 
@@ -519,6 +532,9 @@ namespace Hecton8.Physiology
             if (state.EntityHashID == 0u)
             {
                 state.Flags = 0u;
+                state.RealO2 = 0f;
+                state.AgonyTimeRemaining = 0f;
+                state.IsInHypoxia = 0;
                 return;
             }
 
@@ -541,6 +557,12 @@ namespace Hecton8.Physiology
             float coreTemperature = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(state.CoreTemperature, rule.RecoveryTemperatureCelsius), 18f, 45f);
             float previousCoreTemperature = coreTemperature;
             float toxicity = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(state.Toxicity, 0f), 0f, 8f);
+            float rawRealO2 = state.RealO2;
+            float rawAgonyTimeRemaining = state.AgonyTimeRemaining;
+            bool oxygenBridgeInvalid = !math.isfinite(rawRealO2) || !math.isfinite(rawAgonyTimeRemaining);
+            float realO2 = math.saturate(ShinobuMetabolismJobMath.SanitizeFinite(rawRealO2, 1f));
+            float agonyTimeRemaining = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(rawAgonyTimeRemaining, 0f));
+            byte isInHypoxia = (byte)math.select(0, 1, state.IsInHypoxia != 0 && realO2 <= 0.0001f);
             float speedSq = ExertionSpeedSq != null ? math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(ExertionSpeedSq[index], 0f)) : 0f;
             float ambient = SampleAmbientTemperature(entityAup, tuning.AmbientFallbackTemperatureCelsius, q, ref flags);
 
@@ -581,6 +603,9 @@ namespace Hecton8.Physiology
                 flags |= ShinobuMetabolismFlags.InvalidMath | ShinobuMetabolismFlags.NanDetected;
             }
 
+            if (oxygenBridgeInvalid)
+                flags |= ShinobuMetabolismFlags.InvalidMath | ShinobuMetabolismFlags.NanDetected;
+
             if (calories <= 0.0001f)
                 flags |= ShinobuMetabolismFlags.Starving;
             if (hydration <= 0.0001f)
@@ -595,6 +620,9 @@ namespace Hecton8.Physiology
             float fatigue01 = math.max(calorieFatigue01, hydrationFatigue01);
             if (fatigue01 > 0.0001f)
                 flags |= ShinobuMetabolismFlags.Fatigue;
+            flags = isInHypoxia != 0
+                ? flags | ShinobuMetabolismFlags.Hypoxia
+                : flags & ~ShinobuMetabolismFlags.Hypoxia;
 
             state.Calories = calories;
             state.Hydration = hydration;
@@ -602,7 +630,9 @@ namespace Hecton8.Physiology
             state.Toxicity = toxicity;
             state.Flags = flags;
             state.Fatigue01 = math.saturate(fatigue01);
-            state._pad1 = 0u;
+            state.RealO2 = realO2;
+            state.AgonyTimeRemaining = agonyTimeRemaining;
+            state.IsInHypoxia = isInHypoxia;
 
             if (index == 0)
                 WriteDetailTelemetry(entityAup, state.EntityHashID, flags, ambient, thermalK, previousCoreTemperature, coreTemperature, calorieDrain, suitProfile.ProfileHash, dt);
@@ -745,7 +775,7 @@ namespace Hecton8.Physiology
             }
 
             float cellSize = math.max(0.001f, ThermalCellSizeMeters);
-            float3 grid = local / cellSize;
+            float3 grid = local * math.rcp(cellSize);
             if (!math.all(math.isfinite(grid)) ||
                 grid.x < 0f || grid.y < 0f || grid.z < 0f ||
                 grid.x >= ThermalGridResolution.x ||
@@ -840,7 +870,7 @@ namespace Hecton8.Physiology
             }
 
             float cellSize = math.max(0.001f, ChemicalCellSizeMeters);
-            float3 grid = local / cellSize;
+            float3 grid = local * math.rcp(cellSize);
             if (!math.all(math.isfinite(grid)) ||
                 grid.x < 0f || grid.y < 0f || grid.z < 0f ||
                 grid.x >= ChemicalGridResolution.x ||
@@ -1016,7 +1046,8 @@ namespace Hecton8.Physiology
                                !math.isfinite(state.Hydration) ||
                                !math.isfinite(state.CoreTemperature) ||
                                !math.isfinite(state.Toxicity) ||
-                               !math.isfinite(math.asfloat(state._pad0));
+                               !math.isfinite(state.RealO2) ||
+                               !math.isfinite(state.AgonyTimeRemaining);
                 if (invalid)
                 {
                     flags |= ShinobuMetabolismFlags.NanDetected | ShinobuMetabolismFlags.InvalidMath;
@@ -1044,7 +1075,11 @@ namespace Hecton8.Physiology
                 hash *= 1099511628211UL;
                 hash ^= state.Flags;
                 hash *= 1099511628211UL;
-                hash ^= state._pad0;
+                hash ^= math.asuint(state.RealO2);
+                hash *= 1099511628211UL;
+                hash ^= math.asuint(state.AgonyTimeRemaining);
+                hash *= 1099511628211UL;
+                hash ^= state.IsInHypoxia;
                 hash *= 1099511628211UL;
             }
 

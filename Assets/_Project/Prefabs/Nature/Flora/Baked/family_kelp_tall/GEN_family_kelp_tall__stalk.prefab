@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 330873972081761550}
   - component: {fileID: 6279489077841361674}
+  - component: {fileID: 2392853473251103170}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__stalk
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9068265321113741935}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.020450711, y: 2.5271459, z: -0.013808906}
-  m_Size: 5.0542917
+  m_LocalReferencePoint: {x: -0.008479297, y: 2.631945, z: 0.027497888}
+  m_Size: 5.26389
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 6746147232262010288}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &2392853473251103170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9068265321113741935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: db9e0784affd9ea43b41387c757b3cfa, type: 2}

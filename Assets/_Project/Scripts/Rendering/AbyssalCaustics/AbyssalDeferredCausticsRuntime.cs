@@ -16,7 +16,7 @@ namespace Hecton8.Rendering
     public sealed unsafe class AbyssalDeferredCausticsRuntime : MonoBehaviour, ICausticsService, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
-        private const string DumpPath = "Docs/AgentLogs/Dump_13KRA.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_1719.bin";
         private const float CausticsMinimumWavelength = 0.25f;
 
         private static AbyssalDeferredCausticsRuntime s_runtimeInstance;
@@ -150,8 +150,58 @@ namespace Hecton8.Rendering
                 return;
 
             CausticsParametersDTO telemetryParameters = default;
-            CausticsInputSnapshotDTO telemetryInputSnapshot = default;
             bool recordTelemetry = false;
+            double3 cameraAupLocal = ResolveCameraAupLocalOffset();
+            float quality = ResolveGlobalQualityWeight01();
+            NativeArray<float4> surfaceSwell = default;
+            bool hasTuning = TryResolveVaultBuffer(
+                in _tuningHandle,
+                BufferID.ShinobuCausticsTuning,
+                1,
+                out NativeArray<CausticsTuningDTO> tuning);
+            bool hasProfiles = TryResolveVaultBuffer(
+                in _profilesHandle,
+                BufferID.ShinobuCausticsProfiles,
+                AbyssalCausticsConstants.ProfileCapacity,
+                out NativeArray<CausticsLightingProfileDTO> profiles);
+            if (!hasTuning || !hasProfiles)
+            {
+                _vaultStateReady = false;
+                return;
+            }
+
+            bool hasWeatherSnapshot = TryResolveWeatherSnapshot(out WeatherRuntimeSnapshot weatherSnapshot);
+            TryResolveExternalVaultBuffer(
+                in _surfaceSwellInputHandle,
+                BufferID.ShinobuOceanSurfaceSwell,
+                1,
+                out surfaceSwell);
+
+            CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
+                tuning,
+                hasWeatherSnapshot,
+                weatherSnapshot,
+                surfaceSwell,
+                profiles,
+                quality,
+                _presentationTimeSeconds);
+
+            CalculateCausticParametersJob job = default;
+            job.Telemetry = null;
+            job.TelemetryLength = 0;
+            job.TelemetryCursor = null;
+            job.TelemetryCursorLength = 0;
+            job.InputSnapshot = inputSnapshot;
+            job.CameraAupLocalOffset = cameraAupLocal;
+            job.TimeSeconds = _presentationTimeSeconds;
+            job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
+            job.FrameIndex = _presentationFrameIndex;
+            if (!TryCalculatePendingCausticsParameters(job, out CausticsParametersDTO calculatedParameters))
+            {
+                _vaultStateReady = false;
+                return;
+            }
+
             bool parametersLocked = false;
             try
             {
@@ -167,60 +217,9 @@ namespace Hecton8.Rendering
 
                 parametersLocked = true;
 
-                double3 cameraAupLocal = ResolveCameraAupLocalOffset();
-                float quality = ResolveGlobalQualityWeight01();
-                NativeArray<float4> surfaceSwell = default;
-                bool hasTuning = TryResolveVaultBuffer(
-                    in _tuningHandle,
-                    BufferID.ShinobuCausticsTuning,
-                    1,
-                    out NativeArray<CausticsTuningDTO> tuning);
-                bool hasProfiles = TryResolveVaultBuffer(
-                    in _profilesHandle,
-                    BufferID.ShinobuCausticsProfiles,
-                    AbyssalCausticsConstants.ProfileCapacity,
-                    out NativeArray<CausticsLightingProfileDTO> profiles);
-                if (!hasTuning || !hasProfiles)
+                if (PublishCalculatedCausticsParameters(in calculatedParameters, parameters))
                 {
-                    _vaultStateReady = false;
-                    return;
-                }
-
-                bool hasWeatherSnapshot = TryResolveWeatherSnapshot(out WeatherRuntimeSnapshot weatherSnapshot);
-                TryResolveExternalVaultBuffer(
-                    in _surfaceSwellInputHandle,
-                    BufferID.ShinobuOceanSurfaceSwell,
-                    1,
-                    out surfaceSwell);
-
-                CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
-                    tuning,
-                    hasWeatherSnapshot,
-                    weatherSnapshot,
-                    surfaceSwell,
-                    profiles,
-                    quality,
-                    _presentationTimeSeconds);
-
-                CalculateCausticParametersJob job = default;
-                job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
-                job.ParameterLength = parameters.Length;
-                job.Telemetry = null;
-                job.TelemetryLength = 0;
-                job.TelemetryCursor = null;
-                job.TelemetryCursorLength = 0;
-                job.InputSnapshot = inputSnapshot;
-                job.CameraAupLocalOffset = cameraAupLocal;
-                job.TimeSeconds = _presentationTimeSeconds;
-                job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
-                job.FrameIndex = _presentationFrameIndex;
-                job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
-                if (RunPendingCausticsKernel(job, parameters) &&
-                    parameters.IsCreated &&
-                    parameters.Length > AbyssalCausticsConstants.ActiveParameterIndex)
-                {
-                    telemetryParameters = parameters[AbyssalCausticsConstants.ActiveParameterIndex];
-                    telemetryInputSnapshot = inputSnapshot;
+                    telemetryParameters = calculatedParameters;
                     recordTelemetry = true;
                 }
             }
@@ -231,7 +230,7 @@ namespace Hecton8.Rendering
             }
 
             if (recordTelemetry)
-                RecordCausticsTelemetryOneLock(in telemetryParameters, in telemetryInputSnapshot);
+                RecordCausticsTelemetryOneLock(in telemetryParameters, in inputSnapshot);
         }
 
         public void LateFrameTick()
@@ -835,6 +834,32 @@ namespace Hecton8.Rendering
 
         private void RunMockLightingKernel()
         {
+            TryResolveVaultBuffer(
+                in _tuningHandle,
+                BufferID.ShinobuCausticsTuning,
+                1,
+                out NativeArray<CausticsTuningDTO> tuning);
+            NativeArray<float4> emptySurfaceSwell = default;
+            NativeArray<CausticsLightingProfileDTO> emptyProfiles = default;
+            CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
+                tuning,
+                false,
+                default,
+                emptySurfaceSwell,
+                emptyProfiles,
+                ResolveGlobalQualityWeight01(),
+                _presentationTimeSeconds);
+            double3 cameraAupLocal = ResolveCameraAupLocalOffset();
+
+            GenerateMockCausticLightingJob job = default;
+            job.InputSnapshot = inputSnapshot;
+            job.CameraAupLocalOffset = cameraAupLocal;
+            job.TimeSeconds = _presentationTimeSeconds;
+            job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
+            job.FrameIndex = _presentationFrameIndex;
+            if (!TryCalculatePendingCausticsParameters(job, out CausticsParametersDTO calculatedParameters))
+                return;
+
             if (!TryAcquireVaultWriteBuffer(
                     in _parametersHandle,
                     BufferID.ShinobuCausticsParameters,
@@ -844,32 +869,7 @@ namespace Hecton8.Rendering
 
             try
             {
-                TryResolveVaultBuffer(
-                    in _tuningHandle,
-                    BufferID.ShinobuCausticsTuning,
-                    1,
-                    out NativeArray<CausticsTuningDTO> tuning);
-                NativeArray<float4> emptySurfaceSwell = default;
-                NativeArray<CausticsLightingProfileDTO> emptyProfiles = default;
-                CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
-                    tuning,
-                    false,
-                    default,
-                    emptySurfaceSwell,
-                    emptyProfiles,
-                    ResolveGlobalQualityWeight01(),
-                    _presentationTimeSeconds);
-
-                GenerateMockCausticLightingJob job = default;
-                job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
-                job.ParameterLength = parameters.Length;
-                job.InputSnapshot = inputSnapshot;
-                job.CameraAupLocalOffset = ResolveCameraAupLocalOffset();
-                job.TimeSeconds = _presentationTimeSeconds;
-                job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
-                job.FrameIndex = _presentationFrameIndex;
-                job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
-                RunPendingCausticsKernel(job, parameters);
+                PublishCalculatedCausticsParameters(in calculatedParameters, parameters);
             }
             finally
             {
@@ -880,6 +880,10 @@ namespace Hecton8.Rendering
         private bool TrySetTuningInternal(float chromaticDispersion, float noiseScale, float flowSpeedMultiplier, float maxDepthMeters)
         {
             EnsureVaultState();
+            float safeNoiseScale = math.max(0.005f, noiseScale);
+            float safeFlowSpeedMultiplier = math.max(0f, flowSpeedMultiplier);
+            float safeMaxDepthMeters = math.max(1f, maxDepthMeters);
+            float safeChromaticDispersion = math.saturate(chromaticDispersion);
             if (!TryAcquireVaultWriteBuffer(
                     in _tuningHandle,
                     BufferID.ShinobuCausticsTuning,
@@ -890,10 +894,10 @@ namespace Hecton8.Rendering
             try
             {
                 CausticsTuningDTO tuning = tuningArray[0];
-                tuning.ScaleFlowDepthIntensity.x = math.max(0.005f, noiseScale);
-                tuning.ScaleFlowDepthIntensity.y = math.max(0f, flowSpeedMultiplier);
-                tuning.ScaleFlowDepthIntensity.z = math.max(1f, maxDepthMeters);
-                tuning.DispersionSdfTileProfile.x = math.saturate(chromaticDispersion);
+                tuning.ScaleFlowDepthIntensity.x = safeNoiseScale;
+                tuning.ScaleFlowDepthIntensity.y = safeFlowSpeedMultiplier;
+                tuning.ScaleFlowDepthIntensity.z = safeMaxDepthMeters;
+                tuning.DispersionSdfTileProfile.x = safeChromaticDispersion;
                 tuningArray[0] = tuning;
                 _pendingGpuUpload = false;
             }
@@ -958,38 +962,56 @@ namespace Hecton8.Rendering
             }
         }
 
-        private bool PublishPendingCausticsParameters(NativeArray<CausticsParametersDTO> parameters)
+        private bool PublishCalculatedCausticsParameters(
+            in CausticsParametersDTO calculatedParameters,
+            NativeArray<CausticsParametersDTO> parameters)
         {
             if (!parameters.IsCreated || parameters.Length < AbyssalCausticsConstants.ParameterCapacity)
                 return false;
 
-            parameters[AbyssalCausticsConstants.ActiveParameterIndex] = parameters[AbyssalCausticsConstants.PendingParameterIndex];
-            CausticsParametersDTO activeParameters = parameters[AbyssalCausticsConstants.ActiveParameterIndex];
-            CheckFaultsAndDump(in activeParameters);
+            parameters[AbyssalCausticsConstants.PendingParameterIndex] = calculatedParameters;
+            parameters[AbyssalCausticsConstants.ActiveParameterIndex] = calculatedParameters;
             _pendingGpuUpload = true;
             return true;
         }
 
-        private bool RunPendingCausticsKernel(
+        private bool TryCalculatePendingCausticsParameters(
             GenerateMockCausticLightingJob job,
-            NativeArray<CausticsParametersDTO> parameters)
+            out CausticsParametersDTO parameters)
         {
+            parameters = default;
+            // Local scratch keeps caustic math outside DataVault write locks; callers copy one DTO under lock.
+            CausticsParametersDTO* scratch = stackalloc CausticsParametersDTO[AbyssalCausticsConstants.ParameterCapacity];
+            job.Parameters = scratch;
+            job.ParameterLength = AbyssalCausticsConstants.ParameterCapacity;
+            job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
             job.Execute();
-            return PublishPendingCausticsParameters(parameters);
+            parameters = scratch[AbyssalCausticsConstants.PendingParameterIndex];
+            CheckFaultsAndDump(in parameters);
+            return true;
         }
 
-        private bool RunPendingCausticsKernel(
+        private bool TryCalculatePendingCausticsParameters(
             CalculateCausticParametersJob job,
-            NativeArray<CausticsParametersDTO> parameters)
+            out CausticsParametersDTO parameters)
         {
+            parameters = default;
+            // Local scratch keeps caustic math outside DataVault write locks; callers copy one DTO under lock.
+            CausticsParametersDTO* scratch = stackalloc CausticsParametersDTO[AbyssalCausticsConstants.ParameterCapacity];
+            job.Parameters = scratch;
+            job.ParameterLength = AbyssalCausticsConstants.ParameterCapacity;
+            job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
             job.Execute();
-            return PublishPendingCausticsParameters(parameters);
+            parameters = scratch[AbyssalCausticsConstants.PendingParameterIndex];
+            CheckFaultsAndDump(in parameters);
+            return true;
         }
 
         private void RecordCausticsTelemetryOneLock(
             in CausticsParametersDTO parameters,
             in CausticsInputSnapshotDTO inputSnapshot)
         {
+            CausticsTelemetryEntry entry = BuildCausticsTelemetryEntry(in parameters, in inputSnapshot);
             if (!TryAcquireVaultWriteBuffer(
                     in _telemetryHandle,
                     BufferID.ShinobuCausticsTelemetryRing,
@@ -1011,7 +1033,7 @@ namespace Hecton8.Rendering
                 }
 
                 int cursor = WrapTelemetryCursor(_telemetryWriteCursor, telemetry.Length);
-                telemetry[cursor] = BuildCausticsTelemetryEntry(in parameters, in inputSnapshot);
+                telemetry[cursor] = entry;
                 nextCursor = cursor + 1;
                 if (nextCursor >= telemetry.Length)
                     nextCursor = 0;
@@ -2000,5 +2022,10 @@ namespace Hecton8.Rendering
         public static readonly int ConstantBufferId = Shader.PropertyToID("HectonAbyssalCaustics");
         public static readonly int SourceTextureId = Shader.PropertyToID("_HectonDeferredCausticsSource");
         public static readonly int DepthTextureId = Shader.PropertyToID("_HectonDeferredCausticsDepth");
+        public static readonly int BakedAtlasTextureId = Shader.PropertyToID("_HectonBakedCausticAtlas");
+        public static readonly int BakedAtlasParamsId = Shader.PropertyToID("_HectonBakedCausticAtlasParams");
+        public static readonly int BakedAtlasTexelParamsId = Shader.PropertyToID("_HectonBakedCausticAtlasTexelParams");
+        public static readonly int BakedWaterlineMaskId = Shader.PropertyToID("_HectonBakedCausticWaterlineMask");
+        public static readonly int BakedWaterlineParamsId = Shader.PropertyToID("_HectonBakedCausticWaterlineParams");
     }
 }

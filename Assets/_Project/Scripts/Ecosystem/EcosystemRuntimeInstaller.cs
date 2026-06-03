@@ -18,6 +18,7 @@ namespace Hecton8.Ecosystem
         {
             GameObject runtimeRoot = null;
             WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for ecosystem systems per gameplay scene - owner: EcosystemRuntimeInstaller
 
@@ -32,6 +33,9 @@ namespace Hecton8.Ecosystem
 
             if (!runtimeRoot.TryGetComponent<EcosystemPopulationBalancer>(out _))
                 runtimeRoot.AddComponent<EcosystemPopulationBalancer>();
+#else
+            _ = runtimeRoot;
+#endif
 
             ShinobuEcosystemBalancer.EnsureRuntimeService();
         }

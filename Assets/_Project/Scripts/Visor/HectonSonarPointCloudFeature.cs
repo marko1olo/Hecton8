@@ -7,10 +7,6 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Visor
 {
     /// <summary>
@@ -18,15 +14,12 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonSonarPointCloudFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable
     {
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/SonarGridOverlay.shader";
-#endif
-
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Fullscreen sonar point-cloud shader. Uses pass 0 for history accumulation and pass 1 for composite.")]
-            public Shader shader = null;
+            [UnityEngine.Serialization.FormerlySerializedAs("shader")]
+            [Tooltip("Authored fullscreen sonar point-cloud material. Uses pass 0 for screen history, pass 1 for world history, and pass 2 for composite.")]
+            public Material material = null;
 
             [Tooltip("Legacy fullscreen sonar history/composite path. Active sonar geo illumination is now shader-global geometry emission.")]
             public bool enableFullscreenSonarHistory = false;
@@ -69,9 +62,20 @@ namespace Hecton8.Visor
             private sealed class SonarFullscreenPassData
             {
                 internal Material material;
+                internal MaterialPropertyBlock properties;
                 internal TextureHandle source;
                 internal TextureHandle history;
                 internal TextureHandle worldHistory;
+                internal Vector4 worldMemoryRect;
+                internal Vector4 worldScrollUvOffset;
+                internal Vector4 worldOriginOffset;
+                internal float persistenceSeconds;
+                internal float pointDensity;
+                internal float pointBoost;
+                internal float hasHistory;
+                internal float worldPersistenceSeconds;
+                internal float worldPointRadius;
+                internal float hasWorldHistory;
                 internal int shaderPassIndex;
                 internal bool bindHistory;
                 internal bool bindWorldHistory;
@@ -80,6 +84,7 @@ namespace Hecton8.Visor
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Sonar Point Cloud");
             private FeatureSettings _settings;
             private Material _material;
+            private MaterialPropertyBlock _drawProperties; // COLD ALLOC: per-feature sonar fullscreen draw payload - owner: HectonSonarPointCloudFeature
             private RTHandle _historyRead;
             private RTHandle _historyWrite;
             private RTHandle _worldHistoryRead;
@@ -115,6 +120,7 @@ namespace Hecton8.Visor
                 _material = material;
                 _floatingOrigin = floatingOrigin;
                 _sonarRevealExpireTime = sonarRevealExpireTime;
+                EnsureDrawPropertiesCold();
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
@@ -144,6 +150,17 @@ namespace Hecton8.Visor
                 _requestedWorldResolution = 0;
                 _resourceRequestPending = false;
                 _floatingOrigin = null;
+                _material = null;
+                if (_drawProperties != null)
+                    _drawProperties.Clear();
+            }
+
+            private void EnsureDrawPropertiesCold()
+            {
+                if (_drawProperties != null)
+                    return;
+
+                _drawProperties = new MaterialPropertyBlock(); // COLD ALLOC: per-feature sonar fullscreen draw payload - owner: HectonSonarPointCloudFeature
             }
 
             public bool HasHistory =>
@@ -203,7 +220,8 @@ namespace Hecton8.Visor
                     _worldHistoryRetainUntilTime = math.max(_worldHistoryRetainUntilTime, currentTime + math.max(0.05f, _settings.worldPersistenceSeconds));
                 }
 
-                UpdateMaterialParameters(_material, _settings, screenHistoryAlive, worldHistoryAlive, _worldMemoryRect, _worldScrollUvOffset, floatingOriginOffset);
+                if (_drawProperties == null)
+                    return;
 
                 RecordFullscreenPass(
                     renderGraph,
@@ -213,6 +231,13 @@ namespace Hecton8.Visor
                     default,
                     historyWriteTexture,
                     _material,
+                    _drawProperties,
+                    _settings,
+                    screenHistoryAlive,
+                    worldHistoryAlive,
+                    _worldMemoryRect,
+                    _worldScrollUvOffset,
+                    floatingOriginOffset,
                     0,
                     true,
                     false);
@@ -224,6 +249,13 @@ namespace Hecton8.Visor
                     worldHistoryReadTexture,
                     worldHistoryWriteTexture,
                     _material,
+                    _drawProperties,
+                    _settings,
+                    screenHistoryAlive,
+                    worldHistoryAlive,
+                    _worldMemoryRect,
+                    _worldScrollUvOffset,
+                    floatingOriginOffset,
                     1,
                     false,
                     true);
@@ -235,6 +267,13 @@ namespace Hecton8.Visor
                     worldHistoryWriteTexture,
                     compositeTexture,
                     _material,
+                    _drawProperties,
+                    _settings,
+                    screenHistoryAlive,
+                    worldHistoryAlive,
+                    _worldMemoryRect,
+                    _worldScrollUvOffset,
+                    floatingOriginOffset,
                     2,
                     true,
                     true);
@@ -299,6 +338,13 @@ namespace Hecton8.Visor
                 TextureHandle worldHistory,
                 TextureHandle destination,
                 Material material,
+                MaterialPropertyBlock properties,
+                FeatureSettings settings,
+                bool historyValid,
+                bool worldHistoryValid,
+                Vector4 worldMemoryRect,
+                Vector2 worldScrollUvOffset,
+                Vector3 floatingOriginOffset,
                 int shaderPassIndex,
                 bool bindHistory,
                 bool bindWorldHistory)
@@ -309,9 +355,20 @@ namespace Hecton8.Visor
                            _profilingSampler))
                 {
                     passData.material = material;
+                    passData.properties = properties;
                     passData.source = source;
                     passData.history = history;
                     passData.worldHistory = worldHistory;
+                    passData.worldMemoryRect = worldMemoryRect;
+                    passData.worldScrollUvOffset = new Vector4(worldScrollUvOffset.x, worldScrollUvOffset.y, 0f, 0f);
+                    passData.worldOriginOffset = new Vector4(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z, 0f);
+                    passData.persistenceSeconds = math.max(0.05f, settings.persistenceSeconds);
+                    passData.pointDensity = math.max(0.05f, settings.pointDensity);
+                    passData.pointBoost = math.max(0f, settings.pointBoost);
+                    passData.hasHistory = historyValid ? 1f : 0f;
+                    passData.worldPersistenceSeconds = math.max(0.05f, settings.worldPersistenceSeconds);
+                    passData.worldPointRadius = math.max(0.05f, settings.worldPointRadius);
+                    passData.hasWorldHistory = worldHistoryValid ? 1f : 0f;
                     passData.shaderPassIndex = shaderPassIndex;
                     passData.bindHistory = bindHistory;
                     passData.bindWorldHistory = bindWorldHistory;
@@ -342,7 +399,8 @@ namespace Hecton8.Visor
                             context.cmd.SetGlobalTexture(ShaderConstants.WorldPointCloudTextureId, data.worldHistory);
                         }
 
-                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
+                        UpdateMaterialParameters(data.properties, data);
+                        CoreUtils.DrawFullScreen(context.cmd, data.material, data.properties, data.shaderPassIndex);
                     });
                 }
             }
@@ -519,18 +577,19 @@ namespace Hecton8.Visor
                 _worldHistoryValid = true;
             }
 
-            private static void UpdateMaterialParameters(Material material, FeatureSettings settings, bool historyValid, bool worldHistoryValid, Vector4 worldMemoryRect, Vector2 worldScrollUvOffset, Vector3 floatingOriginOffset)
+            private static void UpdateMaterialParameters(MaterialPropertyBlock properties, SonarFullscreenPassData data)
             {
-                material.SetFloat(ShaderConstants.PersistenceSecondsId, math.max(0.05f, settings.persistenceSeconds));
-                material.SetFloat(ShaderConstants.PointDensityId, math.max(0.05f, settings.pointDensity));
-                material.SetFloat(ShaderConstants.PointBoostId, math.max(0f, settings.pointBoost));
-                material.SetFloat(ShaderConstants.HasHistoryId, historyValid ? 1f : 0f);
-                material.SetFloat(ShaderConstants.WorldPersistenceSecondsId, math.max(0.05f, settings.worldPersistenceSeconds));
-                material.SetFloat(ShaderConstants.WorldPointRadiusId, math.max(0.05f, settings.worldPointRadius));
-                material.SetFloat(ShaderConstants.HasWorldHistoryId, worldHistoryValid ? 1f : 0f);
-                material.SetVector(ShaderConstants.WorldMemoryRectId, worldMemoryRect);
-                material.SetVector(ShaderConstants.WorldScrollUvOffsetId, new Vector4(worldScrollUvOffset.x, worldScrollUvOffset.y, 0f, 0f));
-                material.SetVector(ShaderConstants.WorldOriginOffsetId, new Vector4(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z, 0f));
+                properties.Clear();
+                properties.SetFloat(ShaderConstants.PersistenceSecondsId, data.persistenceSeconds);
+                properties.SetFloat(ShaderConstants.PointDensityId, data.pointDensity);
+                properties.SetFloat(ShaderConstants.PointBoostId, data.pointBoost);
+                properties.SetFloat(ShaderConstants.HasHistoryId, data.hasHistory);
+                properties.SetFloat(ShaderConstants.WorldPersistenceSecondsId, data.worldPersistenceSeconds);
+                properties.SetFloat(ShaderConstants.WorldPointRadiusId, data.worldPointRadius);
+                properties.SetFloat(ShaderConstants.HasWorldHistoryId, data.hasWorldHistory);
+                properties.SetVector(ShaderConstants.WorldMemoryRectId, data.worldMemoryRect);
+                properties.SetVector(ShaderConstants.WorldScrollUvOffsetId, data.worldScrollUvOffset);
+                properties.SetVector(ShaderConstants.WorldOriginOffsetId, data.worldOriginOffset);
             }
         }
 
@@ -557,7 +616,6 @@ namespace Hecton8.Visor
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private SonarPointCloudPass _pass;
-        private Material _material;
         private HectonFloatingOrigin _cachedFloatingOrigin;
         private float _cachedSonarRevealExpireTime;
         private bool _hotSwapRegistered;
@@ -575,21 +633,9 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
-
-            Shader shader = settings != null ? settings.shader : null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Hidden/Hecton8/SonarGridOverlay");
-#endif
-
             if (_pass == null)
                 _pass = new SonarPointCloudPass();
 
-            RecreateMaterial(ref _material, shader);
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
@@ -600,7 +646,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (settings == null || _pass == null || _material == null)
+            if (settings == null || _pass == null || settings.material == null)
                 return;
 
             CameraType cameraType = renderingData.cameraData.cameraType;
@@ -617,7 +663,7 @@ namespace Hecton8.Visor
             if (!_pass.HasHistory && _cachedSonarRevealExpireTime <= 0f)
                 return;
 
-            _pass.Setup(settings, _material, _cachedFloatingOrigin, _cachedSonarRevealExpireTime);
+            _pass.Setup(settings, settings.material, _cachedFloatingOrigin, _cachedSonarRevealExpireTime);
             renderer.EnqueuePass(_pass);
         }
 
@@ -625,8 +671,6 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
-            CoreUtils.Destroy(_material);
-            _material = null;
             _cachedFloatingOrigin = null;
             _cachedSonarRevealExpireTime = 0f;
             TryUnregisterSlowTickable();
@@ -753,20 +797,5 @@ namespace Hecton8.Visor
             _lateFrameRegistered = false;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                CoreUtils.Destroy(material);
-                material = null;
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
     }
 }

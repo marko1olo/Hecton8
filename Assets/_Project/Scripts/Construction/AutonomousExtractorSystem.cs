@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Scavenging;
@@ -21,14 +22,17 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4041)]
-    public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleCapacity = 256;
         private const float SlowTickDeltaSeconds = 0.5f;
+        private const int MaxPendingCompletionFrames = 4;
         private const uint ExtractorCapacityGrowthWarningHash = 0xA8754B21u;
         private const uint ExtractorCapacityGrowthContextHash = 0xE71C92D4u;
         private const uint DuplicateRuntimeWarningHash = 0xB44D12E9u;
         private const uint DuplicateRuntimeContextHash = 0xAD50966Cu;
+        private const uint ExtractorPendingJobStallWarningHash = 0x41D71703u;
+        private const uint ExtractorPendingJobStallContextHash = 0x1B26C087u;
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct ExtractorJobInput
@@ -184,12 +188,17 @@ namespace Hecton8.Construction
         private JobHandle _scheduledJobHandle;
         private bool _scheduledJobActive;
         private bool _slowTickRegistered;
+        private bool _postFixedRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private IPersistentDroppedItemRegistry _persistentDroppedItems;
         private int _scheduledModuleCount;
+        private int _scheduledJobAgeFrames;
+        private bool _dropScheduledJobReadback;
+        private int _lastPendingJobWarningFrame = -1;
         private int _moduleCount;
         private static AutonomousExtractorSystem s_activeRuntime;
+        private static int s_signalPushDropCount;
 
         internal IPersistentDroppedItemRegistry PersistentDroppedItems => _persistentDroppedItems;
 
@@ -206,6 +215,7 @@ namespace Hecton8.Construction
                 return;
 
             TryRegisterHotSwapListener();
+            EnsureExtractorSignalLanes();
             if (!EnsureExtractorNativeStateCold())
                 return;
 
@@ -292,6 +302,8 @@ namespace Hecton8.Construction
             if (!_slowTickRegistered)
                 _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
+            if (!_postFixedRegistered)
+                _postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterRuntimeLoops()
@@ -299,6 +311,7 @@ namespace Hecton8.Construction
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
             {
                 _slowTickRegistered = false;
+                _postFixedRegistered = false;
                 return;
             }
 
@@ -308,6 +321,11 @@ namespace Hecton8.Construction
                 _slowTickRegistered = false;
             }
 
+            if (_postFixedRegistered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                _postFixedRegistered = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -397,6 +415,35 @@ namespace Hecton8.Construction
             _scheduledModuleCount = moduleCount;
             _scheduledJobHandle = job.Schedule(moduleCount, 8);
             _scheduledJobActive = true;
+            _scheduledJobAgeFrames = 0;
+            _dropScheduledJobReadback = false;
+        }
+
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            if (!_scheduledJobActive)
+                return;
+
+            _scheduledJobAgeFrames++;
+            if (TryCompleteScheduledExtractorJob(forceComplete: false))
+                return;
+
+            if (_scheduledJobAgeFrames < MaxPendingCompletionFrames)
+                return;
+
+            if (_dropScheduledJobReadback)
+                return;
+
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastPendingJobWarningFrame == frame)
+                return;
+
+            _lastPendingJobWarningFrame = frame;
+            _dropScheduledJobReadback = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ExtractorPendingJobStallWarningHash,
+                ExtractorPendingJobStallContextHash,
+                _scheduledModuleCount);
         }
 
         private bool TryCompleteScheduledExtractorJob(bool forceComplete)
@@ -406,6 +453,15 @@ namespace Hecton8.Construction
 
             if (!DispatcherJobSwap.TryComplete(ref _scheduledJobHandle, forceComplete))
                 return false;
+
+            if (_dropScheduledJobReadback && !forceComplete)
+            {
+                _scheduledJobActive = false;
+                _scheduledModuleCount = 0;
+                _scheduledJobAgeFrames = 0;
+                _dropScheduledJobReadback = false;
+                return true;
+            }
 
             if (!TryReadLockedExtractorBuffers(
                     out _,
@@ -417,6 +473,8 @@ namespace Hecton8.Construction
             {
                 _scheduledJobActive = false;
                 _scheduledModuleCount = 0;
+                _scheduledJobAgeFrames = 0;
+                _dropScheduledJobReadback = false;
                 return false;
             }
 
@@ -462,6 +520,8 @@ namespace Hecton8.Construction
 
             _scheduledJobActive = false;
             _scheduledModuleCount = 0;
+            _scheduledJobAgeFrames = 0;
+            _dropScheduledJobReadback = false;
             return true;
         }
 
@@ -485,6 +545,7 @@ namespace Hecton8.Construction
 
             if (_moduleCount >= _modules.Length)
             {
+                PublishExtractorCapacityReached(module);
                 GlobalTelemetryBus.PublishPerformanceWarning(
                     ExtractorCapacityGrowthWarningHash,
                     ExtractorCapacityGrowthContextHash,
@@ -497,6 +558,30 @@ namespace Hecton8.Construction
             _moduleCount++;
             module.SetRuntimeIndex(newIndex);
             return newIndex;
+        }
+
+        private static void EnsureExtractorSignalLanes()
+        {
+            SignalBus<ExtractorCapacityReachedSignal>.Configure(
+                ExtractorCapacityReachedSignal.ExpectedCapacity,
+                maxFrameSignals: ExtractorCapacityReachedSignal.MaxFrameSignals,
+                lowTierFrameSignals: ExtractorCapacityReachedSignal.LowTierFrameSignals,
+                laneHash: ExtractorCapacityReachedSignal.LaneHash);
+            SignalBus<ExtractorCapacityReachedSignal>.EnsureInitialized();
+        }
+
+        private void PublishExtractorCapacityReached(AutonomousExtractorModule module)
+        {
+            ExtractorCapacityReachedSignal signal = new ExtractorCapacityReachedSignal
+            {
+                Frame = SystemDispatcher.CurrentFrameId,
+                Capacity = MaxModuleCapacity,
+                ActiveCount = _moduleCount,
+                ModuleInstanceId = module != null ? unchecked((int)EntityId.ToULong(module.GetEntityId())) : 0,
+                Flags = 1u,
+                ContextHash = ExtractorCapacityGrowthContextHash
+            };
+            SignalBus<ExtractorCapacityReachedSignal>.TryPushTracked(in signal, ref s_signalPushDropCount);
         }
 
         internal void UnregisterModule(AutonomousExtractorModule module)
@@ -709,6 +794,8 @@ namespace Hecton8.Construction
             {
                 _scheduledJobHandle = default;
                 _scheduledModuleCount = 0;
+                _scheduledJobAgeFrames = 0;
+                _dropScheduledJobReadback = false;
                 return;
             }
 
@@ -717,11 +804,24 @@ namespace Hecton8.Construction
 
         private bool EnsureExtractorNativeStateCold()
         {
+            if (!ValidateExtractorAbiLayout())
+                return false;
+
             if (_nativeState.IsReady(MaxModuleCapacity))
                 return true;
 
             _nativeState.Ensure(MaxModuleCapacity);
             return _nativeState.IsReady(MaxModuleCapacity);
+        }
+
+        private static bool ValidateExtractorAbiLayout()
+        {
+            return UnsafeUtility.SizeOf<ExtractorJobInput>() == 32 &&
+                   UnsafeUtility.SizeOf<ExtractorJobResult>() == 32 &&
+                   UnsafeUtility.SizeOf<ExtractorCapacityReachedSignal>() == 32 &&
+                   (UnsafeUtility.SizeOf<ExtractorJobInput>() & 7) == 0 &&
+                   (UnsafeUtility.SizeOf<ExtractorJobResult>() & 7) == 0 &&
+                   (UnsafeUtility.SizeOf<ExtractorCapacityReachedSignal>() & 7) == 0;
         }
 
         private void DisposeExtractorNativeState()
@@ -743,7 +843,6 @@ namespace Hecton8.Construction
         private const string DefaultClaimBlockedReason = "VEIN ALREADY CLAIMED";
         private const string DefaultNodeScaleBlockedReason = "VEIN TOO SMALL";
         private const int PlacementOverlapCapacity = 24;
-        private const int ResourceNodeLookupCacheCapacity = PlacementOverlapCapacity;
         private const uint ExtractorOverflowDropWarningHash = 0x6DAE28B7u;
         private const uint ExtractorOverflowDropContextHash = 0xD9113EF2u;
         // COLD ALLOC: Collider[24] — placement/resource-node overlap buffer — owner: AutonomousExtractorModule
@@ -793,12 +892,6 @@ namespace Hecton8.Construction
         private bool _hasPower = true;
         private bool _isOperating;
         private int _runtimeIndex = -1;
-        // COLD ALLOC: ulong[24] — overlap collider id cache for resource-node discovery — owner: AutonomousExtractorModule
-        private readonly ulong[] _resourceNodeLookupColliderIds = new ulong[ResourceNodeLookupCacheCapacity];
-        // COLD ALLOC: ResourceNode[24] — overlap collider resolved resource cache — owner: AutonomousExtractorModule
-        private readonly ResourceNode[] _resourceNodeLookupNodes = new ResourceNode[ResourceNodeLookupCacheCapacity];
-        private int _resourceNodeLookupCount;
-        private int _resourceNodeLookupWriteCursor;
 
         /// <summary>True while the module is currently drawing grid power for extraction.</summary>
         public bool IsOperating => _isOperating;
@@ -825,20 +918,17 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
-            ClearResourceNodeLookupCache();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
-            ClearResourceNodeLookupCache();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
-            ClearResourceNodeLookupCache();
         }
 
         /// <inheritdoc />
@@ -848,7 +938,6 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             SetBoundNode(null);
             ApplyRuntimeTelemetry(0, 0, 0, false);
-            ClearResourceNodeLookupCache();
             TryRegister();
         }
 
@@ -860,7 +949,6 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             SetBoundNode(null);
             ApplyRuntimeTelemetry(0, 0, 0, false);
-            ClearResourceNodeLookupCache();
         }
 
         /// <inheritdoc />
@@ -1090,7 +1178,7 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                float distanceSqr = ResolveCandidateDistanceSq(candidate, position, hasQueryAup, in queryAup);
+                float distanceSqr = ResolveCandidateDistanceSq(in hit, candidate, hasQueryAup, in queryAup);
                 if (distanceSqr >= bestDistanceSqr)
                     continue;
 
@@ -1107,20 +1195,25 @@ namespace Hecton8.Construction
         }
 
         private static float ResolveCandidateDistanceSq(
+            in SpatialQueryHit hit,
             ResourceNode candidate,
-            Vector3 queryRuntimePosition,
             bool hasQueryAup,
             in AbsoluteUniversePosition queryAup)
         {
-            if (candidate != null &&
-                hasQueryAup &&
-                IsFinite(in queryAup) &&
-                candidate.TryGetPersistentAup(out AbsoluteUniversePosition candidateAup))
+            if (hasQueryAup && IsFinite(in queryAup))
             {
-                return SaturateDistanceSq(AbsoluteUniversePosition.DistanceSq(in candidateAup, in queryAup));
+                if (candidate != null &&
+                    candidate.TryGetPersistentAup(out AbsoluteUniversePosition candidateAup))
+                {
+                    return SaturateDistanceSq(AbsoluteUniversePosition.DistanceSq(in candidateAup, in queryAup));
+                }
+
+                AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
+                if (hit.HasAbsolutePosition && IsFinite(in hitAup))
+                    return SaturateDistanceSq(AbsoluteUniversePosition.DistanceSq(in hitAup, in queryAup));
             }
 
-            return float.MaxValue;
+            return math.isfinite(hit.DistanceSqr) && hit.DistanceSqr >= 0f ? hit.DistanceSqr : float.MaxValue;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
@@ -1154,78 +1247,6 @@ namespace Hecton8.Construction
                 return 0f;
 
             return distanceSq >= float.MaxValue ? float.MaxValue : (float)distanceSq;
-        }
-
-        private bool TryResolveResourceNode(Collider collider, out ResourceNode node)
-        {
-            node = null;
-            if (collider == null)
-                return false;
-
-            ulong colliderId = ResolveColliderRuntimeId(collider);
-            if (colliderId != 0UL)
-            {
-                for (int i = 0; i < _resourceNodeLookupCount; i++)
-                {
-                    if (_resourceNodeLookupColliderIds[i] != colliderId)
-                        continue;
-
-                    node = _resourceNodeLookupNodes[i];
-                    if (node != null)
-                        return node.gameObject.activeInHierarchy;
-
-                    _resourceNodeLookupColliderIds[i] = 0UL;
-                    break;
-                }
-            }
-
-            if (!collider.TryGetComponent(out node))
-                ConstructionParentLookup.TryCaptureSelfOrParent(collider, out node);
-
-            if (colliderId != 0UL && node != null)
-                CacheResourceNodeLookup(colliderId, node);
-
-            return node != null;
-        }
-
-        private void CacheResourceNodeLookup(ulong colliderId, ResourceNode node)
-        {
-            if (colliderId == 0UL || node == null)
-                return;
-
-            int slot;
-            if (_resourceNodeLookupCount < _resourceNodeLookupColliderIds.Length)
-            {
-                slot = _resourceNodeLookupCount;
-                _resourceNodeLookupCount++;
-            }
-            else
-            {
-                slot = _resourceNodeLookupWriteCursor;
-            }
-
-            _resourceNodeLookupColliderIds[slot] = colliderId;
-            _resourceNodeLookupNodes[slot] = node;
-            _resourceNodeLookupWriteCursor = (_resourceNodeLookupWriteCursor + 1) % _resourceNodeLookupColliderIds.Length;
-        }
-
-        private void ClearResourceNodeLookupCache()
-        {
-            for (int i = 0; i < _resourceNodeLookupCount; i++)
-            {
-                _resourceNodeLookupColliderIds[i] = 0UL;
-                _resourceNodeLookupNodes[i] = null;
-            }
-
-            _resourceNodeLookupCount = 0;
-            _resourceNodeLookupWriteCursor = 0;
-        }
-
-        private static ulong ResolveColliderRuntimeId(Collider collider)
-        {
-            return collider != null
-                ? EntityId.ToULong(collider.GetEntityId())
-                : 0UL;
         }
 
         private bool MeetsSizeThreshold(ResourceNode node)

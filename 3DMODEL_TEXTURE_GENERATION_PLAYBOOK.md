@@ -3,6 +3,14 @@
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: offline creation of generated or AI-assisted texture families for hard-surface modules, flora, coral, fauna, geology, equipment, decals, atlases, and PBR masks.
 
+## 0. Prime Texture Product Law
+
+Textures are material proof, not color fill. A HECTON-8 texture family must make the surface read as a specific material with scale, age, pressure history, wetness, wear, contamination, and light response.
+
+Generated or AI-assisted textures are accepted only when they survive close inspection, mipmapping, compression, UV/triplanar placement, URP lighting, and material debug views. Random noise, blurred albedo, fake lighting, candy gradients, generic grunge, low-resolution mush, or "interesting" patterns that do not match the mesh and source material are rejected.
+
+The goal is not procedural variety. The goal is believable material identity with optimized reuse: albedo, normal, MRAO, emission, detail, decal, trim, atlas, and proof renders all saying the same thing.
+
 ## 1. Texture Quality Verdict
 
 A texture is accepted only when it improves material identity under URP lighting. A noisy color map is not a texture family. A texture family is a calibrated set of albedo, normal, packed MRAO, optional emission, optional height, and optional decal/detail masks that survive mipmapping, compression, triplanar projection, atlas packing, and LOD transitions.

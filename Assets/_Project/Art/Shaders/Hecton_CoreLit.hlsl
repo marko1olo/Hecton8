@@ -98,8 +98,6 @@ TEXTURE3D(_HectonCaveVoxelSdfTex);
 SAMPLER(sampler_HectonCaveVoxelSdfTex);
 TEXTURE3D(_HectonBiolumVolumeTex);
 SAMPLER(sampler_HectonBiolumVolumeTex);
-TEXTURE2D(_NoirFogLUT);
-SAMPLER(sampler_NoirFogLUT);
 TEXTURE2D(_HectonPhotophobiaFieldTex);
 SAMPLER(sampler_HectonPhotophobiaFieldTex);
 TEXTURE2D(_HectonMicroNormalTex);
@@ -107,6 +105,8 @@ SAMPLER(sampler_HectonMicroNormalTex);
 TEXTURE2D(_RustDetailMap);
 SAMPLER(sampler_RustDetailMap);
 float4 _RustDetailMap_ST;
+#define HECTON_NOIR_FOG_LUT_SAMPLE_COUNT 16
+float4 _NoirFogLUTSamples[HECTON_NOIR_FOG_LUT_SAMPLE_COUNT];
 float4 _HectonNoirFogLutParams;
 float _HectonNoirFogLutBlend;
 float _HectonWeatherIntensity;
@@ -1414,10 +1414,11 @@ float3 HectonCoreLitSampleNoirFogLut(float sample01)
     if (_HectonNoirFogLutParams.w <= 0.5)
         return 0.0;
 
-    float2 uv = float2(
-        saturate(sample01),
-        0.5);
-    return SAMPLE_TEXTURE2D_LOD(_NoirFogLUT, sampler_NoirFogLUT, uv, 0).rgb;
+    float sampleIndex = saturate(sample01) * (HECTON_NOIR_FOG_LUT_SAMPLE_COUNT - 1);
+    int indexA = (int)floor(sampleIndex);
+    int indexB = min(indexA + 1, HECTON_NOIR_FOG_LUT_SAMPLE_COUNT - 1);
+    float blend = frac(sampleIndex);
+    return lerp(_NoirFogLUTSamples[indexA].rgb, _NoirFogLUTSamples[indexB].rgb, blend);
 }
 
 float HectonCoreLitEvaluateThermoclineFogMultiplier(float3 positionWS)

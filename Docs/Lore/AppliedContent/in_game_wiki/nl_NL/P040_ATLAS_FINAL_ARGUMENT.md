@@ -1,10 +1,17 @@
 ---
 packet_id: P040_ATLAS_FINAL_ARGUMENT
+release_set_id: RS008_ESCAPE_ENDINGS_ATLAS_QUESTION
 article_id: hecton8.atlas_final_argument
+unlock_id: unlock.first_atlas_final_argument
+poi_tags: poi.atlas_argument_core;poi.factory_temple_choice
+biome_tags: biome.factory_temple;biome.atlas_core
 locale: nl_NL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Laatste Argument van Atlas

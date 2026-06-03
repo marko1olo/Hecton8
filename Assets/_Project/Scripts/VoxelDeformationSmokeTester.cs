@@ -642,7 +642,7 @@ namespace Hecton8.Dev
                    RequireContains(chunkEvents, "NativeQueue<VoxelChunkModifiedEvent>", "Voxel chunk modified event native queue missing.") &&
                    RequireContains(delta, "PublishDebrisSpawnSignal(in request, radius)", "Immediate dust/debris signal dispatch missing.") &&
                    RequireNotContains(delta, "DecalProjector", "Voxel laser burn path must not depend on DecalProjector.") &&
-                   RequireContains(engine, "Physics.BakeMesh(MeshId, false)", "Worker PhysX bake job missing.") &&
+                   RequireNotContains(engine, "Physics." + "BakeMesh", "Runtime PhysX mesh cooking must stay absent.") &&
                    RequireContains(engine, "modifiedCells = data.ModifiedCells", "Modified-cell map is not fed into vertex color job.") &&
                    RequireContains(engine, "colorPayload.x = 1f", "Vertex color R burn write missing.") &&
                    RequireContains(shader, "vertexBurnMask", "Shader vertex burn mask missing.") &&

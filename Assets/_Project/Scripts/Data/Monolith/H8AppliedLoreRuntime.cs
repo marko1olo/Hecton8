@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
 using Hecton8.World;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Data
@@ -11,6 +12,8 @@ namespace Hecton8.Data
     [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct H8AppliedLoreWorldImpactRecord
     {
+        public const int SizeBytes = 24;
+
         [FieldOffset(0)]
         public uint PacketHash;
 
@@ -25,6 +28,15 @@ namespace Hecton8.Data
 
         [FieldOffset(16)]
         public byte Flags;
+
+        [FieldOffset(17)]
+        private byte _pad0;
+
+        [FieldOffset(18)]
+        private ushort _pad1;
+
+        [FieldOffset(20)]
+        private uint _pad2;
     }
 
     /// <summary>
@@ -40,6 +52,13 @@ namespace Hecton8.Data
         private const float MaxLoreDepthMeters = 5000f;
         private static int s_appliedLoreSignalPushDropCount;
 
+        public static bool ValidateRuntimeLayout()
+        {
+            int worldImpactBytes = UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>();
+            return worldImpactBytes == H8AppliedLoreWorldImpactRecord.SizeBytes &&
+                   (worldImpactBytes & 7) == 0;
+        }
+
         public static bool TryGetUtf8(
             uint packetHash,
             uint localeHash,
@@ -48,7 +67,7 @@ namespace Hecton8.Data
         {
             utf8Bytes = ReadOnlySpan<byte>.Empty;
             return TryFindPacket(packetHash, localeHash, out H8AppliedLorePacketRecord record) &&
-                   TryGetUtf8(in record, surface, out utf8Bytes);
+                   H8StaticDataArena.TryGetAppliedLoreUtf8(in record, surface, out utf8Bytes);
         }
 
         public static bool TryGetUtf8(

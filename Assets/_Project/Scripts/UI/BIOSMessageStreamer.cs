@@ -68,15 +68,14 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
 
         /// <summary>
-        /// Ensures one streamer exists on the supplied host.
+        /// Validates that a streamer was authored on the supplied host.
         /// </summary>
         public static void EnsureRuntimeInstalled(GameObject host)
         {
             if (host == null)
                 return;
 
-            if (!host.TryGetComponent(out BIOSMessageStreamer _))
-                host.AddComponent<BIOSMessageStreamer>(); // COLD ALLOC: BIOSMessageStreamer[1] — submarine BIOS terminal log owner — owner: BIOSMessageStreamer
+            host.TryGetComponent(out BIOSMessageStreamer _);
         }
 
         /// <inheritdoc />

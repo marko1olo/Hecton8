@@ -10,6 +10,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _SiltLayerMap ("Horizontal Silt Layer Map", 2D) = "white" {}
         [NoScaleOffset] _CavityNoiseRamp ("Cavity AO Depth Noise Ramp", 2D) = "gray" {}
+        [NoScaleOffset] _GeologyStrataAlbedoMap ("Baked Geology Strata Albedo", 2D) = "white" {}
+        [NoScaleOffset] _GeologyStrataMraoMap ("Baked Geology MRAO Sediment", 2D) = "white" {}
         [NoScaleOffset] _BiomeFamilyTintVolume ("Visual Family 3D Tint Volume", 3D) = "white" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
@@ -68,6 +70,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _HorizontalSiltDustStrength ("Horizontal Silt Dust Strength", Range(0, 1)) = 0.48
         _HorizontalSiltDustSharpness ("Horizontal Silt Dust Sharpness", Range(1, 12)) = 5
         _HorizontalSiltDustTiling ("Horizontal Silt Dust Tiling", Range(0.01, 4)) = 0.22
+        _GeologyStrataBlend ("Baked Geology Blend", Range(0, 1)) = 0
+        _GeologyWorldOriginAup ("Baked Geology World Origin AUP", Vector) = (0, -800, 0, 0)
+        _GeologyTileMeters ("Baked Geology Tile Meters XY", Vector) = (64, 95, 0, 0)
+        _GeologyOreGlintStrength ("Baked Ore Glint Strength", Range(0, 2)) = 0.65
+        _GeologySedimentStrength ("Baked Sediment Strength", Range(0, 1)) = 0.72
         _BiomeFamilyTintStrength ("Visual Family Tint Strength", Range(0, 1)) = 0.32
         _BiomeFamilyTintVolumeStrength ("Visual Family 3D Tint Strength", Range(0, 1)) = 0.35
         _BiomeFamilyTintVolumeWorldOrigin ("Visual Family 3D Tint Origin AUP", Vector) = (0, 0, 0, 0)
@@ -171,6 +178,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _HorizontalSiltDustStrength;
             float _HorizontalSiltDustSharpness;
             float _HorizontalSiltDustTiling;
+            float _GeologyStrataBlend;
+            float4 _GeologyWorldOriginAup;
+            float4 _GeologyTileMeters;
+            float _GeologyOreGlintStrength;
+            float _GeologySedimentStrength;
             float _BiomeFamilyTintStrength;
             float _BiomeFamilyTintVolumeStrength;
             float _LocalCausticStrength;
@@ -210,6 +222,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SAMPLER(sampler_SiltLayerMap);
         TEXTURE2D(_CavityNoiseRamp);
         SAMPLER(sampler_CavityNoiseRamp);
+        TEXTURE2D(_GeologyStrataAlbedoMap);
+        SAMPLER(sampler_GeologyStrataAlbedoMap);
+        TEXTURE2D(_GeologyStrataMraoMap);
+        SAMPLER(sampler_GeologyStrataMraoMap);
         TEXTURE3D(_BiomeFamilyTintVolume);
         SAMPLER(sampler_BiomeFamilyTintVolume);
         TEXTURE2D(_SargassumCutMaskRT);
@@ -360,14 +376,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
-        float ValueNoise3(float3 value)
-        {
-            value = HectonVoxelRockFiniteOr(value, float3(0.0, 0.0, 0.0));
-            float primary = HectonCoreLitTrianglePulse01(dot(value, float3(0.173, 0.097, 0.131)));
-            float secondary = HectonCoreLitTrianglePulse01(dot(value.yzx + 17.13, float3(0.071, 0.149, 0.109)));
-            return saturate(primary * 0.68 + secondary * 0.32);
-        }
-
         float3 ResolveSamplePositionWS(float3 positionWS)
         {
             float3 safePositionWS = HectonVoxelRockFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
@@ -390,8 +398,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 return 0.0;
 
             float scale = max(_CaveMouthDisplacementScale, 0.05);
-            float lowNoise = ValueNoise3(absolutePositionWS * scale + 17.13);
-            float highNoise = ValueNoise3(absolutePositionWS * (scale * 2.37) + 41.9);
+            float lowNoise = HectonCoreLitTrianglePulse01(dot(absolutePositionWS * scale + 17.13, float3(0.173, 0.097, 0.131)));
+            float highNoise = HectonCoreLitTrianglePulse01(dot(absolutePositionWS * (scale * 2.37) + 41.9, float3(0.071, 0.149, 0.109)));
             float jagged = ((lowNoise * 0.72 + highNoise * 0.28) * 2.0) - 1.0;
             return jagged * _CaveMouthDisplacementStrength * seamMask;
         }
@@ -399,9 +407,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         float ResolveOrganicVertexDisplacement(float3 absolutePositionWS, float3 normalOS, half seamMask)
         {
             float scale = max(_OrganicDisplacementScale, 0.02);
-            float lowNoise = ValueNoise3(absolutePositionWS * scale + 3.17);
-            float midNoise = ValueNoise3(absolutePositionWS * (scale * 2.03) + 19.71);
-            float fineNoise = ValueNoise3(absolutePositionWS * max(_OrganicDisplacementFineScale, 0.05) + 53.2);
+            float lowNoise = HectonCoreLitTrianglePulse01(dot(absolutePositionWS * scale + 3.17, float3(0.157, 0.083, 0.119)));
+            float midNoise = HectonCoreLitTrianglePulse01(dot(absolutePositionWS * (scale * 2.03) + 19.71, float3(0.097, 0.163, 0.071)));
+            float fineNoise = HectonCoreLitTrianglePulse01(dot(absolutePositionWS * max(_OrganicDisplacementFineScale, 0.05) + 53.2, float3(0.193, 0.061, 0.137)));
             float ridged = abs(((lowNoise * 0.54 + midNoise * 0.31 + fineNoise * 0.15) * 2.0) - 1.0);
             float signedRidge = (ridged * 2.0) - 1.0;
             float slopeGate = saturate(1.0 - abs(normalOS.y) * 0.28);
@@ -445,7 +453,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             positionWS = HectonVoxelRockFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
             float scanline = frac(HectonVoxelRockFiniteOr(positionCS.y, 0.0) * 0.125 + safeTime * 17.0);
             half scanPulse = smoothstep(0.84h, 0.98h, (half)scanline);
-            half staticNoise = (half)ValueNoise3(positionWS * 5.0 + safeTime * 3.0);
+            half staticNoise = (half)Hash21(floor(positionWS.xz * 5.0 + safeTime * 3.0));
             half edgeNoise = smoothstep(0.52h, 0.93h, staticNoise);
             half malfunction = saturate((scanPulse * 0.55h + edgeNoise * 0.45h) * reveal * strength);
 
@@ -465,7 +473,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float safeTime = HectonVoxelRockSafeTime();
             float phase = dot(positionWS, float3(0.37, 0.19, 0.41)) * scale + safeTime * 3.7;
             half sinePulse = smoothstep(0.78h, 1.0h, (half)HectonCoreLitTrianglePulse01(phase));
-            half gridNoise = (half)ValueNoise3(positionWS * (scale * 2.0) + safeTime);
+            half gridNoise = (half)HectonCoreLitTrianglePulse01(dot(positionWS.xz, float2(0.071, 0.149)) * (scale * 2.0) + safeTime);
             return gate * saturate(sinePulse * lerp(0.65h, 1.0h, gridNoise));
         }
 
@@ -525,6 +533,32 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             ResolveCinematicTwoAxisProjection(normalWS, primaryAxis, secondaryAxis, secondaryWeight);
             half4 primarySample = SAMPLE_TEXTURE2D(tex, samp, ResolveAxisProjectionUv(positionWS, primaryAxis));
             half4 secondarySample = SAMPLE_TEXTURE2D(tex, samp, ResolveAxisProjectionUv(positionWS, secondaryAxis));
+            return lerp(primarySample, secondarySample, secondaryWeight);
+        }
+
+        float2 ResolveGeologyStrataProjectionUv(float3 positionWS, half axis)
+        {
+            float3 originAup = HectonVoxelRockFiniteOr(_GeologyWorldOriginAup.xyz, float3(0.0, 0.0, 0.0));
+            float2 tileMeters = max(HectonVoxelRockFiniteOr(_GeologyTileMeters, float4(64.0, 95.0, 0.0, 0.0)).xy, float2(1.0, 1.0));
+            float2 invTileMeters = rcp(tileMeters);
+            if (axis < 0.5h)
+                return float2(positionWS.z - originAup.z, positionWS.y - originAup.y) * invTileMeters;
+
+            if (axis > 1.5h)
+                return float2(positionWS.x - originAup.x, positionWS.y - originAup.y) * invTileMeters;
+
+            float horizontalAup = (positionWS.x - originAup.x) + (positionWS.z - originAup.z) * 0.37;
+            return float2(horizontalAup, positionWS.y - originAup.y) * invTileMeters;
+        }
+
+        half4 SampleGeologyBakedAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
+        {
+            half primaryAxis;
+            half secondaryAxis;
+            half secondaryWeight;
+            ResolveCinematicTwoAxisProjection(normalWS, primaryAxis, secondaryAxis, secondaryWeight);
+            half4 primarySample = SAMPLE_TEXTURE2D(tex, samp, ResolveGeologyStrataProjectionUv(positionWS, primaryAxis));
+            half4 secondarySample = SAMPLE_TEXTURE2D(tex, samp, ResolveGeologyStrataProjectionUv(positionWS, secondaryAxis));
             return lerp(primarySample, secondarySample, secondaryWeight);
         }
 
@@ -596,12 +630,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return lerp(half3(1.0h, 1.0h, 1.0h), volumeTint, saturate((half)_BiomeFamilyTintVolumeStrength));
         }
 
-        half ResolveHorizontalSiltDust(float3 absolutePositionWS, half3 normalWS)
+        half ResolveHorizontalSiltDust(half3 normalWS)
         {
-            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
             half upward = smoothstep(0.7h, 0.9h, saturate(normalWS.y));
-            half dustNoise = lerp(0.62h, 1.0h, (half)ValueNoise3(absolutePositionWS * max(_HorizontalSiltDustTiling, 0.01) + 71.9));
-            return saturate(upward * dustNoise * (half)_HorizontalSiltDustStrength);
+            return saturate(upward * (half)_HorizontalSiltDustStrength);
         }
 
         half3 RecalculateDisplacedNormalWS(float3 positionWS, half3 fallbackNormalWS)
@@ -612,7 +644,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return dot(derivedNormalWS, fallbackNormalWS) < 0.0h ? -derivedNormalWS : derivedNormalWS;
         }
 
-        half3 ResolveScreenSpaceSmoothedVoxelNormal(half3 coarseNormalWS, float3 positionWS, float3 absolutePositionWS, half curvature)
+        half3 ResolveScreenSpaceSmoothedVoxelNormal(half3 coarseNormalWS, float3 positionWS, half curvature)
         {
             if (_HectonMathLodMode < 0.5)
                 return coarseNormalWS;
@@ -625,16 +657,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 pixelSpan = abs(dpdx) + abs(dpdy);
             half bevelMask = saturate((half)((pixelSpan.x + pixelSpan.y + pixelSpan.z) * max(_ScreenSpaceNormalBevelStrength, 0.0)));
             half cavityWeight = saturate((0.5h - curvature) * 2.0h);
-            float noiseScale = max(_ScreenSpaceNormalNoiseScale, 0.05);
-            half lowNoise = (half)ValueNoise3(absolutePositionWS * noiseScale + 13.7);
-            half highNoise = (half)ValueNoise3(absolutePositionWS * (noiseScale * 2.17) + 47.3);
-            half organicWeight = lerp(0.35h, 0.82h, saturate(lowNoise * 0.65h + highNoise * 0.35h));
+            half organicWeight = lerp(0.35h, 0.82h, saturate(cavityWeight * 0.7h + bevelMask * 0.3h));
             half3 smoothedNormalWS = SafeNormalize3(lerp(coarseNormalWS, faceNormalWS, bevelMask * organicWeight));
 
             half3 tangentX = SafeNormalize3((half3)dpdx);
             half3 tangentY = SafeNormalize3((half3)dpdy);
-            half noiseStrength = (half)_ScreenSpaceNormalNoiseStrength * (0.35h + cavityWeight * 0.65h);
-            return SafeNormalize3(smoothedNormalWS + tangentX * ((lowNoise - 0.5h) * noiseStrength) + tangentY * ((highNoise - 0.5h) * noiseStrength));
+            half deterministicFacetWeight = (half)_ScreenSpaceNormalNoiseStrength * (0.12h + cavityWeight * 0.18h);
+            return SafeNormalize3(smoothedNormalWS + (tangentX + tangentY) * deterministicFacetWeight * bevelMask);
         }
 
         half ResolveDepthNoiseCavityAo(float3 absolutePositionWS, half bakedAmbientOcclusion)
@@ -761,13 +790,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 layerABasis.x + timePhase * safeLayerA.y,
                 layerABasis.y * 0.23 + timePhase * (safeLayerA.y * 0.31 + safeLayerA.z * 0.17),
                 layerABasis.z + timePhase * safeLayerA.z);
-            float distortion = (ValueNoise3(layerAInput * 0.73 + 7.1) * 2.0 - 1.0) * safeShape.y;
+            float distortion = (HectonCoreLitTrianglePulse01(dot(layerAInput, float3(0.173, 0.097, 0.131)) + 7.1) * 2.0 - 1.0) * safeShape.y;
             float3 layerBInput = float3(
                 layerBSampleAnchor.x + timePhase * safeLayerB.y + distortion,
                 layerBSampleAnchor.y * 0.19 + timePhase * (safeLayerB.y * 0.27 + safeLayerB.z * 0.23),
                 layerBSampleAnchor.z + timePhase * safeLayerB.z - distortion);
-            half layerA = (half)ValueNoise3(layerAInput);
-            half layerB = (half)ValueNoise3(layerBInput);
+            half layerA = (half)HectonCoreLitTrianglePulse01(dot(layerAInput, float3(0.071, 0.149, 0.109)));
+            half layerB = (half)HectonCoreLitTrianglePulse01(dot(layerBInput, float3(0.113, 0.083, 0.167)));
             half causticRaw = FastVoxelPower01(saturate(layerA * layerB), (half)max(safeShape.x, 1.0));
             half caveFade = 1.0h;
             return lerp(1.0h, 1.0h + causticRaw * strength * caveFade, upFacingMask);
@@ -800,8 +829,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 causticBasis.x * 1.37 - timePhase * 0.41 + 13.1,
                 causticBasis.y * 0.19 + timePhase * 0.23 + 7.3,
                 causticBasis.z * 1.37 + timePhase * 0.91 + 5.7);
-            half layerA = (half)ValueNoise3(layerASample);
-            half layerB = (half)ValueNoise3(layerBSample);
+            half layerA = (half)HectonCoreLitTrianglePulse01(dot(layerASample, float3(0.137, 0.061, 0.193)));
+            half layerB = (half)HectonCoreLitTrianglePulse01(dot(layerBSample, float3(0.097, 0.157, 0.071)));
             half causticSeed = saturate(layerA * layerB);
             half causticRaw = causticSeed * causticSeed * causticSeed;
             return lerp(1.0h, 1.0h + causticRaw * localStrength, causticMask);
@@ -985,7 +1014,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
                 float3 samplePositionWS = input.absolutePositionWS;
                 half3 coarseNormalWS = SafeNormalize3(input.normalWS);
-                half3 baseNormalWS = ResolveScreenSpaceSmoothedVoxelNormal(coarseNormalWS, input.positionWS, samplePositionWS, input.curvature);
+                half3 baseNormalWS = ResolveScreenSpaceSmoothedVoxelNormal(coarseNormalWS, input.positionWS, input.curvature);
                 half vertexBurnMask = step(0.999h, saturate(input.terrainSplatColor.r)) * saturate(input.freshCutBlend);
                 half vertexCaveAoRaw = saturate(dot(input.terrainSplatColor.rgb, half3(0.3333h, 0.3333h, 0.3334h)));
                 half vertexCaveAoBurnSafe = saturate((input.terrainSplatColor.g + input.terrainSplatColor.b) * 0.5h);
@@ -1000,6 +1029,23 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half4 baseSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
                 half4 packedMask = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, baseNormalWS);
                 HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
+                half geologyBlend = saturate((half)_GeologyStrataBlend);
+                half bakedOreMetallic = 0.0h;
+                half bakedSedimentMask = 0.0h;
+                [branch]
+                if (geologyBlend > 0.0001h)
+                {
+                    half4 geologyAlbedoSample = SampleGeologyBakedAxisColor(TEXTURE2D_ARGS(_GeologyStrataAlbedoMap, sampler_GeologyStrataAlbedoMap), samplePositionWS, baseNormalWS);
+                    half4 geologyMraoSample = SampleGeologyBakedAxisColor(TEXTURE2D_ARGS(_GeologyStrataMraoMap, sampler_GeologyStrataMraoMap), samplePositionWS, baseNormalWS);
+                    half bakedRoughness = saturate(geologyMraoSample.g);
+                    half bakedAmbientOcclusion = saturate(geologyMraoSample.b);
+                    bakedOreMetallic = saturate(geologyMraoSample.r);
+                    bakedSedimentMask = saturate(geologyMraoSample.a * geologyBlend);
+                    baseSample.rgb = lerp(baseSample.rgb, geologyAlbedoSample.rgb, geologyBlend);
+                    decodedMask.metallic = lerp(decodedMask.metallic, max(decodedMask.metallic, bakedOreMetallic), geologyBlend);
+                    decodedMask.smoothness = lerp(decodedMask.smoothness, 1.0h - bakedRoughness, geologyBlend);
+                    decodedMask.occlusion = lerp(decodedMask.occlusion, min(decodedMask.occlusion, bakedAmbientOcclusion), geologyBlend);
+                }
                 half freshCutMask = saturate(max(max(input.freshCutBlend, vertexBurnMask), cutMask));
                 half scarMask = FastVoxelPower01(saturate(max(cutMask, vertexBurnMask)), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask = 0.0h;
@@ -1031,11 +1077,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half metallic = decodedMask.metallic;
                 half smoothness = saturate(lerp(decodedMask.smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
+                smoothness = saturate(smoothness + bakedOreMetallic * geologyBlend * (half)_GeologyOreGlintStrength * 0.12h);
                 half ambientOcclusion = saturate(noisyBakedAo * vertexCaveAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
                 half caveMouthDistanceAo = saturate(max(input.terrainSplatColor.a, input.skirtAlpha));
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
                 albedo *= 1.0h - caveMouthDistanceAo * 0.24h;
-                half horizontalDust = ResolveHorizontalSiltDust(samplePositionWS, normalWS);
+                half bakedSedimentDust = saturate(bakedSedimentMask * smoothstep(0.55h, 0.92h, saturate(normalWS.y)) * (half)_GeologySedimentStrength);
+                half horizontalDust = saturate(max(ResolveHorizontalSiltDust(normalWS), bakedSedimentDust));
                 half4 siltSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_SiltLayerMap, sampler_SiltLayerMap), samplePositionWS, normalWS);
                 half3 siltAlbedo = saturate(siltSample.rgb * (half3)_SiltTint.rgb * 1.2h);
                 albedo = lerp(albedo, siltAlbedo, horizontalDust);
@@ -1044,19 +1092,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 if (xrFullQuality)
                 {
                     HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
-                    HectonCoreLitApplyProceduralRustSilt(
-                        samplePositionWS,
-                        normalWS,
-                        dominantNormalWS,
-                        convexMask,
-                        (half)_ProceduralDirtAge,
-                        (half)_SiltStrength,
-                        (half)_RustStrength,
-                        (half3)_SiltTint.rgb,
-                        (half3)_RustTint.rgb,
-                        albedo,
-                        metallic,
-                        smoothness);
                 }
                 HectonCoreLitApplyEnvironmentalWear(samplePositionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
                 half dissolveMalfunction = ApplyChunkDissolveMalfunction(input.positionCS, samplePositionWS, albedo, smoothness);

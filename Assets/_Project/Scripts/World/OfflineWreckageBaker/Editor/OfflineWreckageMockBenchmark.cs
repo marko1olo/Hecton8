@@ -1,7 +1,4 @@
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Text;
 using Hecton8.World.OfflineWreckageBaker;
 using Unity.Collections;
 using Unity.Jobs;
@@ -13,15 +10,14 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 {
     public static class OfflineWreckageMockBenchmark
     {
-        private const string ReportPath = "Docs/Reports/WRECKAGE_MOCK_BENCHMARK_SHINOBU_209.json";
-
         [MenuItem("HECTON-8/Wreckage Forge/Run Mock Benchmark")]
         public static void RunMenu()
         {
-            RunAndWriteReport();
+            bool passed = RunBenchmark();
+            UnityEngine.Debug.Log("Offline wreckage mock benchmark passed: " + passed);
         }
 
-        public static bool RunAndWriteReport()
+        public static bool RunBenchmark()
         {
             int3 resolution = new int3(48, 48, 6);
             int vertexCount = resolution.x * resolution.y * resolution.z;
@@ -30,7 +26,8 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             int yzQuadCount = (resolution.y - 1) * (resolution.z - 1);
             int quadCount = 2 * (xyQuadCount + xzQuadCount + yzQuadCount);
             int indexCount = quadCount * 6;
-            int vertexCapacity = vertexCount + indexCount;
+            int vertexCapacity = vertexCount + indexCount + 2048;
+            int indexCapacity = indexCount + 4096;
 
             NativeArray<OfflineWreckageBakeVertexDTO> baseVertices = default;
             NativeArray<int> baseIndices = default;
@@ -46,7 +43,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 baseIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                stateIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                stateIndices = new NativeArray<int>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 tearWeights = new NativeArray<float>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -110,7 +107,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                     Counters = counters,
                     TearThreshold = 0.26f,
                     SplitDistance = 0.16f,
-                    GlobalQualityWeight = 0.82f
+                    GlobalQualityWeight = 0.82f,
+                    EpicenterLocal = new float3(0.15f, 0.25f, -0.35f),
+                    DamageScale = 0.92f
                 };
                 handle = torn.Schedule(handle);
 
@@ -144,8 +143,13 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 stopwatch.Stop();
 
                 OfflineWreckageBakeCounters64 result = counters[0];
-                WriteReport(result, resolution, vertexCount, indexCount, vertexCapacity, stopwatch.Elapsed.TotalMilliseconds * 1000.0);
-                return result.ActiveVertexCount > 0 && result.HullVertexCount == OfflineWreckageBakeConstants.SupportHullPointCount;
+                return result.ActiveVertexCount > vertexCount &&
+                       result.ActiveVertexCount <= vertexCapacity &&
+                       result.ActiveIndexCount > 0 &&
+                       (result.ActiveIndexCount % 3) == 0 &&
+                       result.ActiveIndexCount <= indexCapacity &&
+                       result.HullVertexCount == OfflineWreckageBakeConstants.SupportHullPointCount &&
+                       stopwatch.Elapsed.TotalMilliseconds >= 0.0;
             }
             finally
             {
@@ -166,45 +170,6 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 if (baseVertices.IsCreated)
                     baseVertices.Dispose();
             }
-        }
-
-        private static void WriteReport(
-            in OfflineWreckageBakeCounters64 result,
-            int3 resolution,
-            int sourceVertices,
-            int sourceIndices,
-            int vertexCapacity,
-            double microseconds)
-        {
-            string path = Path.Combine(ProjectRoot(), ReportPath);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            StringBuilder json = new StringBuilder(2048); // COLD ALLOC: StringBuilder[2048] - editor mock benchmark report - owner: OfflineWreckageMockBenchmark
-            json.Append("{\n");
-            json.Append("  \"agent\": \"SHINOBU_209\",\n");
-            json.Append("  \"status\": \"PENDING_VERIFICATION\",\n");
-            json.Append("  \"benchmark\": \"offline_wreckage_mock_dense_grid\",\n");
-            json.Append("  \"resolution\": [").Append(resolution.x).Append(", ").Append(resolution.y).Append(", ").Append(resolution.z).Append("],\n");
-            json.Append("  \"sourceVertices\": ").Append(sourceVertices).Append(",\n");
-            json.Append("  \"sourceIndices\": ").Append(sourceIndices).Append(",\n");
-            json.Append("  \"vertexCapacity\": ").Append(vertexCapacity).Append(",\n");
-            json.Append("  \"activeVertices\": ").Append(result.ActiveVertexCount).Append(",\n");
-            json.Append("  \"tornVertices\": ").Append(result.TornVertexCount).Append(",\n");
-            json.Append("  \"degenerateTriangles\": ").Append(result.DegenerateTriangleCount).Append(",\n");
-            json.Append("  \"hullVertices\": ").Append(result.HullVertexCount).Append(",\n");
-            json.Append("  \"microseconds\": ").Append(microseconds.ToString("0.000", CultureInfo.InvariantCulture)).Append("\n");
-            json.Append("}\n");
-            WriteTextAtomic(path, json.ToString());
-            AssetDatabase.Refresh();
-        }
-
-        private static string ProjectRoot()
-        {
-            return Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
-        }
-
-        private static void WriteTextAtomic(string path, string text)
-        {
-            OfflineWreckageAtomicFile.WriteTextUtf8(path, text);
         }
     }
 }

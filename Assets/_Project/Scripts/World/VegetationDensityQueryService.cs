@@ -26,50 +26,51 @@ namespace Hecton8.World
                 out NativeArray<VegetationDensityChunkRecord> previousChunks,
                 out NativeArray<float3> previousDensityGrid);
             int scratchChunkCapacity = _selectedChunkCount;
-            int scratchGridCapacity = scratchChunkCapacity * DensityGridCellCount;
-            NativeArray<VegetationDensityChunkRecord> scratchChunks = default;
-            NativeArray<float3> scratchDensityGrid = default;
-            NativeArray<float2> scratchThreatAttractorGrid = default;
-            try
+            long scratchGridCapacityLong = (long)scratchChunkCapacity * DensityGridCellCount;
+            if (scratchGridCapacityLong <= 0L || scratchGridCapacityLong > int.MaxValue)
             {
-                scratchChunks = H8Memory.Allocate<VegetationDensityChunkRecord>(
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationDensityQueryScratch,
+                    0u,
                     scratchChunkCapacity,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                scratchDensityGrid = H8Memory.Allocate<float3>(
-                    scratchGridCapacity,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                scratchThreatAttractorGrid = H8Memory.Allocate<float2>(
-                    scratchGridCapacity,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
+                    0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return;
+            }
 
-                if (!scratchChunks.IsCreated ||
-                    scratchChunks.Length < scratchChunkCapacity ||
-                    !scratchDensityGrid.IsCreated ||
-                    scratchDensityGrid.Length < scratchGridCapacity ||
-                    !scratchThreatAttractorGrid.IsCreated ||
-                    scratchThreatAttractorGrid.Length < scratchGridCapacity)
-                {
-                    RecordVegetationMemoryTelemetry(
-                        BufferID.VegetationDensityQueryScratch,
-                        0u,
-                        scratchGridCapacity,
-                        math.min(
-                            scratchDensityGrid.IsCreated ? scratchDensityGrid.Length : 0,
-                            scratchThreatAttractorGrid.IsCreated ? scratchThreatAttractorGrid.Length : 0),
-                        0,
-                        0f,
-                        VegetationMemoryTelemetryCode.StagingCapacityExceeded,
-                        VegetationMemoryTelemetryPhase.SlowTick,
-                        VegetationMemorySovereigntyConstants.FlagCapacity,
-                        default);
-                    return;
-                }
+            int scratchGridCapacity = (int)scratchGridCapacityLong;
+            if (!EnsureDensityQueryScratchCapacity(scratchChunkCapacity) ||
+                !_densityQueryScratchChunks.IsCreated ||
+                _densityQueryScratchChunks.Length < scratchChunkCapacity ||
+                !_densityQueryScratchDensityGrid.IsCreated ||
+                _densityQueryScratchDensityGrid.Length < scratchGridCapacity ||
+                !_densityQueryScratchThreatAttractorGrid.IsCreated ||
+                _densityQueryScratchThreatAttractorGrid.Length < scratchGridCapacity)
+            {
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationDensityQueryScratch,
+                    0u,
+                    scratchGridCapacity,
+                    math.min(
+                        _densityQueryScratchDensityGrid.IsCreated ? _densityQueryScratchDensityGrid.Length : 0,
+                        _densityQueryScratchThreatAttractorGrid.IsCreated ? _densityQueryScratchThreatAttractorGrid.Length : 0),
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return;
+            }
+
+            NativeArray<VegetationDensityChunkRecord> scratchChunks = _densityQueryScratchChunks;
+            NativeArray<float3> scratchDensityGrid = _densityQueryScratchDensityGrid;
+            NativeArray<float2> scratchThreatAttractorGrid = _densityQueryScratchThreatAttractorGrid;
 
             int nextChunkCount = 0;
             for (int i = 0; i < _selectedChunkCount; i++)
@@ -130,13 +131,58 @@ namespace Hecton8.World
                 _densityQueryChunkKeys[i] = default;
 
             _densityQueryChunkCount = nextChunkCount;
-            }
-            finally
+        }
+
+        private bool EnsureDensityQueryScratchCapacity(int chunkCapacity)
+        {
+            if (chunkCapacity <= 0)
+                return false;
+
+            int nextChunkCapacity = Mathf.NextPowerOfTwo(math.max(InitialChunkArrayCapacity, chunkCapacity));
+            long gridCapacityLong = (long)nextChunkCapacity * DensityGridCellCount;
+            if (gridCapacityLong <= 0L || gridCapacityLong > int.MaxValue)
+                return false;
+
+            int nextGridCapacity = (int)gridCapacityLong;
+            if (_densityQueryScratchChunks.IsCreated &&
+                _densityQueryScratchChunks.Length >= nextChunkCapacity &&
+                _densityQueryScratchDensityGrid.IsCreated &&
+                _densityQueryScratchDensityGrid.Length >= nextGridCapacity &&
+                _densityQueryScratchThreatAttractorGrid.IsCreated &&
+                _densityQueryScratchThreatAttractorGrid.Length >= nextGridCapacity)
             {
-                H8Memory.Release(ref scratchThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref scratchDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref scratchChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return true;
             }
+
+            DisposeDensityQueryScratch();
+            _densityQueryScratchChunks = new NativeArray<VegetationDensityChunkRecord>(
+                nextChunkCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: VegetationDensityChunkRecord[nextChunkCapacity] - persistent density-query rebuild scratch - owner: HectonMapMagicVegetationBridge
+            RegisterTrackedNativeArray(_densityQueryScratchChunks, nameof(_densityQueryScratchChunks));
+            _densityQueryScratchDensityGrid = new NativeArray<float3>(
+                nextGridCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float3[nextGridCapacity] - persistent density-query grid rebuild scratch - owner: HectonMapMagicVegetationBridge
+            RegisterTrackedNativeArray(_densityQueryScratchDensityGrid, nameof(_densityQueryScratchDensityGrid));
+            _densityQueryScratchThreatAttractorGrid = new NativeArray<float2>(
+                nextGridCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float2[nextGridCapacity] - persistent threat-attractor rebuild scratch - owner: HectonMapMagicVegetationBridge
+            RegisterTrackedNativeArray(_densityQueryScratchThreatAttractorGrid, nameof(_densityQueryScratchThreatAttractorGrid));
+            return _densityQueryScratchChunks.IsCreated &&
+                   _densityQueryScratchChunks.Length >= nextChunkCapacity &&
+                   _densityQueryScratchDensityGrid.IsCreated &&
+                   _densityQueryScratchDensityGrid.Length >= nextGridCapacity &&
+                   _densityQueryScratchThreatAttractorGrid.IsCreated &&
+                   _densityQueryScratchThreatAttractorGrid.Length >= nextGridCapacity;
+        }
+
+        private void DisposeDensityQueryScratch()
+        {
+            DisposeNativeArray(ref _densityQueryScratchThreatAttractorGrid);
+            DisposeNativeArray(ref _densityQueryScratchDensityGrid);
+            DisposeNativeArray(ref _densityQueryScratchChunks);
         }
 
         private int FindDensityQueryChunkIndex(ChunkKey key)
@@ -317,13 +363,39 @@ namespace Hecton8.World
             bool includeThreatAttractorGrid,
             out NativeArray<VegetationDensityChunkRecord> chunks,
             out NativeArray<float3> densityGrid,
-            out NativeArray<float2> threatAttractorGrid)
+            out NativeArray<float2> threatAttractorGrid,
+            out int leaseIndex)
         {
             chunks = default;
             densityGrid = default;
             threatAttractorGrid = default;
+            leaseIndex = -1;
             if (!TryResolveDensityQueryLengths(out int chunkCount, out int gridLength))
                 return true;
+
+            if (!TryAcquireDensityQuerySnapshotLease(
+                    chunkCount,
+                    gridLength,
+                    includeDensityGrid,
+                    includeThreatAttractorGrid,
+                    out leaseIndex,
+                    out chunks,
+                    out densityGrid,
+                    out threatAttractorGrid))
+            {
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationDensityQueryChunks,
+                    _nativeMemory.DensityQueryChunksHandle.Generation,
+                    chunkCount + (includeDensityGrid ? gridLength : 0) + (includeThreatAttractorGrid ? gridLength : 0),
+                    0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return false;
+            }
 
             NativeArray<VegetationDensityChunkRecord> sourceChunks = default;
             NativeArray<float3> sourceDensityGrid = default;
@@ -346,6 +418,7 @@ namespace Hecton8.World
                      gridLength,
                      out sourceThreatAttractorGrid)))
             {
+                ReleaseDensityQuerySnapshotLease(leaseIndex);
                 RecordVegetationMemoryTelemetry(
                     BufferID.VegetationDensityQueryChunks,
                     _nativeMemory.DensityQueryChunksHandle.Generation,
@@ -360,60 +433,319 @@ namespace Hecton8.World
                 return false;
             }
 
-            chunks = H8Memory.Allocate<VegetationDensityChunkRecord>(
-                chunkCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
-            if (includeDensityGrid)
-            {
-                densityGrid = H8Memory.Allocate<float3>(
-                    gridLength,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (includeThreatAttractorGrid)
-            {
-                threatAttractorGrid = H8Memory.Allocate<float2>(
-                    gridLength,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!chunks.IsCreated ||
-                chunks.Length < chunkCount ||
-                (includeDensityGrid && (!densityGrid.IsCreated || densityGrid.Length < gridLength)) ||
-                (includeThreatAttractorGrid && (!threatAttractorGrid.IsCreated || threatAttractorGrid.Length < gridLength)))
-            {
-                int actualLength = (chunks.IsCreated ? chunks.Length : 0) +
-                                   (densityGrid.IsCreated ? densityGrid.Length : 0) +
-                                   (threatAttractorGrid.IsCreated ? threatAttractorGrid.Length : 0);
-                H8Memory.Release(ref chunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                RecordVegetationMemoryTelemetry(
-                    BufferID.VegetationDensityQueryChunks,
-                    _nativeMemory.DensityQueryChunksHandle.Generation,
-                    chunkCount + (includeDensityGrid ? gridLength : 0) + (includeThreatAttractorGrid ? gridLength : 0),
-                    actualLength,
-                    0,
-                    0f,
-                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
-                    VegetationMemoryTelemetryPhase.SlowTick,
-                    VegetationMemorySovereigntyConstants.FlagCapacity,
-                    default);
-                return false;
-            }
-
             NativeArray<VegetationDensityChunkRecord>.Copy(sourceChunks, chunks, chunkCount);
             if (includeDensityGrid)
                 NativeArray<float3>.Copy(sourceDensityGrid, densityGrid, gridLength);
             if (includeThreatAttractorGrid)
                 NativeArray<float2>.Copy(sourceThreatAttractorGrid, threatAttractorGrid, gridLength);
             return true;
+        }
+
+        private bool TryAcquireDensityQuerySnapshotLease(
+            int chunkCount,
+            int gridLength,
+            bool includeDensityGrid,
+            bool includeThreatAttractorGrid,
+            out int leaseIndex,
+            out NativeArray<VegetationDensityChunkRecord> chunks,
+            out NativeArray<float3> densityGrid,
+            out NativeArray<float2> threatAttractorGrid)
+        {
+            leaseIndex = -1;
+            chunks = default;
+            densityGrid = default;
+            threatAttractorGrid = default;
+            if (chunkCount <= 0 ||
+                gridLength <= 0)
+            {
+                return false;
+            }
+
+            int selectedChunkCapacity = _selectedChunkKeys != null ? _selectedChunkKeys.Length : 0;
+            long selectedGridCapacity = (long)selectedChunkCapacity * DensityGridCellCount;
+            if (selectedChunkCapacity <= 0 ||
+                chunkCount > selectedChunkCapacity ||
+                gridLength > selectedGridCapacity)
+            {
+                return false;
+            }
+
+            ReclaimDensityQuerySnapshotLeases();
+            for (int i = 0; i < _densityQuerySnapshotLeases.Length; i++)
+            {
+                DensityQuerySnapshotLease lease = _densityQuerySnapshotLeases[i];
+                if (lease.Active)
+                    continue;
+
+                if (!IsDensityQuerySnapshotLeaseReady(
+                        in lease,
+                        chunkCount,
+                        gridLength,
+                        includeDensityGrid,
+                        includeThreatAttractorGrid))
+                    continue;
+
+                lease.Active = true;
+                lease.Handle = default;
+                _densityQuerySnapshotLeases[i] = lease;
+                leaseIndex = i;
+                chunks = lease.Chunks.GetSubArray(0, chunkCount);
+                densityGrid = includeDensityGrid ? lease.DensityGrid.GetSubArray(0, gridLength) : default;
+                threatAttractorGrid = includeThreatAttractorGrid ? lease.ThreatAttractorGrid.GetSubArray(0, gridLength) : default;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool EnsureDensityQuerySnapshotLeaseBankCapacity(
+            int chunkCount,
+            bool includeDensityGrid,
+            bool includeThreatAttractorGrid)
+        {
+            if (chunkCount <= 0)
+                return false;
+
+            long gridLengthLong = (long)chunkCount * DensityGridCellCount;
+            if (gridLengthLong <= 0L || gridLengthLong > int.MaxValue)
+                return false;
+
+            int gridLength = (int)gridLengthLong;
+            bool allReady = true;
+            for (int i = 0; i < _densityQuerySnapshotLeases.Length; i++)
+            {
+                DensityQuerySnapshotLease lease = _densityQuerySnapshotLeases[i];
+                if (lease.Active)
+                {
+                    allReady = false;
+                    continue;
+                }
+
+                if (!EnsureDensityQuerySnapshotLeaseCapacity(
+                        ref lease,
+                        chunkCount,
+                        gridLength,
+                        includeDensityGrid,
+                        includeThreatAttractorGrid))
+                {
+                    allReady = false;
+                }
+
+                _densityQuerySnapshotLeases[i] = lease;
+            }
+
+            return allReady;
+        }
+
+        private static bool IsDensityQuerySnapshotLeaseReady(
+            in DensityQuerySnapshotLease lease,
+            int chunkCount,
+            int gridLength,
+            bool includeDensityGrid,
+            bool includeThreatAttractorGrid)
+        {
+            return lease.Chunks.IsCreated &&
+                   lease.ChunkCapacity >= chunkCount &&
+                   (!includeDensityGrid || (lease.DensityGrid.IsCreated && lease.GridCapacity >= gridLength)) &&
+                   (!includeThreatAttractorGrid || (lease.ThreatAttractorGrid.IsCreated && lease.GridCapacity >= gridLength));
+        }
+
+        private bool EnsureDensityQuerySnapshotLeaseCapacity(
+            ref DensityQuerySnapshotLease lease,
+            int chunkCount,
+            int gridLength,
+            bool includeDensityGrid,
+            bool includeThreatAttractorGrid)
+        {
+            int chunkCapacity = Mathf.NextPowerOfTwo(math.max(InitialChunkArrayCapacity, chunkCount));
+            int gridCapacity = Mathf.NextPowerOfTwo(math.max(DensityGridCellCount, gridLength));
+            if (lease.Chunks.IsCreated &&
+                lease.ChunkCapacity >= chunkCapacity &&
+                (!includeDensityGrid || (lease.DensityGrid.IsCreated && lease.GridCapacity >= gridCapacity)) &&
+                (!includeThreatAttractorGrid || (lease.ThreatAttractorGrid.IsCreated && lease.GridCapacity >= gridCapacity)))
+            {
+                return true;
+            }
+
+            DisposeDensityQuerySnapshotLeaseArrays(ref lease);
+            lease.ChunkCapacity = chunkCapacity;
+            lease.GridCapacity = gridCapacity;
+            lease.Chunks = new NativeArray<VegetationDensityChunkRecord>(
+                chunkCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: VegetationDensityChunkRecord[chunkCapacity] - public density query lease bank - owner: HectonMapMagicVegetationBridge
+            RegisterTrackedNativeArray(lease.Chunks, nameof(_densityQuerySnapshotLeases));
+
+            if (includeDensityGrid)
+            {
+                lease.DensityGrid = new NativeArray<float3>(
+                    gridCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float3[gridCapacity] - public visibility/biomass density lease grid - owner: HectonMapMagicVegetationBridge
+                RegisterTrackedNativeArray(lease.DensityGrid, nameof(_densityQuerySnapshotLeases));
+            }
+
+            if (includeThreatAttractorGrid)
+            {
+                lease.ThreatAttractorGrid = new NativeArray<float2>(
+                    gridCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float2[gridCapacity] - public threat-attractor density lease grid - owner: HectonMapMagicVegetationBridge
+                RegisterTrackedNativeArray(lease.ThreatAttractorGrid, nameof(_densityQuerySnapshotLeases));
+            }
+
+            bool ready = lease.Chunks.IsCreated &&
+                         lease.Chunks.Length >= chunkCount &&
+                         (!includeDensityGrid || (lease.DensityGrid.IsCreated && lease.DensityGrid.Length >= gridLength)) &&
+                         (!includeThreatAttractorGrid || (lease.ThreatAttractorGrid.IsCreated && lease.ThreatAttractorGrid.Length >= gridLength));
+            if (!ready)
+                DisposeDensityQuerySnapshotLeaseArrays(ref lease);
+
+            return ready;
+        }
+
+        private void MarkDensityQuerySnapshotLeaseScheduled(int leaseIndex, JobHandle handle)
+        {
+            if ((uint)leaseIndex >= (uint)_densityQuerySnapshotLeases.Length)
+                return;
+
+            DensityQuerySnapshotLease lease = _densityQuerySnapshotLeases[leaseIndex];
+            if (!lease.Active)
+                return;
+
+            lease.Handle = handle;
+            _densityQuerySnapshotLeases[leaseIndex] = lease;
+        }
+
+        private void ReleaseDensityQuerySnapshotLease(int leaseIndex)
+        {
+            if ((uint)leaseIndex >= (uint)_densityQuerySnapshotLeases.Length)
+                return;
+
+            DensityQuerySnapshotLease lease = _densityQuerySnapshotLeases[leaseIndex];
+            lease.Active = false;
+            lease.Handle = default;
+            _densityQuerySnapshotLeases[leaseIndex] = lease;
+        }
+
+        private void ReclaimDensityQuerySnapshotLeases()
+        {
+            for (int i = 0; i < _densityQuerySnapshotLeases.Length; i++)
+            {
+                DensityQuerySnapshotLease lease = _densityQuerySnapshotLeases[i];
+                if (!lease.Active ||
+                    !DispatcherJobFence.TryFinalizeCompleted(ref lease.Handle))
+                {
+                    continue;
+                }
+
+                lease.Active = false;
+                _densityQuerySnapshotLeases[i] = lease;
+            }
+        }
+
+        private void DisposeDensityQuerySnapshotLeases()
+        {
+            for (int i = 0; i < _densityQuerySnapshotLeases.Length; i++)
+            {
+                DensityQuerySnapshotLease lease = _densityQuerySnapshotLeases[i];
+                DisposeDensityQuerySnapshotLeaseArrays(ref lease);
+                lease.Active = false;
+                lease.ChunkCapacity = 0;
+                lease.GridCapacity = 0;
+                lease.Handle = default;
+                _densityQuerySnapshotLeases[i] = lease;
+            }
+        }
+
+        private static void DisposeDensityQuerySnapshotLeaseArrays(ref DensityQuerySnapshotLease lease)
+        {
+            DisposeNativeArray(ref lease.ThreatAttractorGrid, lease.Handle);
+            DisposeNativeArray(ref lease.DensityGrid, lease.Handle);
+            DisposeNativeArray(ref lease.Chunks, lease.Handle);
+            lease.Active = false;
+            lease.Handle = default;
+        }
+
+        private bool TryPinDensityQueryJobSnapshot(
+            bool includeDensityGrid,
+            bool includeThreatAttractorGrid,
+            uint chunksPinBit,
+            uint densityGridPinBit,
+            uint threatAttractorGridPinBit,
+            ref IDataVault readPinVault,
+            ref uint readPinMask,
+            out NativeArray<VegetationDensityChunkRecord> chunks,
+            out NativeArray<float3> densityGrid,
+            out NativeArray<float2> threatAttractorGrid,
+            out int chunkCount,
+            out int gridLength)
+        {
+            chunks = default;
+            densityGrid = default;
+            threatAttractorGrid = default;
+            chunkCount = 0;
+            gridLength = 0;
+            if (!TryResolveDensityQueryLengths(out chunkCount, out gridLength))
+                return true;
+
+            bool resolved =
+                TryPinVegetationReadBuffer(
+                    BufferID.VegetationDensityQueryChunks,
+                    chunksPinBit,
+                    ref readPinVault,
+                    ref readPinMask) &&
+                TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.DensityQueryChunksHandle,
+                    BufferID.VegetationDensityQueryChunks,
+                    chunkCount,
+                    out chunks) &&
+                (!includeDensityGrid ||
+                 (TryPinVegetationReadBuffer(
+                      BufferID.VegetationDensityQueryGrid,
+                      densityGridPinBit,
+                      ref readPinVault,
+                      ref readPinMask) &&
+                  TryReadVegetationMemoryBuffer(
+                      in _nativeMemory.DensityQueryGridHandle,
+                      BufferID.VegetationDensityQueryGrid,
+                      gridLength,
+                      out densityGrid))) &&
+                (!includeThreatAttractorGrid ||
+                 (TryPinVegetationReadBuffer(
+                      BufferID.VegetationThreatAttractorGrid,
+                      threatAttractorGridPinBit,
+                      ref readPinVault,
+                      ref readPinMask) &&
+                  TryReadVegetationMemoryBuffer(
+                      in _nativeMemory.ThreatAttractorGridHandle,
+                      BufferID.VegetationThreatAttractorGrid,
+                      gridLength,
+                      out threatAttractorGrid)));
+
+            if (resolved)
+                return true;
+
+            int actualLength = (chunks.IsCreated ? chunks.Length : 0) +
+                               (densityGrid.IsCreated ? densityGrid.Length : 0) +
+                               (threatAttractorGrid.IsCreated ? threatAttractorGrid.Length : 0);
+            RecordVegetationMemoryTelemetry(
+                BufferID.VegetationDensityQueryChunks,
+                _nativeMemory.DensityQueryChunksHandle.Generation,
+                chunkCount + (includeDensityGrid ? gridLength : 0) + (includeThreatAttractorGrid ? gridLength : 0),
+                actualLength,
+                0,
+                0f,
+                VegetationMemoryTelemetryCode.VaultResolveFailed,
+                VegetationMemoryTelemetryPhase.SlowTick,
+                VegetationMemorySovereigntyConstants.FlagStaleHandle,
+                default);
+            chunks = default;
+            densityGrid = default;
+            threatAttractorGrid = default;
+            chunkCount = 0;
+            gridLength = 0;
+            return false;
         }
 
         private void RebuildAbyssalAnchorSnapshot()

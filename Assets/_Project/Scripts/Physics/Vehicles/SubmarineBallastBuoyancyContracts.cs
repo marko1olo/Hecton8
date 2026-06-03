@@ -30,6 +30,7 @@ namespace Hecton8.Physics.Vehicles
         public const int TelemetryBytes = 64;
         public const int TuningBytes = 64;
         public const int ProfileBytes = 64;
+        public const int VesselTelemetryBytes = 24;
         public const float Gravity = 9.80665f;
         public const float LitersPerCubicMeter = 1000f;
         public const float CubicMetersPerLiter = 0.001f;
@@ -40,6 +41,8 @@ namespace Hecton8.Physics.Vehicles
         public const float Epsilon = 0.0001f;
         public const float FaultMicros = 500f;
         public const float AuthoritativeQualityWeight = 1f;
+        public const float MinimumBallastDisplacementScalar = 0.35f;
+        private const float CareTonePerPanel = 1f / 64f;
         public const uint SourceHash = 0x53333333u;
         public const uint CommandFlagFlood = 1u << 0;
         public const uint CommandFlagBlow = 1u << 1;
@@ -56,8 +59,15 @@ namespace Hecton8.Physics.Vehicles
         public const uint ForceFlagMockFluid = 1u << 2;
         public const uint ForceFlagTimingProxy = 1u << 3;
         public const uint ForceFlagSignalDrop = 1u << 4;
+        public const uint ForceFlagVesselTelemetry = 1u << 5;
         public const uint ForceFlagNonFinite = 1u << 31;
         public const byte MovementModePneumaticHiss = 13;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveCareTone01(uint careActions)
+        {
+            return math.saturate(careActions * CareTonePerPanel);
+        }
     }
 
     public static class SubmarineBallastBufferIds
@@ -69,6 +79,7 @@ namespace Hecton8.Physics.Vehicles
         public const BufferID TelemetryRing = BufferID.Shinobu333BallastTelemetryRing;
         public const BufferID Profiles = BufferID.Shinobu333BallastProfiles;
         public const BufferID Tuning = BufferID.Shinobu333BallastTuning;
+        public const BufferID VesselTelemetry = BufferID.Shinobu333VesselTelemetry;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SubmarineBallastConstants.TankBytes)]
@@ -200,6 +211,22 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(56)] private ulong _pad2;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineBallastConstants.VesselTelemetryBytes)]
+    public struct VesselTelemetryEntry
+    {
+        [FieldOffset(0)] public uint TotalCareActionsCount;
+        [FieldOffset(4)] public float CurrentBallastRatio;
+        [FieldOffset(8)] public ulong HullCleanlinessMask;
+        [FieldOffset(16)] public uint LastCareSourceHash;
+        [FieldOffset(20)] public uint LastBallastSourceHash;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveToneWeight01(uint totalCareActionsCount)
+        {
+            return SubmarineBallastConstants.ResolveCareTone01(totalCareActionsCount);
+        }
+    }
+
     public static class SubmarineBallastLayout
     {
         private static readonly bool s_valid = ValidateInternal();
@@ -234,7 +261,8 @@ namespace Hecton8.Physics.Vehicles
                    UnsafeUtility.SizeOf<SubmarineBallastForcePacketDTO>() == SubmarineBallastConstants.ForcePacketBytes &&
                    UnsafeUtility.SizeOf<SubmarineBallastTelemetryEntry>() == SubmarineBallastConstants.TelemetryBytes &&
                    UnsafeUtility.SizeOf<SubmarineBallastTuningDTO>() == SubmarineBallastConstants.TuningBytes &&
-                   UnsafeUtility.SizeOf<SubmarineBallastProfileDTO>() == SubmarineBallastConstants.ProfileBytes
+                   UnsafeUtility.SizeOf<SubmarineBallastProfileDTO>() == SubmarineBallastConstants.ProfileBytes &&
+                   UnsafeUtility.SizeOf<VesselTelemetryEntry>() == SubmarineBallastConstants.VesselTelemetryBytes
 #if UNITY_EDITOR
                     &&
                     OffsetOf<SubmarineBallastFluidSampleDTO>(nameof(SubmarineBallastFluidSampleDTO.ActiveSampleBudget)) == 148 &&
@@ -242,7 +270,12 @@ namespace Hecton8.Physics.Vehicles
                     OffsetOf<SubmarineBallastForcePacketDTO>(nameof(SubmarineBallastForcePacketDTO.NetForce)) == 24 &&
                     OffsetOf<SubmarineBallastForcePacketDTO>(nameof(SubmarineBallastForcePacketDTO.TargetEntityHash)) == 84 &&
                     OffsetOf<SubmarineBallastTelemetryEntry>(nameof(SubmarineBallastTelemetryEntry.ComputeMicros)) == 44 &&
-                    OffsetOf<SubmarineBallastTuningDTO>(nameof(SubmarineBallastTuningDTO.SourceHash)) == 32
+                    OffsetOf<SubmarineBallastTuningDTO>(nameof(SubmarineBallastTuningDTO.SourceHash)) == 32 &&
+                    OffsetOf<VesselTelemetryEntry>(nameof(VesselTelemetryEntry.TotalCareActionsCount)) == 0 &&
+                    OffsetOf<VesselTelemetryEntry>(nameof(VesselTelemetryEntry.CurrentBallastRatio)) == 4 &&
+                    OffsetOf<VesselTelemetryEntry>(nameof(VesselTelemetryEntry.HullCleanlinessMask)) == 8 &&
+                    OffsetOf<VesselTelemetryEntry>(nameof(VesselTelemetryEntry.LastCareSourceHash)) == 16 &&
+                    OffsetOf<VesselTelemetryEntry>(nameof(VesselTelemetryEntry.LastBallastSourceHash)) == 20
 #endif
                     ;
         }
@@ -584,6 +617,7 @@ namespace Hecton8.Physics.Vehicles
     {
         [ReadOnly, NoAlias] public NativeArray<BallastTankDTO> Tanks;
         [ReadOnly, NoAlias] public NativeArray<SubmarineBallastFluidSampleDTO> FluidSamples;
+        [ReadOnly, NoAlias] public NativeArray<VesselTelemetryEntry> VesselTelemetry;
         [NoAlias] public NativeArray<SubmarineBallastForcePacketDTO> ForcePackets;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<SubmarineBallastTelemetryEntry> TelemetryRing;
         public int TankCount;
@@ -648,6 +682,7 @@ namespace Hecton8.Physics.Vehicles
             float submerged = submergedSum * math.rcp(submergedWeight);
 
             float totalWaterLiters = 0f;
+            float totalTankCapacityLiters = 0f;
             float totalAirMassKg = 0f;
             uint flags = 0u;
             for (int i = 0; i < tankCount; i++)
@@ -657,6 +692,7 @@ namespace Hecton8.Physics.Vehicles
                 float waterLiters = math.clamp(SafeFinite(tank.CurrentWaterLiters, 0f), 0f, tankVolume);
                 float airPressure = math.max(SubmarineBallastConstants.AtmosphericPressureAtm, SafeFinite(tank.CompressedAirPressureATM, 1f));
                 float airVolumeM3 = math.max(0f, (tankVolume - waterLiters) * SubmarineBallastConstants.CubicMetersPerLiter);
+                totalTankCapacityLiters += tankVolume;
                 totalWaterLiters += waterLiters;
                 totalAirMassKg += airVolumeM3 * SubmarineBallastConstants.AirDensityKgPerM3AtOneAtm * airPressure;
                 flags |= math.select(0u, SubmarineBallastConstants.ForceFlagPressureBlocked, (tank.InputStateFlags & SubmarineBallastConstants.TankFlagPressureBlocked) != 0u);
@@ -664,7 +700,12 @@ namespace Hecton8.Physics.Vehicles
                 flags |= math.select(0u, SubmarineBallastConstants.ForceFlagNonFinite, (tank.InputStateFlags & SubmarineBallastConstants.TankFlagNonFinite) != 0u);
             }
 
-            float displacedVolume = hullVolume * submerged;
+            float defaultBallastRatio = totalTankCapacityLiters > SubmarineBallastConstants.Epsilon
+                ? 1f - math.saturate(totalWaterLiters * math.rcp(totalTankCapacityLiters))
+                : 1f;
+            float vesselBallastRatio = ResolveVesselBallastRatio(defaultBallastRatio, ref flags);
+            float displacementBallastScalar = math.lerp(SubmarineBallastConstants.MinimumBallastDisplacementScalar, 1f, vesselBallastRatio);
+            float displacedVolume = hullVolume * submerged * displacementBallastScalar;
             float buoyantY = displacedVolume * density * SubmarineBallastConstants.Gravity;
             float waterMassKg = totalWaterLiters * SubmarineBallastConstants.CubicMetersPerLiter * density;
             float ballastGravityY = -(waterMassKg + totalAirMassKg) * SubmarineBallastConstants.Gravity;
@@ -759,6 +800,20 @@ namespace Hecton8.Physics.Vehicles
         private static float SafeFinite(float value, float fallback)
         {
             return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveVesselBallastRatio(float fallback, ref uint flags)
+        {
+            if (!VesselTelemetry.IsCreated || VesselTelemetry.Length <= 0)
+                return math.saturate(fallback);
+
+            VesselTelemetryEntry entry = VesselTelemetry[0];
+            bool finiteRatio = math.isfinite(entry.CurrentBallastRatio);
+            float ratio = math.saturate(math.select(fallback, entry.CurrentBallastRatio, finiteRatio));
+            flags |= SubmarineBallastConstants.ForceFlagVesselTelemetry;
+            flags |= math.select(SubmarineBallastConstants.ForceFlagNonFinite, 0u, finiteRatio);
+            return ratio;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

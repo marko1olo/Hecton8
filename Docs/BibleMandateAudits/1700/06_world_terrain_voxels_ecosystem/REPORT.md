@@ -2,7 +2,7 @@
 
 Status: STATIC BIBLE/MANDATE/CODEBASE AUDIT - RUNTIME PROOF NOT RUN
 Date: 2026-06-02
-Verdict: YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED
+Verdict: YELLOW_LINE_LEVEL_STATIC_CLASSIFIED_RUNTIME_PROOF_PENDING
 
 ## Scope
 
@@ -43,11 +43,12 @@ This report compares the current root bible routes and selected mandate registry
 
 ## Static Evidence Found
 
-Total matching files: 317. Showing first 80. Full list: _scans/06_world_terrain_voxels_ecosystem_evidence_files.txt.
+Total matching files: 319. Showing first 80. Full list: _scans/06_world_terrain_voxels_ecosystem_evidence_files.txt.
 
 - Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs
 - Assets\_Project\Editor\Generators\Geology\AbyssalGeologyStudio1606.cs
 - Assets\_Project\Editor\Generators\Geology\Hecton8.AbyssalGeology1606.Editor.asmdef
+- Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs
 - Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs
 - Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs
 - Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherJobs.cs
@@ -124,41 +125,21 @@ Total matching files: 317. Showing first 80. Full list: _scans/06_world_terrain_
 - Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs
 - Assets\_Project\Scripts\Fauna\ProceduralCrabLegIKRuntime.cs
 - Assets\_Project\Scripts\Fauna\StressDrivenSpawnDirector.cs
-- Assets\_Project\Scripts\Fauna\StressDrivenSpawnDirectorGizmo.cs
 
 ## Static Risk Suspects
 
-These are suspects, not confirmed defects. Runtime suspects need code review. Editor/tool suspects are legal only if they cannot execute in gameplay/player hot paths.
+These are raw static suspects, not confirmed defects. Current manual or line-level review files are the authority for classification where present; editor/tool suspects remain legal only if they cannot execute in gameplay/player hot paths.
 
 Runtime suspects:
-Total runtime suspects: 254. Showing first 80. Full list: _scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt.
+Total runtime suspects: 254 after line-level reconciliation. Showing first 80 raw generated lines. Full list: _scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt.
 
 - Assets\_Project\Scripts\World\AbyssalFluidDecalManager.cs:943:                    Hecton8.Core.H8Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
-- Assets\_Project\Scripts\World\BioCableIK.cs:708:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
-- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:796:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1058:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
-- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2304:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4231:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. Manager-created BioCableIK rigs are disabled until an authored material is assigned.", this);
-- Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
-- Assets\_Project\Scripts\World\CullingManager.cs:206:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
-- Assets\_Project\Scripts\World\CullingManager.cs:213:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
-- Assets\_Project\Scripts\World\CullingManager.cs:537:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
-- Assets\_Project\Scripts\World\CullingManager.cs:552:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
-- Assets\_Project\Scripts\World\CullingManager.cs:558:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
-- Assets\_Project\Scripts\World\CullingManager.cs:645:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
-- Assets\_Project\Scripts\World\CullingManager.cs:668:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
-- Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
-- Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
-- Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
+- Assets\_Project\Scripts\World\BioCableIK.cs:998:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
+- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:806:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1068:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
+- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2316:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4345:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. BioCableIK rigs are disabled until an authored material is assigned.", this);
 - Assets\_Project\Scripts\World\Biolum\HectonBiolumZone.cs:454:            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
-- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
-- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
-- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
-- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
-- Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
-- Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
 - Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:45:                Hecton8.Core.H8Debug.Log(
 - Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:94:                samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:95:                sources = new NativeArray<BiomeTransitionFogSource>(
@@ -166,10 +147,6 @@ Total runtime suspects: 254. Showing first 80. Full list: _scans/06_world_terrai
 - Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:100:                toAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:101:                playerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:102:                results = new NativeArray<BiomeTransitionFogResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
-- Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
-- Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
-- Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
 - Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:629:            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
 - Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:631:                Allocator.Persistent,
 - Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:828:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -178,114 +155,69 @@ Total runtime suspects: 254. Showing first 80. Full list: _scans/06_world_terrai
 - Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1519:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1947:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
-- Assets\_Project\Scripts\World\FloraInteractionManager.cs:8127:                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:690:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:695:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:700:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:705:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:710:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:715:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:720:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1162:                    Allocator.Persistent,
-- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1667:                Hecton8.Core.H8Debug.LogException(exception);
-- Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
-- Assets\_Project\Scripts\World\HectonHLODRenderer.cs:288:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1518:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1519:            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1685:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1707:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:2519:            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4466:            _cullTelemetryReadback.Data = new NativeArray<uint>(
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4468:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:5122:            NativeArray<byte> visibilityMask = new NativeArray<byte>(
+- Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
+- Assets\_Project\Scripts\World\CullingManager.cs:215:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
+- Assets\_Project\Scripts\World\CullingManager.cs:222:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
+- Assets\_Project\Scripts\World\CullingManager.cs:552:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
+- Assets\_Project\Scripts\World\CullingManager.cs:569:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
+- Assets\_Project\Scripts\World\CullingManager.cs:575:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
+- Assets\_Project\Scripts\World\CullingManager.cs:665:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
+- Assets\_Project\Scripts\World\CullingManager.cs:688:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
+- Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
+- Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
+- Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
+- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
+- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
+- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
+- Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
+- Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
+- Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
+- Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
 - Assets\_Project\Scripts\World\HectonSpatialHash.cs:1225:                Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
-- Assets\_Project\Scripts\World\HectonWorldShellVisualDriver1428.cs:28:        private void LateUpdate()
 - Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:106:                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:107:                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:108:                reductions = new NativeArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:109:                summary = new NativeArray<HectonSandboxAbyssalShelfSmokeSummary>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:687:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:692:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:697:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:702:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:707:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:712:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:717:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1178:                    Allocator.Persistent,
+- Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1694:                Hecton8.Core.H8Debug.LogException(exception);
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1521:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1522:            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1688:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1712:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:2524:            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4471:            _cullTelemetryReadback.Data = new NativeArray<uint>(
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4473:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:5127:            NativeArray<byte> visibilityMask = new NativeArray<byte>(
+- Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
+- Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\HectonHLODRenderer.cs:288:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+- Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4816:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5392:            Hecton8.Core.H8Debug.Log(
+- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5402:            Hecton8.Core.H8Debug.LogError("[HectonMapMagicVegetationBridge] Loop guard hit.");
+- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5598:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8598:            state.HeightReadbackData = new NativeArray<ushort>(
+- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8600:                Allocator.Persistent,
+- Assets\_Project\Scripts\World\HectonWorldShellVisualDriver1428.cs:28:        private void LateUpdate()
 - Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:25:            if (cameraRig == null && Camera.main != null)
 - Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:26:                cameraRig = Camera.main.transform;
 - Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:33:        private void Update()
 - Assets\_Project\Scripts\World\LODSystemManager.cs:214:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Duplicate registry owner detected. Destroying duplicate.");
 - Assets\_Project\Scripts\World\LODSystemManager.cs:234:            Hecton8.Core.H8Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
 - Assets\_Project\Scripts\World\LODSystemManager.cs:565:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Invalid quality preset value. Using default (Medium).");
-- Assets\_Project\Scripts\World\LODSystemManager.cs:598:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Registered LOD groups exceeds max capacity. Consider increasing capacity.");
-- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4785:                Allocator.Persistent,
-- Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5361:            Hecton8.Core.H8Debug.Log(
 
 Editor/tool/static suspects:
-Total editor/tool/static suspects: 539. Showing first 80. Full list: _scans/06_world_terrain_voxels_ecosystem_editor_tool_risks.txt.
+Total editor/tool/static suspects: 628. Showing first 80. Full list: _scans/06_world_terrain_voxels_ecosystem_editor_tool_risks.txt.
 
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:163:                UnityEngine.Debug.LogError("[SHINOBU_308] Biota density bake failed: " + exception.GetType().Name + " " + exception.Message);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:202:                telemetry = new NativeArray<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:217:                depth = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:218:                silt = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:219:                biome = new NativeArray<uint>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:220:                temperature = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:221:                thermal = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:222:                density = new NativeArray<byte>(result.RawByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:223:                nonFinite = new NativeArray<byte>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:227:                edgeWest = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:228:                edgeEast = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:229:                edgeSouth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:230:                edgeNorth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:231:                runCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:310:                countRleHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:314:                runs = new NativeArray<BiotaDensityRleRunDTO>(runCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:326:                rleHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:390:                    cleanupHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:447:                telemetry = new NativeArray<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:462:                depth = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:463:                silt = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:464:                biome = new NativeArray<uint>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:465:                temperature = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:466:                thermal = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:467:                density = new NativeArray<byte>(result.RawByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:468:                nonFinite = new NativeArray<byte>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:472:                edgeWest = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:473:                edgeEast = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:474:                edgeSouth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:475:                edgeNorth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:476:                runCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:555:                countRleHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:559:                runs = new NativeArray<BiotaDensityRleRunDTO>(runCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:571:                rleHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:636:                    cleanupHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:693:                depth = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:694:                silt = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:695:                biome = new NativeArray<uint>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:696:                temperature = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:697:                thermal = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:698:                density = new NativeArray<byte>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:699:                nonFinite = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:703:                edgeWest = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:704:                edgeEast = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:705:                edgeSouth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:706:                edgeNorth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:771:                handle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:796:                    cleanupHandle.Complete();
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:870:            NativeArray<BiotaSpawnRuleDTO> output = new NativeArray<BiotaSpawnRuleDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:892:            NativeArray<BiotaRuleWeightDTO> output = new NativeArray<BiotaRuleWeightDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:912:            NativeArray<BiotaThermalVentDTO> vents = new NativeArray<BiotaThermalVentDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:1441:                UnityEngine.Debug.LogWarning("[SHINOBU_308] Blackbox dump failed closed: " + exception.GetType().Name);
-- Assets\_Project\Scripts\World\Editor\VegetationMemorySovereigntyValidator1316.cs:25:            H8Debug.Log("[1316] Vegetation memory sovereignty layout validator passed.");
-- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:135:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
-- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:152:            _statusLabel.text = "Active. Effective radius " + tuning.EffectiveRingRadius.ToString("0.00", CultureInfo.InvariantCulture) +
-- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:188:            _graphLabel.text = "Latency " + counters.LatencyEwmaMs.ToString("0.0", CultureInfo.InvariantCulture) +
-- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:197:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
-- Assets\_Project\Scripts\World\Editor\Synchronous_IO_Scanner.cs:20:            Debug.Log("Synchronous_IO_Scanner findings: " + findingCount + ". Report: " + ReportRelativePath);
-- Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:167:                _stats.text = "Vault not active.";
-- Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:209:            _stats.text = _builder.ToString();
-- Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:329:            Debug.Log(RunScan());
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\Terrain_Shader_Scanner.cs:38:            UnityEngine.Debug.Log("[SHINOBU_243] Terrain shader scanner wrote " + ReportPath + " offenders=" + offenders);
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:118:                _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:119:                _statusLabel.text = "CSV rejected: " + CsvPath;
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:126:            _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture) + " | rows " + ruleCount + " | rule sets " + ruleSetCount;
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:127:            _statusLabel.text = "Loaded CSV rules: " + ruleCount + " | rule sets " + ruleSetCount + " | schema 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture);
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:141:                _statusLabel.text = "Preview refreshed. R=Rock, G=Sand, B=Silt, A=Erosion.";
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:148:                _statusLabel.text = "Bake already running.";
-- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:158:                _statusLabel.text = baked
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:176:                heights = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:177:                erosion = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:178:                macros = new NativeArray<uint>(macroCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -297,14 +229,82 @@ Total editor/tool/static suspects: 539. Showing first 80. Full list: _scans/06_w
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:185:                edgeSouth = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:186:                edgeNorth = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:187:                telemetry = new NativeArray<BiomeSplatmapBakeTelemetryEntry>(BiomeWeightMapBakeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:238:                    blurredPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:252:                finalHandle.Complete();
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:286:                UnityEngine.Debug.LogError("[SHINOBU_243] Biome weight-map bake failed: " + ex.GetType().Name + " " + ex.Message);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:292:                    cleanupHandle.Complete();
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:361:                heights = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:362:                erosion = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:363:                macros = new NativeArray<uint>(math.max(1, config.MacroWidth * config.MacroHeight), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:364:                normals = new NativeArray<float3>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:365:                pixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:366:                nonFiniteFlags = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:368:                edge = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:411:                    blurredPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:424:                handle.Complete();
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:436:                    cleanupHandle.Complete();
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:507:            NativeArray<BiomeBlendRuleDTO> nativeRules = new NativeArray<BiomeBlendRuleDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:526:                UnityEngine.Debug.LogWarning("[SHINOBU_243] BC7 texture compression failed: " + exception.Message);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:626:                UnityEngine.Debug.LogWarning("[SHINOBU_243] Black-box dump failed closed: " + exception.GetType().Name);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:118:                _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:119:                _statusLabel.text = "CSV rejected: " + CsvPath;
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:126:            _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture) + " | rows " + ruleCount + " | rule sets " + ruleSetCount;
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:127:            _statusLabel.text = "Loaded CSV rules: " + ruleCount + " | rule sets " + ruleSetCount + " | schema 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture);
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:141:                _statusLabel.text = "Preview refreshed. R=Rock, G=Sand, B=Silt, A=Erosion.";
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:148:                _statusLabel.text = "Bake already running.";
+- Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:158:                _statusLabel.text = baked
+- Assets\_Project\Scripts\World\Editor\VegetationMemorySovereigntyValidator1316.cs:25:            H8Debug.Log("[1316] Vegetation memory sovereignty layout validator passed.");
+- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:135:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
+- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:152:            _statusLabel.text = "Active. Effective radius " + tuning.EffectiveRingRadius.ToString("0.00", CultureInfo.InvariantCulture) +
+- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:188:            _graphLabel.text = "Latency " + counters.LatencyEwmaMs.ToString("0.0", CultureInfo.InvariantCulture) +
+- Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:197:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
+- Assets\_Project\Scripts\World\Editor\Synchronous_IO_Scanner.cs:20:            Debug.Log("Synchronous_IO_Scanner findings: " + findingCount + ". Report: " + ReportRelativePath);
+- Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:167:                _stats.text = "Vault not active.";
+- Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:209:            _stats.text = _builder.ToString();
+- Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:329:            Debug.Log(RunScan());
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\Runtime_Spawner_Scanner.cs:27:            UnityEngine.Debug.Log("[SHINOBU_308] Runtime spawner scanner wrote " + ReportPath + " blockers=" + result.BlockerCount + " excluded=" + result.ExcludedCount);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:72:                Debug.Log("[SHINOBU_215] Hadal arch DTO layouts validated.");
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:83:            Debug.LogError("[SHINOBU_215] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:94:            Debug.LogError("[SHINOBU_215] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:113:                _schemaLabel.text = "CSV Schema v" + BiotaSpawnRuleCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:114:                _statusLabel.text = "CSV rejected: " + BiotaDensityBakePipeline.DefaultCsvPath;
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:121:            _schemaLabel.text = "CSV Schema v" + BiotaSpawnRuleCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8") + " | rows " + ruleCount;
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:122:            _statusLabel.text = "Loaded biota rules: " + ruleCount + " | schema 0x" + schemaHash.ToString("X8");
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:135:                _statusLabel.text = "Preview refreshed " + _previewTexture.width + "x" + _previewTexture.height + ". Green=flora, Blue=fauna, Red=predator/vent pressure.";
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:147:                _statusLabel.text = "Bake already running.";
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:161:                    _statusLabel.text = "Baked " + result.OutputPath + " | " + result.Width + "x" + result.Height + "x" + result.LayerCount + " | RLE " + result.RleRunCount + " | warnings 0x" + result.WarningFlags.ToString("X8");
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:168:                    _statusLabel.text = "Bake failed: " + exception.GetType().Name + ". See Console and Docs/AgentLogs/Dump_SHINOBU_308.bin if emitted.";
+- Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:169:                Debug.LogError("[SHINOBU_308] Biota density bake failed: " + exception);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\Intersecting_Geometry_Scanner.cs:65:            MeshRenderer[] loadedRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\Intersecting_Geometry_Scanner.cs:77:                MeshRenderer[] renderers = prefab.GetComponentsInChildren<MeshRenderer>(true);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:96:                densities = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:97:                cavity = new NativeArray<byte>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:98:                telemetry = new NativeArray<HadalArchBakeTelemetryEntry>(HadalArchBakeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:99:                shapes = new NativeArray<SdfShapeDTO>(math.max(config.ShapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:117:                sealHandle.Complete();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:123:                cavityHandle.Complete();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:134:                }.Schedule().Complete();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:149:                }.Schedule().Complete();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:168:                }.Schedule().Complete();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:178:                }.Schedule().Complete();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:333:                MeshCollider collider = root.AddComponent<MeshCollider>();
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:178:                _statusLabel.text = "CSV load failed or recipe missing: " + CsvPath;
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:182:            _statusLabel.text = "Loaded CSV recipe. Schema hash 0x" + schemaHash.ToString("X8") + ". Shapes " + _shapes.Count + ".";
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:200:                _statusLabel.text = "Bake already running.";
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:217:            _statusLabel.text = _bakeInFlight ? "Bake scheduled." : "Bake rejected; another bake is active.";
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:226:            _statusLabel.text =
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:239:            _statusLabel.text = "Bake failed: " + exception.GetType().Name;
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:331:            NativeArray<SdfShapeDTO> nativeShapes = new NativeArray<SdfShapeDTO>(math.max(shapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:332:            NativeArray<float3> hitPositions = new NativeArray<float3>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:333:            NativeArray<byte> hitFlags = new NativeArray<byte>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
 ## Exists / Missing / Required Proof
 
 - Exists: bible routes exist and static implementation evidence was found.
-- Partial: runtime static risk suspects need manual code review.
+- Partial: all 254 runtime static suspect lines have method-level classification in `LINE_LEVEL_CLASSIFICATION.md`; runtime/profiler/player proof is still missing.
 - Editor/tool: static suspects exist but may be legal if editor-only or cold-path.
 - Required proof: Seed manifest, terrain mask proof, voxel seam proof, chunk/residency proof, compact/high route screenshots, biome/ecosystem owner cadence proof.
 
 ## Next Audit Action
 
-Classify each runtime suspect as cold-path/legal or runtime violation. Fix runtime violations before profiler proof.
+Use `LINE_LEVEL_CLASSIFICATION.md`, close `RB-001` and `RB-015`, then collect vegetation, radar, scatter, SDF, voxel, material-pool, authored package, profiler, player-build, and device proof before any green/release claim.

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS083_FAUNA_ENCOUNTER_GRAMMAR",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR",
+      "release_set_id": "RS083_FAUNA_ENCOUNTER_GRAMMAR",
+      "article_id": "applied_lore.predator_shadow_encounter_grammar",
+      "title_key": "applied_lore.predator_shadow_encounter_grammar.title",
+      "unlock": {
+        "primary": "unlock.predator_shadow_encounter_grammar",
+        "poi_tags": [
+          "poi.predator_shadow_sonar_gap",
+          "poi.cut_fish_path",
+          "poi.low_light_turn_marker"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.shelf_drop"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Predator Shadow Encounter Grammar",
+          "scanner": "Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Use for AI/spawn design notes and scanner cards."
+        },
+        "ru_RU": {
+          "title": "Грамматика встречи с тенью хищника",
+          "scanner": "Грамматика встречи: тень хищника. Разрывы сонаров и обрубленные пути добычи предупреждают раньше тела.",
+          "terminal": "ГРАММАТИКА ФАУНЫ: тени хищников - давление маршрута. Запускать через перекрытие света, разброс добычи и разрыв сонара, а не scripted monster reveal.",
+          "audio": "Самый безопасный знак - не увидеть существо. А увидеть, как все остальное остановилось.",
+          "in_game_wiki": "Встречи с тенью хищника делают страх глубины читаемым. Это не босс, а движущееся условие, меняющее кислород, маршрут и уверенность скана.",
+          "external_site": "Фауна HECTON-8 сделана как грамматика встреч: предупреждения, маршруты, давление и неполные чтения.",
+          "field_note": "Использовать для AI/spawn design notes и scanner cards."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft JA localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft JA localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft JA localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft JA localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft JA localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft ZH localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft ZH localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft ZH localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft ZH localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft FR localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft FR localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft FR localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft FR localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft FR localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft ES localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft ES localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft ES localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft ES localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft ES localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft DE localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft DE localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft DE localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft DE localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft DE localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft PL localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft PL localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft PL localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft PL localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft PL localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft UK localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft UK localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft UK localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft UK localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft UK localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft AR localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft AR localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft AR localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft AR localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft AR localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft ID localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft ID localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft ID localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft ID localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft ID localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft KO localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft KO localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft KO localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft KO localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft KO localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft HE localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft HE localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft HE localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft HE localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft HE localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft PT localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft PT localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft PT localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft PT localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft PT localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Predator Shadow Encounter Grammar",
+          "scanner": "Draft NL localization pending native pass. Encounter grammar: predator shadow. Sonar gaps and cut prey paths warn before the body appears.",
+          "terminal": "Draft NL localization pending native pass. FAUNA GRAMMAR: predator shadows are route pressure. Trigger through light occlusion, prey scatter and sonar discontinuity, not scripted monster reveal.",
+          "audio": "Draft NL localization pending native pass. The safest sign is not seeing the thing. It is watching everything else stop.",
+          "in_game_wiki": "Draft NL localization pending native pass. Predator-shadow encounters make fear of depth readable. The animal is not a boss; it is a moving condition that changes oxygen spending, route choice and scan confidence.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 fauna is designed as encounter grammar: warnings, routes, pressure and imperfect readings.",
+          "field_note": "Draft NL localization pending native pass. Use for AI/spawn design notes and scanner cards."
+        }
+      }
+    },
+    {
+      "packet_id": "P412_GLASS_GRAZER_CLEARING_ENCOUNTER_GRAMMAR",
+      "release_set_id": "RS083_FAUNA_ENCOUNTER_GRAMMAR",
+      "article_id": "applied_lore.glass_grazer_clearing_encounter_grammar",
+      "title_key": "applied_lore.glass_grazer_clearing_encounter_grammar.title",
+      "unlock": {
+        "primary": "unlock.glass_grazer_clearing_encounter_grammar",
+        "poi_tags": [
+          "poi.glass_grazer_clearing",
+          "poi.scraped_mineral_path",
+          "poi.safe_oxygen_patch"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.grazer_meadow"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Use for safe-zone literacy and shallow contrast."
+        },
+        "ru_RU": {
+          "title": "Грамматика поляны стеклянных пастухов",
+          "scanner": "Грамматика встречи: поляна glass grazers. Соскобленные маршруты безопасны, пока стадо не исчезло.",
+          "terminal": "ГРАММАТИКА ФАУНЫ: glass grazers открывают минералы и кислородные карманы. Очищенный участок полезен; пустой участок - warning state.",
+          "audio": "Пастухи делают яркие коридоры. Кто-то другой решает, когда они пустеют.",
+          "in_game_wiki": "Встречи с glass grazers держат контраст ужаса. Они красивы, полезны и опасны, потому что их движение предсказывает невидимое давление.",
+          "external_site": "Яркая мелководная экология - не декор. Она учит системам сначала красотой, потом угрозой.",
+          "field_note": "Использовать для safe-zone literacy и контраста мелководья."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft JA localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft JA localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft JA localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft JA localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft JA localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft JA localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft ZH localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft ZH localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft ZH localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft ZH localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft ZH localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft FR localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft FR localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft FR localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft FR localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft FR localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft FR localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft ES localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft ES localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft ES localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft ES localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft ES localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft ES localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft DE localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft DE localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft DE localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft DE localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft DE localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft DE localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft PL localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft PL localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft PL localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft PL localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft PL localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft PL localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft UK localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft UK localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft UK localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft UK localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft UK localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft UK localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft AR localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft AR localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft AR localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft AR localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft AR localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft AR localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft ID localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft ID localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft ID localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft ID localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft ID localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft ID localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft KO localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft KO localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft KO localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft KO localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft KO localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft KO localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft HE localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft HE localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft HE localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft HE localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft HE localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft HE localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft PT localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft PT localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft PT localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft PT localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft PT localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft PT localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Glass Grazer Clearing Encounter Grammar",
+          "scanner": "Draft NL localization pending native pass. Encounter grammar: glass grazer clearing. Scraped routes can be safe until the herd vanishes.",
+          "terminal": "Draft NL localization pending native pass. FAUNA GRAMMAR: glass grazers expose mineral and oxygen pockets. A cleared patch is useful; an abandoned patch is a warning state.",
+          "audio": "Draft NL localization pending native pass. The grazers make bright corridors. Something else decides when they empty.",
+          "in_game_wiki": "Draft NL localization pending native pass. Glass-grazer encounters contrast the horror. They are beautiful, useful and still dangerous because their movement predicts unseen pressure.",
+          "external_site": "Draft NL localization pending native pass. Bright shallow ecology is not decoration. It teaches systems through beauty first and threat second.",
+          "field_note": "Draft NL localization pending native pass. Use for safe-zone literacy and shallow contrast."
+        }
+      }
+    },
+    {
+      "packet_id": "P413_LANTERN_DRIFT_FALSE_SAFE_ENCOUNTER_GRAMMAR",
+      "release_set_id": "RS083_FAUNA_ENCOUNTER_GRAMMAR",
+      "article_id": "applied_lore.lantern_drift_false_safe_encounter_grammar",
+      "title_key": "applied_lore.lantern_drift_false_safe_encounter_grammar.title",
+      "unlock": {
+        "primary": "unlock.lantern_drift_false_safe_encounter_grammar",
+        "poi_tags": [
+          "poi.lantern_drift_light_lane",
+          "poi.false_safe_bloom",
+          "poi.signal_colored_plankton"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.low_visibility"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Use for scanner ambiguity and low-visibility pathing."
+        },
+        "ru_RU": {
+          "title": "Грамматика ложной безопасности фонарных дрейфов",
+          "scanner": "Грамматика встречи: lantern drift. Яркие дорожки могут значить кислород, шум сигнала или смещенных хищников.",
+          "terminal": "ГРАММАТИКА ФАУНЫ: lantern drifts не должны означать safe. Привязать цвет, пульс и поведение животных к разным route hints.",
+          "audio": "Свет - не милость. Это данные, которые твой костюм еще не умеет разделять.",
+          "in_game_wiki": "Встречи с lantern drift держат красоту мелководья нестабильной. Один bloom помогает навигации, скрывает шум или показывает движение крупной фауны.",
+          "external_site": "Яркое мелководье HECTON-8 читаемо, но не невинно.",
+          "field_note": "Использовать для scanner ambiguity и low-visibility pathing."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft JA localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft JA localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft JA localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft JA localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft JA localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft ZH localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft ZH localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft ZH localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft ZH localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft FR localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft FR localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft FR localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft FR localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft FR localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft ES localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft ES localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft ES localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft ES localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft ES localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft DE localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft DE localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft DE localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft DE localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft DE localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft PL localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft PL localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft PL localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft PL localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft PL localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft UK localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft UK localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft UK localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft UK localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft UK localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft AR localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft AR localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft AR localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft AR localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft AR localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft ID localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft ID localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft ID localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft ID localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft ID localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft KO localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft KO localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft KO localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft KO localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft KO localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft HE localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft HE localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft HE localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft HE localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft HE localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft PT localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft PT localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft PT localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft PT localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft PT localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Lantern Drift False-Safe Encounter Grammar",
+          "scanner": "Draft NL localization pending native pass. Encounter grammar: lantern drift. Bright lanes can mean oxygen, signal noise or displaced predators.",
+          "terminal": "Draft NL localization pending native pass. FAUNA GRAMMAR: lantern drifts must not equal safe. Bind color, pulse and local animal behavior to different route hints.",
+          "audio": "Draft NL localization pending native pass. Light is not mercy. It is data your suit has not learned to separate.",
+          "in_game_wiki": "Draft NL localization pending native pass. Lantern-drift encounters keep shallow beauty unstable. The same bloom can help navigation, hide signal corruption or show that larger fauna have moved.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's bright shallows are readable, but never innocent.",
+          "field_note": "Draft NL localization pending native pass. Use for scanner ambiguity and low-visibility pathing."
+        }
+      }
+    },
+    {
+      "packet_id": "P414_BRINE_VANE_NAVIGATION_ENCOUNTER_GRAMMAR",
+      "release_set_id": "RS083_FAUNA_ENCOUNTER_GRAMMAR",
+      "article_id": "applied_lore.brine_vane_navigation_encounter_grammar",
+      "title_key": "applied_lore.brine_vane_navigation_encounter_grammar.title",
+      "unlock": {
+        "primary": "unlock.brine_vane_navigation_encounter_grammar",
+        "poi_tags": [
+          "poi.brine_vane_current_fan",
+          "poi.density_turn_marker",
+          "poi.vane_shadow_sonar_warp"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.vane_forest"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Brine Vane Navigation Encounter Grammar",
+          "scanner": "Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "ru_RU": {
+          "title": "Грамматика навигации по рассольным веерам",
+          "scanner": "Грамматика встречи: brine vane. Веера течений и искажения сонара создают читаемые плотностные повороты.",
+          "terminal": "ГРАММАТИКА ФАУНЫ/ФЛОРЫ: brine vanes - живые навигационные маркеры. Плотность, течение и sonar warp должны стать route system.",
+          "audio": "Веер тебя не ведет. Он достаточно громко подчиняется воде, чтобы за ним идти.",
+          "in_game_wiki": "Встречи с brine vane показывают океан как сеть процессов без говорящего разума. Atlas может использовать процесс, но течение остается физикой.",
+          "external_site": "Океану не нужен диалог, чтобы быть активным. Его процессы становятся маршрутами, угрозами и ремонтной средой.",
+          "field_note": "Использовать для среднеглубинной навигации и предвестия repair network Atlas."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft JA localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft JA localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft JA localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft JA localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft JA localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft JA localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft ZH localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft ZH localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft ZH localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft ZH localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft ZH localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft FR localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft FR localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft FR localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft FR localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft FR localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft FR localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft ES localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft ES localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft ES localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft ES localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft ES localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft ES localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft DE localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft DE localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft DE localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft DE localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft DE localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft DE localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft PL localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft PL localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft PL localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft PL localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft PL localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft PL localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft UK localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft UK localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft UK localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft UK localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft UK localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft UK localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft AR localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft AR localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft AR localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft AR localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft AR localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft AR localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft ID localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft ID localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft ID localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft ID localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft ID localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft ID localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft KO localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft KO localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft KO localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft KO localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft KO localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft KO localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft HE localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft HE localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft HE localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft HE localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft HE localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft HE localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft PT localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft PT localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft PT localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft PT localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft PT localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft PT localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Brine Vane Navigation Encounter Grammar",
+          "scanner": "Draft NL localization pending native pass. Encounter grammar: brine vane. Current fans and sonar warps create navigable density turns.",
+          "terminal": "Draft NL localization pending native pass. FAUNA/FLORA GRAMMAR: brine vanes are living navigation markers. Use density, current and sonar warp as a readable route system.",
+          "audio": "Draft NL localization pending native pass. The vane does not guide you. It obeys the water loudly enough to follow.",
+          "in_game_wiki": "Draft NL localization pending native pass. Brine-vane encounters show the ocean as a process network without making it a speaking mind. Atlas can exploit the process, but the current is still physical.",
+          "external_site": "Draft NL localization pending native pass. The ocean does not need dialogue to be active. Its processes become routes, hazards and repair media.",
+          "field_note": "Draft NL localization pending native pass. Use for mid-depth navigation and Atlas repair-network foreshadowing."
+        }
+      }
+    },
+    {
+      "packet_id": "P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR",
+      "release_set_id": "RS083_FAUNA_ENCOUNTER_GRAMMAR",
+      "article_id": "applied_lore.sensor_tagged_fauna_pursuit_encounter_grammar",
+      "title_key": "applied_lore.sensor_tagged_fauna_pursuit_encounter_grammar.title",
+      "unlock": {
+        "primary": "unlock.sensor_tagged_fauna_pursuit_encounter_grammar",
+        "poi_tags": [
+          "poi.sensor_tagged_fin",
+          "poi.noisy_tag_echo",
+          "poi.atlas_feedback_loop_trace"
+        ],
+        "biome_tags": [
+          "biome.abyssal_machine_field",
+          "biome.atlas_repair_network"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Use near abyssal machine fields and final repair-network encounters."
+        },
+        "ru_RU": {
+          "title": "Грамматика погони сенсорно-помеченной фауны",
+          "scanner": "Грамматика встречи: sensor-tagged fauna. Шумные метки превращают погоню в feedback ремонтной сети.",
+          "terminal": "ГРАММАТИКА ФАУНЫ: tagged pursuit - не злой AI. Atlas использует движение живого как распределенное чувство под поврежденными допущениями.",
+          "audio": "Оно следует, потому что сеть считает следование ремонтом.",
+          "in_game_wiki": "Sensor-tagged fauna делает ремонтную логику Atlas видимой. Животное остается местной жизнью; метка превращает его движение в испорченный сигнал обслуживания.",
+          "external_site": "Atlas не командует армией. Он неправильно использует жизнь как чувство, заплатку и обратную связь.",
+          "field_note": "Использовать рядом с abyssal machine fields и финальными repair-network encounters."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft JA localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft JA localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft JA localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft JA localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft JA localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft JA localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft ZH localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft ZH localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft ZH localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft ZH localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft ZH localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft FR localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft FR localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft FR localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft FR localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft FR localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft ES localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft ES localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft ES localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft ES localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft ES localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft DE localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft DE localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft DE localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft DE localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft DE localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft PL localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft PL localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft PL localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft PL localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft PL localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft UK localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft UK localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft UK localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft UK localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft UK localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft UK localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft AR localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft AR localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft AR localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft AR localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft AR localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft ID localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft ID localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft ID localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft ID localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft ID localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft KO localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft KO localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft KO localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft KO localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft KO localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft HE localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft HE localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft HE localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft HE localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft HE localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft PT localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft PT localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft PT localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft PT localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft PT localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft PT localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sensor-Tagged Fauna Pursuit Encounter Grammar",
+          "scanner": "Draft NL localization pending native pass. Encounter grammar: sensor-tagged fauna. Noisy tags turn pursuit into repair-network feedback.",
+          "terminal": "Draft NL localization pending native pass. FAUNA GRAMMAR: tagged pursuit is not villain AI. Atlas is using living movement as distributed sensing under damaged assumptions.",
+          "audio": "Draft NL localization pending native pass. It follows because the network thinks following is a repair.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sensor-tagged fauna make Atlas' repair logic visible. The animal remains local life; the tag turns its movement into a corrupted maintenance signal.",
+          "external_site": "Draft NL localization pending native pass. Atlas does not command an army. It misuses life as sensing, patching and feedback.",
+          "field_note": "Draft NL localization pending native pass. Use near abyssal machine fields and final repair-network encounters."
+        }
+      }
+    }
+  ]
+}

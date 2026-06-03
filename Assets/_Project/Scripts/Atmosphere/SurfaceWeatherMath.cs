@@ -224,7 +224,7 @@ namespace Hecton8.Atmosphere
             if (!math.isfinite(distanceMeters) || distanceMeters <= 0f)
                 return safeMin;
 
-            float scaledDelay = (distanceMeters * safeScale) / safeSoundSpeed;
+            float scaledDelay = distanceMeters * safeScale * math.rcp(safeSoundSpeed);
             return math.clamp(scaledDelay, safeMin, safeMax);
         }
     }
@@ -237,6 +237,7 @@ namespace Hecton8.Atmosphere
         private const byte SurfaceExecutionModeSurfaceSuppressed = 2;
         private const float TwoPi = 6.283185307179586f;
         private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
+        private const float InverseHash24Max = 0.000000059604648f;
 
         public SurfaceWeatherJobInput input;
         public NativeSlice<SurfaceWeatherJobOutput> output;
@@ -247,13 +248,13 @@ namespace Hecton8.Atmosphere
             SurfaceWeatherMathState state = SurfaceWeatherMathState.Lerp(
                 in input.currentState,
                 in input.targetState,
-                math.saturate(input.deltaTime / math.max(input.weatherBlendDuration, 0.0001f)));
+                math.saturate(input.deltaTime * math.rcp(math.max(input.weatherBlendDuration, 0.0001f))));
 
             result.currentState = state;
             result.currentLocalRainExposure = math.lerp(
                 input.currentLocalRainExposure,
                 input.targetLocalRainExposure,
-                math.saturate(input.deltaTime / math.max(input.shelterExposureBlendTime, 0.05f)));
+                math.saturate(input.deltaTime * math.rcp(math.max(input.shelterExposureBlendTime, 0.05f))));
 
             result.pendingThunderDelay = input.pendingThunderDelay;
             result.pendingThunderVolume = input.pendingThunderVolume;
@@ -404,7 +405,7 @@ namespace Hecton8.Atmosphere
                 followPosition,
                 strikePosition,
                 absoluteUniverseOffset);
-            float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
+            float distanceT = math.saturate((thunderDistance - minDistance) * math.rcp(math.max(maxDistance - minDistance, 0.0001f)));
             float loudness = math.lerp(state.thunderVolumeNear, state.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
             float thunderDelay = SurfaceThunderMath.ResolveThunderDelaySeconds(
@@ -460,7 +461,7 @@ namespace Hecton8.Atmosphere
             if (electricalActivity <= threshold)
                 return 0f;
 
-            float electricalT = math.saturate((electricalActivity - threshold) / math.max(1f - threshold, 0.0001f));
+            float electricalT = math.saturate((electricalActivity - threshold) * math.rcp(math.max(1f - threshold, 0.0001f)));
             float precipitationT = math.lerp(0.7f, 1f, math.saturate(precipitationIntensity));
             return electricalT * precipitationT;
         }
@@ -517,7 +518,7 @@ namespace Hecton8.Atmosphere
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+            return (state & 0x00FFFFFFu) * InverseHash24Max;
         }
     }
 }

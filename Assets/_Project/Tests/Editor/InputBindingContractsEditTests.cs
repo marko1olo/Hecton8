@@ -208,6 +208,11 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("inputManager.ClearBindingOverrides();", rebindSource);
             StringAssert.Contains("private static bool TryClearBindingOverrides(INativeInputManagerRuntime inputManager, ref ControlRemapIoResult result)", controlRemapperSource);
             StringAssert.Contains("if (!TryClearBindingOverrides(inputManager, ref result))", controlRemapperSource);
+            StringAssert.Contains("if (HasRuntimeBindingPathConflict(inputManager))", controlRemapperSource);
+            StringAssert.Contains("HasRuntimeOverrideDuplicate(map, actionIndex, bindingIndex, binding.overridePath)", controlRemapperSource);
+            StringAssert.Contains("HasRuntimeDefaultPathConflict(map, actionIndex, bindingIndex, binding.overridePath)", controlRemapperSource);
+            StringAssert.Contains("IsProtectedKeyboardEscapeOverride(map.name, action.name, binding.overridePath)", controlRemapperSource);
+            StringAssert.Contains("IsProtectedKeyboardTabOverride(map.name, action.name, binding.overridePath)", controlRemapperSource);
             StringAssert.Contains("catch (NotSupportedException)", rebindSource);
             StringAssert.Contains("TryDestroyDuplicateService", rebindSource);
             StringAssert.Contains("_activeRebind != null || _pendingConflictAction != null", rebindSource);
@@ -233,6 +238,12 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("OnOverridesSaveFailed?.Invoke();", rebindSource);
             StringAssert.Contains("Rebind auto-save failed; restored previous binding override.", rebindSource);
             StringAssert.Contains("Conflict rebind auto-save failed; restored previous binding overrides.", rebindSource);
+            StringAssert.Contains("out bool multipleConflicts", rebindSource);
+            StringAssert.Contains("Rebind rejected because binding path conflicts with multiple actions.", rebindSource);
+            StringAssert.Contains("ShouldReserveKeyboardEscape(actionName, actionMap)", rebindSource);
+            StringAssert.Contains("Rebind rejected because Keyboard Escape is reserved for Pause and Cancel.", rebindSource);
+            StringAssert.Contains("ShouldReserveKeyboardTab(actionName, actionMap)", rebindSource);
+            StringAssert.Contains("Rebind rejected because Keyboard Tab is reserved for UI tab navigation.", rebindSource);
             StringAssert.DoesNotContain("SaveOverrides();\n            }\n\n            OnRebindCompleted", rebindNormalized);
             StringAssert.DoesNotContain("action.RemoveBindingOverride(bindingIndex);\n                }\n\n                if (wasEnabled)", rebindNormalized);
             StringAssert.Contains("if (_registeredService)", rebindSource);
@@ -458,6 +469,364 @@ namespace Hecton8.Tests.Editor
             finally
             {
                 writerRuntime?.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsSavingOverrideThatCollidesWithDefaultBinding()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_save_conflict_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            Guid interactId = new Guid("13320000-0000-0000-0000-0000000000B1");
+            Guid jumpId = new Guid("13320000-0000-0000-0000-0000000000B2");
+            MockNativeInputRuntime runtime = new MockNativeInputRuntime();
+            InputAction interact = AddActionWithStableBinding(runtime.Player, "Interact", "<Keyboard>/e", interactId);
+            AddActionWithStableBinding(runtime.Player, "Jump", "<Keyboard>/space", jumpId);
+
+            try
+            {
+                interact.ApplyBindingOverride(0, "<Keyboard>/space");
+
+                bool saved = ControlRemapper.TrySaveOverrides(runtime, path, tempPath, out ControlRemapIoResult result);
+
+                Assert.IsFalse(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, result.ResultCode);
+                Assert.AreNotEqual(0u, result.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                Assert.IsFalse(File.Exists(path));
+                Assert.IsFalse(File.Exists(tempPath));
+            }
+            finally
+            {
+                runtime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsSavingDuplicateOverridePathsInSameMap()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_save_duplicate_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            Guid interactId = new Guid("13320000-0000-0000-0000-0000000000C1");
+            Guid useId = new Guid("13320000-0000-0000-0000-0000000000C2");
+            MockNativeInputRuntime runtime = new MockNativeInputRuntime();
+            InputAction interact = AddActionWithStableBinding(runtime.Player, "Interact", "<Keyboard>/e", interactId);
+            InputAction use = AddActionWithStableBinding(runtime.Player, "Use", "<Keyboard>/f", useId);
+
+            try
+            {
+                interact.ApplyBindingOverride(0, "<Keyboard>/r");
+                use.ApplyBindingOverride(0, "<Keyboard>/r");
+
+                bool saved = ControlRemapper.TrySaveOverrides(runtime, path, tempPath, out ControlRemapIoResult result);
+
+                Assert.IsFalse(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, result.ResultCode);
+                Assert.AreNotEqual(0u, result.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                Assert.IsFalse(File.Exists(path));
+                Assert.IsFalse(File.Exists(tempPath));
+            }
+            finally
+            {
+                runtime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsSavingReservedEscapeForNonPauseAction()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_save_escape_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            MockNativeInputRuntime runtime = new MockNativeInputRuntime();
+            InputAction interact = AddActionWithStableBinding(runtime.Player, "Interact", "<Keyboard>/e", new Guid("13320000-0000-0000-0000-0000000000D3"));
+
+            try
+            {
+                interact.ApplyBindingOverride(0, "<Keyboard>/escape");
+
+                bool saved = ControlRemapper.TrySaveOverrides(runtime, path, tempPath, out ControlRemapIoResult result);
+
+                Assert.IsFalse(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, result.ResultCode);
+                Assert.AreNotEqual(0u, result.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                Assert.IsFalse(File.Exists(path));
+                Assert.IsFalse(File.Exists(tempPath));
+            }
+            finally
+            {
+                runtime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsSavingReservedTabForNonUiTabAction()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_save_tab_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            MockNativeInputRuntime runtime = new MockNativeInputRuntime();
+            InputAction pda = AddActionWithStableBinding(runtime.Player, "PDA", "<Keyboard>/p", new Guid("13320000-0000-0000-0000-0000000000D5"));
+            AddActionWithStableBinding(runtime.UI, "TabNext", "<Keyboard>/tab", new Guid("13320000-0000-0000-0000-0000000000D6"));
+
+            try
+            {
+                pda.ApplyBindingOverride(0, "<Keyboard>/tab");
+
+                bool saved = ControlRemapper.TrySaveOverrides(runtime, path, tempPath, out ControlRemapIoResult result);
+
+                Assert.IsFalse(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, result.ResultCode);
+                Assert.AreNotEqual(0u, result.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                Assert.IsFalse(File.Exists(path));
+                Assert.IsFalse(File.Exists(tempPath));
+            }
+            finally
+            {
+                runtime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonAllowsSavingReservedTabForUiTabNext()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_save_ui_tab_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            Guid tabNextId = new Guid("13320000-0000-0000-0000-0000000000DA");
+            MockNativeInputRuntime writerRuntime = new MockNativeInputRuntime();
+            InputAction writerTabNext = AddActionWithStableBinding(writerRuntime.UI, "TabNext", "<Keyboard>/e", tabNextId);
+
+            try
+            {
+                writerTabNext.ApplyBindingOverride(0, "<Keyboard>/tab");
+                bool saved = ControlRemapper.TrySaveOverrides(writerRuntime, path, tempPath, out ControlRemapIoResult saveResult);
+                Assert.IsTrue(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.Success, saveResult.ResultCode);
+
+                MockNativeInputRuntime readerRuntime = new MockNativeInputRuntime();
+                InputAction readerTabNext = AddActionWithStableBinding(readerRuntime.UI, "TabNext", "<Keyboard>/e", tabNextId);
+
+                try
+                {
+                    bool loaded = ControlRemapper.TryLoadOverrides(readerRuntime, path, out ControlRemapIoResult loadResult);
+
+                    Assert.IsTrue(loaded);
+                    Assert.AreEqual(1, readerRuntime.ClearCount);
+                    Assert.AreEqual("<Keyboard>/tab", readerTabNext.bindings[0].overridePath);
+                    Assert.AreEqual(InputBindingTelemetryResult.Success, loadResult.ResultCode);
+                }
+                finally
+                {
+                    readerRuntime.Dispose();
+                }
+            }
+            finally
+            {
+                writerRuntime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void InteractiveRebindDetectsUnresolvableMultiConflict()
+        {
+            MockNativeInputRuntime runtime = new MockNativeInputRuntime();
+            GameObject host = new GameObject("RebindingManager_MultiConflict_Test");
+            RebindingManager rebinding = host.AddComponent<RebindingManager>();
+            InputAction current = AddActionWithStableBinding(runtime.Player, "Interact", "<Keyboard>/e", new Guid("13320000-0000-0000-0000-0000000000E1"));
+            AddActionWithStableBinding(runtime.Player, "Jump", "<Keyboard>/space", new Guid("13320000-0000-0000-0000-0000000000E2"));
+            AddActionWithStableBinding(runtime.Player, "Use", "<Keyboard>/space", new Guid("13320000-0000-0000-0000-0000000000E3"));
+
+            try
+            {
+                current.ApplyBindingOverride(0, "<Keyboard>/space");
+                FieldInfo nativeInputManagerField = typeof(RebindingManager).GetField("_nativeInputManager", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo detectConflictMethod = typeof(RebindingManager).GetMethod("TryDetectConflict", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(nativeInputManagerField);
+                Assert.NotNull(detectConflictMethod);
+                nativeInputManagerField.SetValue(rebinding, runtime);
+                object[] args = { current, 0, "Player", null, null, -1, false };
+
+                bool conflict = (bool)detectConflictMethod.Invoke(rebinding, args);
+
+                Assert.IsTrue(conflict);
+                Assert.AreEqual("Jump", args[3]);
+                Assert.AreSame(runtime.Player.FindAction("Jump", false), args[4]);
+                Assert.AreEqual(0, args[5]);
+                Assert.IsTrue((bool)args[6]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+                runtime.Dispose();
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsLoadedOverrideThatCollidesWithDefaultBinding()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_default_conflict_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            Guid interactId = new Guid("13320000-0000-0000-0000-0000000000D1");
+            Guid jumpId = new Guid("13320000-0000-0000-0000-0000000000D2");
+            MockNativeInputRuntime writerRuntime = new MockNativeInputRuntime();
+            InputAction writerInteract = AddActionWithStableBinding(writerRuntime.Player, "Interact", "<Keyboard>/e", interactId);
+            AddActionWithStableBinding(writerRuntime.Player, "Jump", "<Keyboard>/space", jumpId);
+
+            try
+            {
+                writerInteract.ApplyBindingOverride(0, "<Keyboard>/enter");
+                bool saved = ControlRemapper.TrySaveOverrides(writerRuntime, path, tempPath, out ControlRemapIoResult saveResult);
+                Assert.IsTrue(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.Success, saveResult.ResultCode);
+                string payload = File.ReadAllText(path);
+                StringAssert.Contains("<Keyboard>/enter", payload);
+                File.WriteAllText(path, payload.Replace("<Keyboard>/enter", "<Keyboard>/space"));
+
+                MockNativeInputRuntime readerRuntime = new MockNativeInputRuntime();
+                InputAction readerInteract = AddActionWithStableBinding(readerRuntime.Player, "Interact", "<Keyboard>/e", interactId);
+                AddActionWithStableBinding(readerRuntime.Player, "Jump", "<Keyboard>/space", jumpId);
+
+                try
+                {
+                    readerInteract.ApplyBindingOverride(0, "<Keyboard>/h");
+
+                    bool loaded = ControlRemapper.TryLoadOverrides(readerRuntime, path, out ControlRemapIoResult loadResult);
+
+                    Assert.IsFalse(loaded);
+                    Assert.AreEqual(0, readerRuntime.ClearCount);
+                    Assert.AreEqual("<Keyboard>/h", readerInteract.bindings[0].overridePath);
+                    Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, loadResult.ResultCode);
+                    Assert.AreNotEqual(0u, loadResult.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                }
+                finally
+                {
+                    readerRuntime.Dispose();
+                }
+            }
+            finally
+            {
+                writerRuntime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsLoadedReservedEscapeWithoutClearingOverrides()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_load_escape_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            Guid interactId = new Guid("13320000-0000-0000-0000-0000000000D4");
+            MockNativeInputRuntime writerRuntime = new MockNativeInputRuntime();
+            InputAction writerInteract = AddActionWithStableBinding(writerRuntime.Player, "Interact", "<Keyboard>/e", interactId);
+
+            try
+            {
+                writerInteract.ApplyBindingOverride(0, "<Keyboard>/enter");
+                bool saved = ControlRemapper.TrySaveOverrides(writerRuntime, path, tempPath, out ControlRemapIoResult saveResult);
+                Assert.IsTrue(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.Success, saveResult.ResultCode);
+                string payload = File.ReadAllText(path);
+                StringAssert.Contains("<Keyboard>/enter", payload);
+                File.WriteAllText(path, payload.Replace("<Keyboard>/enter", "<Keyboard>/escape"));
+
+                MockNativeInputRuntime readerRuntime = new MockNativeInputRuntime();
+                InputAction readerInteract = AddActionWithStableBinding(readerRuntime.Player, "Interact", "<Keyboard>/e", interactId);
+
+                try
+                {
+                    readerInteract.ApplyBindingOverride(0, "<Keyboard>/h");
+
+                    bool loaded = ControlRemapper.TryLoadOverrides(readerRuntime, path, out ControlRemapIoResult loadResult);
+
+                    Assert.IsFalse(loaded);
+                    Assert.AreEqual(0, readerRuntime.ClearCount);
+                    Assert.AreEqual("<Keyboard>/h", readerInteract.bindings[0].overridePath);
+                    Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, loadResult.ResultCode);
+                    Assert.AreNotEqual(0u, loadResult.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                }
+                finally
+                {
+                    readerRuntime.Dispose();
+                }
+            }
+            finally
+            {
+                writerRuntime.Dispose();
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void ControlsJsonRejectsLoadedReservedTabWithoutClearingOverrides()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "h8_controls_load_tab_" + Guid.NewGuid().ToString("N") + ".json");
+            string tempPath = path + ".tmp";
+            Guid pdaId = new Guid("13320000-0000-0000-0000-0000000000D7");
+            MockNativeInputRuntime writerRuntime = new MockNativeInputRuntime();
+            InputAction writerPda = AddActionWithStableBinding(writerRuntime.Player, "PDA", "<Keyboard>/p", pdaId);
+            AddActionWithStableBinding(writerRuntime.UI, "TabNext", "<Keyboard>/tab", new Guid("13320000-0000-0000-0000-0000000000D8"));
+
+            try
+            {
+                writerPda.ApplyBindingOverride(0, "<Keyboard>/r");
+                bool saved = ControlRemapper.TrySaveOverrides(writerRuntime, path, tempPath, out ControlRemapIoResult saveResult);
+                Assert.IsTrue(saved);
+                Assert.AreEqual(InputBindingTelemetryResult.Success, saveResult.ResultCode);
+                string payload = File.ReadAllText(path);
+                StringAssert.Contains("<Keyboard>/r", payload);
+                File.WriteAllText(path, payload.Replace("<Keyboard>/r", "<Keyboard>/tab"));
+
+                MockNativeInputRuntime readerRuntime = new MockNativeInputRuntime();
+                InputAction readerPda = AddActionWithStableBinding(readerRuntime.Player, "PDA", "<Keyboard>/p", pdaId);
+                AddActionWithStableBinding(readerRuntime.UI, "TabNext", "<Keyboard>/tab", new Guid("13320000-0000-0000-0000-0000000000D9"));
+
+                try
+                {
+                    readerPda.ApplyBindingOverride(0, "<Keyboard>/h");
+
+                    bool loaded = ControlRemapper.TryLoadOverrides(readerRuntime, path, out ControlRemapIoResult loadResult);
+
+                    Assert.IsFalse(loaded);
+                    Assert.AreEqual(0, readerRuntime.ClearCount);
+                    Assert.AreEqual("<Keyboard>/h", readerPda.bindings[0].overridePath);
+                    Assert.AreEqual(InputBindingTelemetryResult.UnsupportedPath, loadResult.ResultCode);
+                    Assert.AreNotEqual(0u, loadResult.FaultFlags & InputBindingFaultFlags.UnsupportedPath);
+                }
+                finally
+                {
+                    readerRuntime.Dispose();
+                }
+            }
+            finally
+            {
+                writerRuntime.Dispose();
                 if (File.Exists(path))
                     File.Delete(path);
                 if (File.Exists(tempPath))

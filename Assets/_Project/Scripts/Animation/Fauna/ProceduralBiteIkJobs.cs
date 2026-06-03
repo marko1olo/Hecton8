@@ -25,6 +25,7 @@ namespace Hecton8.Animation.Fauna
         public const float DefaultJawReachMeters = 10f;
         public const float DefaultJawOpenMeters = 0.8f;
         public const float MinLengthSq = 0.000001f;
+        public const float InverseByteMax = 0.0039215689f;
         public const uint RuntimeFlagStrikeActive = 1u << 0;
         public const uint RuntimeFlagMaximumQuality = 1u << 2;
         public const uint RuntimeFlagVisualOverkill = 1u << 3;
@@ -48,7 +49,7 @@ namespace Hecton8.Animation.Fauna
 
         public static float DecodeVisualOverkillWeight01(uint flags)
         {
-            return ((flags & ResultVisualOverkillWeightMask) >> ResultVisualOverkillWeightShift) * (1f / 255f);
+            return ((flags & ResultVisualOverkillWeightMask) >> ResultVisualOverkillWeightShift) * InverseByteMax;
         }
     }
 
@@ -210,7 +211,7 @@ namespace Hecton8.Animation.Fauna
             {
                 closestLocal = ResolveClosestHullPointGradient(targetLocalCenter, extents, contactPadding, targetRightLocal, targetUpLocal, targetForwardLocal);
                 float closestSq = math.lengthsq(closestLocal);
-                distanceMeters = closestSq > ProceduralBiteIkConstants.MinLengthSq ? closestSq * math.rsqrt(closestSq) : 0f;
+                distanceMeters = LengthFromSq(closestSq);
                 reach01 = math.saturate(distanceMeters * math.rcp(jawReach));
                 bool inReach = distanceMeters <= jawReach;
                 desiredTipLocal = inReach
@@ -329,7 +330,7 @@ namespace Hecton8.Animation.Fauna
             float phase = ((localFrame & 7) + 1) * 0.125f;
             float triangle = 1f - math.abs(phase * 2f - 1f);
             float recoilMeters = math.max(0.05f, jawOpen * 0.35f) * triangle;
-            float desiredLength = SanitizePositive(math.length(desiredTipLocal), segmentLength, 0.1f);
+            float desiredLength = SanitizePositive(LengthFromSq(math.lengthsq(desiredTipLocal)), segmentLength, 0.1f);
             float reach = math.max(0.1f, desiredLength - recoilMeters);
             float3 aim = NormalizeSafe(desiredTipLocal, new float3(0f, 0f, 1f)) * reach;
             float3 visualRecoil = new float3(0f, -recoilMeters, math.max(0.1f, segmentLength * 0.75f));
@@ -361,7 +362,7 @@ namespace Hecton8.Animation.Fauna
         {
             float3 span = tipWorld - rootWorld;
             float spanSq = math.lengthsq(span);
-            float distance = spanSq > ProceduralBiteIkConstants.MinLengthSq ? spanSq * math.rsqrt(spanSq) : 0f;
+            float distance = LengthFromSq(spanSq);
             float upperLength = math.max(0.05f, jawReach * 0.45f);
             float lowerLength = math.max(0.05f, jawReach * 0.55f);
             float invDenominator = math.rcp(math.max(0.0001f, 2f * upperLength * math.max(distance, 0.0001f)));
@@ -528,6 +529,14 @@ namespace Hecton8.Animation.Fauna
                 return SanitizeFinite(fallback, new float3(0f, 0f, 1f));
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static float LengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq) || lengthSq <= ProceduralBiteIkConstants.MinLengthSq)
+                return 0f;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, ProceduralBiteIkConstants.MinLengthSq));
         }
 
         private static void OrthonormalizeTargetBasis(ref float3 axisX, ref float3 axisY, ref float3 axisZ)

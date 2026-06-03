@@ -1,10 +1,17 @@
 ---
 packet_id: P042_PRESSURE_BUNK_ROUTINE
+release_set_id: RS009_COLONY_LAYOUT_WORKER_EVIDENCE
 article_id: hecton8.pressure_bunk_routine
+unlock_id: unlock.first_pressure_bunk_routine
+poi_tags: poi.pressure_bunk;poi.hab_sleep_bay
+biome_tags: biome.drowned_colony;biome.pressure_hab
 locale: zh_CN
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # 耐压铺位日程

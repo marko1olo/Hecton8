@@ -11,10 +11,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.UI
 {
     /// <summary>
@@ -32,10 +28,6 @@ namespace Hecton8.UI
         private const float DefaultVerticalDegrees = 48f;
         private const float DegreesToHalfRadians = 0.008726646f;
         private const float Epsilon = 0.0001f;
-        private const string DefaultShaderName = "Hecton8/UI/DiegeticVisorCurvedHUD";
-#if UNITY_EDITOR
-        private const string DefaultShaderPath = "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader";
-#endif
 
         private static readonly int PanelPowerLevelId = Shader.PropertyToID("_PanelPowerLevel");
         private static readonly int DamageGlitchId = Shader.PropertyToID("_DamageGlitch");
@@ -48,13 +40,11 @@ namespace Hecton8.UI
         [SerializeField, Min(0.05f)] private float distanceMeters = DefaultDistanceMeters;
         [SerializeField, Range(16f, 130f)] private float horizontalDegrees = DefaultHorizontalDegrees;
         [SerializeField, Range(12f, 90f)] private float verticalDegrees = DefaultVerticalDegrees;
-        [SerializeField, Range(4, 64)] private int horizontalSegments = 24;
-        [SerializeField, Range(2, 32)] private int verticalSegments = 10;
-        [SerializeField, Range(0f, 0.18f)] private float curvatureMeters = 0.045f;
+        [SerializeField, Tooltip("Authored curved visor projection mesh. Runtime mesh synthesis is forbidden; leave null only when MeshFilter.sharedMesh is already authored.")]
+        private Mesh authoredProjectionMesh;
 
         [Header("Render State")]
         [SerializeField] private Material sourceMaterial;
-        [SerializeField] private Shader fallbackShader;
         [SerializeField] private bool releaseRuntimeObjectsOnDisable;
         [SerializeField] private bool releaseBlackBoxOnDisable;
         [SerializeField] private int stencilReference = 17;
@@ -69,6 +59,7 @@ namespace Hecton8.UI
         private MeshRenderer _meshRenderer;
         private Mesh _runtimeMesh;
         private Material _runtimeMaterial;
+        private MaterialPropertyBlock _materialProperties;
         private Transform _cameraTransform;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private VaultGenerationHandle<DiegeticHudTelemetryEntry> _blackBoxHandle;
@@ -90,19 +81,10 @@ namespace Hecton8.UI
         private float _lastDamageGlitch = -1f;
         private float _lastHumidity = -1f;
         private int _lastStencilReference = int.MinValue;
-        private int _meshHorizontalSegments = -1;
-        private int _meshVerticalSegments = -1;
-        private int _meshQualityBucket = -1;
         private float _cachedQualityWeight01 = 1f;
         private float _meshDistanceMeters = -1f;
         private float _meshHorizontalDegrees = -1f;
         private float _meshVerticalDegrees = -1f;
-        private float _meshCurvatureMeters = -1f;
-        private Vector3[] _vertices;
-        private Vector3[] _normals;
-        private Vector2[] _uv;
-        private int[] _indices;
-
         public float PanelPower01 => panelPower01;
         public float Brownout01 => _brownout01;
         public float DamageGlitch01 => _damageGlitch01;
@@ -171,6 +153,7 @@ namespace Hecton8.UI
             if (_meshRebuildDirty)
             {
                 _meshRebuildDirty = false;
+                RebuildMesh();
                 _materialStateDirty = true;
             }
 
@@ -341,38 +324,15 @@ namespace Hecton8.UI
         private bool RefreshQualityPolicy()
         {
             float nextQualityWeight01 = ResolveCurrentQualityWeight(_cachedQualityWeight01);
-            if (math.abs(nextQualityWeight01 - _cachedQualityWeight01) <= Epsilon)
-            {
-                _cachedQualityWeight01 = nextQualityWeight01;
-                return false;
-            }
-
+            bool changed = math.abs(nextQualityWeight01 - _cachedQualityWeight01) > Epsilon;
             _cachedQualityWeight01 = nextQualityWeight01;
-            int hSegments = ResolveSegmentCount(horizontalSegments, nextQualityWeight01, 4, 64);
-            int vSegments = ResolveSegmentCount(verticalSegments, nextQualityWeight01, 2, 32);
-            return hSegments != _meshHorizontalSegments || vSegments != _meshVerticalSegments;
+            return changed && _runtimeMesh == null;
         }
 
         private static float ResolveCurrentQualityWeight(float fallbackWeight01)
         {
             float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(fallbackWeight01, qualityWeight01, math.isfinite(qualityWeight01)));
-        }
-
-        private static int ResolveSegmentCount(int authoringCount, float qualityWeight01, int min, int max)
-        {
-            int safeCount = math.clamp(authoringCount, min, max);
-            float quality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
-            float lowToAuth = math.lerp(min, safeCount, math.saturate(quality * 2f));
-            float authToMax = math.lerp(safeCount, max, math.saturate((quality - 0.5f) * 2f));
-            float target = math.lerp(lowToAuth, authToMax, SmoothStep01(math.saturate((quality - 0.5f) * 2f)));
-            return math.clamp((int)math.round(target), min, max);
-        }
-
-        private static float SmoothStep01(float value)
-        {
-            float t = math.saturate(value);
-            return t * t * (3f - (2f * t));
         }
 
         private void ResolveComponents()
@@ -417,87 +377,27 @@ namespace Hecton8.UI
         private void RebuildMesh()
         {
             ResolveComponents();
-            float qualityWeight = math.saturate(_cachedQualityWeight01);
-            int hSegments = ResolveSegmentCount(horizontalSegments, qualityWeight, 4, 64);
-            int vSegments = ResolveSegmentCount(verticalSegments, qualityWeight, 2, 32);
-            int qualityBucket = (hSegments << 8) | vSegments;
-            if (IsMeshCurrent(qualityBucket, hSegments, vSegments))
+            Mesh authoredMesh = authoredProjectionMesh != null
+                ? authoredProjectionMesh
+                : _meshFilter != null
+                    ? _meshFilter.sharedMesh
+                    : null;
+            bool meshValid = authoredMesh != null &&
+                             authoredMesh.subMeshCount > 0 &&
+                             authoredMesh.GetIndexCount(0) > 0u;
+            if (!meshValid)
             {
-                if (_meshFilter != null && _meshFilter.sharedMesh != _runtimeMesh)
-                    _meshFilter.sharedMesh = _runtimeMesh;
-
+                if (_meshFilter != null && ReferenceEquals(_meshFilter.sharedMesh, _runtimeMesh))
+                    _meshFilter.sharedMesh = null;
+                _runtimeMesh = null;
                 return;
             }
 
-            int vertexCount = (hSegments + 1) * (vSegments + 1);
-            int indexCount = hSegments * vSegments * 6;
-            EnsureMeshArrays(vertexCount, indexCount);
-
-            if (_runtimeMesh == null)
-            {
-                _runtimeMesh = new Mesh(); // COLD ALLOC: Mesh[1] - visor physical projection surface - owner: DiegeticVisorHudMesh
-                _runtimeMesh.name = nameof(DiegeticVisorHudMesh);
-            }
-            else
-            {
-                _runtimeMesh.Clear();
-            }
-
-            float halfHorizontal = horizontalDegrees * DegreesToHalfRadians;
-            float halfVertical = verticalDegrees * DegreesToHalfRadians;
-            float invHSegments = math.rcp((float)math.max(1, hSegments));
-            float invVSegments = math.rcp((float)math.max(1, vSegments));
-            int vertexIndex = 0;
-            for (int y = 0; y <= vSegments; y++)
-            {
-                float y01 = y * invVSegments;
-                float ySigned = (y01 * 2f) - 1f;
-                for (int x = 0; x <= hSegments; x++)
-                {
-                    float x01 = x * invHSegments;
-                    float xSigned = (x01 * 2f) - 1f;
-                    float localX = RationalTan(xSigned * halfHorizontal) * distanceMeters;
-                    float localY = RationalTan(ySigned * halfVertical) * distanceMeters;
-                    float curveDepth = curvatureMeters * ((xSigned * xSigned) + (0.35f * ySigned * ySigned));
-                    _vertices[vertexIndex] = new Vector3(localX, localY, distanceMeters - curveDepth);
-                    _normals[vertexIndex] = Vector3.back;
-                    _uv[vertexIndex] = new Vector2(x01, y01);
-                    vertexIndex++;
-                }
-            }
-
-            int index = 0;
-            int stride = hSegments + 1;
-            for (int y = 0; y < vSegments; y++)
-            {
-                for (int x = 0; x < hSegments; x++)
-                {
-                    int a = y * stride + x;
-                    int b = a + 1;
-                    int c = a + stride;
-                    int d = c + 1;
-                    _indices[index++] = a;
-                    _indices[index++] = c;
-                    _indices[index++] = b;
-                    _indices[index++] = b;
-                    _indices[index++] = c;
-                    _indices[index++] = d;
-                }
-            }
-
-            _runtimeMesh.SetVertices(_vertices);
-            _runtimeMesh.SetNormals(_normals);
-            _runtimeMesh.SetUVs(0, _uv);
-            _runtimeMesh.SetTriangles(_indices, 0, false);
-            _runtimeMesh.RecalculateBounds();
+            _runtimeMesh = authoredMesh;
             _meshFilter.sharedMesh = _runtimeMesh;
-            _meshQualityBucket = qualityBucket;
-            _meshHorizontalSegments = hSegments;
-            _meshVerticalSegments = vSegments;
             _meshDistanceMeters = distanceMeters;
             _meshHorizontalDegrees = horizontalDegrees;
             _meshVerticalDegrees = verticalDegrees;
-            _meshCurvatureMeters = curvatureMeters;
         }
 
         private void EnsureRuntimeMaterial()
@@ -509,27 +409,15 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (sourceMaterial == null)
+            if (sourceMaterial == null || sourceMaterial.shader == null)
             {
-                Shader shader = fallbackShader;
-#if UNITY_EDITOR
-                if (shader == null)
-                {
-                    shader = AssetDatabase.LoadAssetAtPath<Shader>(DefaultShaderPath);
-                    fallbackShader = shader;
-                }
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (shader == null)
-                    shader = Shader.Find(DefaultShaderName);
-#endif
-                if (shader != null)
-                    _runtimeMaterial = new Material(shader); // COLD ALLOC: Material[1] - fallback visor shader instance - owner: DiegeticVisorHudMesh
+                _runtimeMaterial = null;
+                if (_meshRenderer != null)
+                    _meshRenderer.sharedMaterial = null;
+                return;
             }
-            else
-            {
-                _runtimeMaterial = new Material(sourceMaterial); // COLD ALLOC: Material[1] - per-visor shader state - owner: DiegeticVisorHudMesh
-            }
+
+            _runtimeMaterial = sourceMaterial;
 
             if (_runtimeMaterial == null)
                 return;
@@ -544,9 +432,10 @@ namespace Hecton8.UI
 
         private void ApplyMaterialState()
         {
-            if (_runtimeMaterial == null)
+            if (_runtimeMaterial == null || _meshRenderer == null)
                 return;
 
+            EnsureMaterialPropertiesCold();
             float resolvedPanelPower = math.saturate(panelPower01) * (1f - (_brownout01 * 0.65f));
             if (!math.isfinite(resolvedPanelPower) ||
                 !math.isfinite(_damageGlitch01) ||
@@ -556,29 +445,50 @@ namespace Hecton8.UI
                 return;
             }
 
+            bool changed = false;
             if (math.abs(resolvedPanelPower - _lastPanelPower) > 0.001f)
             {
-                _runtimeMaterial.SetFloat(PanelPowerLevelId, resolvedPanelPower);
+                _materialProperties.SetFloat(PanelPowerLevelId, resolvedPanelPower);
                 _lastPanelPower = resolvedPanelPower;
+                changed = true;
             }
 
             if (math.abs(_damageGlitch01 - _lastDamageGlitch) > 0.001f)
             {
-                _runtimeMaterial.SetFloat(DamageGlitchId, _damageGlitch01);
+                _materialProperties.SetFloat(DamageGlitchId, _damageGlitch01);
                 _lastDamageGlitch = _damageGlitch01;
+                changed = true;
             }
 
             if (math.abs(_humidity01 - _lastHumidity) > 0.001f)
             {
-                _runtimeMaterial.SetFloat(Humidity01Id, _humidity01);
+                _materialProperties.SetFloat(Humidity01Id, _humidity01);
                 _lastHumidity = _humidity01;
+                changed = true;
             }
 
             if (stencilReference != _lastStencilReference)
             {
-                _runtimeMaterial.SetInt(StencilRefId, stencilReference);
+                _materialProperties.SetInt(StencilRefId, stencilReference);
                 _lastStencilReference = stencilReference;
+                changed = true;
             }
+
+            if (changed)
+                _meshRenderer.SetPropertyBlock(_materialProperties);
+        }
+
+        private void EnsureMaterialPropertiesCold()
+        {
+            if (_materialProperties != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] - visor per-renderer shader state - owner: DiegeticVisorHudMesh.
+            _materialProperties = new MaterialPropertyBlock();
+            _lastPanelPower = -1f;
+            _lastDamageGlitch = -1f;
+            _lastHumidity = -1f;
+            _lastStencilReference = int.MinValue;
         }
 
         private void SampleHumidity(float deltaTime)
@@ -897,53 +807,12 @@ namespace Hecton8.UI
             if (_meshRenderer != null && _meshRenderer.sharedMaterial == _runtimeMaterial)
                 _meshRenderer.sharedMaterial = null;
 
-            if (_runtimeMesh != null)
-            {
-                Destroy(_runtimeMesh);
-                _runtimeMesh = null;
-            }
+            _runtimeMesh = null;
+            _runtimeMaterial = null;
 
-            if (_runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
-            _meshHorizontalSegments = -1;
-            _meshVerticalSegments = -1;
             _meshDistanceMeters = -1f;
             _meshHorizontalDegrees = -1f;
             _meshVerticalDegrees = -1f;
-            _meshCurvatureMeters = -1f;
-            _vertices = null;
-            _normals = null;
-            _uv = null;
-            _indices = null;
-        }
-
-        private bool IsMeshCurrent(int qualityBucket, int hSegments, int vSegments)
-        {
-            return _runtimeMesh != null &&
-                   _meshHorizontalSegments == hSegments &&
-                   _meshVerticalSegments == vSegments &&
-                   _meshQualityBucket == qualityBucket &&
-                   math.abs(_meshDistanceMeters - distanceMeters) <= Epsilon &&
-                   math.abs(_meshHorizontalDegrees - horizontalDegrees) <= Epsilon &&
-                   math.abs(_meshVerticalDegrees - verticalDegrees) <= Epsilon &&
-                   math.abs(_meshCurvatureMeters - curvatureMeters) <= Epsilon;
-        }
-
-        private void EnsureMeshArrays(int vertexCount, int indexCount)
-        {
-            if (_vertices == null || _vertices.Length != vertexCount)
-            {
-                _vertices = new Vector3[vertexCount]; // COLD ALLOC: Vector3[vertexCount] - retained visor mesh vertices - owner: DiegeticVisorHudMesh
-                _normals = new Vector3[vertexCount]; // COLD ALLOC: Vector3[vertexCount] - retained visor mesh normals - owner: DiegeticVisorHudMesh
-                _uv = new Vector2[vertexCount]; // COLD ALLOC: Vector2[vertexCount] - retained visor mesh uv - owner: DiegeticVisorHudMesh
-            }
-
-            if (_indices == null || _indices.Length != indexCount)
-                _indices = new int[indexCount]; // COLD ALLOC: int[indexCount] - retained visor mesh triangles - owner: DiegeticVisorHudMesh
         }
 
         private float ResolveHalfWidth()
@@ -956,13 +825,6 @@ namespace Hecton8.UI
             return RationalTan(verticalDegrees * DegreesToHalfRadians) * distanceMeters;
         }
 
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (fallbackShader == null)
-                fallbackShader = AssetDatabase.LoadAssetAtPath<Shader>(DefaultShaderPath);
-        }
-#endif
     }
 
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]

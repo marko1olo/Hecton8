@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-174000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Editor::UnityEditor.Rendering.Universal.AssetVersion
+  version: 10
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MAT_Equipment_Atlas
+  m_Shader: {fileID: 4800000, guid: fdac643fbeb24374ba9ea1e341842908, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 0
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties:
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RustDetailMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BlueNoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _H8UberNoirAlbedoArray:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _H8UberNoirNormalArray:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _H8UberNoirMaskArray:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _EmissionStrength: 1
+    - _HectonHandRadiationMask: 0
+    - _Metallic: 0.22
+    - _NoirFogAlpha: 0.62
+    - _OcclusionStrength: 1
+    - _Smoothness: 0.68
+    - _UberNoirInstanceCapacity: 0
+    - _UberNoirPadding0: 0
+    - _UberNoirPadding1: 0
+    m_Colors:
+    - _BaseColor: {r: 0.145, g: 0.168, b: 0.162, a: 1}
+    - _EmissionColor: {r: 0.0, g: 0.72, b: 0.86, a: 1}
+    - _RustTint: {r: 0.45, g: 0.24, b: 0.10, a: 1}
+    - _RustPitTint: {r: 0.12, g: 0.055, b: 0.032, a: 1}
+    - _BiolumLowColor: {r: 0.0, g: 0.18, b: 0.34, a: 1}
+    - _BiolumHighColor: {r: 0.24, g: 0.95, b: 1.35, a: 1}
+    - _NoirAbyssFloorColor: {r: 0.005, g: 0.008, b: 0.012, a: 1}
+    - _NoirFogColor: {r: 0.015, g: 0.025, b: 0.035, a: 1}
+    - _UberNoirFeatureFlags: {r: 1, g: 1, b: 1, a: 1}
+    - _UberNoirInstanceParams: {r: 0, g: 0, b: 0, a: 0}
+    - _UberNoirParallaxParams: {r: 0.02, g: 0.16, b: 0, a: 0}
+    - _UberNoirRustParams: {r: 0.72, g: 0.3, b: 0.65, a: 0.9}
+    - _UberNoirBendParams: {r: 1, g: 0.22, b: 1, a: 0}
+    - _UberNoirBiolumParams: {r: 1, g: 0.35, b: 4, a: 1}
+    - _UberNoirDitherParams: {r: 0.5, g: 0, b: 1, a: 1}
+    - _UberNoirLightingParams: {r: 0.35, g: 0.08, b: 0.35, a: 1}
+    - _UberNoirRefractionParams: {r: 0, g: 0.5, b: 0, a: 0}
+    - _UberNoirIorLut: {r: 1.0003, g: 1.333, b: 1.38, a: 1.46}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

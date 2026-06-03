@@ -15,11 +15,18 @@ MonoBehaviour:
   moduleName: Straight Corridor
   stableId: Build_Corridor_Straight
   icon: {fileID: 0}
-  description: Standard two-socket transit spine.
-  family: 0
+  description: Pressurized connector for linking starter modules.
+  family: 1
+  blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
-  finalPrefab: {fileID: 0}
+  finalPrefab: {fileID: 289323947487979299, guid: 7693821d1cc09294fbd732cffd8a94ea, type: 3}
   moduleTemplate: {fileID: 11400000, guid: 59f2e14dc8429ce429ea50db12d8d5ea, type: 2}
-  buildCost: []
+  buildCost:
+  - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: ae02bcd19d7e28b44a03544b03dc399a, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: 55af013acadda304f891e03a554e0b27, type: 2}
+    amount: 1
   powerRating: -6
-  powerPriority: 40
+  powerPriority: 35

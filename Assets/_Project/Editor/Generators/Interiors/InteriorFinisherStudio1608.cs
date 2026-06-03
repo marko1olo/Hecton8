@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -1902,7 +1903,13 @@ namespace Hecton8.Editor.Interiors
                 }
 
                 string prefabPath = $"{settings.OutputFolder}/{settings.OutputName}.prefab";
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                    throw new InvalidOperationException("Collider topology rejected before interior prefab save. path=" + prefabPath + " reason=" + colliderFailure);
+
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (!ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    throw new InvalidOperationException("Collider topology rejected after interior prefab save. path=" + prefabPath + " reason=" + colliderFailure);
+
                 return prefabPath;
             }
             finally

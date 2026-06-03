@@ -475,10 +475,12 @@ namespace Hecton8.VFX.Bioluminescence
             if (Volatile.Read(ref s_runtimeClaimed) != 0)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             // COLD ALLOC: GameObject[1] - scene-local visual director host when authoring has not placed the component - owner: BIOLUM_PULSE_SYNC
             GameObject host = new GameObject("H8_BiolumPulseSyncRuntime");
             host.hideFlags = HideFlags.DontSave;
             host.AddComponent<BiolumPulseSyncRuntime>();
+#endif
         }
 
         private bool TryClaimRuntimeOwner()

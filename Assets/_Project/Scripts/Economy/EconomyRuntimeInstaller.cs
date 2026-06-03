@@ -17,6 +17,7 @@ namespace Hecton8.Economy
         {
             GameObject runtimeRoot = null;
             WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for economy systems per gameplay scene - owner: EconomyRuntimeInstaller
 
@@ -31,6 +32,9 @@ namespace Hecton8.Economy
 
             if (!runtimeRoot.TryGetComponent<Hecton8.World.EnvironmentalStrainManager>(out _))
                 runtimeRoot.AddComponent<Hecton8.World.EnvironmentalStrainManager>();
+#else
+            _ = runtimeRoot;
+#endif
         }
     }
 }

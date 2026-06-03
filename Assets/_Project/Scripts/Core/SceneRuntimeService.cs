@@ -24,11 +24,11 @@ namespace Hecton8.Core
         private const int SceneActivationWatchdogInitialFrames = 1200;
         private const int SceneActivationWatchdogRepeatFrames = 300;
         private const double SceneActivationEmergencyReleaseSeconds = 35d;
+        private const double ManagedSceneUnloadWatchdogSeconds = 20d;
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const string OrbitSceneName = "01_ORBIT";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const string TransitionOverlayRootName = "[SceneRuntimeService_TransitionOverlay]";
-        private const string TransitionDitherShaderName = "Hecton8/UI/IGNDitherDissolve";
         private const float MainMenuCameraPanDurationSeconds = 2f;
         private const float MainMenuCameraPanDepth = 9f;
         private const float MainMenuCameraPanPitchDegrees = 16f;
@@ -103,6 +103,10 @@ namespace Hecton8.Core
         [SerializeField] private AudioMixerSnapshot mainMenuMusicSnapshot;
         [SerializeField] private AudioMixerSnapshot abyssalAmbientSnapshot;
 
+        [Header("Authored Transition Assets")]
+        [SerializeField, Tooltip("Dedicated authored material instance for the scene transition dither overlay. Must not be shared with gameplay/UI surfaces.")]
+        private Material transitionDitherMaterial;
+
         private static bool _suppressRuntimeClearForManagedUnload;
         private bool _isInitialized;
         private bool _registeredSceneService;
@@ -145,7 +149,8 @@ namespace Hecton8.Core
         private Canvas _transitionOverlayCanvas;
         private CanvasGroup _transitionOverlayGroup;
         private Camera _transitionOverlayCamera;
-        private Material _transitionDitherMaterial;
+        private Material _resolvedTransitionDitherMaterial;
+        private bool _ownsResolvedTransitionDitherMaterial;
         private TMP_Text _terminalBootText;
         // COLD ALLOC: char[384] - transition terminal boot text buffer - owner: SceneRuntimeService
         private readonly char[] _terminalBootBuffer = new char[TerminalBootBufferLength];
@@ -637,8 +642,8 @@ namespace Hecton8.Core
             _cinematicTransitionActive = true;
             _cinematicTransitionElapsed = 0f;
             _transitionPerformanceWarningPublished = false;
-            _cinematicCamera = _configuredCinematicCamera;
-            _transitionOverlayCamera = _cinematicCamera;
+            _cinematicCamera = ResolveMainMenuCinematicCameraCold();
+            BindTransitionOverlayCameraCold(_cinematicCamera);
             ClearTransitionPresentationState();
             _transitionVisualOverkill01 = 1f;
             _cinematicMenuGroup = _configuredCinematicMenuGroup;
@@ -777,7 +782,7 @@ namespace Hecton8.Core
                 SceneManager.SetActiveScene(loadedScene);
                 Camera loadedSceneCamera = ResolvePrimarySceneCameraCold(loadedScene);
                 if (loadedSceneCamera != null)
-                    _transitionOverlayCamera = loadedSceneCamera;
+                    BindTransitionOverlayCameraCold(loadedSceneCamera);
             }
 
             if (previousScene.IsValid() && previousScene.isLoaded && !string.Equals(previousScene.name, loadedSceneName, StringComparison.Ordinal))
@@ -786,8 +791,20 @@ namespace Hecton8.Core
                 try
                 {
                     AsyncOperation unloadOperation = SceneManager.UnloadSceneAsync(previousScene);
+                    int unloadWaitFrames = 0;
+                    long unloadStartTimestamp = Stopwatch.GetTimestamp();
                     while (unloadOperation != null && !unloadOperation.isDone)
                     {
+                        if (HasManagedSceneUnloadWatchdogElapsed(unloadStartTimestamp, out double elapsedSeconds))
+                        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Hecton8.Core.H8Debug.LogError(
+                                $"[SceneRuntimeService] Managed unload for scene '{previousScene.name}' exceeded {elapsedSeconds:0.00}s/{unloadWaitFrames} frames; continuing transition fail-open.");
+#endif
+                            break;
+                        }
+
+                        unloadWaitFrames++;
                         await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
                     }
                 }
@@ -800,6 +817,12 @@ namespace Hecton8.Core
             BeginInputReclaimInterpolation();
             ResetWorldEntryFreezeState();
             await DissolveTransitionOverlayAsync();
+        }
+
+        private static bool HasManagedSceneUnloadWatchdogElapsed(long startTimestamp, out double elapsedSeconds)
+        {
+            elapsedSeconds = (Stopwatch.GetTimestamp() - startTimestamp) / (double)Stopwatch.Frequency;
+            return elapsedSeconds >= ManagedSceneUnloadWatchdogSeconds;
         }
 
         private async Awaitable DissolveTransitionOverlayAsync()
@@ -836,7 +859,7 @@ namespace Hecton8.Core
                     : 1f;
                 float eased = SmoothStep01(normalized);
                 float visualOverkill01 = UpdateTransitionVisualOverkill01(normalized);
-                float overlayAlpha = _transitionDitherMaterial == null
+                float overlayAlpha = _resolvedTransitionDitherMaterial == null
                     ? 1f - eased
                     : 1f;
                 QueueMainMenuCinematicPresentation(
@@ -941,10 +964,11 @@ namespace Hecton8.Core
 
         private void DestroyTransitionDitherMaterial()
         {
-            if (_transitionDitherMaterial != null)
-                Destroy(_transitionDitherMaterial);
+            if (_ownsResolvedTransitionDitherMaterial && _resolvedTransitionDitherMaterial != null)
+                Destroy(_resolvedTransitionDitherMaterial);
 
-            _transitionDitherMaterial = null;
+            _resolvedTransitionDitherMaterial = null;
+            _ownsResolvedTransitionDitherMaterial = false;
         }
 
         private void PublishTransitionSolveBudgetWarningIfNeeded(long solveStartTicks)
@@ -1063,18 +1087,13 @@ namespace Hecton8.Core
             image.raycastTarget = true;
             image.color = _TransitionAbyssColor;
 
-            Shader ditherShader = null;
-            RuntimeShaderReferenceCatalog.TryGetSceneTransitionDitherShader(out ditherShader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (ditherShader == null)
-                ditherShader = Shader.Find(TransitionDitherShaderName);
-#endif
-            if (ditherShader != null)
+            Material ditherMaterial = ResolveTransitionDitherMaterial();
+            if (ditherMaterial != null)
             {
-                _transitionDitherMaterial = new Material(ditherShader); // COLD ALLOC: Material[1] - IGN scene dissolve material - owner: SceneRuntimeService
-                _transitionDitherMaterial.SetColor(_TransitionDitherColorId, _TransitionAbyssColor);
-                _transitionDitherMaterial.SetFloat(_TransitionDitherProgressId, 1f);
-                image.material = _transitionDitherMaterial;
+                _resolvedTransitionDitherMaterial = ditherMaterial;
+                _resolvedTransitionDitherMaterial.SetColor(_TransitionDitherColorId, _TransitionAbyssColor);
+                _resolvedTransitionDitherMaterial.SetFloat(_TransitionDitherProgressId, 1f);
+                image.material = _resolvedTransitionDitherMaterial;
             }
 
             GameObject terminalRoot = new GameObject("TerminalBootOverlay", typeof(RectTransform), typeof(TextMeshProUGUI)); // COLD ALLOC: GameObject[1] - zero-GC terminal boot overlay text - owner: SceneRuntimeService
@@ -1106,6 +1125,16 @@ namespace Hecton8.Core
             DestroyTransitionOverlayRoot(root);
             ClearTransitionOverlayObjectReferences();
             DestroyTransitionDitherMaterial();
+        }
+
+        private Material ResolveTransitionDitherMaterial()
+        {
+            _ownsResolvedTransitionDitherMaterial = false;
+            if (transitionDitherMaterial != null)
+                return transitionDitherMaterial;
+
+            Hecton8.Core.H8Debug.LogError("[SceneRuntimeService] Missing authored transitionDitherMaterial. Scene transitions fall back to solid blackout only; runtime material creation is forbidden.");
+            return null;
         }
 
         private void PlaceTransitionOverlayInCameraView()
@@ -1150,6 +1179,28 @@ namespace Hecton8.Core
             Canvas overlayCanvas = _transitionOverlayCanvas;
             if (overlayCanvas != null)
                 overlayCanvas.worldCamera = overlayCamera;
+        }
+
+        private Camera ResolveMainMenuCinematicCameraCold()
+        {
+            Camera configuredCamera = _configuredCinematicCamera;
+            if (configuredCamera != null && configuredCamera.enabled)
+                return configuredCamera;
+
+            Camera activeSceneCamera = ResolvePrimarySceneCameraCold(SceneManager.GetActiveScene());
+            if (activeSceneCamera != null)
+                return activeSceneCamera;
+
+            return null;
+        }
+
+        private void BindTransitionOverlayCameraCold(Camera camera)
+        {
+            _transitionOverlayCamera = camera;
+
+            Canvas overlayCanvas = _transitionOverlayCanvas;
+            if (overlayCanvas != null)
+                overlayCanvas.worldCamera = camera;
         }
 
         private Camera ResolvePrimarySceneCameraCold(Scene scene)
@@ -1363,12 +1414,12 @@ namespace Hecton8.Core
 
         private void SetTransitionDitherCoverage(float coverage, float visualOverkill01)
         {
-            if (_transitionDitherMaterial == null)
+            if (_resolvedTransitionDitherMaterial == null)
                 return;
 
             float safeVisualOverkill = math.saturate(math.select(1f, visualOverkill01, math.isfinite(visualOverkill01)));
             float qualityCoverageScale = math.lerp(MinimumTransitionDitherCoverageScale, 1f, safeVisualOverkill);
-            _transitionDitherMaterial.SetFloat(_TransitionDitherProgressId, math.saturate(coverage) * qualityCoverageScale);
+            _resolvedTransitionDitherMaterial.SetFloat(_TransitionDitherProgressId, math.saturate(coverage) * qualityCoverageScale);
         }
 
         private static float SmoothStep01(float value)

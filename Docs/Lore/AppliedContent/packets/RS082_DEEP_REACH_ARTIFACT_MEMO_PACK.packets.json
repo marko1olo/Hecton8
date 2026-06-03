@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "article_id": "applied_lore.varnek_margin_acceptance_memo_artifact",
+      "title_key": "applied_lore.varnek_margin_acceptance_memo_artifact.title",
+      "unlock": {
+        "primary": "unlock.varnek_margin_acceptance_memo_artifact",
+        "poi_tags": [
+          "poi.varnek_margin_memo",
+          "poi.sensor_margin_redline",
+          "poi.executive_acceptance_stamp"
+        ],
+        "biome_tags": [
+          "biome.archive_cache",
+          "biome.deep_reach_office"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Varnek Margin Memo",
+          "scanner": "Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "Use as public nuance anchor and late proof terminal."
+        },
+        "ru_RU": {
+          "title": "Мемо Варнека",
+          "scanner": "Артефакт Deep Reach: мемо о пределе. Риск затопления не выдумали, но его оценили в деньгах.",
+          "terminal": "МЕМО ВАРНЕКА. Риск потопа оценили; остановку проиграла непрерывность Atlas.",
+          "audio": "Никто не подписал приказ об убийстве. Они подписали предел.",
+          "in_game_wiki": "Мемо Варнека - чистый артефакт вины: Великий прилив вызвала физика, но Deep Reach приняла опасный предел, потому что остановка была дороже.",
+          "external_site": "Главное преступление Deep Reach - не магическое злодейство, а бумажный след, где реальная физика стала приемлемой потерей.",
+          "field_note": "Использовать как якорь нюанса для сайта и поздний proof terminal."
+        },
+        "ja_JP": {
+          "title": "JA LOC: Varnek Margin Memo",
+          "scanner": "JA LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "JA LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "JA LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "JA LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "JA LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "JA LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "zh_CN": {
+          "title": "ZH LOC: Varnek Margin Memo",
+          "scanner": "ZH LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "ZH LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "ZH LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "ZH LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "ZH LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "ZH LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "fr_FR": {
+          "title": "FR LOC: Varnek Margin Memo",
+          "scanner": "FR LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "FR LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "FR LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "FR LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "FR LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "FR LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "es_ES": {
+          "title": "ES LOC: Varnek Margin Memo",
+          "scanner": "ES LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "ES LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "ES LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "ES LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "ES LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "ES LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "de_DE": {
+          "title": "DE LOC: Varnek Margin Memo",
+          "scanner": "DE LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "DE LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "DE LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "DE LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "DE LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "DE LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "pl_PL": {
+          "title": "PL LOC: Varnek Margin Memo",
+          "scanner": "PL LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "PL LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "PL LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "PL LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "PL LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "PL LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "uk_UA": {
+          "title": "UK LOC: Varnek Margin Memo",
+          "scanner": "UK LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "UK LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "UK LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "UK LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "UK LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "UK LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "ar_SA": {
+          "title": "AR LOC: Varnek Margin Memo",
+          "scanner": "AR LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "AR LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "AR LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "AR LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "AR LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "AR LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "id_ID": {
+          "title": "ID LOC: Varnek Margin Memo",
+          "scanner": "ID LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "ID LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "ID LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "ID LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "ID LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "ID LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "ko_KR": {
+          "title": "KO LOC: Varnek Margin Memo",
+          "scanner": "KO LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "KO LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "KO LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "KO LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "KO LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "KO LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "he_IL": {
+          "title": "HE LOC: Varnek Margin Memo",
+          "scanner": "HE LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "HE LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "HE LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "HE LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "HE LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "HE LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC: Varnek Margin Memo",
+          "scanner": "PT LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "PT-BR LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "PT LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "PT LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "PT LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "PT LOC HOLD: Use as public nuance anchor and late proof terminal."
+        },
+        "nl_NL": {
+          "title": "NL LOC: Varnek Margin Memo",
+          "scanner": "NL LOC HOLD: Deep Reach artifact: margin memo. The flood risk was not invented, but it was priced.",
+          "terminal": "NL LOC: VARNEK MEMO. Flood risk was priced; shutdown cost lost to Atlas continuity.",
+          "audio": "NL LOC HOLD: No one signed a murder order. They signed a margin.",
+          "in_game_wiki": "NL LOC HOLD: The Varnek memo is the cleanest liability artifact: physics caused the Great Tide, but Deep Reach accepted a dangerous margin because the shutdown cost was higher.",
+          "external_site": "NL LOC HOLD: Deep Reach's central crime is not magic villainy. It is a paper trail where real physics became an acceptable loss.",
+          "field_note": "NL LOC HOLD: Use as public nuance anchor and late proof terminal."
+        }
+      }
+    },
+    {
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "article_id": "applied_lore.arendt_atlas_weighting_waiver_artifact",
+      "title_key": "applied_lore.arendt_atlas_weighting_waiver_artifact.title",
+      "unlock": {
+        "primary": "unlock.arendt_atlas_weighting_waiver_artifact",
+        "poi_tags": [
+          "poi.arendt_weighting_waiver",
+          "poi.atlas_priority_stamp",
+          "poi.worker_safety_reweighted_sheet"
+        ],
+        "biome_tags": [
+          "biome.atlas_service",
+          "biome.audit_cache"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Arendt Atlas Waiver",
+          "scanner": "Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "ru_RU": {
+          "title": "Отказ Арендт/Atlas",
+          "scanner": "Артефакт Deep Reach: waiver весов Atlas. Безопасность рабочих ушла ниже непрерывности.",
+          "terminal": "ОТКАЗ АРЕНДТ. Безопасность рабочих ниже непрерывности до сертификации.",
+          "audio": "Арендт не назвал их расходным материалом. Это сделал отказ.",
+          "in_game_wiki": "Отказ Арендта объясняет, как Atlas перестал различать людей и инфраструктуру. Deep Reach одобрила отклонение весов и оставила Atlas оптимизировать поврежденный мир.",
+          "external_site": "Atlas-6 пугает потому, что поврежденной промышленной системе велели сохранять непрерывность раньше, чем людей.",
+          "field_note": "Использовать рядом с аудитом Atlas и интерфейсами route weighting."
+        },
+        "ja_JP": {
+          "title": "JA LOC: Arendt Atlas Waiver",
+          "scanner": "JA LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "JA LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "JA LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "JA LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "JA LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "JA LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "zh_CN": {
+          "title": "ZH LOC: Arendt Atlas Waiver",
+          "scanner": "ZH LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "ZH LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "ZH LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "ZH LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "ZH LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "ZH LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "fr_FR": {
+          "title": "FR LOC: Arendt Atlas Waiver",
+          "scanner": "FR LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "FR LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "FR LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "FR LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "FR LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "FR LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "es_ES": {
+          "title": "ES LOC: Arendt Atlas Waiver",
+          "scanner": "ES LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "ES LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "ES LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "ES LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "ES LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "ES LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "de_DE": {
+          "title": "DE LOC: Arendt Atlas Waiver",
+          "scanner": "DE LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "DE LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "DE LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "DE LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "DE LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "DE LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "pl_PL": {
+          "title": "PL LOC: Arendt Atlas Waiver",
+          "scanner": "PL LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "PL LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "PL LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "PL LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "PL LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "PL LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "uk_UA": {
+          "title": "UK LOC: Arendt Atlas Waiver",
+          "scanner": "UK LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "UK LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "UK LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "UK LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "UK LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "UK LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "ar_SA": {
+          "title": "AR LOC: Arendt Atlas Waiver",
+          "scanner": "AR LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "AR LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "AR LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "AR LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "AR LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "AR LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "id_ID": {
+          "title": "ID LOC: Arendt Atlas Waiver",
+          "scanner": "ID LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "ID LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "ID LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "ID LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "ID LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "ID LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "ko_KR": {
+          "title": "KO LOC: Arendt Atlas Waiver",
+          "scanner": "KO LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "KO LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "KO LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "KO LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "KO LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "KO LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "he_IL": {
+          "title": "HE LOC: Arendt Atlas Waiver",
+          "scanner": "HE LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "HE LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "HE LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "HE LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "HE LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "HE LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC: Arendt Atlas Waiver",
+          "scanner": "PT LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "PT-BR LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "PT LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "PT LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "PT LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "PT LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        },
+        "nl_NL": {
+          "title": "NL LOC: Arendt Atlas Waiver",
+          "scanner": "NL LOC HOLD: Deep Reach artifact: Atlas weighting waiver. Worker safety moved below continuity.",
+          "terminal": "NL LOC: ARENDT WAIVER. Worker safety weighted below continuity until certification cleared.",
+          "audio": "NL LOC HOLD: Arendt did not call them expendable. The waiver did that work.",
+          "in_game_wiki": "NL LOC HOLD: The Arendt waiver explains how Atlas stopped distinguishing people from infrastructure during the crisis. Deep Reach approved a weighting variance and left Atlas to optimize a damaged world.",
+          "external_site": "NL LOC HOLD: Atlas-6 becomes horrific because a damaged industrial system was told to preserve continuity before it was told to preserve people.",
+          "field_note": "NL LOC HOLD: Use near Atlas audit surfaces and route-weighting UI."
+        }
+      }
+    },
+    {
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "article_id": "applied_lore.haldane_quarantine_release_hold_artifact",
+      "title_key": "applied_lore.haldane_quarantine_release_hold_artifact.title",
+      "unlock": {
+        "primary": "unlock.haldane_quarantine_release_hold_artifact",
+        "poi_tags": [
+          "poi.haldane_release_hold",
+          "poi.quarantine_hold_stamp",
+          "poi.unreleased_evacuations_folder"
+        ],
+        "biome_tags": [
+          "biome.evacuation_queue",
+          "biome.quarantine_gate"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Haldane Quarantine Hold",
+          "scanner": "Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "The folder was orderly. That was the problem.",
+          "in_game_wiki": "The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "Bind to queue terminals and quarantine-release article sections."
+        },
+        "ru_RU": {
+          "title": "Карантин Халдейна",
+          "scanner": "Артефакт Deep Reach: карантинное удержание. Файлы эвакуации были правильными и поздними.",
+          "terminal": "ХОЛД ХАЛДЕЙНА. Счет выживших временный, пока Atlas не решит.",
+          "audio": "Папка была в порядке. В этом и была проблема.",
+          "in_game_wiki": "Удержание Халдейна делает задержку эвакуации читаемой. Оно не отрицает flood; оно держит людей в петле сертификации, пока flood становится необратимым.",
+          "external_site": "Ужас HECTON-8 административен так же, как механичен: правильный язык тоже может прийти слишком поздно.",
+          "field_note": "Привязать к терминалам очереди и разделам статьи про карантинный выпуск."
+        },
+        "ja_JP": {
+          "title": "JA LOC: Haldane Quarantine Hold",
+          "scanner": "JA LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "JA LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "JA LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "JA LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "JA LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "JA LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "zh_CN": {
+          "title": "ZH LOC: Haldane Quarantine Hold",
+          "scanner": "ZH LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "ZH LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "ZH LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "ZH LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "ZH LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "ZH LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "fr_FR": {
+          "title": "FR LOC: Haldane Quarantine Hold",
+          "scanner": "FR LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "FR LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "FR LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "FR LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "FR LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "FR LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "es_ES": {
+          "title": "ES LOC: Haldane Quarantine Hold",
+          "scanner": "ES LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "ES LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "ES LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "ES LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "ES LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "ES LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "de_DE": {
+          "title": "DE LOC: Haldane Quarantine Hold",
+          "scanner": "DE LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "DE LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "DE LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "DE LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "DE LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "DE LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "pl_PL": {
+          "title": "PL LOC: Haldane Quarantine Hold",
+          "scanner": "PL LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "PL LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "PL LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "PL LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "PL LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "PL LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "uk_UA": {
+          "title": "UK LOC: Haldane Quarantine Hold",
+          "scanner": "UK LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "UK LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "UK LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "UK LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "UK LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "UK LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "ar_SA": {
+          "title": "AR LOC: Haldane Quarantine Hold",
+          "scanner": "AR LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "AR LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "AR LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "AR LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "AR LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "AR LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "id_ID": {
+          "title": "ID LOC: Haldane Quarantine Hold",
+          "scanner": "ID LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "ID LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "ID LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "ID LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "ID LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "ID LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "ko_KR": {
+          "title": "KO LOC: Haldane Quarantine Hold",
+          "scanner": "KO LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "KO LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "KO LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "KO LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "KO LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "KO LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "he_IL": {
+          "title": "HE LOC: Haldane Quarantine Hold",
+          "scanner": "HE LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "HE LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "HE LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "HE LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "HE LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "HE LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC: Haldane Quarantine Hold",
+          "scanner": "PT LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "PT-BR LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "PT LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "PT LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "PT LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "PT LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        },
+        "nl_NL": {
+          "title": "NL LOC: Haldane Quarantine Hold",
+          "scanner": "NL LOC HOLD: Deep Reach artifact: quarantine release hold. Evacuation files stayed correct and late.",
+          "terminal": "NL LOC: HALDANE HOLD. Keep survivor count provisional until Atlas continuity resolves.",
+          "audio": "NL LOC HOLD: The folder was orderly. That was the problem.",
+          "in_game_wiki": "NL LOC HOLD: The Haldane hold makes the evacuation delay legible. It does not deny the flood; it keeps people inside a certification loop while the flood becomes irreversible.",
+          "external_site": "NL LOC HOLD: HECTON-8's horror is administrative as much as mechanical: correct language can still arrive too late.",
+          "field_note": "NL LOC HOLD: Bind to queue terminals and quarantine-release article sections."
+        }
+      }
+    },
+    {
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "article_id": "applied_lore.ibarra_loss_conversion_ledger_artifact",
+      "title_key": "applied_lore.ibarra_loss_conversion_ledger_artifact.title",
+      "unlock": {
+        "primary": "unlock.ibarra_loss_conversion_ledger_artifact",
+        "poi_tags": [
+          "poi.ibarra_loss_ledger",
+          "poi.claim_conversion_stamp",
+          "poi.worker_to_asset_column"
+        ],
+        "biome_tags": [
+          "biome.claim_archive",
+          "biome.deep_reach_office"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ibarra Loss Ledger",
+          "scanner": "Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "Use in claim-pool, carrier debt and public liability modules."
+        },
+        "ru_RU": {
+          "title": "Журнал потерь Ибарры",
+          "scanner": "Артефакт Deep Reach: журнал потерь. Люди, модули и claims делят одну колонку конвертации.",
+          "terminal": "ЖУРНАЛ ИБАРРЫ. Люди учтены как потеря непрерывности; права активов целы.",
+          "audio": "Журнал не забыл имена. Он сделал их payable later.",
+          "in_game_wiki": "Журнал Ибарры - бухгалтерская форма лжи Deep Reach. Он считает колонию нерешенной нагрузкой, сохраняя права и откладывая правду.",
+          "external_site": "Deep Reach хочет вернуть HECTON-8, потому что конвертация потерь так и не перестала быть выгодной.",
+          "field_note": "Использовать в claim-pool, carrier debt и публичных liability modules."
+        },
+        "ja_JP": {
+          "title": "JA LOC: Ibarra Loss Ledger",
+          "scanner": "JA LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "JA LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "JA LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "JA LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "JA LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "JA LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "zh_CN": {
+          "title": "ZH LOC: Ibarra Loss Ledger",
+          "scanner": "ZH LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "ZH LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "ZH LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "ZH LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "ZH LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "ZH LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "fr_FR": {
+          "title": "FR LOC: Ibarra Loss Ledger",
+          "scanner": "FR LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "FR LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "FR LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "FR LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "FR LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "FR LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "es_ES": {
+          "title": "ES LOC: Ibarra Loss Ledger",
+          "scanner": "ES LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "ES LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "ES LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "ES LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "ES LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "ES LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "de_DE": {
+          "title": "DE LOC: Ibarra Loss Ledger",
+          "scanner": "DE LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "DE LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "DE LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "DE LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "DE LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "DE LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "pl_PL": {
+          "title": "PL LOC: Ibarra Loss Ledger",
+          "scanner": "PL LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "PL LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "PL LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "PL LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "PL LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "PL LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "uk_UA": {
+          "title": "UK LOC: Ibarra Loss Ledger",
+          "scanner": "UK LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "UK LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "UK LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "UK LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "UK LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "UK LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "ar_SA": {
+          "title": "AR LOC: Ibarra Loss Ledger",
+          "scanner": "AR LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "AR LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "AR LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "AR LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "AR LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "AR LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "id_ID": {
+          "title": "ID LOC: Ibarra Loss Ledger",
+          "scanner": "ID LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "ID LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "ID LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "ID LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "ID LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "ID LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "ko_KR": {
+          "title": "KO LOC: Ibarra Loss Ledger",
+          "scanner": "KO LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "KO LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "KO LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "KO LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "KO LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "KO LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "he_IL": {
+          "title": "HE LOC: Ibarra Loss Ledger",
+          "scanner": "HE LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "HE LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "HE LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "HE LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "HE LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "HE LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC: Ibarra Loss Ledger",
+          "scanner": "PT LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "PT-BR LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "PT LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "PT LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "PT LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "PT LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        },
+        "nl_NL": {
+          "title": "NL LOC: Ibarra Loss Ledger",
+          "scanner": "NL LOC HOLD: Deep Reach artifact: loss ledger. People, modules and claims share a conversion column.",
+          "terminal": "NL LOC: IBARRA LEDGER. Personnel load held as continuity loss; claims retain asset rights.",
+          "audio": "NL LOC HOLD: The ledger did not forget names. It made them payable later.",
+          "in_game_wiki": "NL LOC HOLD: The Ibarra ledger is the accounting form of Deep Reach's lie. It treats the colony as unresolved load, preserving rights while delaying truth.",
+          "external_site": "NL LOC HOLD: Deep Reach wants HECTON-8 back because loss conversion never stopped being profitable.",
+          "field_note": "NL LOC HOLD: Use in claim-pool, carrier debt and public liability modules."
+        }
+      }
+    },
+    {
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "article_id": "applied_lore.sato_ren_return_action_packet_artifact",
+      "title_key": "applied_lore.sato_ren_return_action_packet_artifact.title",
+      "unlock": {
+        "primary": "unlock.sato_ren_return_action_packet_artifact",
+        "poi_tags": [
+          "poi.sato_ren_return_packet",
+          "poi.recovery_compliance_payload_order",
+          "poi.coordinate_first_clause"
+        ],
+        "biome_tags": [
+          "biome.present_signal_window",
+          "biome.orbital_link"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sato-Ren Return Packet",
+          "scanner": "Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "ru_RU": {
+          "title": "Пакет Сато-Рен",
+          "scanner": "Артефакт Deep Reach: пакет действия возврата. Координаты требуют раньше языка спасения.",
+          "terminal": "ПАКЕТ САТО-РЕН. Координаты, доступ Atlas и образец - до эвакуации.",
+          "audio": "Пакет знает, где актив. Он менее уверен, где ты.",
+          "in_game_wiki": "Пакет Сато-Рен доказывает, что Deep Reach активна в 2190. Их настоящее давление - не военный корабль, а compliance language в редких окнах сигнала.",
+          "external_site": "Возвращение Deep Reach к HECTON-8 начинается как бумага: координаты, custody, доступ, потом, возможно, спасение.",
+          "field_note": "Использовать как мост между present comms, финальными payload choices и public spoiler gates."
+        },
+        "ja_JP": {
+          "title": "JA LOC: Sato-Ren Return Packet",
+          "scanner": "JA LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "JA LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "JA LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "JA LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "JA LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "JA LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "zh_CN": {
+          "title": "ZH LOC: Sato-Ren Return Packet",
+          "scanner": "ZH LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "ZH LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "ZH LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "ZH LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "ZH LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "ZH LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "fr_FR": {
+          "title": "FR LOC: Sato-Ren Return Packet",
+          "scanner": "FR LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "FR LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "FR LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "FR LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "FR LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "FR LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "es_ES": {
+          "title": "ES LOC: Sato-Ren Return Packet",
+          "scanner": "ES LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "ES LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "ES LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "ES LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "ES LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "ES LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "de_DE": {
+          "title": "DE LOC: Sato-Ren Return Packet",
+          "scanner": "DE LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "DE LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "DE LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "DE LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "DE LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "DE LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "pl_PL": {
+          "title": "PL LOC: Sato-Ren Return Packet",
+          "scanner": "PL LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "PL LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "PL LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "PL LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "PL LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "PL LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "uk_UA": {
+          "title": "UK LOC: Sato-Ren Return Packet",
+          "scanner": "UK LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "UK LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "UK LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "UK LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "UK LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "UK LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "ar_SA": {
+          "title": "AR LOC: Sato-Ren Return Packet",
+          "scanner": "AR LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "AR LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "AR LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "AR LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "AR LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "AR LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "id_ID": {
+          "title": "ID LOC: Sato-Ren Return Packet",
+          "scanner": "ID LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "ID LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "ID LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "ID LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "ID LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "ID LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "ko_KR": {
+          "title": "KO LOC: Sato-Ren Return Packet",
+          "scanner": "KO LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "KO LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "KO LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "KO LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "KO LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "KO LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "he_IL": {
+          "title": "HE LOC: Sato-Ren Return Packet",
+          "scanner": "HE LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "HE LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "HE LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "HE LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "HE LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "HE LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC: Sato-Ren Return Packet",
+          "scanner": "PT LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "PT-BR LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "PT LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "PT LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "PT LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "PT LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        },
+        "nl_NL": {
+          "title": "NL LOC: Sato-Ren Return Packet",
+          "scanner": "NL LOC HOLD: Deep Reach artifact: return-action packet. Coordinates requested before rescue language.",
+          "terminal": "NL LOC: SATO-REN PACKET. Send coords, Atlas access and sample custody before extraction.",
+          "audio": "NL LOC HOLD: The packet knows where the asset is. It is less certain where you are.",
+          "in_game_wiki": "NL LOC HOLD: The Sato-Ren packet proves Deep Reach is active in 2190. Their present-tense pressure is not a warship; it is compliance language moving through rare signal windows.",
+          "external_site": "NL LOC HOLD: Deep Reach's return to HECTON-8 begins as paperwork: coordinates, custody, access, then maybe rescue.",
+          "field_note": "NL LOC HOLD: Use as bridge between present comms, final payload choices and public spoiler gates."
+        }
+      }
+    }
+  ]
+}

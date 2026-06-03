@@ -33,6 +33,7 @@ namespace Hecton8.Graphics.Scalability
     {
         private static int s_x001ThermalDynamicResolutionAdapterSignalPushDropCount;
         private const int TelemetryCapacity = 300;
+        private const int DispatcherRegistrationRepairMaxFrames = 1800;
         private const int TelemetryHeaderBytes = 20;
         private const int DrsTelemetryEntryBytes = 64;
         private const int ResolutionScaleStateBytes = 64;
@@ -209,6 +210,8 @@ namespace Hecton8.Graphics.Scalability
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _sceneLoadedRepairRegistered;
+        private bool _dispatcherRegistrationRepairRunning;
         private bool _systemScalerInstalled;
         private bool _blackBoxDumped;
         private uint _blackBoxDumpHash;
@@ -245,6 +248,7 @@ namespace Hecton8.Graphics.Scalability
         private bool _scaleStateMirrorValid;
         private int _cameraShieldCachedCount;
         private readonly Camera[] _cameraShieldSnapshot = new Camera[CameraShieldCacheCapacity];
+        private readonly Camera[] _cameraShieldCameras = new Camera[CameraShieldCacheCapacity];
         private readonly ulong[] _cameraShieldEntityIds = new ulong[CameraShieldCacheCapacity];
         private readonly byte[] _cameraShieldWorldCameraFlags = new byte[CameraShieldCacheCapacity];
 
@@ -428,7 +432,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void OnEnable()
         {
-            if (!ReferenceEquals(s_activeAdapter, this))
+            if (!TryClaimActiveAdapterAfterReloadCold())
                 return;
 
             if (Application.isPlaying)
@@ -446,11 +450,13 @@ namespace Hecton8.Graphics.Scalability
             TryRegister();
             TryRegisterLateFrame();
             TryRegisterHotSwap();
+            RegisterSceneLoadedRepair();
+            RequestDispatcherPhaseRegistrationRepair();
         }
 
         private void Start()
         {
-            if (!ReferenceEquals(s_activeAdapter, this))
+            if (!TryClaimActiveAdapterAfterReloadCold())
                 return;
 
             RefreshCameraShieldCacheCold();
@@ -458,14 +464,19 @@ namespace Hecton8.Graphics.Scalability
             TryRegister();
             TryRegisterLateFrame();
             TryRegisterHotSwap();
+            RegisterSceneLoadedRepair();
+            RequestDispatcherPhaseRegistrationRepair();
         }
 
         private void OnDisable()
         {
             bool ownsAdapter = ReferenceEquals(s_activeAdapter, this);
+            _dispatcherRegistrationRepairRunning = false;
+            StopAllCoroutines();
             TryUnregister();
             TryUnregisterLateFrame();
             TryUnregisterHotSwap();
+            UnregisterSceneLoadedRepair();
             UnregisterResolutionScalerService();
             if (ownsAdapter)
             {
@@ -488,6 +499,7 @@ namespace Hecton8.Graphics.Scalability
             TryUnregister();
             TryUnregisterLateFrame();
             TryUnregisterHotSwap();
+            UnregisterSceneLoadedRepair();
             UnregisterResolutionScalerService();
             if (ownsAdapter)
             {
@@ -605,6 +617,8 @@ namespace Hecton8.Graphics.Scalability
 
             if (!ReferenceEquals(s_activeAdapter, this))
                 return;
+
+            ApplyCameraShieldCached();
 
             if (_pendingRenderScaleCommitDirty)
             {
@@ -894,7 +908,10 @@ namespace Hecton8.Graphics.Scalability
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
                 RebindDataVault(currentService as IDataVault);
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            {
                 TryRegister();
+                RequestDispatcherPhaseRegistrationRepair();
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -911,7 +928,10 @@ namespace Hecton8.Graphics.Scalability
                 TryUnregister();
                 TryUnregisterLateFrame();
                 if (currentService != null)
+                {
                     TryRegister();
+                    RequestDispatcherPhaseRegistrationRepair();
+                }
             }
         }
 
@@ -1528,6 +1548,37 @@ namespace Hecton8.Graphics.Scalability
             TryRegisterSlowTick();
         }
 
+        private void RequestDispatcherPhaseRegistrationRepair()
+        {
+            if (!Application.isPlaying ||
+                _dispatcherRegistrationRepairRunning ||
+                (_registeredLateFrame && _registeredSlowTick))
+            {
+                return;
+            }
+
+            StartCoroutine(RepairDispatcherPhaseRegistrationCold());
+        }
+
+        private System.Collections.IEnumerator RepairDispatcherPhaseRegistrationCold()
+        {
+            _dispatcherRegistrationRepairRunning = true;
+            int remainingFrames = DispatcherRegistrationRepairMaxFrames;
+            while (Application.isPlaying &&
+                   enabled &&
+                   (!_registeredLateFrame || !_registeredSlowTick) &&
+                   remainingFrames-- > 0)
+            {
+                TryRegister();
+                if (_registeredLateFrame && _registeredSlowTick)
+                    break;
+
+                yield return null;
+            }
+
+            _dispatcherRegistrationRepairRunning = false;
+        }
+
         private void TryUnregister()
         {
             TryUnregisterSlowTick();
@@ -1602,6 +1653,58 @@ namespace Hecton8.Graphics.Scalability
             _hotSwapRegistered = false;
         }
 
+        private void RegisterSceneLoadedRepair()
+        {
+            if (_sceneLoadedRepairRegistered || !Application.isPlaying)
+                return;
+
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedRepairCold;
+            _sceneLoadedRepairRegistered = true;
+        }
+
+        private void UnregisterSceneLoadedRepair()
+        {
+            if (!_sceneLoadedRepairRegistered)
+                return;
+
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedRepairCold;
+            _sceneLoadedRepairRegistered = false;
+        }
+
+        private void OnSceneLoadedRepairCold(
+            UnityEngine.SceneManagement.Scene scene,
+            UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (!TryClaimActiveAdapterAfterReloadCold() || !Application.isPlaying)
+                return;
+
+            RebindDataVault(GlobalRegistry.DataVault);
+            RebindDynamicResolutionRuntime(GlobalRegistry.DynamicResolutionRuntime);
+            RefreshRenderSurfaceSnapshotCold();
+            ApplyQualitySnapshotPolicyCold();
+            RegisterResolutionScalerService();
+            InstallSystemDynamicResolutionScaler();
+            RegisterCameraShield();
+            TryRegisterHotSwap();
+            TryRegister();
+            CommitRenderScale(0);
+            RequestDispatcherPhaseRegistrationRepair();
+        }
+
+        private bool TryClaimActiveAdapterAfterReloadCold()
+        {
+            if (ReferenceEquals(s_activeAdapter, this))
+                return true;
+
+            if (s_activeAdapter == null)
+            {
+                s_activeAdapter = this;
+                return true;
+            }
+
+            return false;
+        }
+
         private void RegisterCameraShield()
         {
             if (_cameraShieldRegistered || !Application.isPlaying)
@@ -1627,9 +1730,7 @@ namespace Hecton8.Graphics.Scalability
             if (camera == null)
                 return;
 
-            bool shouldAllowDynamicResolution = IsWorldCameraCached(camera) && _stpActive;
-            if (camera.allowDynamicResolution != shouldAllowDynamicResolution)
-                camera.allowDynamicResolution = shouldAllowDynamicResolution;
+            ApplyCameraShieldPolicy(camera, IsWorldCameraCached(camera));
         }
 
         private bool IsWorldCameraCached(Camera camera)
@@ -1644,8 +1745,46 @@ namespace Hecton8.Graphics.Scalability
                     return _cameraShieldWorldCameraFlags[i] == 2;
             }
 
-            _cameraShieldColdRefreshRequested = true;
-            return false;
+            bool isWorldCamera = IsWorldCameraCold(camera);
+            _cameraShieldColdRefreshRequested = !TryCacheCameraShieldEntryCold(
+                camera,
+                entityId,
+                isWorldCamera ? (byte)2 : (byte)1);
+            return isWorldCamera;
+        }
+
+        private bool TryCacheCameraShieldEntryCold(Camera camera, ulong entityId, byte worldCameraFlag)
+        {
+            if (_cameraShieldCachedCount >= CameraShieldCacheCapacity)
+                return false;
+
+            _cameraShieldCameras[_cameraShieldCachedCount] = camera;
+            _cameraShieldEntityIds[_cameraShieldCachedCount] = entityId;
+            _cameraShieldWorldCameraFlags[_cameraShieldCachedCount] = worldCameraFlag;
+            _cameraShieldCachedCount++;
+            return true;
+        }
+
+        private void ApplyCameraShieldCached()
+        {
+            if (!_cameraShieldRegistered)
+                return;
+
+            for (int i = 0; i < _cameraShieldCachedCount; i++)
+            {
+                Camera camera = _cameraShieldCameras[i];
+                if (camera == null)
+                    continue;
+
+                ApplyCameraShieldPolicy(camera, _cameraShieldWorldCameraFlags[i] == 2);
+            }
+        }
+
+        private void ApplyCameraShieldPolicy(Camera camera, bool isWorldCamera)
+        {
+            bool shouldAllowDynamicResolution = isWorldCamera && _stpActive;
+            if (camera.allowDynamicResolution != shouldAllowDynamicResolution)
+                camera.allowDynamicResolution = shouldAllowDynamicResolution;
         }
 
         private void RefreshCameraShieldCacheCold()
@@ -1654,6 +1793,7 @@ namespace Hecton8.Graphics.Scalability
             for (int i = 0; i < CameraShieldCacheCapacity; i++)
             {
                 _cameraShieldSnapshot[i] = null;
+                _cameraShieldCameras[i] = null;
                 _cameraShieldEntityIds[i] = 0UL;
                 _cameraShieldWorldCameraFlags[i] = 0;
             }
@@ -1667,9 +1807,12 @@ namespace Hecton8.Graphics.Scalability
                 if (camera == null)
                     continue;
 
+                bool isWorldCamera = IsWorldCameraCold(camera);
+                _cameraShieldCameras[_cameraShieldCachedCount] = camera;
                 _cameraShieldEntityIds[_cameraShieldCachedCount] = EntityId.ToULong(camera.GetEntityId());
-                _cameraShieldWorldCameraFlags[_cameraShieldCachedCount] = IsWorldCameraCold(camera) ? (byte)2 : (byte)1;
+                _cameraShieldWorldCameraFlags[_cameraShieldCachedCount] = isWorldCamera ? (byte)2 : (byte)1;
                 _cameraShieldCachedCount++;
+                ApplyCameraShieldPolicy(camera, isWorldCamera);
             }
 
             _cameraShieldColdRefreshRequested = cameraCount > CameraShieldCacheCapacity;
@@ -1795,6 +1938,7 @@ namespace Hecton8.Graphics.Scalability
         private void RequestLateFrameRegistrationRepair()
         {
             _lateFrameRegistrationRequested = !_registeredLateFrame;
+            RequestDispatcherPhaseRegistrationRepair();
         }
 
         private void PublishResolutionChangedSignalIfNeeded(byte flags)

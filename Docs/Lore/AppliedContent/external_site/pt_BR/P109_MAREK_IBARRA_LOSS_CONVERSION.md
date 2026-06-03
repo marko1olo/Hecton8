@@ -1,30 +1,37 @@
 ---
 packet_id: P109_MAREK_IBARRA_LOSS_CONVERSION
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.marek_ibarra_loss_conversion
+unlock_id: unlock.first_marek_ibarra_loss_conversion
+poi_tags: poi.loss_conversion_table;poi.keelmark_adjuster_log
+biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: pt_BR
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Marek Ibarra Loss Conversion
 
-Draft PT localization pending native pass. Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
+Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
 
 ## Scanner
 
-Draft PT localization pending native pass. Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
 
 ## Terminal
 
-Draft PT localization pending native pass. IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
 
 ## Audio
 
-Draft PT localization pending native pass. A missing person became a pending category. That was cheaper.
+A missing person became a pending category. That was cheaper.
 
 ## Field Note
 
-Draft PT localization pending native pass. Insurance language should feel colder than gunfire.
+Insurance language should feel colder than gunfire.
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/pt_BR. -->

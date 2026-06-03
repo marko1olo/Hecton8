@@ -8,10 +8,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine.Serialization;
 
 namespace Hecton8.Visor
 {
@@ -22,14 +19,11 @@ namespace Hecton8.Visor
     {
         private const int LootRefreshCallMask = 0x07;
 
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_BiosDiagnostic.shader";
-#endif
-
         [Serializable]
         private sealed class FeatureSettings
         {
-            public Shader shader = null;
+            [FormerlySerializedAs("shader")]
+            public Material material = null;
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
             public bool forceEnabled;
             [Range(0f, 1f)] public float forcedIntensity = 1f;
@@ -53,18 +47,19 @@ namespace Hecton8.Visor
                 public TextureHandle Source;
                 public TextureHandle Depth;
                 public Material Material;
+                public MaterialPropertyBlock Properties;
+                public Vector4 LootSphereAup;
+                public float Intensity;
+                public float LootActive;
+                public float DitherStrength;
+                public float ScanlineStrength;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton BIOS Diagnostic");
             private FeatureSettings _settings;
             private Material _material;
+            private MaterialPropertyBlock _drawProperties;
             private RuntimeState _state;
-            private Vector4 _appliedLootSphereAup;
-            private float _appliedIntensity = -1f;
-            private float _appliedLootActive = -1f;
-            private float _appliedDitherStrength = -1f;
-            private float _appliedScanlineStrength = -1f;
-            private bool _materialDirty = true;
 
             public DiagnosticPass()
             {
@@ -74,15 +69,18 @@ namespace Hecton8.Visor
 
             public void Setup(FeatureSettings settings, Material material, RuntimeState state)
             {
-                if (!ReferenceEquals(_material, material))
-                    _materialDirty = true;
-
                 _settings = settings;
                 _material = material;
                 _state = state;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
+            }
+
+            public void Dispose()
+            {
+                _drawProperties?.Clear();
+                _drawProperties = null;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -113,7 +111,7 @@ namespace Hecton8.Visor
                 destinationDesc.colorFormat = sourceDesc.colorFormat;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterialIfNeeded(_material, _settings, _state);
+                EnsureDrawProperties();
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DiagnosticPassData>(
                            "Hecton BIOS Diagnostic",
@@ -123,6 +121,12 @@ namespace Hecton8.Visor
                     passData.Source = sourceTexture;
                     passData.Depth = depthTexture;
                     passData.Material = _material;
+                    passData.Properties = _drawProperties;
+                    passData.LootSphereAup = _state.LootSphereAup;
+                    passData.Intensity = math.saturate(_state.Intensity);
+                    passData.LootActive = _state.HasLoot != 0 ? 1f : 0f;
+                    passData.DitherStrength = math.saturate(_settings.ditherStrength);
+                    passData.ScanlineStrength = math.saturate(_settings.scanlineStrength);
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
@@ -131,65 +135,32 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc(static (DiagnosticPassData data, RasterGraphContext context) =>
                     {
-                        if (data.Material == null)
+                        if (data.Material == null || data.Properties == null)
                             return;
 
+                        UpdateDrawProperties(data.Properties, data);
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
-                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, data.Properties, 0);
                     });
                 }
 
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialIfNeeded(Material material, FeatureSettings settings, RuntimeState state)
+            private static void UpdateDrawProperties(MaterialPropertyBlock properties, DiagnosticPassData data)
             {
-                float intensity = math.saturate(state.Intensity);
-                float lootActive = state.HasLoot != 0 ? 1f : 0f;
-                float ditherStrength = math.saturate(settings.ditherStrength);
-                float scanlineStrength = math.saturate(settings.scanlineStrength);
-
-                if (_materialDirty || math.abs(_appliedIntensity - intensity) > 0.0005f)
-                {
-                    material.SetFloat(ShaderConstants.IntensityId, intensity);
-                    _appliedIntensity = intensity;
-                }
-
-                if (_materialDirty || math.abs(_appliedLootActive - lootActive) > 0.0005f)
-                {
-                    material.SetFloat(ShaderConstants.LootActiveId, lootActive);
-                    _appliedLootActive = lootActive;
-                }
-
-                if (_materialDirty || Vector4DistanceSq(_appliedLootSphereAup, state.LootSphereAup) > 0.000001f)
-                {
-                    material.SetVector(ShaderConstants.LootSphereId, state.LootSphereAup);
-                    _appliedLootSphereAup = state.LootSphereAup;
-                }
-
-                if (_materialDirty || math.abs(_appliedDitherStrength - ditherStrength) > 0.0005f)
-                {
-                    material.SetFloat(ShaderConstants.DitherStrengthId, ditherStrength);
-                    _appliedDitherStrength = ditherStrength;
-                }
-
-                if (_materialDirty || math.abs(_appliedScanlineStrength - scanlineStrength) > 0.0005f)
-                {
-                    material.SetFloat(ShaderConstants.ScanlineStrengthId, scanlineStrength);
-                    _appliedScanlineStrength = scanlineStrength;
-                }
-
-                _materialDirty = false;
+                properties.Clear();
+                properties.SetFloat(ShaderConstants.IntensityId, data.Intensity);
+                properties.SetFloat(ShaderConstants.LootActiveId, data.LootActive);
+                properties.SetVector(ShaderConstants.LootSphereId, data.LootSphereAup);
+                properties.SetFloat(ShaderConstants.DitherStrengthId, data.DitherStrength);
+                properties.SetFloat(ShaderConstants.ScanlineStrengthId, data.ScanlineStrength);
             }
 
-            private static float Vector4DistanceSq(Vector4 a, Vector4 b)
+            private void EnsureDrawProperties()
             {
-                float x = a.x - b.x;
-                float y = a.y - b.y;
-                float z = a.z - b.z;
-                float w = a.w - b.w;
-                return x * x + y * y + z * z + w * w;
+                _drawProperties ??= new MaterialPropertyBlock(); // COLD ALLOC: BIOS diagnostic per-pass payload - owner: HECTON_BIOS_DIAGNOSTIC
             }
         }
 
@@ -219,20 +190,17 @@ namespace Hecton8.Visor
 
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
-
             _pass ??= new DiagnosticPass();
-            Shader shader = settings != null ? settings.shader : null;
-            RecreateMaterial(ref _material, shader);
+            _material = settings != null ? settings.material : null;
             TryRegisterHotSwapListener();
             CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if (settings != null)
+                _material = settings.material;
+
             if (settings == null || _pass == null || _material == null)
                 return;
 
@@ -297,7 +265,7 @@ namespace Hecton8.Visor
 
         protected override void Dispose(bool disposing)
         {
-            CoreUtils.Destroy(_material);
+            _pass?.Dispose();
             _material = null;
             CachePlayerContext(null);
             TryUnregisterHotSwapListener();
@@ -343,20 +311,5 @@ namespace Hecton8.Visor
             _hotSwapRegistered = false;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                CoreUtils.Destroy(material);
-                material = null;
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
     }
 }

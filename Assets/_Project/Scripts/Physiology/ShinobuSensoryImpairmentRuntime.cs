@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -20,6 +21,7 @@ namespace Hecton8.Physiology
         private const string CsvRelativePath = "sensory_impairment_profiles.csv";
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_322.bin";
+        private const uint MetabolicStateHandleRetryFrames = 30u;
 
         private static readonly ulong TuningMutationGuardMask =
             MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer);
@@ -61,6 +63,7 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<SensoryImpairmentProfileDTO> _profilesHandle;
         private VaultGenerationHandle<SensoryInputDriftDebugDTO> _driftDebugHandle;
         private VaultGenerationHandle<GasPhysiologyStateDTO> _gasStateHandle;
+        private VaultGenerationHandle<MetabolicStateDTO> _metabolicStateHandle;
         private VaultGenerationHandle<MockEnvironmentVitalsSignal> _environmentHandle;
         private VaultGenerationHandle<InputStateDTO> _currentInputHandle;
         private VaultGenerationHandle<PredictedInputDTO> _predictedInputHandle;
@@ -76,6 +79,7 @@ namespace Hecton8.Physiology
 #endif
         private string _dumpPath;
         private uint _frameCounter;
+        private uint _nextMetabolicStateHandleRetryFrame;
         private int _telemetryCursor;
         private bool _registeredSlow;
         private bool _registeredLateFrame;
@@ -655,12 +659,89 @@ namespace Hecton8.Physiology
 
             SensoryImpairmentDTO row = impairment[0];
             float co2 = ShinobuPhysiologyJobMath.ResolveCarbonDioxideToxicity01(gas.CarbonDioxidePartialPressure);
+            float metabolicHypoxia = ResolveMetabolicHypoxiaVisual01();
             float quality = ResolveGlobalQualityWeight();
             HectonShaderGlobalDataVaultBridge.PublishPhysiologyGasToxicity(new Vector4(
-                math.saturate(row.HypoxiaVignette01),
+                math.max(math.saturate(row.HypoxiaVignette01), metabolicHypoxia),
                 math.saturate(gas.CnsToxicity01),
                 math.saturate(co2),
                 quality));
+        }
+
+        private float ResolveMetabolicHypoxiaVisual01()
+        {
+            if (!TryReadMetabolicStateBuffer(out NativeArray<MetabolicStateDTO>.ReadOnly metabolicStates) ||
+                metabolicStates.Length <= 0)
+            {
+                return 0f;
+            }
+
+            MetabolicStateDTO state = metabolicStates[0];
+            bool hypoxia =
+                state.IsInHypoxia != 0 ||
+                (state.Flags & ShinobuMetabolismVaultContract.FlagHypoxia) != 0u;
+            if (!hypoxia)
+                return 0f;
+
+            float remaining = math.max(
+                0f,
+                math.select(0f, state.AgonyTimeRemaining, math.isfinite(state.AgonyTimeRemaining)));
+            float duration = math.max(0.01f, ShinobuMetabolismVaultContract.HypoxiaAgonyDurationSeconds);
+            float phase = math.saturate((duration - remaining) * math.rcp(duration));
+            return math.smoothstep(0f, 1f, phase);
+        }
+
+        private bool TryReadMetabolicStateBuffer(out NativeArray<MetabolicStateDTO>.ReadOnly buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            BufferID bufferId = (BufferID)ShinobuMetabolismVaultContract.MetabolismStatesBufferId;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if ((_metabolicStateHandle.BufferID != (uint)bufferId ||
+                 _metabolicStateHandle.Generation == 0u) &&
+                (!CanRetryMetabolicStateHandle() ||
+                 !vault.TryGetGenerationHandle<MetabolicStateDTO>(bufferId, out _metabolicStateHandle)))
+            {
+                _metabolicStateHandle = default;
+                return false;
+            }
+
+            if (vault.TryReadOnlyHandle(in _metabolicStateHandle, out buffer) &&
+                !vault.IsCompactionFenceActive &&
+                buffer.Length >= 1)
+            {
+                return true;
+            }
+
+            buffer = default;
+            if (vault.IsCompactionFenceActive)
+                return false;
+
+            _metabolicStateHandle = default;
+            _nextMetabolicStateHandleRetryFrame = 0u;
+            if (!CanRetryMetabolicStateHandle() ||
+                !vault.TryGetGenerationHandle<MetabolicStateDTO>(bufferId, out _metabolicStateHandle) ||
+                !vault.TryReadOnlyHandle(in _metabolicStateHandle, out buffer) ||
+                vault.IsCompactionFenceActive ||
+                buffer.Length < 1)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CanRetryMetabolicStateHandle()
+        {
+            uint frame = unchecked((uint)Time.frameCount);
+            if ((int)(frame - _nextMetabolicStateHandleRetryFrame) < 0)
+                return false;
+
+            _nextMetabolicStateHandleRetryFrame = unchecked(frame + MetabolicStateHandleRetryFrames);
+            return true;
         }
 
         private void TryDumpAutopsyIfFaulted(IDataVault vault)
@@ -1110,6 +1191,39 @@ namespace Hecton8.Physiology
             return true;
         }
 
+        private bool TryReadExistingBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
+                return false;
+
+            if ((handle.BufferID != (uint)bufferId || handle.Generation == 0u) &&
+                !vault.TryGetGenerationHandle<T>(bufferId, out handle))
+            {
+                handle = default;
+                return false;
+            }
+
+            if ((!vault.TryReadOnlyHandle(in handle, out buffer) ||
+                 vault.IsCompactionFenceActive ||
+                 buffer.Length < requiredLength) &&
+                (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                 !vault.TryReadOnlyHandle(in handle, out buffer) ||
+                 vault.IsCompactionFenceActive ||
+                 buffer.Length < requiredLength))
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
         private double3 ResolveAupOrigin()
         {
             IPlayerRuntimeContext player = _playerContext;
@@ -1296,6 +1410,8 @@ namespace Hecton8.Physiology
             _profilesHandle = default;
             _driftDebugHandle = default;
             _gasStateHandle = default;
+            _metabolicStateHandle = default;
+            _nextMetabolicStateHandleRetryFrame = 0u;
             _environmentHandle = default;
             _currentInputHandle = default;
             _predictedInputHandle = default;

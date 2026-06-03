@@ -1,0 +1,12 @@
+# HECTON-8 Agent 17-D deterministic input profile.
+# Runtime owner: InputDispatcher editor FileSystemWatcher -> staged InputProfileDTO -> GlobalDataVault.
+# key,value ASCII only. No profile sections; unsupported keys are ignored by the span parser.
+inner_deadzone,0.14
+outer_deadzone,0.96
+move_exponent,1.55
+mouse_sensitivity,1.00
+mouse_acceleration,0.06
+haptic_power_scale,1.00
+haptic_thermal_amplitude_scale,0.62
+haptic_dispatch_interval_seconds,0.0333333
+mock_collision,0

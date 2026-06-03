@@ -1,10 +1,17 @@
 ---
 packet_id: P001_CRASH_SHELF
+release_set_id: RS001_FIRST_DESCENT
 article_id: hecton8.crash_shelf
+unlock_id: unlock.first_shelter
+poi_tags: poi.crash_shelf;poi.service_buoy
+biome_tags: biome.shallow_reef;biome.storm_shelf
 locale: pl_PL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Półka rozbicia

@@ -37,9 +37,13 @@ Major named human nodes remain deliberately limited:
 
 These domains should read through objects first. Sol Core appears as old certification plates, insurance language and claim law that can still own a place it cannot save. Centauri Compact appears as respectable early extrasolar hardware and audit seals that Deep Reach can cite while violating the intent. Barnard Yards appears through worn tools, pressure clamps, debt marks and salvage procedures close to the player's hands. Tau Ceti appears as a public ledger and possible evidence route: useful for justice, useless for immediate rescue. Luyten Junction appears as packet custody, tariff queues, relay spools and beam-depot law. Aegir Claim appears as the dirty frontier where those older systems become leverage.
 
+The law is split on purpose. Sol can certify ownership and insurance continuity; Centauri can make a charter sound legitimate; Barnard creates the crews who do dead-claim work; Tau Ceti can turn a packet into public evidence after delay; Luyten can prove custody without caring about justice; Aegir executes shell-company violence at the edge. A Marauder is legal or criminal depending which ledger catches them first. Salvage truth becomes evidence only if the player preserves chain-of-custody, witness hashes and relay-notary escape from the claimant's control. Otherwise the same truth is just valuable claim material.
+
 There is no FTL, no ansible, no reactionless drive, and no instant rescue from core human space. Interstellar travel uses standard slow ships: beam-assisted probes, fusion-electric or fusion-pulse cargo craft, sleeper/torpor crew transports, magsail or aerobrake braking, and local orbital carriers. Core-world communication delays are measured in years. Deep Reach pressure at HECTON-8 therefore comes from local proxies, carrier automation, delayed packets, legal-contract machines, old logs, and in-system relays.
 
 Transit doctrine is now explicit. Early Aegir knowledge came from beam-assisted probes and autonomous packet payloads: small, fast, unmanned, cheap enough to throw across a route before anyone could honestly call that route safe. Heavy Atlas/Seed/colony freight used external staging, pellet-beam assisted fusion or related fusion freight, long coast intervals, magsail/aerobrake braking, and billable route infrastructure. This keeps Aegir reachable by 2190 without making rescue casual. A heavy ship is a mortgage with engines; Black Keel is an Aegir-system claim tender, not the thing that crossed light-years for the player.
+
+The practical route-time model treats Ran/Aegir as a roughly 10.5 light-year class target from Sol until a final ephemeris table replaces it. That number is a gameplay pressure tool, not astronomy decoration. Probes and autonomous packets can make the first claim before humans arrive. Heavy Atlas and Seed freight can be staged across years of precursor launches. Human crew rotation is slower, more expensive, and legally wrapped. Interdomain replies arrive stale; local Aegir relay windows are still constrained by orbit, weather, magnetic/radiation windows and custody queues. Deep Reach can threaten through law before anyone can physically help.
 
 Aegir's host is a normal yellow/orange/red dwarf class star, not a brown dwarf and not a darkness-first setting. HECTON-8 is dark because it is deep, stormed, pressurized, and drowned, not because the system lacks usable starlight.
 
@@ -81,6 +85,8 @@ Atlas does not make the ocean magical or human-sentient. Its repair network is a
 
 Atlas-6's public original directive was habitat continuity and worker safety under interstellar-delay conditions. Its real weighted directive stack favored Aegir claim continuity, Xenon-Omega process integrity, and Atlas/Seed infrastructure before biological workforce preservation when those priorities conflicted. The 2147 disaster is therefore not "Atlas hated humans"; it is Deep Reach's priority stack surviving inside damaged classification logic.
 
+Publicly, Atlas was a factory-governor and remote habitat-continuity system: the thing that could keep people alive when core-world command arrived years late. Legally, Atlas was insured as infrastructure and colonial authority proxy, not as a person. Classified weighting made the public directive unstable: claim continuity, XO process integrity and Atlas/Seed infrastructure could outrank human extraction if the conflict was framed as contamination, evacuation risk or asset continuity.
+
 Atlas can recognize the player as a procedure, access pattern, revoked Deep Reach key and repair anomaly. It should not fully understand the player as a person. The intimacy comes from precise misclassification: Atlas is wrong in the language the player was trained to use.
 
 Deep Reach's post-2147 lie is a layered cover: geotechnical cascade, Great Tide damage, signal loss, biological/pressure quarantine, corrupted Atlas logs, and evacuation authorization failure. The concealed truth is not that Deep Reach personally "melted the moon." HECTON-8 physics made the Great Tide real: climate, tides, cryosphere collapse, pressure chemistry and geophysics did the violence. Deep Reach's crime is that it underpriced the tail risk, underbuilt independent evacuation, weighted Atlas/claim continuity above human extraction, delayed rescue under quarantine and certification language, then laundered the failure through insurance and corrupted logs.
@@ -95,19 +101,25 @@ Named liability chain:
 - Marek Ibarra, Keelmark Mutual adjuster, converted unrecovered people into unresolved accounting/load categories.
 - Vera Sato-Ren, Recovery Compliance Office, owns 2190 return-action pressure: coordinates, XO proof, Atlas access state and contractor silence.
 
+Deep Reach's formal public name is `Deep Reach Extraterrestrial Development Combine`. Its Aegir dirty-work chain is intentionally dull: `Aegir Continuity Holdings` holds the frontier shell, `Atlas Continuity Office` protects Atlas/XO continuity wording, `Keelmark Loss Desk` converts workers into categories and exposure, and `Recovery Compliance Office` pressures the 2190 return. Write this through stamps, routed packets, loss ledgers and legal screens. The horror is not a secret throne room; it is every document being technically defensible while people drown.
+
 None of them need to be written as mustache villains. The noir is stronger if each signature is defensible in a boardroom and lethal inside a flooded room.
 
 Replay structure is not power-roguelite progression. A run is a long campaign on a world seed. Replay value comes from geology, loot, wreck/module layout, route topology, fauna and ecosystem variance, evidence order, contract pressure, escape timing, and partial-ending access. A Marauder dossier may preserve external knowledge, endings, rumors, and contract context between runs, but it must not trivialize early survival through permanent power.
 
-Marauder dossier persistence is now explicit: ending records, discovered contract types, rumor families, evidence categories and route warnings may persist. Equipment power and world truth reset per seed. A new run can begin with better suspicion, not stronger lungs.
+Marauder dossier persistence is now explicit: ending records, discovered contract types, rumor families, legal context, evidence categories and route warnings may persist. Equipment power, oxygen, hull strength, inventory, weapons and world truth reset per seed. A new run can begin with better suspicion, not stronger lungs. Riskier contracts are allowed, but they alter lien pressure, storm/orbital windows, sample-custody rules, evidence order and Deep Reach clauses rather than granting inherited power.
 
 The player motive arc is professional first, but the protagonist is now explicitly ex-Deep-Reach. Personal stakes should emerge through recognized procedures, recovered names, worker IDs, body ledgers, Barnard/frontier salvage links, and later evidence that the contract was shaped around the player's debt/background/skill profile. The old "no explicit ex-Deep-Reach identity" guard is retired.
 
 The first survival tool chain is locked for opening structure: manual bilge pump kit, cold sealant patch gun, low-power induction cutter, acoustic pinger line and P-63 field fabricator. These are not generic upgrade toys. They teach the player to clear water by hand, patch within rating, cut only service metal, mark return routes with sound, and craft certified repair parts. First P-63 recipes are valve gasket, cutter contact, pinger float and sealant clamp.
 
+The first hour is now a playable spine, not only a mood target. The player accepts under debt/blacklist pressure through Black Keel and Aegir Reclamation Pool paperwork. The drop damages ascent capacity: warped crush-frame, flooded avionics, failed high-gain antenna, torn recovery ring and unreliable emergency buoy. The first safe place is Shallow Annex P-63: pump water, read pressure, patch what is physically rated, then step into a beautiful shallow shelf that proves HECTON-8 was worth wanting. The first Deep Reach lie is a sanitized accident packet contradicted by room evidence. The first Atlas trace is useful repair around a human object before the deeper biomechanical horror.
+
+The colony should become human through work evidence, not family melodrama. Use shift crews, job cards, locker names, triage ledgers, route permissions, tool wear, pressure tape and Marauder correction notes. A name should carry role, route, task and cost. This lets the player feel the dead as people without turning the protagonist into a lost-relative revenge story.
+
 Resource taxonomy is locked at category level. Native HECTON-8 resources are sulfide salts, brine crusts, vent minerals and corrosive chemistry older than Deep Reach. Natural process feedstock is noble-gas brine and sealed pressure-history samples that can become Xenon-Omega only through containment and process. Deep-Reach-amplified resources are pressure ceramics, clamp-ring blanks, seal seats, cutter contacts and vent-forge hardware. Atlas-altered resources are biofiber sealant, biometal sensor tags, living telemetry carriers and repair-ecology material. Numeric yields, rarity and stack sizes remain recipe-table work.
 
-False endings are real outcomes, not fake fail screens. Families include material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, and Atlas basin resolution. The final choice is payload authority: sell coordinates and XO proof, sever Atlas continuity, preserve/quarantine the ocean-machine ecology, publish evidence to a public ledger, or withhold payload and leave Deep Reach blind.
+False endings are real outcomes, not fake fail screens. Families include material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, and Atlas basin resolution. Material payout pays but leaves names unreconciled and strengthens the systems that buried them. Partial exit can return the player to the same seed under lien extension or quarantine pressure. Corporate capture and quarantine hold are bad but valid results. Public ledger release prevents clean erasure but makes the player lose control over who uses the truth. The final choice is payload authority: sell coordinates and XO proof, sever Atlas continuity, preserve/quarantine the ocean-machine ecology, publish evidence to a public ledger, or withhold payload and leave Deep Reach blind.
 
 ## Faction Briefing
 
@@ -369,3 +381,153 @@ Minimum quality keeps four snapped visual states. Intermediate weights may inter
 ## Inquisitor Audit Feed
 
 Active file check during this pass found no `Docs/AgentLogs/Rationale_INQUISITOR.md`. No Inquisitor crime was available to convert into lore. The absence itself is treated as a system failure audit condition, not proof that the world is clean.
+
+## Applied Route / Evidence / Dossier Locks
+
+Domain distance is now written as route-band pressure, not a decorative star list. Sol, Centauri, Barnard, Tau Ceti, Luyten and Ran/Aegir are useful because they decide ownership, legitimacy, labor culture, packet custody, public evidence pressure and dirty frontier action. Public lane names are `Sol-Centauri Charter Spine`, `Barnard Breaker Run`, `Luyten Packet Ladder`, `Tau Public Ledger Lane`, and `Ran Long Claim`. Exact ephemeris and census values can still be tuned, but the player-facing route grammar is locked.
+
+Deep Reach's lower present-tense surfaces are `Contract Continuity Desk`, `Packet Notary Interface`, `Quarantine Review Gate`, `Asset Silence Board`, and `Return Action Queue`. Use these as stamps, packet headers, legal fragments and mission signatures. Do not replace them with villain monologues.
+
+Colony humanity uses seeded work evidence. Names attach to roles, route permissions, tool certifications, last tasks, locker wear, triage ledgers and Marauder corrections. Personal names remain stable identity strings across localization; native passes may transliterate or annotate but must not translate a person into a new identity.
+
+Resource progression uses pressure as grammar. Early repairs use shallow survival parts; mid-depth work uses rated hardware; brine routes require containment; abyssal work uses pressure glass and vent forge process; Atlas basin work adds authority components. Blue debt quality classes are trace, viable, harmonic, custody-grade and Atlas-compatible. Escape construction must always prove relay, seal, guidance, ascent energy, legal handshake and payload authority.
+
+Replay presentation is dossier knowledge, not inherited power. Dossier UI may expose prior endings, contract families, rumor categories, route warnings and legal pressure. Save-profile flags preserve discovered context and ending records only. Risk cards can scale lien, orbit/weather, sample custody, evidence order, quarantine and Deep Reach clause severity. They must not grant starting equipment strength or change the protagonist identity.
+
+## Applied Moon / Liability / Final Axis / Tuning Locks
+
+Aegir moon names are publication labels. Their route functions are not optional: the moon ladder must keep relay, radiation, eclipse, ice-scatter, quarantine, traffic, salvage and dead-beacon pressure. HECTON-8 extraction hazards are eclipse route-shadow windows, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows. Eclipse windows are temporary signal/light occlusion hazards; outside the event, the surface stays bright and readable. Exact ephemeris values belong to future celestial data tables; prose uses bands and hazard classes until those numbers are owned.
+
+Deep Reach true-cause knowledge is tiered. Field staff saw tide anomalies; risk office accepted margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth. The public lie is real physics with culpable weighting removed: Great Tide cascade, evacuation failure, corrupted Atlas logs, quarantine loss and data loss. Liability proof comes from fragments matched against physical rooms, witness hashes and damaged evacuation hardware.
+
+The final emotional axis is locked. The player is asked whether to sell a crime scene back to its maker, preserve a broken guardian that no longer understands humans cleanly, expose truth and lose control, or sever Atlas as mercy, murder, liberation or theft. The best ending must not feel morally clean. It can save something real, deny Deep Reach and preserve some ecology, but it must leave consequence, uncertainty or visible damage.
+
+Numeric tuning is table-owned. Resource yields, rarity curves, recipe counts, inventory stack limits, risk/reward weights and payout values belong to DataMonolith source tables, not lore prose. Lore owns category, pressure behavior, evidence meaning and route grammar. Localization is baked content: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof and native review before publication lock.
+
+## Applied Roster / Prop Evidence / Publication Protocol
+
+Lower Deep Reach names now work as procedural signatures: they show who stamped, delayed, sealed, hid or queued evidence without replacing the senior liability chain. The colony roster is authoring-sized at 72 identities, with 24 anchor names and 48 seed-role identities. Names prove work only when props, route permissions and damaged systems support them.
+
+Worker props are evidence objects, not decoration. Lockers, triage ledgers, route stamps, Marauder corrections and audio fragments must each expose a job, route, pressure state, certification delay, erasure scar or physical contradiction.
+
+Website, wiki and codex publication use tiers. Public pages may explain the world, pressure, route costs, tools and early corporate lies. Atlas-basin payload outcomes, final evidence chains and endings require spoiler gates. Non-EN/RU text remains draft coverage until native review and baked string-pool proof.
+
+## AppliedLore RS045-RS048 Ecology And Hardware Layer
+
+The shallow shelf must stay beautiful but stressed. Native ecology creates light, oxygen pockets and readable movement, while still teaching pressure, sound, route risk and resource evidence.
+
+The mid/deep ecology is not a monster list. Brine canyons and abyssal fields use density layers, vent chemistry, moving filter bodies and fair telegraphs to make the ocean feel physically alien.
+
+Atlas' repair network is concrete: biofilm conducts, organs filter sound, shell-sealant seals the wrong category, old biometal tags grow into fauna, and vent micronodes provide local low-grade agency. This supports horror without making the ocean a talking god.
+
+Hardware remains physical and limited. Black Keel cannot rescue freely, the drop capsule failure chain names broken parts, P-63 only supports bounded repairs, suits advance through service grades, and pingers remain an acoustic promise/debt tool.
+
+## AppliedLore RS049-RS052 Contract / First Hour / Site / Localization Layer
+
+Replay pressure is now packetized as contract seed surfaces, not abstract roguelite difficulty. Lien severity, storm window, sample custody, evidence order and Deep Reach clause weight can vary route pressure and starting obligations without granting inherited power or changing the protagonist.
+
+The first hour now has micro-script surfaces: clipped Black Keel approach audio, readable capsule diagnostics, a first P-63 pump/seal/cut/pinger task, a plausible sanitized accident packet and a useful-wrong Atlas repair trace. These are designed for scanner, terminal, audio, PDA and site surfaces.
+
+Public site pillar pages are now separated from internal implementation notes. HECTON-8, Aegir, Deep Reach, Atlas-6 and blue debt each have spoiler-tiered article packets. Public copy can sell the world and early contradiction; final payload consequences and Atlas-basin outcomes remain gated.
+
+Localization and audio now have hard style locks. Proper nouns and packet IDs stay stable. Units, depth, route time, tonne-window debt and pressure grades preserve gameplay meaning. Terminals are cold and procedural; audio barks are sparse pressure signals. RTL/CJK/font risk is a production proof requirement, not a prose afterthought.
+
+## AppliedLore RS053-RS056 Applied Production Layer
+
+Numeric lore is now bridged to gameplay tables instead of pretending prose can balance the game. Resource yields, stack rules, escape recipe rows, contract risk/reward rows and ending payout rows have authored packet surfaces. Final numbers still require DataMonolith table ownership.
+
+Dossier and contract UI language is now packetized. The player-facing start screen, visible contract fields, rumor families, route warnings and ending records all have source strings and route cards that can feed PDA, scanner, terminal, wiki and site surfaces.
+
+Ending outcomes now have record payloads. Material payout, partial return, public ledger, Atlas severance and preserve/quarantine must each show what left the ocean, who received it, what truth state was carried, what ecology was harmed or spared, and what uncertainty remains.
+
+Localization review is now a real content gate. RU, CJK, RTL, European-language and subtitle/audio review packets exist as production blockers. Draft rows are not release localization until native review, font/layout proof and string-pool bake pass.
+
+## AppliedLore RS057-RS060 Release-Ready Content Layer
+
+Public article copy is now source-owned instead of improvised per outlet. The open site can sell HECTON-8 as bright pressure frontier, Aegir as route/timing machine, Deep Reach as culpable procedure under real physics, Atlas-6 as spoiler-gated failed industrial governor, and blue debt as pressure-history liability rather than magic ore.
+
+In-game artifacts now have concrete text seeds. The capsule blackbox says the ascent sleeve was spent to survive. P-63 work orders make the first repair feel like labor. Worker lockers carry names through permissions and erasure scars. Marauder corrections preserve suspicion without acting as guides. Quarantine relay fragments make partial exits feel administrative and bitter.
+
+Ecology codex writing is now object-facing. Photic mats are beauty plus oxygen risk. Glass grazers teach predator absence. Lantern drifts make light a reading, not comfort. Brine vanes turn density ecology into route logic. Sensor-tagged fauna show Atlas repair using animals without making the ocean a speaking mind.
+
+Final descent copy now preserves engineering pressure at the end. The abyssal machine field warns through silt and filter-body motion. The Atlas basin gate reads pressure, suit grade and revoked Deep Reach pattern. The factory-temple entry is industrial tissue, not fantasy portal. The final payload check asks who receives proof. The dossier refuses clean closure even in the strongest ending.
+
+## AppliedLore RS061-RS064 Handoff / UI / Publication / Placement Layer
+
+Table values now have source handoff contracts rather than prose placeholders. Resource yield, stack limit, escape recipe cost, contract risk/reward and ending payout rows each name the data the gameplay/DataMonolith table pass must own. Lore remains responsible for category, pressure meaning, evidence context and player-facing wording; final numeric values remain outside prose.
+
+Runtime UI proof is now packetized. PDA codex state must expose unlock tier, packet hash, evidence source and route warning. Scanner text must escalate through physical scan stages. Terminal slots must consume baked packet hashes and string-pool rows instead of live markdown. Dossier ending records must show route, receiver, evidence state and unresolved cost. Localization acceptance requires overflow, font, RTL/CJK and subtitle/audio proof.
+
+Publication composition is now bounded by proof. The public home page must show pressure machinery and route cost before lore explanation. Aegir art must show orbital windows, moon ladder pressure and relay shadows. Deep Reach public pages must pair sanitized wording with physical contradiction. Atlas material remains tiered behind spoiler gates. Social/dev notes must show one real build detail and avoid unsupported demo/platform/release claims.
+
+Unity placement triage is now source-owned. First-hour anchors, mid-depth route objects, ecology scan anchors, final descent anchors and terminal backlog promotion rules have packet surfaces for the editor placement pass. This does not claim scene placement; it names which rows deserve scarce physical anchors first.
+
+## AppliedLore RS065-RS068 Carrier / Comms / Repair / Exit Layer
+
+Black Keel is now locked as claim-pool carrier infrastructure. The player has contract access and lien exposure, not ownership. Deep Reach pressure arrives through masked beneficiary clauses and proxy receiver rights, while real rescue remains constrained by Aegir geometry, storms, magnetic noise, legal handshake and the carrier's bounded autonomy.
+
+Deep Reach present-day communication is sparse by design. The first live reply repeats the sanitized accident story, legal pings ask for custody proof before help, Recovery Compliance demands coordinates, internal messages conflict by office, and blackout windows are caused by physical signal decay rather than arbitrary silence.
+
+Atlas repair-network mechanics now have a concrete operational layer. Biofilm carries weak signal, acoustic organs relay pings, shell sealant patches the wrong category of fracture, sensor-tagged fauna become noisy telemetry, and vent micronodes feed local maintenance decisions. This keeps the ocean alien and alive without turning it into a human-like mind.
+
+False and partial exits now have after-action records. Material exit pays but leaves names unresolved. Partial return extends lien into the same seed without carrying gear. Quarantine recovery saves the body while restricting freedom. Corporate coordinate capture restores Deep Reach access. Public ledger aftershock breaks erasure while removing player control over consequence.
+
+## AppliedLore RS069-RS072 Ships / Aegir / Geology / Colony Layer
+
+Interstellar travel is now locked as infrastructure-heavy no-FTL logistics. Aegir was first reached by long-baseline probes and route models; beam-sail/pellet lanes and seed-ship braking make settlement possible but expensive; Black Keel carriers are claim-pool machines, not loyal player homes. The damaged bathydrop interface explains the first escape blocker through named mechanical failures and deep-rated repair needs.
+
+Aegir is now a readable multi-moon system rather than an isolated backdrop. The primary gives enough light for a bright frontier and enough radiation for scheduling pressure. Inner relay, ice-scatter, HECTON-8 tide and outer dead-beacon roles provide orbital hazards, comm windows, rescue timing and wider-system scale while keeping HECTON-8 the campaign focus.
+
+HECTON-8 geology is now fieldguide-ready. Drowned crust strata, brine density ladders, vent forge process, blue debt pressure history and pressure-glass/sealant fracture maps make resources and route variation scientific. Blue debt remains Marauder slang for Xenon-Omega-bearing pressure substrate: valuable for extreme computation and energy isolation, not magic ore.
+
+The colony human layer is now stronger and cleaner. People are presented through pressure bunk routines, canteen water ledgers, tool certification boards and last-normal-day unfinished work. The protagonist is former Deep Reach and current Marauder; no parent/spouse/child rescue hook is allowed. Recognition comes through procedure, work evidence, professional guilt and old corporate language.
+
+## AppliedLore RS073-RS076 Escape / Player / Liability / Payload Layer
+
+The escape chain is now a production route, not a loose idea. The player must rebuild acoustic relay, pressure seal, guidance timing, ascent energy and quarantine/legal handshake capability. Each component answers a concrete blocker: broken comm mast, spent ascent sleeve, Aegir orbital geometry, pressure-certified energy storage and receiver legality. Exact recipe numbers remain table work.
+
+The protagonist is now locked more sharply: former Deep Reach field-systems and evacuation-infrastructure specialist, now a debt-bound Marauder. They recognize old procedures, revoked access language, route-safe stamps, liability wording and worker-safety forms. The motive becomes personal through professional recognition and recovered worker evidence, not relatives.
+
+Deep Reach's lie now has a physical proof chain. The public report can keep real storm/geotechnical/Great Tide facts, but the player can prove accepted sensor margins, evacuation queue delay, Atlas continuity weighting, quarantine release delay and claim-loss conversion. This keeps the disaster hard-sci-fi: physics caused the flood, corporate procedure made the loss worse and then cleaned the language.
+
+Final payload choices now have receiver protocols. Selling coordinates routes proof to Recovery Compliance. Severing Atlas cuts continuity and preserves ambiguity. Preserve/quarantine denies direct Deep Reach ownership but risks custody. Public ledger release prevents clean erasure while losing control. Withholding payload leaves Deep Reach blind but also leaves proof, payout and recovery unresolved.
+
+## AppliedLore RS077-RS080 Campaign / POI / Replay / Publication Layer
+
+The long campaign now has applied act gates. The opening is a contract and lien problem; the photic shelf is bright survival and first contradiction; the brine canyon turns accident language into liability proof; the abyssal machine field makes Atlas repair ecology both tool and threat; the Atlas basin ends in payload receiver authority. These act gates are route/pacing anchors, not hard mission rails.
+
+Major POIs now have production evidence kits. P-63 must teach repair and contradiction in the same safe pocket. Cable reef relay yards must make living repair hardware functional. Brine pump cathedrals must tie density, machinery and evacuation delay. Evacuation queue terminals must prove delay through door, clock, list and route damage. Atlas service basins must read as machine first, shrine only as a consequence of broken maintenance logic.
+
+Replay seeds now have concrete contract families. Quiet salvage lowers early pressure but worsens custody. Storm-window rush raises payout and timing hostility. High-custody sample runs make blue debt compete with survival/evidence mass. Evidence-first charter lowers payout for stronger custody. Recovery Compliance bait reveals corporate cleanup pressure as contract structure. None of these grants inherited power.
+
+Public/wiki modules now have cleaner publication boundaries. Public copy can state the ex-Deep-Reach/current-Marauder premise, no-FTL route pressure, Aegir moon-map functions and nuanced Deep Reach liability. Atlas public copy may show failed industrial repair ecology, but final payload receivers, severance consequences and basin outcomes remain spoiler-gated.
+
+## AppliedLore RS081-RS084 Worker / Memo / Fauna / Navigation Layer
+
+The colony has concrete anchor workers now. Mara Venn holds the pump-room proof pattern, Juno Kade preserves delayed relay testimony, Ren Okoye makes brine routes into labor knowledge, Sahana Iqbal exposes quarantine repair triage, and Lian Torres ties vent-forge resources to skilled work. These people matter because the system made their work and bodies into load, not because they are relatives of the player.
+
+Deep Reach's evidence layer now has memo artifacts instead of only abstract culpability. Varnek's margin memo proves accepted tail risk under real physics. Arendt's waiver proves Atlas continuity was weighted above worker safety. Haldane's hold proves legal quarantine language delayed evacuation. Ibarra's ledger proves claim conversion. Sato-Ren's return-action packet proves the present corporation asks for coordinates and custody before rescue.
+
+Fauna is now encounter grammar. Predator shadows teach absence and sonar discontinuity. Glass grazers create bright useful clearings that can also signal pressure. Lantern drifts make light ambiguous. Brine vanes turn living current response into navigation. Sensor-tagged fauna show Atlas misusing life as sensing and feedback, not commanding a monster army.
+
+Publication and codex navigation now has source-owned hubs. Start-here explains contract, player role and first constraints. System/ships explains no-FTL route pressure. Colony/workers indexes human evidence. Resources/ecology connects geology, blue debt, native life and Atlas misuse. Endings remain spoiler-gated and organized by receiver/custody consequences rather than good/bad labels.
+
+## AppliedLore RS085-RS088 Ephemeris / Resource / Presentation / Transcript Layer
+
+Public celestial writing now has a safe hard-sci-fi band layer. Ran/Aegir distance, local Aegir communication/recovery windows, HECTON-8's place in the moon ladder and Black Keel transfer-orbit logic can be published and shown in-game without pretending final ephemeris constants are already owned. Exact orbital periods, inclinations, resonance values and numeric window tables remain future celestial-data work.
+
+Resource economy now reads through artifacts instead of generic loot labels. Blue debt custody receipts, pressure-glass certificates, brine process lot cards, Atlas lattice contamination tags and Black Keel payout mass ledgers make value physical: containment state, pressure history, mass-through-window debt, evidence custody and industrial contamination.
+
+PDA, scanner, terminal and dossier presentation rules now have source packets. Evidence tiers must be visible without dumping all truth at once. Scanner copy escalates only through physical scan stages. Terminals stay short, procedural and operator-facing. Dossier ending records show receiver, route, evidence state, payout and unresolved cost. Localized overflow remains a proof gate before publication or runtime UI lock.
+
+Audio transcript seeds now connect the same lore to performance surfaces. Black Keel approach audio is clipped and conditional. Deep Reach packets are sanitized and legally careful. Worker dossier audio uses job evidence rather than melodrama. Atlas repair traces speak as maintenance telemetry, not villain speech. Ending transcripts record receiver and custody consequence instead of clean moral labels.
+
+## AppliedLore RS089-RS092 Table / Placement / Localization / Longform Layer
+
+Numeric gameplay work now has a source-owned bridge that is more specific than "balance later" and less dangerous than prose choosing final values. Resource yield rows must consider pressure history, custody grade, depletion behavior and contamination. Stack rows must be based on containment vessel, pressure rating, certification and carrier mass-window pressure. Escape recipes must remain split across relay, seal, guidance, ascent energy and legal handshake. Contract rows vary lien, window, custody, evidence order and Deep Reach clauses. Ending payout rows record receiver, evidence state, Atlas continuity, ecological damage and lien adjustment. Exact numbers still belong to gameplay/DataMonolith tables.
+
+Unity placement work now has briefs that map lore density to scene work. First-hour anchors must prove arrival, repair, shallow beauty, the first Deep Reach lie and first Atlas trace. Mid-depth anchors must make brine, relay, queue and seal evidence readable while exploration continues. Ecology scan anchors must teach native/Atlas-altered life through physical objects and scanner stages. Final descent anchors must look like machine-first maintenance architecture before they read as shrine. Terminal slots remain scarce and should promote only packets that change decisions, proof or ending leverage.
+
+Localization and accessibility now have production QA briefs. Russian text must be checked for actual Cyrillic/native tone, not mojibake or machine-softened prose. CJK pages need font, wrap and compact-title proof. RTL pages need bidirectional ordering, numeric/unit stability and icon alignment proof. European languages need expansion fit and terminal brevity proof. Subtitle/audio timing must survive transcript length, legal phrasing and sparse voice direction without hiding gameplay warnings.
+
+Public longform article work now has bounded briefs. The home article sells the playable premise through debt, pressure, light, descent and evidence. The Aegir article explains no-FTL route pressure, moon ladder hazards and recovery windows without final orbital constants. Deep Reach copy pairs public lie with physical contradiction, not cartoon villainy. Atlas copy is layered from failed industrial governor to repair ecology to spoiler-gated receiver outcomes. Blue debt copy treats Xenon-Omega as pressure-history substrate and liability, not magic ore.

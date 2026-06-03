@@ -111,9 +111,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private GameObject worldBeaconPrefab;
         [SerializeField] private float feedbackInterval = 0.45f;
 
-        [Header("Fallback Beacon")]
+        [Header("Authored Beacon")]
         [SerializeField] private Color beaconColor = new Color(0.25f, 1f, 0.95f, 1f);
+        [Tooltip("Legacy serialized size hint. The runtime no longer generates fallback beacon geometry; the authored prefab controls final shape.")]
         [SerializeField] private Vector3 beaconScale = new Vector3(0.22f, 0.45f, 0.22f);
+        [Tooltip("Light range applied to the authored beacon runtime light. No runtime light component is generated when the prefab is invalid.")]
         [SerializeField] private float fallbackLightRange = 4f;
 
         private float _cooldown;

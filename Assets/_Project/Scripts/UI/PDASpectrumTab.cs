@@ -44,12 +44,12 @@ namespace Hecton8.UI
         [Header("-- Font -------------------------------------")]
         [Tooltip("Shrift s kirillitsey. Esli null — ispolzuetsya TMP default.")]
         [SerializeField] private TMPro.TMP_FontAsset _labelFont;
-        [SerializeField, Tooltip("GPU point-cloud shader forwarded to the runtime-created PDA map tab.")]
-        private Shader pdaSonarPointCloudShader;
+        [SerializeField, Tooltip("Authored GPU point-cloud material forwarded to the runtime-created PDA map tab.")]
+        private Material pdaSonarPointCloudMaterial;
         [SerializeField, Tooltip("Compute shader forwarded to the runtime-created PDA map tab.")]
         private ComputeShader pdaSonarMapCompute;
-        [SerializeField, Tooltip("Hologram volume shader forwarded to the runtime-created PDA map tab.")]
-        private Shader pdaHologramMapShader;
+        [SerializeField, Tooltip("Authored hologram volume material forwarded to the runtime-created PDA map tab.")]
+        private Material pdaHologramMapMaterial;
 
         // ----------------------------------------------------------
         //  PRIVATE STATE
@@ -260,17 +260,16 @@ namespace Hecton8.UI
         //  BUILD UI
         // ----------------------------------------------------------
 
-        internal void ConfigureMapRuntimeAssets(Shader pointCloudShader, ComputeShader mapCompute, Shader hologramShader)
+        internal void ConfigureMapRuntimeAssets(Material pointCloudMaterial, ComputeShader mapCompute, Material hologramMaterial)
         {
-            if (pointCloudShader != null)
-                pdaSonarPointCloudShader = pointCloudShader;
+            if (pointCloudMaterial != null)
+                pdaSonarPointCloudMaterial = pointCloudMaterial;
             if (mapCompute != null)
                 pdaSonarMapCompute = mapCompute;
-            if (hologramShader != null)
-                pdaHologramMapShader = hologramShader;
-
+            if (hologramMaterial != null)
+                pdaHologramMapMaterial = hologramMaterial;
             if (_mapTab != null)
-                _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudShader, pdaSonarMapCompute, pdaHologramMapShader);
+                _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudMaterial, pdaSonarMapCompute, pdaHologramMapMaterial);
         }
 
         private void EnsureBuilt()
@@ -380,7 +379,7 @@ namespace Hecton8.UI
             mapViewport.gameObject.TryGetComponent(out _mapTab);
             if (_mapTab == null)
                 _mapTab = mapViewport.gameObject.AddComponent<PDAMapTab>();
-            _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudShader, pdaSonarMapCompute, pdaHologramMapShader);
+            _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudMaterial, pdaSonarMapCompute, pdaHologramMapMaterial);
 
             _currentModeLabel = CreateText("CurrentMode", panel, 11f, colorAccent, TextAlignmentOptions.TopLeft);
             _currentModeLabel.fontStyle = FontStyles.Bold;

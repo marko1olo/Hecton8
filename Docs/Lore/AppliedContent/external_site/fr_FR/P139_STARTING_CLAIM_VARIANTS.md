@@ -1,30 +1,37 @@
 ---
 packet_id: P139_STARTING_CLAIM_VARIANTS
+release_set_id: RS028_REPLAY_CONTRACT_DOSSIER_RULES
 article_id: replay.starting_claim_variants
+unlock_id: unlock.starting_claim_variants
+poi_tags: poi.claim_variant_selector;poi.salvage_origin_stamp
+biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: fr_FR
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Starting Claim Variants
 
-Draft FR localization pending native pass. Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
 
 ## Scanner
 
-Draft FR localization pending native pass. Same protagonist. Different claim pressure.
+Same protagonist. Different claim pressure.
 
 ## Terminal
 
-Draft FR localization pending native pass. CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
 
 ## Audio
 
-Draft FR localization pending native pass. You can change the job without changing who took it.
+You can change the job without changing who took it.
 
 ## Field Note
 
-Draft FR localization pending native pass. Variants should color motive, not erase the canon character.
+Variants should color motive, not erase the canon character.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/fr_FR. -->

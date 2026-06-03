@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P326_SANITIZED_ACCIDENT_REPLY_WINDOW",
+      "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+      "article_id": "applied_lore.sanitized_accident_reply_window",
+      "title_key": "applied_lore.sanitized_accident_reply_window.title",
+      "unlock": {
+        "primary": "unlock.sanitized_accident_reply_window",
+        "poi_tags": [
+          "poi.sanitized_reply_packet",
+          "poi.deep_reach_window_clock",
+          "poi.room_evidence_conflict"
+        ],
+        "biome_tags": [
+          "biome.first_hour",
+          "biome.deep_reach"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sanitized Accident Reply Window",
+          "scanner": "Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Place after first physical contradiction, not before."
+        },
+        "ru_RU": {
+          "title": "Окно ответа sanitized accident",
+          "scanner": "Reply window open. Deep Reach повторяет storm collapse и failed autonomous evacuation.",
+          "terminal": "DR-LIVE WINDOW: HECTON-8 loss остается classified как storm surge, geological collapse и autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Они ответили комнате, которую ты должен был найти, а не комнате, в которой ты стоишь.",
+          "in_game_wiki": "Окно ответа sanitized accident дает Deep Reach живой голос без всеведения. Их первый ответ - старый public script под новым давлением.",
+          "external_site": "Deep Reach сначала лжет процедурой. Противоречие - не речь злодея, а public report, столкнувшийся с мокрой машиной и именами.",
+          "field_note": "Ставить после первого физического contradiction, не раньше."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft JA localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft JA localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft JA localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft JA localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft JA localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft ZH localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft ZH localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft ZH localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft ZH localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft FR localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft FR localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft FR localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft FR localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft ES localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft ES localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft ES localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft ES localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft DE localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft DE localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft DE localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft DE localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft PL localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft PL localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft PL localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft PL localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft UK localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft UK localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft UK localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft UK localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft UK localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft AR localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft AR localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft AR localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft AR localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft ID localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft ID localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft ID localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft ID localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft KO localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft KO localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft KO localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft KO localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft HE localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft HE localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft HE localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft HE localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft PT localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft PT localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft PT localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft PT localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft PT localization pending native pass. Place after first physical contradiction, not before."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sanitized Accident Reply Window",
+          "scanner": "Draft NL localization pending native pass. Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.",
+          "terminal": "Draft NL localization pending native pass. DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.",
+          "audio": "Draft NL localization pending native pass. They answered the room you were supposed to find, not the room you are standing in.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.",
+          "field_note": "Draft NL localization pending native pass. Place after first physical contradiction, not before."
+        }
+      }
+    },
+    {
+      "packet_id": "P327_LEGAL_INSURANCE_AUTOMATED_PING",
+      "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+      "article_id": "applied_lore.legal_insurance_automated_ping",
+      "title_key": "applied_lore.legal_insurance_automated_ping.title",
+      "unlock": {
+        "primary": "unlock.legal_insurance_automated_ping",
+        "poi_tags": [
+          "poi.legal_ping_queue",
+          "poi.insurance_delay_stamp",
+          "poi.no_rescue_priority_notice"
+        ],
+        "biome_tags": [
+          "biome.contract",
+          "biome.orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Legal Insurance Automated Ping",
+          "scanner": "Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "ru_RU": {
+          "title": "Автоматический legal insurance ping",
+          "scanner": "Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Первый вопрос не о том, жив ли ты. Первый вопрос - что ты несешь.",
+          "in_game_wiki": "Автоматический legal insurance ping делает корпоративное давление игровым. Сообщения редкие, процедурные и работают как evidence, не как постоянная экспозиция.",
+          "external_site": "Современный Deep Reach говорит через automated custody systems не меньше, чем через людей. Это оставляет ужас бюрократическим и hard-sci-fi.",
+          "field_note": "Кандидат для short bark. Не спамить; использовать на route thresholds."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft JA localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft JA localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft JA localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft JA localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft JA localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft JA localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft ZH localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft ZH localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft ZH localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft ZH localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft ZH localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft FR localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft FR localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft FR localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft FR localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft FR localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft FR localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft ES localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft ES localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft ES localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft ES localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft ES localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft ES localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft DE localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft DE localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft DE localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft DE localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft DE localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft DE localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft PL localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft PL localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft PL localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft PL localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft PL localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft PL localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft UK localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft UK localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft UK localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft UK localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft UK localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft UK localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft AR localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft AR localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft AR localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft AR localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft AR localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft AR localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft ID localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft ID localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft ID localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft ID localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft ID localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft ID localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft KO localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft KO localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft KO localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft KO localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft KO localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft KO localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft HE localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft HE localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft HE localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft HE localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft HE localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft HE localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft PT localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft PT localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft PT localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft PT localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft PT localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft PT localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Legal Insurance Automated Ping",
+          "scanner": "Draft NL localization pending native pass. Automated ping: custody unresolved. Rescue language replaced by receiver proof.",
+          "terminal": "Draft NL localization pending native pass. INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.",
+          "audio": "Draft NL localization pending native pass. The first thing they ask is not whether you are alive. It is what you are carrying.",
+          "in_game_wiki": "Draft NL localization pending native pass. Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.",
+          "external_site": "Draft NL localization pending native pass. Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.",
+          "field_note": "Draft NL localization pending native pass. Short bark candidate. Do not spam; use at route thresholds."
+        }
+      }
+    },
+    {
+      "packet_id": "P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND",
+      "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+      "article_id": "applied_lore.recovery_compliance_coordinate_demand",
+      "title_key": "applied_lore.recovery_compliance_coordinate_demand.title",
+      "unlock": {
+        "primary": "unlock.recovery_compliance_coordinate_demand",
+        "poi_tags": [
+          "poi.coordinate_demand_packet",
+          "poi.payload_receiver_toggle",
+          "poi.compliance_threat_line"
+        ],
+        "biome_tags": [
+          "biome.deep_reach",
+          "biome.contract"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Recovery Compliance Coordinate Demand",
+          "scanner": "Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "They can say rescue without meaning rescue.",
+          "in_game_wiki": "Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Use near payload authority decisions and receiver selection."
+        },
+        "ru_RU": {
+          "title": "Требование координат Recovery Compliance",
+          "scanner": "Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Они умеют говорить rescue и не иметь в виду rescue.",
+          "in_game_wiki": "Требование координат делает текущего антагониста конкретным. Deep Reach не обязан стрелять первым; он может сделать спасение условным доступом.",
+          "external_site": "Текущая цель Deep Reach - вернуть HECTON-8 как ресурс, evidence и control surface. Игрок полезен, потому что может отправить координаты.",
+          "field_note": "Использовать рядом с payload authority decisions и receiver selection."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft JA localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft JA localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft JA localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft JA localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft JA localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft ZH localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft ZH localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft ZH localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft ZH localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft FR localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft FR localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft FR localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft FR localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft FR localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft ES localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft ES localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft ES localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft ES localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft ES localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft DE localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft DE localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft DE localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft DE localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft DE localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft PL localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft PL localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft PL localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft PL localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft PL localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft UK localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft UK localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft UK localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft UK localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft UK localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft AR localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft AR localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft AR localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft AR localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft AR localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft ID localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft ID localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft ID localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft ID localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft ID localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft KO localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft KO localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft KO localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft KO localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft KO localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft HE localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft HE localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft HE localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft HE localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft HE localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft PT localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft PT localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft PT localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft PT localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft PT localization pending native pass. Use near payload authority decisions and receiver selection."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Recovery Compliance Coordinate Demand",
+          "scanner": "Draft NL localization pending native pass. Compliance packet: coordinates requested before medical recovery language.",
+          "terminal": "Draft NL localization pending native pass. RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.",
+          "audio": "Draft NL localization pending native pass. They can say rescue without meaning rescue.",
+          "in_game_wiki": "Draft NL localization pending native pass. Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.",
+          "field_note": "Draft NL localization pending native pass. Use near payload authority decisions and receiver selection."
+        }
+      }
+    },
+    {
+      "packet_id": "P329_DEEP_REACH_FACTION_MESSAGE_SPLIT",
+      "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+      "article_id": "applied_lore.deep_reach_faction_message_split",
+      "title_key": "applied_lore.deep_reach_faction_message_split.title",
+      "unlock": {
+        "primary": "unlock.deep_reach_faction_message_split",
+        "poi_tags": [
+          "poi.conflicting_dr_messages",
+          "poi.asset_silence_stamp",
+          "poi.old_engineer_warning"
+        ],
+        "biome_tags": [
+          "biome.deep_reach",
+          "biome.truth"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Faction Message Split",
+          "scanner": "Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "A company can be one logo and three knives.",
+          "in_game_wiki": "Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "This is not redemption. It is pressure-source readability."
+        },
+        "ru_RU": {
+          "title": "Раскол сообщений Deep Reach",
+          "scanner": "Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Компания может быть одним логотипом и тремя ножами.",
+          "in_game_wiki": "Раскол сообщений Deep Reach не дает сделать плоского злодея. Корпорация виновна как система, но текущие сообщения конфликтуют: recovery, silence, engineering caution и liability containment.",
+          "external_site": "Угроза Deep Reach сильнее как институциональная, не мультяшная. HECTON-8 позволяет разным офисам показывать разные провалы.",
+          "field_note": "Это не redemption. Это readability источника давления."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft JA localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft JA localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft JA localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft JA localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft JA localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft JA localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft ZH localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft ZH localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft ZH localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft ZH localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft ZH localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft FR localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft FR localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft FR localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft FR localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft FR localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft ES localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft ES localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft ES localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft ES localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft ES localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft DE localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft DE localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft DE localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft DE localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft DE localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft PL localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft PL localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft PL localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft PL localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft PL localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft UK localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft UK localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft UK localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft UK localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft UK localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft UK localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft AR localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft AR localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft AR localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft AR localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft AR localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft ID localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft ID localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft ID localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft ID localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft ID localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft KO localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft KO localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft KO localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft KO localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft KO localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft HE localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft HE localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft HE localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft HE localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft HE localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft PT localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft PT localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft PT localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft PT localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft PT localization pending native pass. This is not redemption. It is pressure-source readability."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Deep Reach Faction Message Split",
+          "scanner": "Draft NL localization pending native pass. Message sources conflict: asset recovery, legal silence, old engineering warning.",
+          "terminal": "Draft NL localization pending native pass. SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.",
+          "audio": "Draft NL localization pending native pass. A company can be one logo and three knives.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.",
+          "external_site": "Draft NL localization pending native pass. The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.",
+          "field_note": "Draft NL localization pending native pass. This is not redemption. It is pressure-source readability."
+        }
+      }
+    },
+    {
+      "packet_id": "P330_BLACKOUT_WINDOW_SIGNAL_DECAY",
+      "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+      "article_id": "applied_lore.blackout_window_signal_decay",
+      "title_key": "applied_lore.blackout_window_signal_decay.title",
+      "unlock": {
+        "primary": "unlock.blackout_window_signal_decay",
+        "poi_tags": [
+          "poi.signal_decay_meter",
+          "poi.aegir_shadow_window",
+          "poi.last_good_packet_record"
+        ],
+        "biome_tags": [
+          "biome.aegir",
+          "biome.comms"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blackout Window Signal Decay",
+          "scanner": "Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Use as the comms cadence rule."
+        },
+        "ru_RU": {
+          "title": "Распад сигнала в blackout window",
+          "scanner": "Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Когда небо закрывается, бумажная очередь продолжает дышать.",
+          "in_game_wiki": "Распад сигнала держит связь редкой по физическим причинам. Игрок получает окна, broken packets и acoustic relays, не постоянное radio guidance.",
+          "external_site": "HECTON-8 использует орбитальную и магнитную среду Aegir, чтобы тишина стала частью навигации и структуры истории.",
+          "field_note": "Использовать как comms cadence rule."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft JA localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft JA localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft JA localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft JA localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft JA localization pending native pass. Use as the comms cadence rule."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft ZH localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft ZH localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft ZH localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft ZH localization pending native pass. Use as the comms cadence rule."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft FR localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft FR localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft FR localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft FR localization pending native pass. Use as the comms cadence rule."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft ES localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft ES localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft ES localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft ES localization pending native pass. Use as the comms cadence rule."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft DE localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft DE localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft DE localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft DE localization pending native pass. Use as the comms cadence rule."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft PL localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft PL localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft PL localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft PL localization pending native pass. Use as the comms cadence rule."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft UK localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft UK localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft UK localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft UK localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft UK localization pending native pass. Use as the comms cadence rule."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft AR localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft AR localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft AR localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft AR localization pending native pass. Use as the comms cadence rule."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft ID localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft ID localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft ID localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft ID localization pending native pass. Use as the comms cadence rule."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft KO localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft KO localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft KO localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft KO localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft KO localization pending native pass. Use as the comms cadence rule."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft HE localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft HE localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft HE localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft HE localization pending native pass. Use as the comms cadence rule."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft PT localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft PT localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft PT localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft PT localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft PT localization pending native pass. Use as the comms cadence rule."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Blackout Window Signal Decay",
+          "scanner": "Draft NL localization pending native pass. Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.",
+          "terminal": "Draft NL localization pending native pass. BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.",
+          "audio": "Draft NL localization pending native pass. When the sky closes, the paperwork keeps breathing.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.",
+          "field_note": "Draft NL localization pending native pass. Use as the comms cadence rule."
+        }
+      }
+    }
+  ]
+}

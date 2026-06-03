@@ -5,7 +5,7 @@ Scope: rocks, boulders, cliffs, ore nodes, cave chunks, thermal vents, mineral s
 
 ## 1. Geology Mesh Law
 
-Generated geology must look stratified, pressure-eroded, mineral-stained, fractured, and embedded in the abyss. Smooth noise blobs and perfect ico-spheres are rejected. The shape must contain readable geological process: sediment bands, chipped edges, sheared planes, pitted cavities, erosion shelves, mineral veins, vent chimneys, or collapsed fracture faces.
+Generated geology must look stratified, pressure-eroded or wave-eroded, mineral-stained, fractured, and embedded in its route: surface, photic shallows, depth, cave, vent, or abyss. Smooth noise blobs and perfect ico-spheres are rejected. The shape must contain readable geological process: sediment bands, chipped edges, sheared planes, pitted cavities, erosion shelves, mineral veins, vent chimneys, waterline marks, shoreline undercuts, or collapsed fracture faces.
 
 Geology may use voxel/SDF, marching cubes, signed distance blends, Voronoi fracture, ridged noise, erosion filters, or authored profiles. The saved output must still pass topology, UV/material, LOD, and collider gates.
 
@@ -31,6 +31,7 @@ Required layers by asset type:
 - Thermal vent: chimney stacks, mineral crust, soot/heat discoloration, porous openings.
 - Ore node: host rock plus vein material, exposed chipped vein cross-sections.
 - Cave chunk: overhang/shelf silhouette, occluded cavities, ground contact blend.
+- Surface/photic rock: wet waterline, sunlit mineral breakup, erosion shelves, shallow-water contact, foam/wetness edge, and clear silhouette.
 
 The mesh generator must use deterministic seeds and stable profile parameters. Random noise without geological identity is rejected.
 
@@ -119,4 +120,4 @@ Geology generation must output:
 
 ## 11. Acceptance Sentence
 
-A generated geology asset is accepted only when its silhouette and topology reveal a believable geological process, its masks and materials support abyssal wet mineral truth, its LODs preserve gameplay-readable ore/vent/fracture forms, and its collision proxy remains separate from decorative visual triangles.
+A generated geology asset is accepted only when its silhouette and topology reveal a believable geological process, its masks and materials support the correct surface/photic/depth/cave/abyss material truth, its LODs preserve gameplay-readable ore/vent/fracture/shore forms, and its collision proxy remains separate from decorative visual triangles.

@@ -1,30 +1,37 @@
 ---
 packet_id: P052_BLACK_KEEL_TARIFF_TABLE
+release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.black_keel_tariff_table
+unlock_id: unlock.first_black_keel_tariff_table
+poi_tags: poi.tariff_plate;poi.claim_terminal
+biome_tags: biome.corporate_wreck;biome.salvage_route
 locale: id_ID
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Black Keel Tariff Table
 
-Draft ID localization pending native pass. Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
+Black Keel Tariff Table defines the carrier economy around HECTON-8 rescue calls: billing class can outrank human urgency.
 
 ## Scanner
 
-Draft ID localization pending native pass. The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
+The tariff plate prices distress, samples, custody seals and oxygen separately; survival is not the fastest billing class.
 
 ## Terminal
 
-Draft ID localization pending native pass. TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
 
 ## Audio
 
-Draft ID localization pending native pass. The table has a price for rescue and a discount for evidence.
+The table has a price for rescue and a discount for evidence.
 
 ## Field Note
 
-Draft ID localization pending native pass. A rescue request and a sample manifest do not enter the same queue.
+A rescue request and a sample manifest do not enter the same queue.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/id_ID. -->

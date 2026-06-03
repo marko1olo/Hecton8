@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Editor.GeologyForge
 {
-    internal static class GeologyForgeConstants
+    public static class GeologyForgeConstants
     {
         public const int LodCount = 3;
         public const int VertexStrideBytes = 32;

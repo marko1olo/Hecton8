@@ -1,10 +1,17 @@
 ---
 packet_id: P058_BLACK_KEEL_CLAIM_HOOKS
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.black_keel_claim_hooks
+unlock_id: unlock.first_black_keel_claim_hooks
+poi_tags: poi.claim_hook_terminal;poi.carrier_tariff
+biome_tags: biome.claim_pool;biome.surface_relay
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Black Keel Claim Hooks

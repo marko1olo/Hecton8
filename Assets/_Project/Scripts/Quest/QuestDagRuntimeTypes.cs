@@ -13,6 +13,8 @@ namespace Hecton8.Quest
         public const int NodeStrideBytes = 32;
         public const int TriggerVolumeStrideBytes = 64;
         public const int NodeRuntimeStrideBytes = 64;
+        public const int QuestStateStrideBytes = 16;
+        public const int QuestDependencyLinkStrideBytes = 16;
         public const int TelemetryEntryStrideBytes = 64;
         public const int StateChangedSignalStrideBytes = 32;
         public const int MockStoryEventSignalStrideBytes = 32;
@@ -128,6 +130,44 @@ namespace Hecton8.Quest
 
         [FieldOffset(56)]
         private ulong _pad3;
+    }
+
+    /// <summary>
+    /// HUD-facing unmanaged quest state used by the Zeigarnik overlap pass.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.QuestStateStrideBytes)]
+    public struct QuestStateDTO
+    {
+        [FieldOffset(0)]
+        public uint ActiveQuestHashID;
+
+        [FieldOffset(4)]
+        public float CompletionProgress;
+
+        [FieldOffset(8)]
+        public uint InjectedSubQuestHashID;
+
+        [FieldOffset(12)]
+        public uint StateFlags;
+    }
+
+    /// <summary>
+    /// Sorted parent-to-child edge table for branch-light quest overlap resolution.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.QuestDependencyLinkStrideBytes)]
+    public struct QuestDependencyLinkDTO
+    {
+        [FieldOffset(0)]
+        public uint ParentQuestHashID;
+
+        [FieldOffset(4)]
+        public uint ChildQuestHashID;
+
+        [FieldOffset(8)]
+        public uint Flags;
+
+        [FieldOffset(12)]
+        public uint _pad0;
     }
 
     /// <summary>
@@ -303,6 +343,8 @@ namespace Hecton8.Quest
         public VaultGenerationHandle<int> Counters;
         public VaultGenerationHandle<int> TriggerNodeIndices;
         public VaultGenerationHandle<int> NoTriggerNodeIndices;
+        public VaultGenerationHandle<QuestStateDTO> QuestStates;
+        public VaultGenerationHandle<QuestDependencyLinkDTO> DependencyLinks;
         public VaultGenerationHandle<long> CsvMonitor;
         public int NodeCapacity;
         public int TriggerCapacity;
@@ -310,6 +352,8 @@ namespace Hecton8.Quest
         public int ItemLinkCapacity;
         public int PlayerItemCapacity;
         public int FactionCapacity;
+        public int QuestStateCapacity;
+        public int DependencyLinkCapacity;
     }
 
     /// <summary>
@@ -332,6 +376,8 @@ namespace Hecton8.Quest
         public NativeArray<int> Counters;
         public NativeArray<int> TriggerNodeIndices;
         public NativeArray<int> NoTriggerNodeIndices;
+        public NativeArray<QuestStateDTO> QuestStates;
+        public NativeArray<QuestDependencyLinkDTO> DependencyLinks;
         public NativeArray<long> CsvMonitor;
     }
 
@@ -346,14 +392,17 @@ namespace Hecton8.Quest
         public const int DefaultItemLinkCapacity = 10000;
         public const int DefaultPlayerItemCapacity = 512;
         public const int DefaultFactionCapacity = 256;
+        public const int DefaultQuestStateCapacity = 64;
+        public const int DefaultDependencyLinkCapacity = 10000;
         public const int TelemetryCapacity = 300;
-        public const int CounterCount = 16;
+        public const int CounterCount = 20;
         public const int SpatialCellSizeMeters = 100;
         public const int SpatialHashCellsPerTriggerBudget = 27;
         public const int SpatialHashMaxInsertedCellRadius = 1;
         public const int NoTriggerNodesPerPassBudget = 256;
         public const int MaxFixedPointIterations = 5;
         public const int ToasterTickModulo = 15;
+        public const float ZeigarnikPreCompletionProgressThreshold = 0.95f;
         public const uint SignalSourceHash = 0x51444147u; // QDAG
         public const uint OshinoBinarySourceHash = 0x4F534849u; // OSHI
         public const uint EmergencyMockSourceHash = 0x4D4F434Bu; // MOCK
@@ -380,7 +429,11 @@ namespace Hecton8.Quest
             SpatialHashVersion = 12,
             SpatialHashRebuildCount = 13,
             PendingScheduleDropCount = 14,
-            NoTriggerCursor = 15
+            NoTriggerCursor = 15,
+            QuestStateCount = 16,
+            DependencyLinkCount = 17,
+            ZeigarnikInjectedCount = 18,
+            ZeigarnikFailClosedCount = 19
         }
     }
 
@@ -422,6 +475,18 @@ namespace Hecton8.Quest
         public const int QuestNodeRuntimeDTO_Pad2 = 48;
         public const int QuestNodeRuntimeDTO_Pad3 = 56;
 
+        public const int QuestStateDTOSize = 16;
+        public const int QuestStateDTO_ActiveQuestHashID = 0;
+        public const int QuestStateDTO_CompletionProgress = 4;
+        public const int QuestStateDTO_InjectedSubQuestHashID = 8;
+        public const int QuestStateDTO_StateFlags = 12;
+
+        public const int QuestDependencyLinkDTOSize = 16;
+        public const int QuestDependencyLinkDTO_ParentQuestHashID = 0;
+        public const int QuestDependencyLinkDTO_ChildQuestHashID = 4;
+        public const int QuestDependencyLinkDTO_Flags = 8;
+        public const int QuestDependencyLinkDTO_Pad0 = 12;
+
         public const int QuestDagTelemetryEntrySize = 64;
         public const int QuestDagTelemetryEntry_ResolverComputeTimeMs = 0;
         public const int QuestDagTelemetryEntry_BitsFlipped = 8;
@@ -456,7 +521,18 @@ namespace Hecton8.Quest
         FixedPointLimitHit = 1 << 0,
         InvalidAup = 1 << 1,
         ToasterDilated = 1 << 2,
-        NoTriggerBudgeted = 1 << 3
+        NoTriggerBudgeted = 1 << 3,
+        ZeigarnikInjected = 1 << 4,
+        ZeigarnikFailClosed = 1 << 5
+    }
+
+    [Flags]
+    public enum QuestStateFlags : uint
+    {
+        None = 0,
+        ZeigarnikProgressArmed = 1u << 0,
+        ZeigarnikInjected = 1u << 1,
+        ZeigarnikDependencyMissing = 1u << 2
     }
 
     [Flags]

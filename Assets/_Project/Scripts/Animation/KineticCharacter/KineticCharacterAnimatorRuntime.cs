@@ -54,7 +54,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         [SerializeField] private Material _gpuSkinningMaterial;
         [SerializeField] private bool _publishGlobalBuffer = true;
-        [SerializeField] private bool _seedEmergencyMockRig = true;
+        [SerializeField] private bool _seedEmergencyMockRig;
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Vector3Int _sdfDimensions = new Vector3Int(64, 64, 64);
         [SerializeField] private Vector3 _sdfOrigin = new Vector3(-32f, -32f, -32f);
@@ -370,7 +370,7 @@ namespace Hecton8.Animation.KineticCharacter
             RefreshColdDependencies();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
-            if (_seedEmergencyMockRig)
+            if (ShouldSeedEmergencyMockRig())
                 GenerateEmergencyMockRig();
         }
 
@@ -384,7 +384,7 @@ namespace Hecton8.Animation.KineticCharacter
             RefreshColdDependencies();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
-            if (_seedEmergencyMockRig)
+            if (ShouldSeedEmergencyMockRig())
                 GenerateEmergencyMockRig();
             TryRegister();
         }
@@ -603,13 +603,16 @@ namespace Hecton8.Animation.KineticCharacter
             if (_dataVault != null)
             {
                 OpenOrAcquireVaultBuffersForOwnerRoute();
-                if (_seedEmergencyMockRig)
+                if (ShouldSeedEmergencyMockRig())
                     GenerateEmergencyMockRig();
             }
         }
 
         public void GenerateEmergencyMockRig()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return;
+#endif
             IDataVault vault = CacheDataVaultCold();
             if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return;
@@ -701,6 +704,15 @@ namespace Hecton8.Animation.KineticCharacter
 
             for (int i = 0; i < targets.Length; i++)
                 targets[i] = default;
+        }
+
+        private bool ShouldSeedEmergencyMockRig()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return _seedEmergencyMockRig;
+#else
+            return false;
+#endif
         }
 
         private static void WriteParent(NativeArray<int> parents, int child, int parent)

@@ -536,7 +536,6 @@ def append_source_authority(out: list[str]) -> None:
         "Docs/DOC_GOVERNANCE.md",
         "Docs/PROJECT_ATLAS.md",
         "Docs/DEPENDENCY_GRAPH.md",
-        "Docs/Actual Domains of Project.txt",
         "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
         "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
         "Docs/Reports/VRAM_Budget_Audit.json",

@@ -97,13 +97,17 @@ namespace Hecton8.Construction
         private StorageCrate _cachedDestinationIdentityOwner;
         private int _cachedSourceIdentity;
         private int _cachedDestinationIdentity;
+        private uint _cachedSourceNodeId;
+        private uint _cachedDestinationNodeId;
         private bool _registered;
         private bool _registeredHotSwap;
+        private bool _hasSubmittedPipeLink;
         private bool _despawning;
         private bool _hasPower = true;
         private float _exportTimer;
         private int _activeReservationId;
-        private int _pipeLinkId;
+        private long _pipeLinkId;
+        private long _submittedPipeLinkId;
         private ItemData _inFlightItem;
         private int _inFlightItemHashId;
         private float _transitRemaining;
@@ -138,7 +142,7 @@ namespace Hecton8.Construction
             _cachedTransform = transform;
             TryGetComponent(out _powerNode);
             ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
-            _pipeLinkId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            _pipeLinkId = ComposePipeLinkId(0u, unchecked((uint)EntityId.ToULong(GetEntityId())));
             CacheRegistryServicesCold();
             RefreshEndpointCache(true);
         }
@@ -516,12 +520,20 @@ namespace Hecton8.Construction
         {
             if (sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
             {
-                ConnectionSplineBatchRenderer.RemovePipeLink(_pipeLinkId);
+                ClearCableVisuals();
                 return;
             }
 
             Vector3 sourcePosition = _cachedSourcePosition;
             Vector3 destinationPosition = _cachedDestinationPosition;
+            long linkId = _pipeLinkId;
+            if (_hasSubmittedPipeLink && _submittedPipeLinkId != linkId)
+            {
+                ConnectionSplineBatchRenderer.RemovePipeLink(_submittedPipeLinkId);
+                _hasSubmittedPipeLink = false;
+                force = true;
+            }
+
             bool moved = force ||
                          (sourcePosition - _lastSourcePosition).sqrMagnitude > PositionRefreshEpsilonSqr ||
                          (destinationPosition - _lastDestinationPosition).sqrMagnitude > PositionRefreshEpsilonSqr;
@@ -531,7 +543,9 @@ namespace Hecton8.Construction
 
             _lastSourcePosition = sourcePosition;
             _lastDestinationPosition = destinationPosition;
-            ConnectionSplineBatchRenderer.SubmitPipeLink(_pipeLinkId, sourcePosition, destinationPosition, PipeSplineColor);
+            ConnectionSplineBatchRenderer.SubmitPipeLink(linkId, sourcePosition, destinationPosition, PipeSplineColor);
+            _submittedPipeLinkId = linkId;
+            _hasSubmittedPipeLink = true;
         }
 
         private void RefreshEndpointCache(bool force)
@@ -547,20 +561,36 @@ namespace Hecton8.Construction
             if (force || !ReferenceEquals(_cachedSourceIdentityOwner, sourceCrate))
             {
                 _cachedSourceIdentityOwner = sourceCrate;
-                _cachedSourceIdentity = sourceCrate != null ? unchecked((int)EntityId.ToULong(sourceCrate.GetEntityId())) : 0;
+                _cachedSourceNodeId = sourceCrate != null ? unchecked((uint)EntityId.ToULong(sourceCrate.GetEntityId())) : 0u;
+                _cachedSourceIdentity = unchecked((int)_cachedSourceNodeId);
             }
 
             if (force || !ReferenceEquals(_cachedDestinationIdentityOwner, destinationCrate))
             {
                 _cachedDestinationIdentityOwner = destinationCrate;
-                _cachedDestinationIdentity = destinationCrate != null ? unchecked((int)EntityId.ToULong(destinationCrate.GetEntityId())) : 0;
+                _cachedDestinationNodeId = destinationCrate != null ? unchecked((uint)EntityId.ToULong(destinationCrate.GetEntityId())) : 0u;
+                _cachedDestinationIdentity = unchecked((int)_cachedDestinationNodeId);
             }
 
             _cachedSourcePosition = _cachedSourceTransform != null ? _cachedSourceTransform.position : Vector3.zero;
             _cachedDestinationPosition = _cachedDestinationTransform != null ? _cachedDestinationTransform.position : _cachedSourcePosition;
             Vector3 pathDelta = _cachedSourcePosition - _cachedDestinationPosition;
             _cachedPathDistanceMeters = math.sqrt(math.max(pathDelta.sqrMagnitude, 0f));
+            RefreshPipeLinkId();
             RefreshSchedulerTopologyKey();
+        }
+
+        private void RefreshPipeLinkId()
+        {
+            uint sourceNodeId = _cachedSourceNodeId;
+            uint destinationNodeId = _cachedDestinationNodeId;
+            if (sourceNodeId != 0u && destinationNodeId != 0u && sourceNodeId != destinationNodeId)
+            {
+                _pipeLinkId = ComposePipeLinkId(sourceNodeId, destinationNodeId);
+                return;
+            }
+
+            _pipeLinkId = ComposePipeLinkId(0u, unchecked((uint)EntityId.ToULong(GetEntityId())));
         }
 
         private void RefreshSchedulerTopologyKey()
@@ -622,7 +652,12 @@ namespace Hecton8.Construction
 
         private void ClearCableVisuals()
         {
-            ConnectionSplineBatchRenderer.RemovePipeLink(_pipeLinkId);
+            if (!_hasSubmittedPipeLink)
+                return;
+
+            ConnectionSplineBatchRenderer.RemovePipeLink(_submittedPipeLinkId);
+            _submittedPipeLinkId = 0L;
+            _hasSubmittedPipeLink = false;
         }
 
         private void NotifyGridBalanceChanged()
@@ -687,10 +722,12 @@ namespace Hecton8.Construction
         private void PublishRuptureSignals(Vector3 rupturePosition)
         {
             float ruptureSeverity = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
-            uint leftNodeId = (uint)(_pipeLinkId >> 32);
-            uint rightNodeId = unchecked((uint)_pipeLinkId);
-            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(leftNodeId, true);
-            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(rightNodeId, true);
+            DecodePipeLinkId(_pipeLinkId, out uint leftNodeId, out uint rightNodeId);
+            if (leftNodeId != 0u)
+                ConnectionSplineBatchRenderer.SetPipeNodeRuptured(leftNodeId, true);
+
+            if (rightNodeId != 0u && rightNodeId != leftNodeId)
+                ConnectionSplineBatchRenderer.SetPipeNodeRuptured(rightNodeId, true);
 
             if (!TryResolveAupFromRuntimeOrigin(rupturePosition, out AbsoluteUniversePosition ruptureAup))
                 return;
@@ -699,7 +736,7 @@ namespace Hecton8.Construction
             {
                 RuptureAup = ruptureAup,
                 NetworkId = 0u,
-                NodeId = rightNodeId,
+                NodeId = rightNodeId != 0u ? rightNodeId : leftNodeId,
                 PressureKPa = _overpressureStress,
                 ContentKind = 0,
                 Flags = 1,
@@ -834,6 +871,19 @@ namespace Hecton8.Construction
             int encodedFlow = (int)math.round(normalizedFlow * 127f);
             encodedFlow = math.clamp(encodedFlow, -127, 127);
             return (sbyte)encodedFlow;
+        }
+
+        private static long ComposePipeLinkId(uint left, uint right)
+        {
+            uint min = math.min(left, right);
+            uint max = math.max(left, right);
+            return ((long)min << 32) | max;
+        }
+
+        private static void DecodePipeLinkId(long linkId, out uint leftNodeId, out uint rightNodeId)
+        {
+            leftNodeId = (uint)(linkId >> 32);
+            rightNodeId = unchecked((uint)linkId);
         }
     }
 }

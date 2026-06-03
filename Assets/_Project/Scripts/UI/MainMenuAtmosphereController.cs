@@ -16,29 +16,40 @@ namespace Hecton8.UI
         private const float EdgeMaskDistanceMeters = 1.48f;
         private const float MinimumPresentationDeltaSeconds = 0f;
         private const float MaximumPresentationDeltaSeconds = 0.1f;
+        private const string AuthoredStageRootName = "H8_MENU_VISUAL_STAGE_1428";
+        private const string AuthoredBackdropName = "Stage_Deep_Backdrop";
+        private const string AuthoredHazeName = "Stage_Back_Pressure_Window";
         private static readonly Color AbyssFloorColor = new Color(0.016f, 0.024f, 0.032f, 1f);
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        private readonly Transform[] _siltStrips = new Transform[SiltStripCount]; // COLD ALLOC: fixed menu atmosphere strip cache.
-        private readonly MeshRenderer[] _siltRenderers = new MeshRenderer[SiltStripCount]; // COLD ALLOC: no renderer lookup in visual sync.
-        private readonly Material[] _siltMaterials = new Material[SiltStripCount]; // COLD ALLOC: per-strip alpha without MaterialPropertyBlock churn.
+        [Header("Authored Atmosphere")]
+        [SerializeField, Tooltip("Authored root for menu atmosphere quads. When null, this transform is used; no GameObject is created.")]
+        private Transform _atmosphereRoot;
+        [SerializeField, Tooltip("Authored full-screen abyss backdrop quad.")]
+        private Transform _backdrop;
+        [SerializeField, Tooltip("Authored full-screen cyanotic haze quad.")]
+        private Transform _haze;
+        [SerializeField, Tooltip("Authored pressure silt strip quads. Missing optional entries are skipped without runtime generation.")]
+        private Transform[] _siltStrips = new Transform[SiltStripCount];
+        [SerializeField, Tooltip("Authored dirty-glass edge mask rail quads. Missing entries are skipped without runtime generation.")]
+        private Transform[] _edgeMasks = new Transform[EdgeMaskCount];
+        [SerializeField] private MeshRenderer _backdropRenderer;
+        [SerializeField] private MeshRenderer _hazeRenderer;
+        [SerializeField] private MeshRenderer[] _siltRenderers = new MeshRenderer[SiltStripCount];
+        [SerializeField] private MeshRenderer[] _edgeRenderers = new MeshRenderer[EdgeMaskCount];
+
+        private MaterialPropertyBlock _backdropProperties;
+        private MaterialPropertyBlock _hazeProperties;
+        private MaterialPropertyBlock[] _siltProperties;
+        private MaterialPropertyBlock[] _edgeProperties;
         private readonly float[] _siltBaseX = new float[SiltStripCount]; // COLD ALLOC: deterministic fake-current positions.
         private readonly float[] _siltBaseY = new float[SiltStripCount]; // COLD ALLOC: deterministic fake-current positions.
         private readonly float[] _siltPhase = new float[SiltStripCount]; // COLD ALLOC: deterministic fake-current phases.
         private readonly float[] _siltSpeed = new float[SiltStripCount]; // COLD ALLOC: deterministic fake-current rates.
-        private readonly Transform[] _edgeMasks = new Transform[EdgeMaskCount]; // COLD ALLOC: fixed dirty-glass edge masks.
-        private readonly MeshRenderer[] _edgeRenderers = new MeshRenderer[EdgeMaskCount]; // COLD ALLOC: no lookup in LateFrameTick.
-        private readonly Material[] _edgeMaterials = new Material[EdgeMaskCount]; // COLD ALLOC: edge color cache.
 
         private Camera _camera;
         private Transform _cameraTransform;
-        private Transform _atmosphereRoot;
-        private Transform _backdrop;
-        private Transform _haze;
-        private MeshRenderer _backdropRenderer;
-        private MeshRenderer _hazeRenderer;
-        private Material _backdropMaterial;
-        private Material _hazeMaterial;
-        private Shader _transparentShader;
         private bool _configured;
 
         public void Configure(Camera camera)
@@ -51,7 +62,8 @@ namespace Hecton8.UI
             if (_cameraTransform == null)
                 return;
 
-            EnsureTransparentShaderCold();
+            EnsurePropertyBlocksCold();
+            ResolveAuthoredAtmosphereCold();
             EnsureRootCold();
             EnsureBackdropCold();
             EnsureHazeCold();
@@ -87,26 +99,143 @@ namespace Hecton8.UI
             ApplyEdgeMasks(in state, quality, time, conceptBias);
         }
 
-        private void EnsureTransparentShaderCold()
+        private void EnsurePropertyBlocksCold()
         {
-            if (_transparentShader != null)
-                return;
+            if (_backdropProperties == null)
+                _backdropProperties = new MaterialPropertyBlock(); // COLD ALLOC: menu backdrop MPB - owner: MainMenuAtmosphereController.
+            if (_hazeProperties == null)
+                _hazeProperties = new MaterialPropertyBlock(); // COLD ALLOC: menu haze MPB - owner: MainMenuAtmosphereController.
+            EnsurePropertyBlockArrayCold(ref _siltProperties, SiltStripCount);
+            EnsurePropertyBlockArrayCold(ref _edgeProperties, EdgeMaskCount);
+        }
 
-            _transparentShader = Shader.Find("Sprites/Default");
-            if (_transparentShader == null)
-                _transparentShader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (_transparentShader == null)
-                _transparentShader = Shader.Find("Unlit/Color");
+        private static void EnsurePropertyBlockArrayCold(ref MaterialPropertyBlock[] blocks, int count)
+        {
+            if (blocks == null || blocks.Length != count)
+                blocks = new MaterialPropertyBlock[count]; // COLD ALLOC: fixed menu renderer MPB slots.
+
+            for (int i = 0; i < count; i++)
+            {
+                if (blocks[i] == null)
+                    blocks[i] = new MaterialPropertyBlock(); // COLD ALLOC: per-strip menu MPB.
+            }
+        }
+
+        private void ResolveAuthoredAtmosphereCold()
+        {
+            EnsureVisualArraysCold();
+
+            Transform searchRoot = _atmosphereRoot;
+            if (searchRoot == null || searchRoot == transform)
+                searchRoot = FindSceneTransformByNameCold(AuthoredStageRootName);
+
+            if (searchRoot == null)
+                searchRoot = transform;
+
+            if (_atmosphereRoot == null || _atmosphereRoot == transform)
+                _atmosphereRoot = searchRoot;
+
+            if (_backdrop == null)
+                _backdrop = FindChildRecursiveByNameCold(searchRoot, AuthoredBackdropName);
+            if (_haze == null)
+                _haze = FindChildRecursiveByNameCold(searchRoot, AuthoredHazeName);
+
+            for (int i = 0; i < SiltStripCount; i++)
+            {
+                if (_siltStrips[i] == null)
+                    _siltStrips[i] = FindChildRecursiveByNameCold(searchRoot, ResolveSiltStripName(i));
+            }
+
+            for (int i = 0; i < EdgeMaskCount; i++)
+            {
+                if (_edgeMasks[i] == null)
+                    _edgeMasks[i] = FindChildRecursiveByNameCold(searchRoot, ResolveEdgeMaskName(i));
+            }
+        }
+
+        private void EnsureVisualArraysCold()
+        {
+            if (_siltStrips == null || _siltStrips.Length != SiltStripCount)
+                _siltStrips = new Transform[SiltStripCount]; // COLD ALLOC: fixed authored menu strip references.
+            if (_edgeMasks == null || _edgeMasks.Length != EdgeMaskCount)
+                _edgeMasks = new Transform[EdgeMaskCount]; // COLD ALLOC: fixed authored menu edge references.
+            if (_siltRenderers == null || _siltRenderers.Length != SiltStripCount)
+                _siltRenderers = new MeshRenderer[SiltStripCount]; // COLD ALLOC: fixed authored menu strip renderers.
+            if (_edgeRenderers == null || _edgeRenderers.Length != EdgeMaskCount)
+                _edgeRenderers = new MeshRenderer[EdgeMaskCount]; // COLD ALLOC: fixed authored menu edge renderers.
+        }
+
+        private Transform FindSceneTransformByNameCold(string targetName)
+        {
+            UnityEngine.SceneManagement.Scene scene = gameObject.scene;
+            if (!scene.IsValid() || string.IsNullOrEmpty(targetName))
+                return null;
+
+            GameObject[] roots = scene.GetRootGameObjects(); // COLD ALLOC: scene bootstrap lookup only.
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root == null)
+                    continue;
+
+                Transform match = FindChildRecursiveByNameCold(root.transform, targetName);
+                if (match != null)
+                    return match;
+            }
+
+            return null;
+        }
+
+        private static Transform FindChildRecursiveByNameCold(Transform root, string targetName)
+        {
+            if (root == null || string.IsNullOrEmpty(targetName))
+                return null;
+
+            if (root.name == targetName)
+                return root;
+
+            for (int i = 0, childCount = root.childCount; i < childCount; i++)
+            {
+                Transform match = FindChildRecursiveByNameCold(root.GetChild(i), targetName);
+                if (match != null)
+                    return match;
+            }
+
+            return null;
+        }
+
+        private static string ResolveSiltStripName(int index)
+        {
+            switch (index)
+            {
+                case 0: return "Stage_Action_Cyan_A";
+                case 1: return "Stage_Action_Cyan_B";
+                case 2: return "Stage_Action_Amber";
+                case 3: return "Stage_Deck_Warn_L";
+                case 4: return "Stage_Deck_Warn_R";
+                case 5: return "Stage_Floor_Plate";
+                case 6: return "Stage_Command_Pedestal";
+                default: return null;
+            }
+        }
+
+        private static string ResolveEdgeMaskName(int index)
+        {
+            switch (index)
+            {
+                case 0: return "Stage_Left_Rail";
+                case 1: return "Stage_Right_Rail";
+                case 2: return "Stage_Top_Rail";
+                case 3: return "Stage_Bottom_Rail";
+                default: return null;
+            }
         }
 
         private void EnsureRootCold()
         {
-            if (_atmosphereRoot != null)
-                return;
+            if (_atmosphereRoot == null)
+                _atmosphereRoot = transform;
 
-            GameObject root = new GameObject("H8_MenuCamera_Atmosphere"); // COLD ALLOC: presentation-only generated camera layer.
-            root.hideFlags = HideFlags.DontSave;
-            _atmosphereRoot = root.transform;
             _atmosphereRoot.SetParent(_cameraTransform, false);
             _atmosphereRoot.localPosition = Vector3.zero;
             _atmosphereRoot.localRotation = Quaternion.identity;
@@ -116,36 +245,46 @@ namespace Hecton8.UI
         private void EnsureBackdropCold()
         {
             if (_backdrop != null)
+            {
+                _backdropRenderer = ResolveAtmosphereRenderer(_backdrop, _backdropRenderer);
+                ConfigureAtmosphereRenderer(_backdropRenderer);
+                _backdrop.localPosition = new Vector3(0f, 0f, BackgroundDistanceMeters);
+                _backdrop.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                _backdrop.localScale = new Vector3(3.25f, 1.94f, 1f);
                 return;
+            }
 
-            _backdrop = CreateQuadCold("H8_Menu_Abyss_Backdrop", _atmosphereRoot, out _backdropRenderer, out _backdropMaterial);
-            _backdrop.localPosition = new Vector3(0f, 0f, BackgroundDistanceMeters);
-            _backdrop.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            _backdrop.localScale = new Vector3(3.25f, 1.94f, 1f);
+            _backdropRenderer = null;
         }
 
         private void EnsureHazeCold()
         {
             if (_haze != null)
+            {
+                _hazeRenderer = ResolveAtmosphereRenderer(_haze, _hazeRenderer);
+                ConfigureAtmosphereRenderer(_hazeRenderer);
+                _haze.localPosition = new Vector3(0f, -0.05f, HazeDistanceMeters);
+                _haze.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                _haze.localScale = new Vector3(3.05f, 1.38f, 1f);
                 return;
+            }
 
-            _haze = CreateQuadCold("H8_Menu_Cyanotic_Haze", _atmosphereRoot, out _hazeRenderer, out _hazeMaterial);
-            _haze.localPosition = new Vector3(0f, -0.05f, HazeDistanceMeters);
-            _haze.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            _haze.localScale = new Vector3(3.05f, 1.38f, 1f);
+            _hazeRenderer = null;
         }
 
         private void EnsureSiltCold()
         {
+            if (!HasArrayCapacity(_siltStrips, SiltStripCount) || !HasArrayCapacity(_siltRenderers, SiltStripCount))
+                return;
+
             for (int i = 0; i < SiltStripCount; i++)
             {
-                if (_siltStrips[i] != null)
+                Transform strip = GetArrayValue(_siltStrips, i);
+                if (strip == null)
                     continue;
 
-                Transform strip = CreateQuadCold("H8_Menu_Pressure_Silt_" + i.ToString("00"), _atmosphereRoot, out MeshRenderer renderer, out Material material);
-                _siltStrips[i] = strip;
-                _siltRenderers[i] = renderer;
-                _siltMaterials[i] = material;
+                _siltRenderers[i] = ResolveAtmosphereRenderer(strip, GetArrayValue(_siltRenderers, i));
+                ConfigureAtmosphereRenderer(_siltRenderers[i]);
 
                 float lane = i / (float)(SiltStripCount - 1);
                 _siltBaseX[i] = math.lerp(-1.52f, 1.52f, Frac01((i * 0.371f) + 0.17f));
@@ -157,15 +296,17 @@ namespace Hecton8.UI
 
         private void EnsureEdgeMasksCold()
         {
+            if (!HasArrayCapacity(_edgeMasks, EdgeMaskCount) || !HasArrayCapacity(_edgeRenderers, EdgeMaskCount))
+                return;
+
             for (int i = 0; i < EdgeMaskCount; i++)
             {
-                if (_edgeMasks[i] != null)
+                Transform mask = GetArrayValue(_edgeMasks, i);
+                if (mask == null)
                     continue;
 
-                Transform mask = CreateQuadCold("H8_Menu_Glass_Edge_" + i.ToString("00"), _atmosphereRoot, out MeshRenderer renderer, out Material material);
-                _edgeMasks[i] = mask;
-                _edgeRenderers[i] = renderer;
-                _edgeMaterials[i] = material;
+                _edgeRenderers[i] = ResolveAtmosphereRenderer(mask, GetArrayValue(_edgeRenderers, i));
+                ConfigureAtmosphereRenderer(_edgeRenderers[i]);
             }
 
             SetEdgeMaskPose(0, new Vector3(-1.52f, 0f, EdgeMaskDistanceMeters), new Vector3(0.44f, 2.10f, 1f));
@@ -174,72 +315,48 @@ namespace Hecton8.UI
             SetEdgeMaskPose(3, new Vector3(0f, -0.88f, EdgeMaskDistanceMeters), new Vector3(3.35f, 0.36f, 1f));
         }
 
-        private Transform CreateQuadCold(string objectName, Transform parent, out MeshRenderer renderer, out Material material)
+        private static T GetArrayValue<T>(T[] values, int index) where T : class
         {
-            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad); // COLD ALLOC: fixed menu visual fake, never spawned per frame.
-            quad.name = objectName;
-            quad.hideFlags = HideFlags.DontSave;
-            quad.layer = _camera != null ? _camera.gameObject.layer : quad.layer;
-            Transform quadTransform = quad.transform;
-            quadTransform.SetParent(parent, false);
+            return values != null && (uint)index < (uint)values.Length ? values[index] : null;
+        }
 
-            if (quad.TryGetComponent(out Collider collider))
-                collider.enabled = false;
+        private static bool HasArrayCapacity<T>(T[] values, int required)
+        {
+            return values != null && values.Length >= required;
+        }
 
-            renderer = quad.GetComponent<MeshRenderer>();
+        private static MeshRenderer ResolveAtmosphereRenderer(Transform visual, MeshRenderer configured)
+        {
+            if (configured != null)
+                return configured;
+
+            if (visual != null && visual.TryGetComponent(out MeshRenderer renderer))
+                return renderer;
+
+            return null;
+        }
+
+        private static void ConfigureAtmosphereRenderer(MeshRenderer renderer)
+        {
+            if (renderer == null)
+                return;
+
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             renderer.lightProbeUsage = LightProbeUsage.Off;
             renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
             renderer.allowOcclusionWhenDynamic = false;
-
-            material = CreateTransparentMaterialCold(objectName + "_Material");
-            renderer.sharedMaterial = material;
-            return quadTransform;
         }
 
-        private Material CreateTransparentMaterialCold(string materialName)
+        private static void SetRendererColor(MeshRenderer renderer, MaterialPropertyBlock propertyBlock, Color color)
         {
-            Material material = _transparentShader != null
-                ? new Material(_transparentShader) // COLD ALLOC: menu atmosphere generated material.
-                : new Material(Shader.Find("Unlit/Color")); // COLD ALLOC: last-resort generated material.
-            material.name = materialName;
-            material.hideFlags = HideFlags.DontSave;
-            material.renderQueue = (int)RenderQueue.Transparent;
-            ConfigureTransparentMaterial(material);
-            return material;
-        }
-
-        private static void ConfigureTransparentMaterial(Material material)
-        {
-            if (material == null)
+            if (renderer == null || propertyBlock == null)
                 return;
 
-            if (material.HasProperty("_Surface"))
-                material.SetFloat("_Surface", 1f);
-            if (material.HasProperty("_Blend"))
-                material.SetFloat("_Blend", 0f);
-            if (material.HasProperty("_SrcBlend"))
-                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            if (material.HasProperty("_DstBlend"))
-                material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-            if (material.HasProperty("_ZWrite"))
-                material.SetFloat("_ZWrite", 0f);
-
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.EnableKeyword("_ALPHABLEND_ON");
-        }
-
-        private static void SetMaterialColor(Material material, Color color)
-        {
-            if (material == null)
-                return;
-
-            if (material.HasProperty("_BaseColor"))
-                material.SetColor("_BaseColor", color);
-            if (material.HasProperty("_Color"))
-                material.SetColor("_Color", color);
-            material.color = color;
+            propertyBlock.Clear();
+            propertyBlock.SetColor(BaseColorId, color);
+            propertyBlock.SetColor(ColorId, color);
+            renderer.SetPropertyBlock(propertyBlock);
         }
 
         private void ApplyCameraClearColor(Color color)
@@ -258,7 +375,7 @@ namespace Hecton8.UI
 
             Color deep = ResolveAbyssSafe(LerpColor(AbyssFloorColor, state.BackgroundColor, 0.30f + quality * 0.26f));
             deep.a = math.lerp(0.40f, 0.58f, quality) + conceptBias * 0.04f;
-            SetMaterialColor(_backdropMaterial, deep);
+            SetRendererColor(_backdropRenderer, _backdropProperties, deep);
             _backdrop.localScale = new Vector3(3.20f + quality * 0.18f, 1.90f + quality * 0.08f, 1f);
             if (_backdropRenderer != null)
                 _backdropRenderer.enabled = true;
@@ -277,7 +394,7 @@ namespace Hecton8.UI
             Color haze = LerpColor(state.AccentColor, state.SecondaryTextColor, 0.45f + state.WetGlassWeight * 0.22f);
             haze = ResolveAbyssSafe(haze);
             haze.a = (0.035f + quality * 0.075f) * (0.65f + state.WetGlassWeight * 0.75f + conceptBias * 0.32f);
-            SetMaterialColor(_hazeMaterial, haze);
+            SetRendererColor(_hazeRenderer, _hazeProperties, haze);
             if (_hazeRenderer != null)
                 _hazeRenderer.enabled = deltaTime >= 0f;
         }
@@ -290,8 +407,8 @@ namespace Hecton8.UI
 
             for (int i = 0; i < SiltStripCount; i++)
             {
-                MeshRenderer renderer = _siltRenderers[i];
-                Transform strip = _siltStrips[i];
+                MeshRenderer renderer = GetArrayValue(_siltRenderers, i);
+                Transform strip = GetArrayValue(_siltStrips, i);
                 if (renderer == null || strip == null)
                     continue;
 
@@ -318,7 +435,7 @@ namespace Hecton8.UI
                     : LerpColor(state.WarningColor, state.AccentColor, 0.72f);
                 color = ResolveAbyssSafe(color);
                 color.a = depthAlpha * math.lerp(0.55f, 1.0f, Frac01(phase * 0.19f));
-                SetMaterialColor(_siltMaterials[i], color);
+                SetRendererColor(renderer, GetArrayValue(_siltProperties, i), color);
             }
         }
 
@@ -330,20 +447,22 @@ namespace Hecton8.UI
 
             for (int i = 0; i < EdgeMaskCount; i++)
             {
-                if (_edgeRenderers[i] != null)
-                    _edgeRenderers[i].enabled = true;
-                SetMaterialColor(_edgeMaterials[i], color);
+                MeshRenderer renderer = GetArrayValue(_edgeRenderers, i);
+                if (renderer != null)
+                    renderer.enabled = true;
+                SetRendererColor(renderer, GetArrayValue(_edgeProperties, i), color);
             }
         }
 
         private void SetEdgeMaskPose(int index, Vector3 localPosition, Vector3 localScale)
         {
-            if ((uint)index >= EdgeMaskCount || _edgeMasks[index] == null)
+            Transform mask = GetArrayValue(_edgeMasks, index);
+            if ((uint)index >= EdgeMaskCount || mask == null)
                 return;
 
-            _edgeMasks[index].localPosition = localPosition;
-            _edgeMasks[index].localRotation = Quaternion.Euler(0f, 180f, 0f);
-            _edgeMasks[index].localScale = localScale;
+            mask.localPosition = localPosition;
+            mask.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            mask.localScale = localScale;
         }
 
         private static Color ResolveClearColor(in MenuVisualStyleState state, float quality)
@@ -385,23 +504,12 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            DestroyMaterialCold(_backdropMaterial);
-            DestroyMaterialCold(_hazeMaterial);
+            _backdropProperties?.Clear();
+            _hazeProperties?.Clear();
             for (int i = 0; i < SiltStripCount; i++)
-                DestroyMaterialCold(_siltMaterials[i]);
+                GetArrayValue(_siltProperties, i)?.Clear();
             for (int i = 0; i < EdgeMaskCount; i++)
-                DestroyMaterialCold(_edgeMaterials[i]);
-        }
-
-        private static void DestroyMaterialCold(Material material)
-        {
-            if (material == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(material);
-            else
-                DestroyImmediate(material);
+                GetArrayValue(_edgeProperties, i)?.Clear();
         }
     }
 }

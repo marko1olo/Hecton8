@@ -1,10 +1,17 @@
 ---
 packet_id: P074_TAU_CETI_PUBLIC_LEDGER
+release_set_id: RS015_HUMAN_DOMAINS_ROUTE_ECONOMY
 article_id: human.tau_ceti_public_ledger
+unlock_id: unlock.first_tau_ceti_public_ledger
+poi_tags: poi.public_ledger_node;poi.civic_law_cache
+biome_tags: biome.admin_spine;biome.relay_spine
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Tau Ceti Public Ledger

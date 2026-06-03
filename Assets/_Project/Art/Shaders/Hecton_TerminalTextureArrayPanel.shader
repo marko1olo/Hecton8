@@ -5,6 +5,13 @@ Shader "HECTON/UI/Terminal TextureArray Panel"
         _TerminalTextureArray("Terminal Texture Array", 2DArray) = "" {}
         _TerminalSlice("Terminal Slice", Float) = 0
         _EmissionTint("Emission Tint", Color) = (0.70, 1.0, 0.78, 1.0)
+        _TerminalScreenAlbedoAtlas("Baked CRT Albedo Atlas", 2D) = "black" {}
+        _TerminalScreenProjectionLut("Baked CRT Projection LUT", 2D) = "black" {}
+        _TerminalScreenPackedMrao("Baked CRT Packed MRAO", 2D) = "white" {}
+        _TerminalScreenBakedProjectionReady("Baked Projection Ready", Float) = 0
+        _TerminalScreenBakedProjectionWeight("Baked Projection Weight", Range(0, 1)) = 1
+        _TerminalScreenBurnInWeight("Burn-In Weight", Range(0, 1)) = 0.68
+        _TerminalScreenGlassWeight("Glass Mask Weight", Range(0, 1)) = 0.42
     }
 
     SubShader
@@ -37,10 +44,20 @@ Shader "HECTON/UI/Terminal TextureArray Panel"
 
             TEXTURE2D_ARRAY(_TerminalTextureArray);
             SAMPLER(sampler_TerminalTextureArray);
+            TEXTURE2D(_TerminalScreenAlbedoAtlas);
+            SAMPLER(sampler_TerminalScreenAlbedoAtlas);
+            TEXTURE2D(_TerminalScreenProjectionLut);
+            SAMPLER(sampler_TerminalScreenProjectionLut);
+            TEXTURE2D(_TerminalScreenPackedMrao);
+            SAMPLER(sampler_TerminalScreenPackedMrao);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _EmissionTint;
                 float _TerminalSlice;
+                float _TerminalScreenBakedProjectionReady;
+                float _TerminalScreenBakedProjectionWeight;
+                float _TerminalScreenBurnInWeight;
+                float _TerminalScreenGlassWeight;
             CBUFFER_END
             float4 _HectonVrComfortSignals;
             float4 _HectonVrComfortMotion;
@@ -129,8 +146,39 @@ Shader "HECTON/UI/Terminal TextureArray Panel"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                half4 sampleColor = SAMPLE_TEXTURE2D_ARRAY(_TerminalTextureArray, sampler_TerminalTextureArray, input.uv, input.slice);
-                half3 color = sampleColor.rgb * _EmissionTint.rgb;
+                float ready = step(0.5, _TerminalScreenBakedProjectionReady);
+                half3 color = half3(0.0h, 0.0h, 0.0h);
+                UNITY_BRANCH
+                if (ready > 0.5)
+                {
+                    half4 projectionPacked = SAMPLE_TEXTURE2D(_TerminalScreenProjectionLut, sampler_TerminalScreenProjectionLut, input.uv);
+                    float2 projectedUv = saturate(projectionPacked.rg);
+                    float projectionWeight = saturate(_TerminalScreenBakedProjectionWeight);
+                    float2 terminalUv = lerp(input.uv, projectedUv, projectionWeight);
+                    float scanMask = projectionPacked.a;
+                    float glitchFrame = floor(frac(_Time.y * 0.25) * 64.0) * 0.015625;
+                    float glitchBand = 1.0 - abs(frac(glitchFrame + input.uv.y * 7.0) * 2.0 - 1.0);
+                    terminalUv.x = saturate(terminalUv.x + (scanMask - 0.5) * glitchBand * projectionWeight * 0.006);
+                    half4 sampleColor = SAMPLE_TEXTURE2D_ARRAY(_TerminalTextureArray, sampler_TerminalTextureArray, terminalUv, input.slice);
+                    half4 bakedAlbedo = SAMPLE_TEXTURE2D(_TerminalScreenAlbedoAtlas, sampler_TerminalScreenAlbedoAtlas, terminalUv);
+                    half4 packedMrao = SAMPLE_TEXTURE2D(_TerminalScreenPackedMrao, sampler_TerminalScreenPackedMrao, input.uv);
+                    color = sampleColor.rgb * _EmissionTint.rgb;
+                    color = lerp(color, max(color, bakedAlbedo.rgb * _EmissionTint.rgb), bakedAlbedo.a * 0.32h);
+                    half burnIn = (half)(projectionPacked.b * saturate(_TerminalScreenBurnInWeight));
+                    half scanNoise = (half)scanMask;
+                    half glassWeight = (half)saturate(_TerminalScreenGlassWeight);
+                    half ao = lerp(1.0h, packedMrao.b, glassWeight);
+                    half roughScratch = (1.0h - packedMrao.g) * glassWeight;
+                    color *= lerp(1.0h, ao, 0.72h);
+                    color += _EmissionTint.rgb * (burnIn * 0.22h + packedMrao.a * burnIn * 0.18h);
+                    color = lerp(color, color * (0.90h + scanNoise * 0.16h), 0.75h);
+                    color += roughScratch * half3(0.018h, 0.024h, 0.022h);
+                }
+                else
+                {
+                    half4 sampleColor = SAMPLE_TEXTURE2D_ARRAY(_TerminalTextureArray, sampler_TerminalTextureArray, input.uv, input.slice);
+                    color = sampleColor.rgb * _EmissionTint.rgb;
+                }
                 float2 comfortScreenUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
                 float comfortBlackAmount = ResolveHectonComfortBlackAmount(comfortScreenUV, input.positionCS.xy);
                 color = lerp(color, half3(0.0015h, 0.0023h, 0.0031h), (half)comfortBlackAmount);

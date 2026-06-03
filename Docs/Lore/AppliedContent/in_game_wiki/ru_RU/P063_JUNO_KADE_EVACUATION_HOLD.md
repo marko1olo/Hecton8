@@ -1,10 +1,17 @@
 ---
 packet_id: P063_JUNO_KADE_EVACUATION_HOLD
+release_set_id: RS013_COLONY_ATLAS_MAINTENANCE
 article_id: hecton8.juno_kade_evacuation_hold
+unlock_id: unlock.first_juno_kade_evacuation_hold
+poi_tags: poi.evacuation_console;poi.route_hold_board
+biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Эвакуационная задержка Джуно Кейд

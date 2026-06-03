@@ -430,7 +430,7 @@ namespace Hecton8.Core
                 pulse.LowFrequencyMotor01 = math.saturate(intensity * math.lerp(0.08f, 0.22f, 1f - heat));
                 pulse.HighFrequencyMotor01 = math.saturate(intensity * math.lerp(0.35f, 1f, heat));
                 pulse.DurationSeconds = math.lerp(0.025f, 0.08f, heat);
-                pulse.PriorityFlags = HapticPulseSignal.PriorityTool | (signal.ToolHash & 0x00FFFFFFu);
+                pulse.PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(HapticPulseSignal.PriorityTool, signal.ToolHash);
                 WritePulse(ref pulseIndex, ref droppedCount, ref flags, pulse);
             }
 
@@ -506,7 +506,7 @@ namespace Hecton8.Core
             pulse.LowFrequencyMotor01 = math.saturate(attenuated * lowGain);
             pulse.HighFrequencyMotor01 = math.saturate(attenuated * highGain);
             pulse.DurationSeconds = math.clamp((0.025f + (attenuated * 0.2f)) * profile.DurationScale, 0.015f, 0.35f);
-            pulse.PriorityFlags = priorityFlags | (sourceHash & 0x00FFFFFFu);
+            pulse.PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(priorityFlags, sourceHash);
             WritePulse(ref pulseIndex, ref droppedCount, ref flags, pulse);
         }
 

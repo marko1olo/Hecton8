@@ -1,0 +1,220 @@
+#pragma kernel GenerateChemicalAlbedo
+#pragma kernel GenerateChemicalMrao
+
+RWTexture2D<float4> _ChemicalOutput;
+Texture2D<float4> _CurvatureMap;
+SamplerState sampler_CurvatureMap;
+
+float4 _ChemicalTextureSize; // x width, y height, z curvature bound, w role
+uint _ChemicalSeed;
+float _ChemicalQuality;
+float4 _ChemicalLayerParams; // rust, verdigris, oil, paint survival
+float4 _ChemicalFlowParams; // streak length, lateral slope, base period, unused
+
+static const float3 kDeepPaint = float3(0.045, 0.058, 0.055);
+static const float3 kPrimer = float3(0.215, 0.070, 0.045);
+static const float3 kBareSteel = float3(0.470, 0.440, 0.385);
+static const float3 kDarkRust = float3(0.145, 0.055, 0.026);
+static const float3 kOrangeRust = float3(0.590, 0.220, 0.055);
+static const float3 kVerdigris = float3(0.105, 0.475, 0.390);
+static const float3 kOil = float3(0.030, 0.026, 0.018);
+static const float3 kHazard = float3(0.820, 0.610, 0.165);
+
+uint WrapInt(int value, uint period)
+{
+    int p = max(1, (int)period);
+    int wrapped = value - (value / p) * p;
+    return (uint)(wrapped < 0 ? wrapped + p : wrapped);
+}
+
+uint HashMix(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return value;
+}
+
+float Hash01(uint2 cell)
+{
+    uint h = HashMix(cell.x * 0x9e3779b9u ^ cell.y * 0x85ebca6bu ^ _ChemicalSeed);
+    return (float)(h & 0x00ffffffu) * (1.0 / 16777215.0);
+}
+
+float PeriodicValueNoise(float2 p, uint period)
+{
+    int2 cell = (int2)floor(p);
+    float2 f = frac(p);
+    uint2 c00 = uint2(WrapInt(cell.x, period), WrapInt(cell.y, period));
+    uint2 c10 = uint2(WrapInt(cell.x + 1, period), c00.y);
+    uint2 c01 = uint2(c00.x, WrapInt(cell.y + 1, period));
+    uint2 c11 = uint2(c10.x, c01.y);
+    float n00 = Hash01(c00);
+    float n10 = Hash01(c10);
+    float n01 = Hash01(c01);
+    float n11 = Hash01(c11);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(n00, n10, u.x), lerp(n01, n11, u.x), u.y);
+}
+
+float PeriodicFbm(float2 uv, uint basePeriod)
+{
+    float sum = 0.0;
+    float norm = 0.0;
+    float amp = 0.54;
+    [unroll]
+    for (int i = 0; i < 5; i++)
+    {
+        uint period = max(8u, basePeriod << i);
+        sum += PeriodicValueNoise(uv * (float)period, period) * amp;
+        norm += amp;
+        amp *= 0.52;
+    }
+
+    return norm > 0.0 ? sum / norm : 0.0;
+}
+
+float JointMask(float2 uv)
+{
+    float2 panel = abs(frac(uv * 8.0) - 0.5);
+    float seam = min(panel.x, panel.y);
+    return 1.0 - smoothstep(0.010, 0.040, seam);
+}
+
+float RivetMask(float2 uv)
+{
+    float2 grid = frac(uv * 18.0) - 0.5;
+    float rivet = 1.0 - smoothstep(0.065, 0.115, length(grid));
+    float keep = step(0.38, PeriodicValueNoise(floor(uv * 18.0), 64u));
+    return rivet * keep;
+}
+
+float EdgeCurvatureMask(float2 uv)
+{
+    float joint = JointMask(uv);
+    float rivet = RivetMask(uv);
+    float pittingBase = PeriodicFbm(uv + 0.117, 64u);
+    float pittingSquared = pittingBase * pittingBase;
+    float pitting = pittingSquared * pittingSquared;
+    return saturate(max(joint * 0.80, rivet * 0.72) + pitting * 0.22);
+}
+
+float SampleChemicalCurvature(float2 uv)
+{
+    if (_ChemicalTextureSize.z > 0.5)
+        return saturate(_CurvatureMap.SampleLevel(sampler_CurvatureMap, uv, 0.0).r);
+
+    return EdgeCurvatureMask(uv);
+}
+
+float OilSource(float2 uv)
+{
+    float joint = JointMask(uv);
+    float rivet = RivetMask(uv);
+    float gasket = smoothstep(0.78, 0.96, PeriodicFbm(uv * 0.5 + 0.31, 32u));
+    return saturate(max(joint * 0.72, rivet) + gasket * 0.38);
+}
+
+float DownwardStreak(float2 uv, uint basePeriod, float length01)
+{
+    float streak = 0.0;
+    float slope = _ChemicalFlowParams.y;
+    float streakLength = lerp(0.08, 0.62, saturate(length01));
+    [unroll]
+    for (int i = 0; i < 24; i++)
+    {
+        float t = (float)i / 23.0;
+        float2 sampleUv = frac(uv - float2((t - 0.5) * slope * 0.09, t * streakLength));
+        float source = OilSource(sampleUv);
+        float taper = 1.0 - t;
+        float wobble = 0.65 + 0.35 * PeriodicValueNoise(sampleUv * (float)basePeriod + t * 11.0, basePeriod);
+        streak = max(streak, source * taper * wobble);
+    }
+
+    return saturate(streak);
+}
+
+struct LayerState
+{
+    float rust;
+    float rustOrange;
+    float verdigris;
+    float oil;
+    float paint;
+    float primer;
+    float bareSteel;
+    float curvature;
+    float soot;
+};
+
+LayerState EvaluateLayers(float2 uv)
+{
+    uint basePeriod = (uint)max(32.0, _ChemicalFlowParams.z);
+    float q = saturate(_ChemicalQuality);
+    float curvature = SampleChemicalCurvature(uv);
+    float largeNoise = PeriodicFbm(uv + 0.071, basePeriod);
+    float fineNoise = PeriodicFbm(uv * 2.0 + 0.419, basePeriod * 2u);
+    float saltBloom = smoothstep(0.58, 0.94, PeriodicFbm(uv * 0.75 + 0.271, basePeriod));
+    float scratches = 1.0 - smoothstep(0.018, 0.050, abs(frac((uv.x + uv.y * 0.17) * 72.0) - 0.5));
+    scratches *= smoothstep(0.48, 0.85, PeriodicValueNoise(uv * (float)(basePeriod * 3u), basePeriod * 3u));
+
+    LayerState state;
+    state.curvature = curvature;
+    state.rust = saturate((_ChemicalLayerParams.x * 0.44) + curvature * 0.58 + largeNoise * 0.42 + scratches * 0.18 - _ChemicalLayerParams.w * 0.30);
+    state.rust = smoothstep(0.48, 0.93, state.rust);
+    state.rustOrange = saturate(state.rust * smoothstep(0.38, 0.88, fineNoise));
+    state.verdigris = saturate(_ChemicalLayerParams.y * smoothstep(0.50, 0.91, saltBloom + curvature * 0.35) * (0.45 + 0.55 * JointMask(uv * 0.75 + 0.11)));
+    state.oil = saturate(_ChemicalLayerParams.z * DownwardStreak(uv, basePeriod, _ChemicalFlowParams.x) * (0.75 + 0.25 * q));
+    state.paint = saturate(_ChemicalLayerParams.w + fineNoise * 0.18 - state.rust * 0.72 - state.verdigris * 0.42 - scratches * 0.22);
+    state.primer = saturate((1.0 - state.paint) * (1.0 - state.rust) * (0.28 + curvature * 0.32));
+    state.bareSteel = saturate((1.0 - state.paint) * (1.0 - state.rust * 0.86) * (1.0 - state.verdigris * 0.92) * (0.22 + curvature * 0.78 + scratches * 0.28));
+    state.soot = saturate(smoothstep(0.72, 0.97, PeriodicFbm(uv * 0.55 + 0.62, basePeriod)) * (0.28 + state.oil * 0.65));
+    return state;
+}
+
+[numthreads(8, 8, 1)]
+void GenerateChemicalAlbedo(uint3 id : SV_DispatchThreadID)
+{
+    uint width = (uint)_ChemicalTextureSize.x;
+    uint height = (uint)_ChemicalTextureSize.y;
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    LayerState l = EvaluateLayers(uv);
+    uint basePeriod = (uint)max(32.0, _ChemicalFlowParams.z);
+    float grain = PeriodicFbm(uv * 4.0 + 0.29, basePeriod * 4u);
+    float3 rustColor = lerp(kDarkRust, kOrangeRust, l.rustOrange);
+    float3 color = lerp(kBareSteel, kDeepPaint, l.paint);
+    color = lerp(color, kPrimer, l.primer);
+    color = lerp(color, rustColor, l.rust);
+    color = lerp(color, kVerdigris, l.verdigris);
+    color = lerp(color, kOil, l.oil);
+    color = lerp(color, kHazard, saturate(l.bareSteel * l.curvature * 0.08 * _ChemicalQuality));
+    color *= lerp(0.82, 1.18, grain);
+    color *= 1.0 - l.soot * 0.45;
+    _ChemicalOutput[id.xy] = float4(saturate(color), 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateChemicalMrao(uint3 id : SV_DispatchThreadID)
+{
+    uint width = (uint)_ChemicalTextureSize.x;
+    uint height = (uint)_ChemicalTextureSize.y;
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    LayerState l = EvaluateLayers(uv);
+    uint basePeriod = (uint)max(32.0, _ChemicalFlowParams.z);
+    float fine = PeriodicFbm(uv * 3.0 + 0.713, basePeriod * 4u);
+
+    float metallic = saturate(l.bareSteel * (1.0 - l.rust * 0.80) * (1.0 - l.verdigris * 0.92) * (1.0 - l.oil * 0.40));
+    float roughness = saturate(0.36 + l.paint * 0.08 + l.primer * 0.17 + l.rust * 0.47 + l.verdigris * 0.35 - l.oil * 0.26 + (fine - 0.5) * 0.14);
+    float ao = saturate(1.0 - l.curvature * 0.34 - l.rust * 0.12 - l.oil * 0.10 - l.soot * 0.14);
+    float emission = saturate(smoothstep(0.965, 0.996, PeriodicValueNoise(uv * (float)(basePeriod * 3u) + 4.0, basePeriod * 3u)) * l.curvature * _ChemicalQuality * 0.16);
+
+    _ChemicalOutput[id.xy] = float4(metallic, roughness, ao, emission);
+}

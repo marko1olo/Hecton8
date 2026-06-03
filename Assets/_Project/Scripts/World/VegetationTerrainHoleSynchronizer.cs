@@ -493,56 +493,6 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryReadTerrainHoleRecords(out NativeArray<TerrainHoleRecord> terrainHoles)
-        {
-            terrainHoles = default;
-            if (_terrainHoleCount <= 0)
-                return true;
-
-            return TryReadVegetationMemoryBuffer(
-                in _nativeMemory.TerrainHoleRecordsHandle,
-                BufferID.VegetationTerrainHoleRecords,
-                _terrainHoleCount,
-                out terrainHoles);
-        }
-
-        private bool TryCreateTerrainHoleJobSnapshot(out NativeArray<TerrainHoleRecord> terrainHoles)
-        {
-            terrainHoles = default;
-            int holeCount = _terrainHoleCount;
-            if (holeCount <= 0)
-                return true;
-
-            if (!TryReadTerrainHoleRecords(out NativeArray<TerrainHoleRecord> sourceHoles))
-                return false;
-
-            terrainHoles = H8Memory.Allocate<TerrainHoleRecord>(
-                holeCount,
-                VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
-            if (!terrainHoles.IsCreated || terrainHoles.Length < holeCount)
-            {
-                int actualLength = terrainHoles.IsCreated ? terrainHoles.Length : 0;
-                H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                RecordVegetationMemoryTelemetry(
-                    BufferID.VegetationTerrainHoleRecords,
-                    _nativeMemory.TerrainHoleRecordsHandle.Generation,
-                    holeCount,
-                    actualLength,
-                    0,
-                    0f,
-                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
-                    VegetationMemoryTelemetryPhase.SlowTick,
-                    VegetationMemorySovereigntyConstants.FlagCapacity,
-                    default);
-                return false;
-            }
-
-            NativeArray<TerrainHoleRecord>.Copy(sourceHoles, terrainHoles, holeCount);
-            return true;
-        }
-
         private void InvalidateChunksIntersectingHole(Vector3 position, float radius)
         {
             float radiusSq = radius * radius;
@@ -921,22 +871,30 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
+            if (HasChunkBuildJobsForTile(state.TileX, state.TileZ))
+            {
+                CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
+                state.TileCacheDisposalDeferred = true;
+                return;
+            }
+
+            bool deferHeightReadbackDisposal = TryDeferTileHeightReadbackDisposal(state);
+            if (state.HeightReadbackPending && !state.HeightReadbackRequest.done)
+                return;
+
             DisposeTileNativeCacheBuffer(ref state.PrimaryCacheBuffer);
             DisposeTileNativeCacheBuffer(ref state.SecondaryCacheBuffer);
             ReleaseVegetationMemoryBuffer(ref state.TerrainHoleMaskHandle);
             ReleaseTileNativeCacheSlot(state);
-            if (state.HeightReadbackPending && !state.HeightReadbackRequest.done)
-            {
-                // BLOCKING_SYNC_POINT: teardown only; tile height texture/readback data must outlive in-flight AsyncGPUReadback.
-                AsyncGPUReadback.WaitAllRequests();
-            }
 
-            DisposeTileHeightReadbackData(state);
+            if (!deferHeightReadbackDisposal)
+                DisposeTileHeightReadbackData(state);
             state.ActiveCacheBufferIndex = 0;
             state.PendingCacheBufferIndex = 0;
             state.HeightReadbackPending = false;
             state.HeightReadbackRequest = default;
+            state.TileCacheDisposalDeferred = false;
+            state.TileCacheEvictionDeferred = false;
             state.HolesResolution = 0;
             state.TerrainHoleMaskCount = 0;
             state.TerrainHolesDirty = false;
@@ -948,21 +906,36 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            if (state.HeightReadbackPending && !state.HeightReadbackRequest.done)
-            {
-                if (s_DeferredTileCacheDisposalCount < s_DeferredTileCacheDisposals.Length)
-                {
-                    s_DeferredTileCacheDisposals[s_DeferredTileCacheDisposalCount++] = new DeferredTileCacheDisposal
-                    {
-                        Request = state.HeightReadbackRequest
-                    };
-                }
-
-                DisposeTileNativeCaches(state);
-                return;
-            }
-
+            TryDisposeDeferredTileCacheReadbacks();
             DisposeTileNativeCaches(state);
+        }
+
+        private static bool TryDeferTileHeightReadbackDisposal(TileRuntimeState state)
+        {
+            if (state == null || !state.HeightReadbackPending)
+                return false;
+
+            if (state.HeightReadbackRequest.done)
+                return false;
+
+            if (state.HeightReadbackDisposalDeferred)
+                return true;
+
+            TryDisposeDeferredTileCacheReadbacks();
+            if (s_DeferredTileCacheDisposalCount >= s_DeferredTileCacheDisposals.Length)
+                return false;
+
+            s_DeferredTileCacheDisposals[s_DeferredTileCacheDisposalCount++] = new DeferredTileCacheDisposal
+            {
+                Request = state.HeightReadbackRequest,
+                State = state
+            };
+            state.HeightReadbackDisposalDeferred = true;
+            state.HeightReadbackPending = false;
+            state.HeightReadbackRepairRequested = false;
+            state.HeightReadbackRepairSampleCount = 0;
+            state.HeightReadbackRequest = default;
+            return true;
         }
 
         private static void TryDisposeDeferredTileCacheReadbacks()
@@ -972,6 +945,15 @@ namespace Hecton8.World
                 DeferredTileCacheDisposal disposal = s_DeferredTileCacheDisposals[i];
                 if (!disposal.Request.done)
                     continue;
+
+                TileRuntimeState state = disposal.State;
+                if (state != null)
+                {
+                    state.HeightReadbackDisposalDeferred = false;
+                    state.HeightReadbackPending = false;
+                    state.HeightReadbackRequest = default;
+                    ReleaseTileHeightReadbackData(state);
+                }
 
                 int lastIndex = --s_DeferredTileCacheDisposalCount;
                 s_DeferredTileCacheDisposals[i] = s_DeferredTileCacheDisposals[lastIndex];

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P291_PHOTIC_MAT_CODEX_CARD",
+      "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+      "article_id": "applied_lore.p291_photic_mat_codex_card",
+      "title_key": "applied_lore.p291_photic_mat_codex_card.title",
+      "unlock": {
+        "primary": "unlock.p291_photic_mat_codex_card",
+        "poi_tags": [
+          "poi.photic_mat_scan_patch",
+          "poi.oxygen_color_sample",
+          "poi.shallow_mat_edge"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Photic Mat Codex Card",
+          "scanner": "Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Light here is work, not comfort.",
+          "in_game_wiki": "Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "ru_RU": {
+          "title": "Codex card: photic mat",
+          "scanner": "Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Codex card должен быть bright, useful, slightly unstable; не horror-only.",
+          "terminal": "SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Свет здесь работа, не комфорт.",
+          "in_game_wiki": "Codex card photic mat задает первую living system как beauty, oxygen and route risk.",
+          "external_site": "Photic shelf яркий потому, что жизнь работает под давлением, а не потому что HECTON-8 безопасен."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft JA localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft JA localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft JA localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft JA localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft JA localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft JA localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft ZH localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft ZH localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft ZH localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft ZH localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft ZH localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft FR localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft FR localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft FR localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft FR localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft FR localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft FR localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft ES localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft ES localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft ES localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft ES localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft ES localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft ES localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft DE localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft DE localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft DE localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft DE localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft DE localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft DE localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft PL localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft PL localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft PL localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft PL localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft PL localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft PL localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft UK localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft UK localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft UK localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft UK localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft UK localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft UK localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft AR localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft AR localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft AR localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft AR localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft AR localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft AR localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft ID localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft ID localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft ID localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft ID localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft ID localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft ID localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft KO localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft KO localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft KO localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft KO localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft KO localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft KO localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft HE localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft HE localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft HE localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft HE localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft HE localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft HE localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft PT localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft PT localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft PT localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft PT localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft PT localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft PT localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Photic Mat Codex Card",
+          "scanner": "Draft NL localization pending native pass. Photic mat: oxygen-positive, pressure-fragile, edible to grazers, dangerous when torn.",
+          "field_note": "Draft NL localization pending native pass. Codex card should be bright, useful and slightly unstable; not horror-only.",
+          "terminal": "Draft NL localization pending native pass. SPECIMEN: photic mat. Do not harvest large sheets near sealed seams.",
+          "audio": "Draft NL localization pending native pass. Light here is work, not comfort.",
+          "in_game_wiki": "Draft NL localization pending native pass. Photic Mat Codex Card defines the first living system as beauty, oxygen and route risk.",
+          "external_site": "Draft NL localization pending native pass. The photic shelf is bright because life is doing work under pressure, not because HECTON-8 is safe."
+        }
+      }
+    },
+    {
+      "packet_id": "P292_GLASS_GRAZER_CODEX_CARD",
+      "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+      "article_id": "applied_lore.p292_glass_grazer_codex_card",
+      "title_key": "applied_lore.p292_glass_grazer_codex_card.title",
+      "unlock": {
+        "primary": "unlock.p292_glass_grazer_codex_card",
+        "poi_tags": [
+          "poi.glass_grazer_scan",
+          "poi.grazer_tooth_mark",
+          "poi.shallow_school_echo"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.fauna"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Glass Grazer Codex Card",
+          "scanner": "Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "When they stop eating, you stop moving.",
+          "in_game_wiki": "Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "ru_RU": {
+          "title": "Codex card: glass grazer",
+          "scanner": "Glass grazer: non-hostile. Если школа замирает, уходи из open water.",
+          "field_note": "Использовать как tutorial для absence-as-warning без UI exposition.",
+          "terminal": "SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Когда они перестают есть, ты перестаешь двигаться.",
+          "in_game_wiki": "Codex card glass grazer превращает benign animal в readable safety instrument.",
+          "external_site": "Безопасная жизнь HECTON-8 - часть survival interface: движение, отсутствие и повреждения говорят игроку то, что meter не скажет."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft JA localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft JA localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft JA localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft JA localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft JA localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft ZH localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft ZH localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft ZH localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft ZH localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft FR localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft FR localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft FR localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft FR localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft FR localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft ES localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft ES localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft ES localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft ES localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft ES localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft DE localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft DE localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft DE localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft DE localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft DE localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft PL localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft PL localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft PL localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft PL localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft PL localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft UK localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft UK localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft UK localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft UK localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft UK localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft AR localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft AR localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft AR localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft AR localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft AR localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft ID localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft ID localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft ID localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft ID localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft ID localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft KO localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft KO localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft KO localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft KO localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft KO localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft HE localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft HE localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft HE localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft HE localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft HE localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft PT localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft PT localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft PT localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft PT localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft PT localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Glass Grazer Codex Card",
+          "scanner": "Draft NL localization pending native pass. Glass grazer: non-hostile. If the school freezes, leave the open water.",
+          "field_note": "Draft NL localization pending native pass. Use as tutorial for absence-as-warning without UI exposition.",
+          "terminal": "Draft NL localization pending native pass. SPECIMEN: glass grazer school. Predator-risk proxy, not harvest target.",
+          "audio": "Draft NL localization pending native pass. When they stop eating, you stop moving.",
+          "in_game_wiki": "Draft NL localization pending native pass. Glass Grazer Codex Card turns a benign animal into a readable safety instrument.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's harmless life is part of the survival interface: movement, absence and damage tell the player what a meter cannot."
+        }
+      }
+    },
+    {
+      "packet_id": "P293_LANTERN_DRIFT_CODEX_CARD",
+      "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+      "article_id": "applied_lore.p293_lantern_drift_codex_card",
+      "title_key": "applied_lore.p293_lantern_drift_codex_card.title",
+      "unlock": {
+        "primary": "unlock.p293_lantern_drift_codex_card",
+        "poi_tags": [
+          "poi.lantern_drift_scan",
+          "poi.false_safe_light",
+          "poi.plankton_route_spark"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.light"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Lantern Drift Codex Card",
+          "scanner": "Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Card teaches that beauty can be route information and route deception.",
+          "terminal": "SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "ru_RU": {
+          "title": "Codex card: lantern drift",
+          "scanner": "Lantern drift: useful light. Проверить current, charge and residue before following.",
+          "field_note": "Card учит, что beauty может быть route information и route deception.",
+          "terminal": "SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Красиво не значит безопасно. Красиво - это показание.",
+          "in_game_wiki": "Codex card lantern drift связывает visual wonder со storm-window route pressure.",
+          "external_site": "Свет мелководья может вести или обманывать; HECTON-8 делает красоту частью navigation, не postcard."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft JA localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft JA localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft JA localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft JA localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft JA localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft JA localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft ZH localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft ZH localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft ZH localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft ZH localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft ZH localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft FR localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft FR localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft FR localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft FR localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft FR localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft FR localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft ES localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft ES localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft ES localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft ES localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft ES localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft ES localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft DE localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft DE localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft DE localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft DE localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft DE localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft DE localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft PL localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft PL localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft PL localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft PL localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft PL localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft PL localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft UK localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft UK localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft UK localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft UK localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft UK localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft UK localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft AR localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft AR localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft AR localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft AR localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft AR localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft AR localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft ID localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft ID localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft ID localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft ID localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft ID localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft ID localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft KO localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft KO localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft KO localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft KO localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft KO localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft KO localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft HE localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft HE localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft HE localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft HE localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft HE localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft HE localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft PT localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft PT localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft PT localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft PT localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft PT localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft PT localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Lantern Drift Codex Card",
+          "scanner": "Draft NL localization pending native pass. Lantern drift: useful light. Verify current, charge and residue before following.",
+          "field_note": "Draft NL localization pending native pass. Card teaches that beauty can be route information and route deception.",
+          "terminal": "Draft NL localization pending native pass. SPECIMEN: lantern drift. Storm charge raises false-positive route glow.",
+          "audio": "Draft NL localization pending native pass. Pretty is not safe. Pretty is a reading.",
+          "in_game_wiki": "Draft NL localization pending native pass. Lantern Drift Codex Card links visual wonder with storm-window route pressure.",
+          "external_site": "Draft NL localization pending native pass. The shallow ocean's light can guide or mislead; HECTON-8 makes beauty part of navigation, not a postcard."
+        }
+      }
+    },
+    {
+      "packet_id": "P294_BRINE_VANE_CODEX_CARD",
+      "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+      "article_id": "applied_lore.p294_brine_vane_codex_card",
+      "title_key": "applied_lore.p294_brine_vane_codex_card.title",
+      "unlock": {
+        "primary": "unlock.p294_brine_vane_codex_card",
+        "poi_tags": [
+          "poi.brine_vane_scan",
+          "poi.density_shear_sample",
+          "poi.canyon_flow_marker"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Brine Vane Codex Card",
+          "scanner": "Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "ru_RU": {
+          "title": "Codex card: brine vane",
+          "scanner": "Brine vane: roots in density shear. Следовать aligned edges, не open glow.",
+          "field_note": "Mid-depth codex: красивые vertical structures, которые одновременно navigation logic.",
+          "terminal": "SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Это растение указывает не вверх. Оно указывает сквозь.",
+          "in_game_wiki": "Codex card brine vane превращает mid-depth flora в route-reading evidence.",
+          "external_site": "В brine canyons экология становится картой, потому что только pressure-adapted growth переживает маршрут."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft JA localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft JA localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft JA localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft JA localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft JA localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft JA localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft ZH localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft ZH localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft ZH localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft ZH localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft ZH localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft FR localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft FR localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft FR localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft FR localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft FR localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft FR localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft ES localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft ES localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft ES localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft ES localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft ES localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft ES localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft DE localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft DE localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft DE localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft DE localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft DE localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft DE localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft PL localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft PL localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft PL localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft PL localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft PL localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft PL localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft UK localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft UK localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft UK localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft UK localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft UK localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft UK localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft AR localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft AR localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft AR localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft AR localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft AR localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft AR localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft ID localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft ID localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft ID localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft ID localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft ID localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft ID localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft KO localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft KO localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft KO localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft KO localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft KO localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft KO localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft HE localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft HE localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft HE localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft HE localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft HE localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft HE localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft PT localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft PT localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft PT localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft PT localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft PT localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft PT localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Brine Vane Codex Card",
+          "scanner": "Draft NL localization pending native pass. Brine vane: roots in density shear. Follow aligned edges, not open glow.",
+          "field_note": "Draft NL localization pending native pass. Use as mid-depth codex: beautiful vertical structures that are also navigation logic.",
+          "terminal": "Draft NL localization pending native pass. SPECIMEN: brine vane. Stable shear marker; hull contact not advised.",
+          "audio": "Draft NL localization pending native pass. The plant is not pointing up. It is pointing through.",
+          "in_game_wiki": "Draft NL localization pending native pass. Brine Vane Codex Card turns mid-depth flora into route-reading evidence.",
+          "external_site": "Draft NL localization pending native pass. In the brine canyons, ecology becomes a map because only pressure-adapted growth can survive the route."
+        }
+      }
+    },
+    {
+      "packet_id": "P295_SENSOR_TAGGED_FAUNA_CODEX_CARD",
+      "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+      "article_id": "applied_lore.p295_sensor_tagged_fauna_codex_card",
+      "title_key": "applied_lore.p295_sensor_tagged_fauna_codex_card.title",
+      "unlock": {
+        "primary": "unlock.p295_sensor_tagged_fauna_codex_card",
+        "poi_tags": [
+          "poi.sensor_tagged_fauna_scan",
+          "poi.biometal_tag_growth",
+          "poi.atlas_packet_echo"
+        ],
+        "biome_tags": [
+          "biome.atlas_repair",
+          "biome.fauna"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sensor Tagged Fauna Codex Card",
+          "scanner": "Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "It is not obeying. It is being used.",
+          "in_game_wiki": "Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "ru_RU": {
+          "title": "Codex card: sensor-tagged fauna",
+          "scanner": "Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Не писать как possession. Это damaged maintenance, использующая animal movement.",
+          "terminal": "SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Оно не подчиняется. Его используют.",
+          "in_game_wiki": "Codex card sensor-tagged fauna уточняет Atlas repair ecology без превращения океана в mind.",
+          "external_site": "Ужас Atlas процедурный: он гонит repair через рост, звук и движение, пока живое животное случайно не становится infrastructure."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft JA localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft JA localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft JA localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft JA localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft JA localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft JA localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft ZH localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft ZH localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft ZH localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft ZH localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft ZH localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft FR localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft FR localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft FR localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft FR localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft FR localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft ES localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft ES localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft ES localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft ES localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft ES localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft DE localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft DE localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft DE localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft DE localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft DE localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft PL localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft PL localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft PL localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft PL localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft PL localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft UK localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft UK localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft UK localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft UK localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft UK localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft UK localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft AR localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft AR localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft AR localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft AR localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft AR localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft ID localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft ID localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft ID localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft ID localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft ID localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft KO localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft KO localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft KO localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft KO localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft KO localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft HE localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft HE localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft HE localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft HE localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft HE localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft PT localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft PT localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft PT localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft PT localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft PT localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft PT localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sensor Tagged Fauna Codex Card",
+          "scanner": "Draft NL localization pending native pass. Sensor-tagged fauna: living carrier, old tag, partial Atlas route echo.",
+          "field_note": "Draft NL localization pending native pass. Do not write as possession. It is damaged maintenance using animal movement.",
+          "terminal": "Draft NL localization pending native pass. SPECIMEN: biometal tag growth detected. Animal movement overlaps maintenance route.",
+          "audio": "Draft NL localization pending native pass. It is not obeying. It is being used.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sensor-Tagged Fauna Codex Card clarifies Atlas repair ecology without making the ocean a mind.",
+          "external_site": "Draft NL localization pending native pass. Atlas' horror is procedural: it routes repair through growth, sound and movement until a living animal becomes infrastructure by accident."
+        }
+      }
+    }
+  ]
+}

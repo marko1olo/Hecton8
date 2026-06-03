@@ -1,72 +1,72 @@
 ﻿{
   "schema": "HECTON8_DATA_MONOLITH_PLAYER_PARSER_ABSENCE_CLI_V1",
   "agent": "X_002",
-  "generated": "2026-05-25T09:53:32.1963030Z",
-  "status": "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+  "generated": "2026-06-02T20:16:04.2704619Z",
+  "status": "FAIL_PLAYER_STATIC_CONFIG_PARSER_RESIDUE",
   "proofBoundary": "Standalone CLI source/preprocessor scan. It proves no active release/development player static-config CSV/text parser routes under Assets/_Project/Scripts, except documented user save/profile/mod persistence. It is not a Unity player profiler trace.",
   "modes": {
     "release": {
-      "status": "PASS_RELEASE_PLAYER_PARSER_ABSENCE",
+      "status": "FAIL_RELEASE_PLAYER_PARSER_RESIDUE",
       "developmentBuild": false,
-      "filesScanned": 2411,
-      "productionFilesScanned": 1778,
-      "editorOrTestFilesSkipped": 633,
-      "inactiveLinesSkipped": 92574,
+      "filesScanned": 2514,
+      "productionFilesScanned": 1831,
+      "editorOrTestFilesSkipped": 683,
+      "inactiveLinesSkipped": 106117,
       "missingRoots": 0,
-      "blockingFindingCount": 0,
+      "blockingFindingCount": 1,
       "directFileStreamReadByteCount": 0,
-      "allowedPersistenceFindingCount": 9,
+      "allowedPersistenceFindingCount": 7,
       "blockingByKind": {
+        "csvParserRoute": 1
       },
       "allowedByKind": {
-        "managedTextFileRead": 3,
         "managedTextStreamReader": 2,
-        "managedJsonDeserialize": 4
+        "managedTextFileRead": 2,
+        "managedJsonDeserialize": 3
       },
       "findings": [
+        { "kind": "csvParserRoute", "path": "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs", "line": 1209, "source": "private void WriteRecord(FileStream stream, in QAEnduranceCsvRecord record)" }
       ],
       "allowedPersistenceFindings": [
-        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/Core/RebindingManager.cs", "line": 374, "source": "string json = File.ReadAllText(path);" },
-        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "line": 514, "source": "using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "line": 569, "source": "OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);" },
-        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1059, "source": "string json = File.ReadAllText(path);" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1062, "source": ": JsonUtility.FromJson<GlobalProfileData>(json);" },
-        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs", "line": 313, "source": "using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))" },
-        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 241, "source": "string json = File.ReadAllText(manifestPath);" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 242, "source": "ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs", "line": 296, "source": "payload = JsonUtility.FromJson<ModWorldSavePayload>(json);" }
+        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "line": 820, "source": "using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))" },
+        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1106, "source": "string json = File.ReadAllText(path);" },
+        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1109, "source": ": JsonUtility.FromJson<GlobalProfileData>(json);" },
+        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs", "line": 305, "source": "using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))" },
+        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 324, "source": "string json = File.ReadAllText(manifestPath);" },
+        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 325, "source": "ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);" },
+        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs", "line": 304, "source": "payload = JsonUtility.FromJson<ModWorldSavePayload>(json);" }
       ]
     },
     "development": {
-      "status": "PASS_DEVELOPMENT_PLAYER_PARSER_ABSENCE",
+      "status": "FAIL_DEVELOPMENT_PLAYER_PARSER_RESIDUE",
       "developmentBuild": true,
-      "filesScanned": 2411,
-      "productionFilesScanned": 1778,
-      "editorOrTestFilesSkipped": 633,
-      "inactiveLinesSkipped": 82337,
+      "filesScanned": 2514,
+      "productionFilesScanned": 1831,
+      "editorOrTestFilesSkipped": 683,
+      "inactiveLinesSkipped": 93776,
       "missingRoots": 0,
-      "blockingFindingCount": 0,
+      "blockingFindingCount": 1,
       "directFileStreamReadByteCount": 0,
-      "allowedPersistenceFindingCount": 9,
+      "allowedPersistenceFindingCount": 7,
       "blockingByKind": {
+        "csvParserRoute": 1
       },
       "allowedByKind": {
-        "managedTextFileRead": 3,
         "managedTextStreamReader": 2,
-        "managedJsonDeserialize": 4
+        "managedTextFileRead": 2,
+        "managedJsonDeserialize": 3
       },
       "findings": [
+        { "kind": "csvParserRoute", "path": "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs", "line": 1209, "source": "private void WriteRecord(FileStream stream, in QAEnduranceCsvRecord record)" }
       ],
       "allowedPersistenceFindings": [
-        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/Core/RebindingManager.cs", "line": 374, "source": "string json = File.ReadAllText(path);" },
-        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "line": 514, "source": "using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "line": 569, "source": "OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);" },
-        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1059, "source": "string json = File.ReadAllText(path);" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1062, "source": ": JsonUtility.FromJson<GlobalProfileData>(json);" },
-        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs", "line": 313, "source": "using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))" },
-        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 241, "source": "string json = File.ReadAllText(manifestPath);" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 242, "source": "ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);" },
-        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs", "line": 296, "source": "payload = JsonUtility.FromJson<ModWorldSavePayload>(json);" }
+        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "line": 820, "source": "using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))" },
+        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1106, "source": "string json = File.ReadAllText(path);" },
+        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", "line": 1109, "source": ": JsonUtility.FromJson<GlobalProfileData>(json);" },
+        { "kind": "managedTextStreamReader", "path": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs", "line": 305, "source": "using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))" },
+        { "kind": "managedTextFileRead", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 324, "source": "string json = File.ReadAllText(manifestPath);" },
+        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "line": 325, "source": "ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);" },
+        { "kind": "managedJsonDeserialize", "path": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs", "line": 304, "source": "payload = JsonUtility.FromJson<ModWorldSavePayload>(json);" }
       ]
     }
   }

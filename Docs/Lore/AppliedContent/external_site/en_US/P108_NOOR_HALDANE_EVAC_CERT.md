@@ -1,10 +1,17 @@
 ---
 packet_id: P108_NOOR_HALDANE_EVAC_CERT
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.noor_haldane_evac_cert
+unlock_id: unlock.first_noor_haldane_evac_cert
+poi_tags: poi.evac_cert_hold;poi.quarantine_release_panel
+biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Noor Haldane Evac Cert

@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY",
+    "P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY",
+    "P363_GUIDANCE_TIMING_CORE_ASSEMBLY",
+    "P364_ASCENT_ENERGY_CHARGE_ASSEMBLY",
+    "P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS.packets.json"
+  ]
+}

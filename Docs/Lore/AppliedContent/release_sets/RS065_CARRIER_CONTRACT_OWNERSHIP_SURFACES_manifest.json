@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P321_BLACK_KEEL_CLAIM_POOL_CHARTER",
+    "P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE",
+    "P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL",
+    "P324_SALVAGE_CARRIER_AUTONOMY_LIMITS",
+    "P325_PLAYER_LIEN_CONTRACT_START_CARD"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES.packets.json"
+  ]
+}

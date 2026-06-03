@@ -1,10 +1,17 @@
 ---
 packet_id: P140_DOSSIER_KNOWLEDGE_NOT_POWER
+release_set_id: RS028_REPLAY_CONTRACT_DOSSIER_RULES
 article_id: replay.dossier_knowledge_not_power
+unlock_id: unlock.dossier_knowledge_not_power
+poi_tags: poi.no_power_carryover_notice;poi.route_warning_card
+biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Dossier: знание, а не сила

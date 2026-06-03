@@ -15,8 +15,8 @@ namespace Hecton8.UI.Navigation
         [SerializeField, Tooltip("Runtime that owns vault-backed gyro compass state. Defaults to this object.")]
         private DiegeticGyroCompassRuntime runtime;
 
-        [SerializeField, Tooltip("Adds the runtime to this physical tool when no runtime is assigned.")]
-        private bool createRuntimeIfMissing = true;
+        [SerializeField, Tooltip("Editor/development repair only. Release builds require the runtime component to be authored on the prefab or scene object.")]
+        private bool createRuntimeIfMissing;
 
         [Header("Physical Tool")]
         [SerializeField, Tooltip("Physical hand tool or cockpit instrument root. Defaults to this transform.")]
@@ -90,8 +90,10 @@ namespace Hecton8.UI.Navigation
             if (TryGetComponent(out runtime))
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (createRuntimeIfMissing)
                 runtime = gameObject.AddComponent<DiegeticGyroCompassRuntime>(); // COLD ALLOC: Component[1] - physical compass runtime fallback - owner: DiegeticGyroCompassPhysicalBinding
+#endif
         }
 
         private void InjectDependencies()

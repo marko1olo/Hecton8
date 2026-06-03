@@ -1,10 +1,17 @@
 ---
 packet_id: P137_RISKIER_CONTRACT_SEEDS
+release_set_id: RS028_REPLAY_CONTRACT_DOSSIER_RULES
 article_id: replay.riskier_contract_seeds
+unlock_id: unlock.riskier_contract_seeds
+poi_tags: poi.high_risk_contract_board;poi.storm_window_selector
+biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Более рискованные контрактные seeds

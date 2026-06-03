@@ -21,20 +21,24 @@ namespace Hecton8.Interaction
         private const int MaxQueuedSignals = 256;
         private const int MaxInteractionPacketsPerFrame = 256;
         private const int MaxQueuedSurfaceRequests = 64;
+        private const int MaxEquipmentSocketSlots = VRInteractionKinematicBridgeConstants.SocketCapacity;
+        private const int MaxLateFramePendingSocketPublishes = 8;
+        private const int MaxLateFramePendingSocketClears = 8;
         private const int MaxCompletedSurfaceAgeFrames = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
+        private const int MutationGuardLaneMask = 31;
         private static readonly ulong SignalQueueMutationGuardMask =
-            InteractionMutationGuardBit(BufferID.InteractionSignalQueue);
+            1UL << (unchecked((int)(uint)(int)BufferID.InteractionSignalQueue) & MutationGuardLaneMask);
         private static readonly ulong StagingCommandsMutationGuardMask =
-            InteractionMutationGuardBit(BufferID.InteractionRaycastStagingCommands);
+            1UL << (unchecked((int)(uint)(int)BufferID.InteractionRaycastStagingCommands) & MutationGuardLaneMask);
         private static readonly ulong SurfaceQueryScheduledMutationGuardMask =
-            InteractionMutationGuardBit(BufferID.InteractionRaycastScheduledCommands) |
-            InteractionMutationGuardBit(BufferID.InteractionRaycastScheduledHits);
+            (1UL << (unchecked((int)(uint)(int)BufferID.InteractionRaycastScheduledCommands) & MutationGuardLaneMask)) |
+            (1UL << (unchecked((int)(uint)(int)BufferID.InteractionRaycastScheduledHits) & MutationGuardLaneMask));
         private static readonly ulong SurfaceQueryScheduleMutationGuardMask =
             SurfaceQueryScheduledMutationGuardMask |
-            InteractionMutationGuardBit(BufferID.InteractionRaycastStagingCommands);
+            (1UL << (unchecked((int)(uint)(int)BufferID.InteractionRaycastStagingCommands) & MutationGuardLaneMask));
         private static int _baseModuleLayer = int.MinValue;
         private static int _interactableLayer = int.MinValue;
         private static int _voxelLayer = int.MinValue;
@@ -47,6 +51,10 @@ namespace Hecton8.Interaction
         private readonly ulong[] _stagingRequesterIds = new ulong[MaxQueuedSurfaceRequests];
         // COLD ALLOC: ulong[64] - requester ids paired with the scheduled surface-query lane - owner: EquipmentInteractionHandler
         private readonly ulong[] _scheduledRequesterIds = new ulong[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: InteractionSurfaceQueryDTO[64] - lock-flattened scheduled query snapshot - owner: EquipmentInteractionHandler
+        private readonly InteractionSurfaceQueryDTO[] _scheduledResolveRequests = new InteractionSurfaceQueryDTO[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: InteractionSurfaceHitDTO[64] - lock-flattened completed hit writeback snapshot - owner: EquipmentInteractionHandler
+        private readonly InteractionSurfaceHitDTO[] _scheduledResolveHitDtos = new InteractionSurfaceHitDTO[MaxQueuedSurfaceRequests];
         // COLD ALLOC: ulong[64] - requester ids paired with completed frame-latent surface results - owner: EquipmentInteractionHandler
         private readonly ulong[] _completedRequesterIds = new ulong[MaxQueuedSurfaceRequests];
         // COLD ALLOC: InteractionSurfaceHit[64] - completed frame-latent tool surface results - owner: EquipmentInteractionHandler
@@ -63,6 +71,12 @@ namespace Hecton8.Interaction
         private readonly Vector3[] _queuedPlatformLocalHitNormals = new Vector3[MaxQueuedSignals];
         // COLD ALLOC: bool[256] - platform-local hit validity bits aligned with the vault signal queue - owner: EquipmentInteractionHandler
         private readonly bool[] _queuedHasPlatformLocalHit = new bool[MaxQueuedSignals];
+        // COLD ALLOC: EquipmentMetadata[128] - runtime equipment socket slot ownership, one entry per bridge socket slot - owner: EquipmentInteractionHandler
+        private readonly EquipmentMetadata[] _equipmentSocketSlotOwners = new EquipmentMetadata[MaxEquipmentSocketSlots];
+        // COLD ALLOC: VRInteractionSocketDTO[128] - transient equipment socket publication source copied into DataVault under bridge guard - owner: EquipmentInteractionHandler
+        private readonly VRInteractionSocketDTO[] _equipmentSocketScratch = new VRInteractionSocketDTO[MaxEquipmentSocketSlots];
+        // COLD ALLOC: bool[128] - deferred socket-slot clears when compaction fence blocks unregister writes - owner: EquipmentInteractionHandler
+        private readonly bool[] _pendingEquipmentSocketClears = new bool[MaxEquipmentSocketSlots];
 
         private IDataVault _dataVault;
         private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _voxelSdfReadModel;
@@ -77,6 +91,7 @@ namespace Hecton8.Interaction
         private int _stagedRequestCount;
         private int _scheduledRequestCount;
         private int _completedResultCount;
+        private int _pendingEquipmentSocketClearCount;
         private int _packetAdmissionFrame = -1;
         private int _packetAdmissionCount;
         private int _lastOverflowWarningFrame = -1;
@@ -111,6 +126,7 @@ namespace Hecton8.Interaction
         {
             CacheRegistryDependenciesCold();
             TryRegisterHotSwapListenerCold();
+            FlushPendingEquipmentSocketPublications(MaxEquipmentSocketSlots);
             if (_isInitialized)
             {
                 TryRegisterSignalService();
@@ -170,6 +186,57 @@ namespace Hecton8.Interaction
             {
                 ReleaseInteractionGuard(vault, SignalQueueMutationGuardMask);
             }
+        }
+
+        public bool TryRegisterEquipmentSockets(
+            EquipmentMetadata metadata,
+            Transform equipmentRoot,
+            out int startIndex,
+            out int slotCount)
+        {
+            startIndex = -1;
+            slotCount = 0;
+            if (metadata == null ||
+                equipmentRoot == null ||
+                _dataVault == null ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!TryPrepareEquipmentSocketScratch(metadata, equipmentRoot, out int socketCount))
+                return false;
+
+            if (!TryReserveEquipmentSocketSlots(metadata, socketCount, out startIndex))
+                return false;
+
+            slotCount = socketCount;
+            if (!TryWritePreparedEquipmentSocketRange(startIndex, slotCount, socketCount, out int written) ||
+                written != socketCount)
+            {
+                ReleaseEquipmentSocketSlots(metadata, startIndex, slotCount);
+                ClearOrQueueEquipmentSocketRange(startIndex, slotCount);
+                startIndex = -1;
+                slotCount = 0;
+                return false;
+            }
+
+            RemovePendingEquipmentSocketClearRange(startIndex, slotCount);
+            return true;
+        }
+
+        public void UnregisterEquipmentSockets(EquipmentMetadata metadata, int startIndex, int slotCount)
+        {
+            if (metadata == null ||
+                startIndex < 0 ||
+                slotCount <= 0 ||
+                startIndex + slotCount > MaxEquipmentSocketSlots)
+            {
+                return;
+            }
+
+            ReleaseEquipmentSocketSlots(metadata, startIndex, slotCount);
+            ClearOrQueueEquipmentSocketRange(startIndex, slotCount);
         }
 
         /// <inheritdoc />
@@ -278,6 +345,8 @@ namespace Hecton8.Interaction
                     ref _stagingRequestsHandle,
                     BufferID.InteractionRaycastStagingCommands);
             }
+
+            FlushPendingEquipmentSocketPublications(MaxEquipmentSocketSlots);
         }
 
         private void OnEnable()
@@ -285,6 +354,7 @@ namespace Hecton8.Interaction
             ActiveRuntimeInstance = this;
             CacheRegistryDependenciesCold();
             TryRegisterHotSwapListenerCold();
+            FlushPendingEquipmentSocketPublications(MaxEquipmentSocketSlots);
 
             if (!_isInitialized)
                 return;
@@ -327,6 +397,10 @@ namespace Hecton8.Interaction
             CompleteScheduledSurfaceQueries();
             FlushSignals();
             ScheduleStagedSurfaceQueries();
+            if (EquipmentMetadata.HasPendingRuntimeSocketPublications)
+                FlushPendingEquipmentSocketPublications(MaxLateFramePendingSocketPublishes);
+            if (_pendingEquipmentSocketClearCount > 0)
+                FlushPendingEquipmentSocketClears(MaxLateFramePendingSocketClears);
         }
 
         private void OnDestroy()
@@ -349,11 +423,16 @@ namespace Hecton8.Interaction
             ClearQueuedSignals(createVaultLane: false);
 
             ReleaseInteractionVaultDescriptor(_dataVault, ref _signalQueueHandle);
+            TryClearEquipmentSocketRange(0, MaxEquipmentSocketSlots);
             DisposeSurfaceQueryBuffers();
+            System.Array.Clear(_equipmentSocketSlotOwners, 0, _equipmentSocketSlotOwners.Length);
+            System.Array.Clear(_equipmentSocketScratch, 0, _equipmentSocketScratch.Length);
+            System.Array.Clear(_pendingEquipmentSocketClears, 0, _pendingEquipmentSocketClears.Length);
             _scheduledSurfaceQueryActive = false;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
             _completedResultCount = 0;
+            _pendingEquipmentSocketClearCount = 0;
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -993,7 +1072,7 @@ namespace Hecton8.Interaction
             }
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 _scheduledRequestCount = 0;
                 _scheduledSurfaceQueryActive = false;
@@ -1001,6 +1080,7 @@ namespace Hecton8.Interaction
             }
 
             bool mutationGuardAcquired = false;
+            int scheduledCount = 0;
             try
             {
                 if (!vault.TryAcquireMutationGuard(SurfaceQueryScheduledMutationGuardMask))
@@ -1011,6 +1091,14 @@ namespace Hecton8.Interaction
                 }
 
                 mutationGuardAcquired = true;
+                if (vault.IsCompactionFenceActive)
+                {
+                    _scheduledRequestCount = 0;
+                    _scheduledSurfaceQueryActive = false;
+                    return;
+                }
+
+                scheduledCount = math.min(_scheduledRequestCount, MaxQueuedSurfaceRequests);
                 if (!TryOpenExistingInteractionVaultBuffer(
                         vault,
                         ref _scheduledRequestsHandle,
@@ -1029,23 +1117,17 @@ namespace Hecton8.Interaction
                     return;
                 }
 
-                _completedResultCount = _scheduledRequestCount;
-
-                int completionFrame = ResolveSimulationFrameIndex();
-                for (int i = 0; i < _scheduledRequestCount; i++)
+                for (int i = 0; i < scheduledCount; i++)
                 {
-                    InteractionSurfaceQueryDTO request = scheduledRequests[i];
-                    bool hasAuthoritativeHit = TryResolveKinematicSurfaceHit(in request, out InteractionSurfaceHit candidate);
-                    scheduledHits[i] = hasAuthoritativeHit ? candidate.Dto : default;
+                    _scheduledResolveRequests[i] = scheduledRequests[i];
                     _completedRequesterIds[i] = _scheduledRequesterIds[i];
-                    _completedHasHit[i] = hasAuthoritativeHit;
-                    _completedHits[i] = _completedHasHit[i] ? candidate : default;
-                    _completedHitFrames[i] = completionFrame;
                     _scheduledRequesterIds[i] = 0UL;
                 }
 
-                for (int i = _scheduledRequestCount; i < MaxQueuedSurfaceRequests; i++)
+                for (int i = scheduledCount; i < MaxQueuedSurfaceRequests; i++)
                 {
+                    _scheduledResolveRequests[i] = default;
+                    _scheduledResolveHitDtos[i] = default;
                     _completedRequesterIds[i] = 0UL;
                     _completedHasHit[i] = false;
                     _completedHits[i] = default;
@@ -1064,6 +1146,53 @@ namespace Hecton8.Interaction
                 if (mutationGuardAcquired)
                     vault.ReleaseMutationGuard(SurfaceQueryScheduledMutationGuardMask);
             }
+
+            _completedResultCount = scheduledCount;
+
+            int completionFrame = ResolveSimulationFrameIndex();
+            for (int i = 0; i < scheduledCount; i++)
+            {
+                InteractionSurfaceQueryDTO request = _scheduledResolveRequests[i];
+                bool hasAuthoritativeHit = TryResolveKinematicSurfaceHit(in request, out InteractionSurfaceHit candidate);
+                _scheduledResolveHitDtos[i] = hasAuthoritativeHit ? candidate.Dto : default;
+                _completedHasHit[i] = hasAuthoritativeHit;
+                _completedHits[i] = hasAuthoritativeHit ? candidate : default;
+                _completedHitFrames[i] = completionFrame;
+                _scheduledResolveRequests[i] = default;
+            }
+
+            mutationGuardAcquired = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireMutationGuard(SurfaceQueryScheduledMutationGuardMask))
+                    return;
+
+                mutationGuardAcquired = true;
+                if (vault.IsCompactionFenceActive)
+                    return;
+
+                if (!TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _scheduledHitsHandle,
+                        BufferID.InteractionRaycastScheduledHits,
+                        MaxQueuedSurfaceRequests,
+                        out NativeArray<InteractionSurfaceHitDTO> scheduledHits))
+                {
+                    return;
+                }
+
+                int writeCount = math.min(scheduledCount, scheduledHits.Length);
+                for (int i = 0; i < writeCount; i++)
+                    scheduledHits[i] = _scheduledResolveHitDtos[i];
+                for (int i = writeCount; i < scheduledHits.Length; i++)
+                    scheduledHits[i] = default;
+            }
+            finally
+            {
+                if (mutationGuardAcquired)
+                    vault.ReleaseMutationGuard(SurfaceQueryScheduledMutationGuardMask);
+            }
         }
 
         private void ScheduleStagedSurfaceQueries()
@@ -1075,7 +1204,7 @@ namespace Hecton8.Interaction
                 return;
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
             bool mutationGuardAcquired = false;
@@ -1086,6 +1215,9 @@ namespace Hecton8.Interaction
                     return;
 
                 mutationGuardAcquired = true;
+                if (vault.IsCompactionFenceActive)
+                    return;
+
                 if (!TryOpenExistingInteractionVaultBuffer(
                         vault,
                         ref _stagingRequestsHandle,
@@ -1142,6 +1274,288 @@ namespace Hecton8.Interaction
             _dataVault = null;
         }
 
+        private bool TryReserveEquipmentSocketSlots(EquipmentMetadata metadata, int slotCount, out int startIndex)
+        {
+            startIndex = -1;
+            if (metadata == null || slotCount <= 0 || slotCount > MaxEquipmentSocketSlots)
+                return false;
+
+            int lastStart = MaxEquipmentSocketSlots - slotCount;
+            for (int candidate = 0; candidate <= lastStart; candidate++)
+            {
+                bool free = true;
+                for (int offset = 0; offset < slotCount; offset++)
+                {
+                    EquipmentMetadata owner = _equipmentSocketSlotOwners[candidate + offset];
+                    if (owner != null && !ReferenceEquals(owner, metadata))
+                    {
+                        free = false;
+                        candidate += offset;
+                        break;
+                    }
+                }
+
+                if (!free)
+                    continue;
+
+                for (int offset = 0; offset < slotCount; offset++)
+                    _equipmentSocketSlotOwners[candidate + offset] = metadata;
+
+                startIndex = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ReleaseEquipmentSocketSlots(EquipmentMetadata metadata, int startIndex, int slotCount)
+        {
+            if (metadata == null ||
+                startIndex < 0 ||
+                slotCount <= 0 ||
+                startIndex + slotCount > MaxEquipmentSocketSlots)
+            {
+                return;
+            }
+
+            for (int i = 0; i < slotCount; i++)
+            {
+                int index = startIndex + i;
+                if (ReferenceEquals(_equipmentSocketSlotOwners[index], metadata))
+                    _equipmentSocketSlotOwners[index] = null;
+            }
+        }
+
+        private bool TryPrepareEquipmentSocketScratch(EquipmentMetadata metadata, Transform equipmentRoot, out int socketCount)
+        {
+            socketCount = 0;
+            if (metadata == null ||
+                equipmentRoot == null ||
+                _dataVault == null ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            Vector3 rootPosition = equipmentRoot.position;
+            if (!IsFinite(rootPosition))
+                return false;
+
+            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootPosition);
+            if (!math.all(math.isfinite(rootAup)))
+                return false;
+
+            float4x4 localToWorldMatrix = ToFloat4x4(equipmentRoot.localToWorldMatrix);
+            float3 rootRuntimePosition = new float3(rootPosition.x, rootPosition.y, rootPosition.z);
+            socketCount = metadata.CopyAnchorsToSockets(
+                _equipmentSocketScratch,
+                0,
+                rootAup,
+                rootRuntimePosition,
+                localToWorldMatrix);
+            return socketCount > 0 && socketCount <= MaxEquipmentSocketSlots;
+        }
+
+        private static float4x4 ToFloat4x4(Matrix4x4 matrix)
+        {
+            return new float4x4(
+                new float4(matrix.m00, matrix.m10, matrix.m20, matrix.m30),
+                new float4(matrix.m01, matrix.m11, matrix.m21, matrix.m31),
+                new float4(matrix.m02, matrix.m12, matrix.m22, matrix.m32),
+                new float4(matrix.m03, matrix.m13, matrix.m23, matrix.m33));
+        }
+
+        private bool TryWritePreparedEquipmentSocketRange(int startIndex, int slotCount, int socketCount, out int written)
+        {
+            written = 0;
+            if (_dataVault == null ||
+                _dataVault.IsCompactionFenceActive ||
+                startIndex < 0 ||
+                slotCount <= 0 ||
+                socketCount < 0 ||
+                socketCount > slotCount ||
+                startIndex + slotCount > MaxEquipmentSocketSlots)
+            {
+                return false;
+            }
+
+            return VRInteractionKinematicBridgeVault.TryReplaceSocketRange(
+                _dataVault,
+                _equipmentSocketScratch,
+                socketCount,
+                startIndex,
+                slotCount,
+                out written);
+        }
+
+        private bool TryClearEquipmentSocketRange(int startIndex, int slotCount)
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                startIndex < 0 ||
+                slotCount <= 0 ||
+                startIndex + slotCount > MaxEquipmentSocketSlots)
+            {
+                return false;
+            }
+
+            return VRInteractionKinematicBridgeVault.TryReplaceSocketRange(
+                vault,
+                (VRInteractionSocketDTO[])null,
+                0,
+                startIndex,
+                slotCount,
+                out int written) &&
+                written == 0;
+        }
+
+        private void ClearOrQueueEquipmentSocketRange(int startIndex, int slotCount)
+        {
+            if (TryClearEquipmentSocketRange(startIndex, slotCount))
+            {
+                RemovePendingEquipmentSocketClearRange(startIndex, slotCount);
+                return;
+            }
+
+            QueuePendingEquipmentSocketClearRange(startIndex, slotCount);
+        }
+
+        private void QueuePendingEquipmentSocketClearRange(int startIndex, int slotCount)
+        {
+            if (startIndex < 0 ||
+                slotCount <= 0 ||
+                startIndex + slotCount > MaxEquipmentSocketSlots)
+            {
+                return;
+            }
+
+            for (int offset = 0; offset < slotCount; offset++)
+            {
+                int index = startIndex + offset;
+                if (_pendingEquipmentSocketClears[index])
+                    continue;
+
+                _pendingEquipmentSocketClears[index] = true;
+                _pendingEquipmentSocketClearCount++;
+            }
+        }
+
+        private void RemovePendingEquipmentSocketClearRange(int startIndex, int slotCount)
+        {
+            if (startIndex < 0 ||
+                slotCount <= 0 ||
+                startIndex + slotCount > MaxEquipmentSocketSlots ||
+                _pendingEquipmentSocketClearCount <= 0)
+            {
+                return;
+            }
+
+            for (int offset = 0; offset < slotCount; offset++)
+            {
+                int index = startIndex + offset;
+                if (!_pendingEquipmentSocketClears[index])
+                    continue;
+
+                _pendingEquipmentSocketClears[index] = false;
+                _pendingEquipmentSocketClearCount--;
+            }
+        }
+
+        private void FlushPendingEquipmentSocketClears(int maxRanges)
+        {
+            if (maxRanges <= 0 ||
+                _pendingEquipmentSocketClearCount <= 0 ||
+                _dataVault == null ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return;
+            }
+
+            int index = 0;
+            int rangesCleared = 0;
+            while (index < MaxEquipmentSocketSlots &&
+                   _pendingEquipmentSocketClearCount > 0 &&
+                   rangesCleared < maxRanges)
+            {
+                if (!_pendingEquipmentSocketClears[index])
+                {
+                    index++;
+                    continue;
+                }
+
+                if (_equipmentSocketSlotOwners[index] != null)
+                {
+                    RemovePendingEquipmentSocketClearRange(index, 1);
+                    index++;
+                    continue;
+                }
+
+                int startIndex = index;
+                int slotCount = 1;
+                while (startIndex + slotCount < MaxEquipmentSocketSlots &&
+                       _pendingEquipmentSocketClears[startIndex + slotCount] &&
+                       _equipmentSocketSlotOwners[startIndex + slotCount] == null)
+                {
+                    slotCount++;
+                }
+
+                if (!TryClearEquipmentSocketRange(startIndex, slotCount))
+                    return;
+
+                RemovePendingEquipmentSocketClearRange(startIndex, slotCount);
+                rangesCleared++;
+                index = startIndex + slotCount;
+            }
+        }
+
+        private void RepublishOwnedEquipmentSocketsCold()
+        {
+            if (_dataVault == null || _dataVault.IsCompactionFenceActive)
+                return;
+
+            int index = 0;
+            while (index < MaxEquipmentSocketSlots)
+            {
+                EquipmentMetadata metadata = _equipmentSocketSlotOwners[index];
+                if (metadata == null)
+                {
+                    index++;
+                    continue;
+                }
+
+                int startIndex = index;
+                int slotCount = 1;
+                while (startIndex + slotCount < MaxEquipmentSocketSlots &&
+                       ReferenceEquals(_equipmentSocketSlotOwners[startIndex + slotCount], metadata))
+                {
+                    slotCount++;
+                }
+
+                if (metadata.isActiveAndEnabled &&
+                    TryPrepareEquipmentSocketScratch(metadata, metadata.transform, out int socketCount))
+                {
+                    if (TryWritePreparedEquipmentSocketRange(startIndex, slotCount, socketCount, out _))
+                        RemovePendingEquipmentSocketClearRange(startIndex, slotCount);
+                }
+
+                index = startIndex + slotCount;
+            }
+        }
+
+        private void FlushPendingEquipmentSocketPublications(int maxAttempts)
+        {
+            if (!Application.isPlaying ||
+                maxAttempts <= 0 ||
+                _dataVault == null ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return;
+            }
+
+            EquipmentMetadata.FlushPendingRuntimeSocketPublications(this, maxAttempts);
+        }
+
         private void CacheRegistryDependenciesCold()
         {
             RebindDataVaultCold(GlobalRegistry.DataVault);
@@ -1162,12 +1576,16 @@ namespace Hecton8.Interaction
             _scheduledSurfaceQueryActive = false;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
+            System.Array.Clear(_pendingEquipmentSocketClears, 0, _pendingEquipmentSocketClears.Length);
+            _pendingEquipmentSocketClearCount = 0;
 
             if (_dataVault == null)
                 return;
 
             EnsureSignalQueueHandle(createIfMissing: true);
             EnsureSurfaceQueryBufferHandles(createIfMissing: true);
+            RepublishOwnedEquipmentSocketsCold();
+            FlushPendingEquipmentSocketPublications(MaxEquipmentSocketSlots);
         }
 
         private void TryRegisterHotSwapListenerCold()
@@ -1368,7 +1786,7 @@ namespace Hecton8.Interaction
                 return true;
 
             buffer = default;
-            if (vault == null || requiredLength <= 0 || !createIfMissing)
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0 || !createIfMissing)
                 return false;
 
             if (vault.IsAllocationLocked)
@@ -1397,6 +1815,7 @@ namespace Hecton8.Interaction
         {
             buffer = default;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsGameplayToolsVaultHandle(in handle, bufferId) ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
@@ -1418,14 +1837,12 @@ namespace Hecton8.Interaction
                    handle.Generation != 0u;
         }
 
-        private static ulong InteractionMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
-        }
-
         private static bool TryAcquireInteractionGuard(IDataVault vault, ulong guardMask)
         {
-            return vault != null && guardMask != 0UL && vault.TryAcquireMutationGuard(guardMask);
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   guardMask != 0UL &&
+                   vault.TryAcquireMutationGuard(guardMask);
         }
 
         private static void ReleaseInteractionGuard(IDataVault vault, ulong guardMask)
@@ -1442,7 +1859,7 @@ namespace Hecton8.Interaction
             if (vault == null || !IsGameplayToolsVaultHandle(in handle, bufferId))
                 return;
 
-            ulong guardMask = InteractionMutationGuardBit(bufferId);
+            ulong guardMask = 1UL << (unchecked((int)(uint)(int)bufferId) & MutationGuardLaneMask);
             if (!TryAcquireInteractionGuard(vault, guardMask))
                 return;
 

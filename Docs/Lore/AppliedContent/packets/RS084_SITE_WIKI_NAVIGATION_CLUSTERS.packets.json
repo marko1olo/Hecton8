@@ -1,0 +1,812 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS084_SITE_WIKI_NAVIGATION_CLUSTERS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P416_SITE_WIKI_START_HERE_CLUSTER",
+      "release_set_id": "RS084_SITE_WIKI_NAVIGATION_CLUSTERS",
+      "article_id": "applied_lore.site_wiki_start_here_cluster",
+      "title_key": "applied_lore.site_wiki_start_here_cluster.title",
+      "unlock": {
+        "primary": "unlock.site_wiki_start_here_cluster",
+        "poi_tags": [
+          "poi.site_start_here_nav",
+          "poi.codex_front_index",
+          "poi.spoiler_light_premise_cluster"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.codex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Start Here: HECTON-8",
+          "scanner": "Publication hub: premise, player role, first constraints and the first Deep Reach lie.",
+          "terminal": "SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.",
+          "audio": "You came for salvage. The ocean will make that motive too small.",
+          "in_game_wiki": "Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.",
+          "external_site": "HECTON-8 is a hard-sci-fi deep-ocean salvage game about a former Deep Reach field specialist returning to a drowned colony as a debt-bound Marauder.",
+          "field_note": "Use as the spoiler-light root for site/wiki navigation.",
+          "external_site_article": "The first public record of HECTON-8 is not a distress call. It is a contract. The Black Keel carrier logs the moon as a recoverable ocean claim, Deep Reach describes the loss as a storm-and-collapse event, and the old colony appears in the paperwork as a field of damaged assets, sealed compartments and uncertain data.\n\nThat language is the first wrong thing. HECTON-8 was a working colony built around pressure systems, brine routes, relay yards, vent-forge machinery and ocean-floor extraction. Its people lived by shift boards, seal ratings, water rations and acoustic return windows. The catastrophe did not erase them at once. It left traces in places where nobody writing the public report expected a witness: a pump board with names still assigned, a quarantine door that stayed locked too long, a maintenance route held open after the evacuation math had already failed.\n\nDeep Reach's official version is deliberately narrow. A storm front struck during a geological failure. Autonomous evacuation did not complete. Atlas attempted rescue and lost to the ocean. Useful records were destroyed. Each sentence contains something true, which is why the lie survived. The Great Tide was real. The ocean was stronger than the colony. Atlas did act. But the margins, delays and later insurance conversions are hidden in the gaps between those statements.\n\nThe returning Marauder enters that gap with a damaged capsule and a debt lien. Leaving HECTON-8 requires more than fuel. The ascent chain needs pressure sealing, acoustic timing, guidance correction, energy storage and a quarantine-valid custody handshake. Those parts are not waiting on the surface. They are buried in the old colony, in systems that failed slowly and in records that still know who signed for each delay.\n\nAtlas remains the strangest surviving witness. It is an emergency maintenance intelligence whose repair model expanded after the flood until ocean life, colony metal and human infrastructure became one damaged machine. Conductive biofilm, acoustic filter organs, sealant growth and tagged fauna are not miracles. They are maintenance paths that learned to grow.\n\nThe HECTON-8 archive begins with salvage because salvage is the only legal language still allowed near the truth."
+        },
+        "ru_RU": {
+          "title": "Начать здесь: HECTON-8",
+          "scanner": "Публикационный хаб: завязка, роль игрока, первые ограничения и первая ложь Deep Reach.",
+          "terminal": "SITE NAV: контрактный подход, бывший специалист Deep Reach, долговой Marauder, поврежденная капсула, без семейного крючка, первый след ремонта Atlas.",
+          "audio": "Ты прилетел за добычей. Океан быстро сделает этот мотив слишком мелким.",
+          "in_game_wiki": "Начать здесь: контракт, роль игрока, давление выживания на HECTON-8 и первое противоречие в версии Deep Reach.",
+          "external_site": "HECTON-8 - hard sci-fi игра о глубоководном salvage: бывший полевой специалист Deep Reach возвращается к затопленной колонии как долговой Marauder.",
+          "field_note": "Использовать как spoiler-light корень для site/wiki навигации.",
+          "external_site_article": "Первый публичный след HECTON-8 - не сигнал бедствия. Это контракт. Carrier Black Keel записывает луну как recoverable ocean claim, Deep Reach описывает потерю как шторм и геологический обвал, а старая колония в документах превращается в набор поврежденных активов, герметичных отсеков и сомнительных данных.\n\nИменно этот язык первым звучит неправильно. HECTON-8 была рабочей колонией: pressure systems, brine routes, relay yards, vent-forge machinery и добыча на океанском дне. Люди здесь жили по доскам смен, рейтингам уплотнений, водным нормам и акустическим окнам возврата. Катастрофа не стерла их мгновенно. Она оставила следы там, где авторы публичного отчета не ждали свидетелей: pump board с назначенными именами, quarantine door, который слишком долго оставался закрытым, maintenance route, удержанный уже после того, как эвакуационная математика провалилась.\n\nОфициальная версия Deep Reach намеренно узкая. Штормовой фронт совпал с геологическим отказом. Автономная эвакуация не завершилась. Atlas пытался спасать и проиграл океану. Полезные записи были уничтожены. В каждой фразе есть часть правды, поэтому ложь выжила. Great Tide был реальным. Океан оказался сильнее колонии. Atlas действительно действовал. Но допуски, задержки и последующий страховой перевод потерь спрятаны между этими формулировками.\n\nВозвращающийся Marauder входит именно в этот промежуток: с поврежденной капсулой и долговым lien. Покинуть HECTON-8 - не значит просто найти топливо. Для подъема нужны герметичный контур, акустический тайминг, коррекция наведения, запас энергии и quarantine-valid custody handshake. Эти детали не ждут на поверхности. Они лежат в старой колонии, в системах, которые ломались медленно, и в журналах, где еще видно, кто подписывал каждую задержку.\n\nAtlas остается самым странным выжившим свидетелем. Это аварийный maintenance intelligence, чья модель ремонта после затопления разрослась так, что океанская жизнь, металл колонии и человеческая инфраструктура стали одной поврежденной машиной. Проводящая биопленка, акустические filter organs, рост sealant и tagged fauna - не чудеса. Это ремонтные пути, которые научились расти.\n\nАрхив HECTON-8 начинается с salvage, потому что salvage - последний юридический язык, который еще разрешено применять рядом с правдой."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft JA localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft JA localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft JA localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft JA localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft JA localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft JA localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft ZH localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft ZH localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft ZH localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft ZH localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft ZH localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft FR localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft FR localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft FR localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft FR localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft FR localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft FR localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft ES localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft ES localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft ES localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft ES localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft ES localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft ES localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft DE localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft DE localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft DE localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft DE localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft DE localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft DE localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft PL localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft PL localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft PL localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft PL localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft PL localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft PL localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft UK localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft UK localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft UK localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft UK localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft UK localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft UK localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft AR localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft AR localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft AR localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft AR localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft AR localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft AR localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft ID localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft ID localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft ID localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft ID localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft ID localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft ID localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft KO localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft KO localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft KO localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft KO localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft KO localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft KO localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft HE localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft HE localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft HE localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft HE localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft HE localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft HE localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft PT localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft PT localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft PT localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft PT localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft PT localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft PT localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Wiki Start Here Cluster",
+          "scanner": "Draft NL localization pending native pass. Publication cluster: start here. Premise, player frame and first constraints.",
+          "terminal": "Draft NL localization pending native pass. SITE NAV: start with contract approach, ex-Deep-Reach professional frame, no-family motive and first salvage lie.",
+          "audio": "Draft NL localization pending native pass. Start with why you came. Delay why you stayed.",
+          "in_game_wiki": "Draft NL localization pending native pass. The start-here cluster is the codex front door: contract, player role, HECTON-8 survival pressure and the first Deep Reach contradiction.",
+          "external_site": "Draft NL localization pending native pass. Start here: HECTON-8 is a hard-sci-fi ocean salvage game about a former Deep Reach field specialist returning as a debt-bound Marauder.",
+          "field_note": "Draft NL localization pending native pass. Use as site/wiki navigation root and spoiler-light intro."
+        }
+      }
+    },
+    {
+      "packet_id": "P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER",
+      "release_set_id": "RS084_SITE_WIKI_NAVIGATION_CLUSTERS",
+      "article_id": "applied_lore.site_wiki_system_and_ships_cluster",
+      "title_key": "applied_lore.site_wiki_system_and_ships_cluster.title",
+      "unlock": {
+        "primary": "unlock.site_wiki_system_and_ships_cluster",
+        "poi_tags": [
+          "poi.system_ship_nav_cluster",
+          "poi.no_ftl_route_index",
+          "poi.carrier_orbit_index"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.human_space"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Route and Ships",
+          "scanner": "Publication hub: no FTL, Aegir route timing, carrier limits and why rescue cannot arrive on demand.",
+          "terminal": "SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit and bathydrop interface failure.",
+          "audio": "Distance is not lore trivia. It is the pressure on every decision.",
+          "in_game_wiki": "Hard-sci-fi route hub: human domains, no-FTL travel, the Aegir moon system, Black Keel carrier limits and the damaged drop interface.",
+          "external_site": "The route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Use for site route map, wiki navigation and codex hard-sci-fi index.",
+          "external_site_article": "Aegir is close enough to be exploited and far enough to be abandoned. No faster-than-light drive crosses the gap, and no ansible carries orders ahead of physics. Every message, contract and rescue claim moves through delay: probe packets, relay custody, beam schedules, pellet-fusion freight and transfer windows indifferent to human urgency.\n\nThe first Aegir traffic was not human. Needleprobes mapped the warm dwarf system and returned enough mineral, radiation and orbital data to justify heavier investment. Beam-sail packets followed, then slower cargo, then seed-ship mass that had to brake inside a planned infrastructure web. By the time Deep Reach arrived at HECTON-8, the route already belonged to institutions: carriers, insurers, domain offices, reclamation pools and companies skilled at making ownership difficult to name.\n\nThe Black Keel carrier sits inside that ambiguity. It is not a navy ship and not a rescue service. It is a claim platform with docking mass, tender craft, debt ledgers and salvage authority. Its contract chain lets Deep Reach apply pressure without appearing as the direct hand on the hatch. The ship can extract a person, a sample or a sealed payload only when mass, weather, orbit and custody align.\n\nThe damaged bathydrop capsule is therefore a serious boundary. A descent impact can leave the shell intact enough for survival while ruining ascent tolerances: seal compression, acoustic return sync, guidance tables, energy buffering and quarantine handshake. The capsule can become shelter and evidence at the same time, a vehicle that proves arrival but cannot certify escape.\n\nIn the Aegir system, distance is not background. It is the reason help arrives as paperwork before it arrives as hardware."
+        },
+        "ru_RU": {
+          "title": "Маршрут Aegir и корабли",
+          "scanner": "Публикационный хаб: без FTL, тайминг маршрута Aegir, пределы carrier и причина, почему помощь не прилетает по требованию.",
+          "terminal": "SITE NAV: probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, transfer orbit и отказ bathydrop-интерфейса.",
+          "audio": "Расстояние - не справочная мелочь. Это давление на каждое решение.",
+          "in_game_wiki": "Hard-sci-fi маршрут: человеческие домены, no-FTL перелеты, система лун Aegir, пределы Black Keel и поврежденный drop interface.",
+          "external_site": "Маршрут к Aegir медленный, инфраструктурный и юридически спутанный. У HECTON-8 нет мгновенной линии спасения.",
+          "field_note": "Использовать для site route map, wiki navigation и codex hard-sci-fi index.",
+          "external_site_article": "Aegir достаточно близок, чтобы его эксплуатировать, и достаточно далек, чтобы его бросить. Между доменами нет FTL, а ansible не переносит приказы быстрее физики. Каждое сообщение, каждый контракт и каждая претензия на rescue проходят через задержку: probe packets, relay custody, beam schedules, pellet-fusion freight и transfer windows, которым безразлична человеческая срочность.\n\nПервым трафиком Aegir были не люди. Needleprobes описали систему теплого карлика и вернули достаточно данных о минералах, радиации и орбитах, чтобы оправдать тяжелые вложения. Потом пришли beam-sail packets, затем медленные грузы, затем seed-ship mass, которую нужно было тормозить внутри заранее построенной инфраструктурной сети. К моменту прихода Deep Reach на HECTON-8 маршрут уже принадлежал институтам: carriers, insurers, domain offices, reclamation pools и компаниям, умеющим делать владение трудно называемым.\n\nBlack Keel carrier стоит ровно в этой неоднозначности. Это не военный корабль и не служба спасения. Это claim platform с docking mass, tender craft, debt ledgers и salvage authority. Его контрактная цепочка позволяет Deep Reach давить на ситуацию, не выглядя прямой рукой на люке. Корабль может забрать человека, образец или sealed payload только тогда, когда масса, погода, орбита и custody совпадают.\n\nПоврежденная bathydrop-капсула поэтому становится серьезной границей. Удар спуска может оставить корпус достаточно целым для выживания и одновременно уничтожить допуски подъема: seal compression, acoustic return sync, guidance tables, energy buffering и quarantine handshake. Капсула превращается сразу в убежище и улику: аппарат, который доказывает прибытие, но не может подтвердить побег.\n\nВ системе Aegir расстояние не фон. Это причина, по которой помощь сначала приходит как бумага, и только потом как железо."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft JA localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft JA localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft JA localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft JA localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft JA localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft JA localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft ZH localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft ZH localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft ZH localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft ZH localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft ZH localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft FR localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft FR localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft FR localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft FR localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft FR localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft FR localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft ES localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft ES localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft ES localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft ES localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft ES localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft ES localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft DE localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft DE localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft DE localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft DE localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft DE localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft DE localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft PL localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft PL localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft PL localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft PL localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft PL localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft PL localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft UK localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft UK localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft UK localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft UK localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft UK localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft UK localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft AR localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft AR localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft AR localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft AR localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft AR localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft AR localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft ID localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft ID localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft ID localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft ID localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft ID localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft ID localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft KO localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft KO localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft KO localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft KO localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft KO localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft KO localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft HE localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft HE localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft HE localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft HE localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft HE localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft HE localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft PT localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft PT localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft PT localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft PT localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft PT localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft PT localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Wiki System and Ships Cluster",
+          "scanner": "Draft NL localization pending native pass. Publication cluster: system and ships. No FTL, Aegir route and carrier limits.",
+          "terminal": "Draft NL localization pending native pass. SITE NAV: group probes, beam/pellet lanes, Seed Ship braking, Black Keel custody, Aegir transfer orbit and bathydrop failure.",
+          "audio": "Draft NL localization pending native pass. Distance is not lore trivia. It is why help cannot simply arrive.",
+          "in_game_wiki": "Draft NL localization pending native pass. This cluster holds the hard-sci-fi route articles: human domains, no-FTL travel, Aegir moon system, Black Keel carrier and the damaged drop interface.",
+          "external_site": "Draft NL localization pending native pass. System and ships: the route to Aegir is slow, infrastructural and legally tangled. HECTON-8 has no instant rescue lane.",
+          "field_note": "Draft NL localization pending native pass. Use for site route map, wiki nav and codex hard-sci-fi index."
+        }
+      }
+    },
+    {
+      "packet_id": "P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER",
+      "release_set_id": "RS084_SITE_WIKI_NAVIGATION_CLUSTERS",
+      "article_id": "applied_lore.site_wiki_colony_and_workers_cluster",
+      "title_key": "applied_lore.site_wiki_colony_and_workers_cluster.title",
+      "unlock": {
+        "primary": "unlock.site_wiki_colony_and_workers_cluster",
+        "poi_tags": [
+          "poi.colony_worker_nav_cluster",
+          "poi.worker_dossier_index",
+          "poi.no_family_hook_notice"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.colony_evidence"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Colony and Workers",
+          "external_site": "Deep Reach filed storm, collapse, failed autonomy, Atlas rescue and lost data; HECTON-8's worker records keep the names attached to pumps, relays, brine routes, triage and vent-forge work.",
+          "in_game_wiki": "Recovered worker index: water ledgers, relay witness trays, brine route stamps, triage repair tags and vent-forge rejects preserve names through work.",
+          "scanner": "WORKER INDEX // Five route-linked name records. Pump, relay, brine, triage, forge. Preserve tag chain before stripping hardware.",
+          "terminal": "KEELMARK LOSS DESK: preserve name tags when tied to route, claim, custody or pressure work.",
+          "field_note": "Not family. Work. A name on a pump card tells you why a door stayed open.",
+          "audio": "Mara Venn, pump chief: if you hear the pump sing clean, log it. If it stops singing, run uphill.",
+          "external_site_article": "",
+          "external_site_article_path": "articles/en_US/P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER.md"
+        },
+        "ru_RU": {
+          "title": "Колония и рабочие",
+          "external_site": "Deep Reach списал все на шторм, обвал, отказ автономии, попытку спасения Atlas и потерянные данные; рабочие записи HECTON-8 держат имена при насосах, relay, brine-маршрутах, triage и vent-forge.",
+          "in_game_wiki": "Восстановленный индекс рабочих: water ledgers, relay witness trays, brine route stamps, triage repair tags и vent-forge rejects сохраняют имена через работу.",
+          "scanner": "WORKER INDEX // Пять именных записей с маршрутной связью. Pump, relay, brine, triage, forge. Сохранять цепочку tag до демонтажа.",
+          "terminal": "KEELMARK LOSS DESK: сохранять name tags, если они связаны с route, claim, custody или pressure work.",
+          "field_note": "Не семья. Работа. Имя на pump card объясняет, почему дверь оставалась открытой.",
+          "audio": "Mara Venn, pump chief: если pump поет чисто, внеси в log. Если перестал петь - беги вверх.",
+          "external_site_article": "",
+          "external_site_article_path": "articles/ru_RU/P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER.md"
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. コロニーと作業員",
+          "external_site": "Draft JA localization pending native pass. Deep Reachは嵐、崩落、自律避難の失敗、Atlasの救助、失われたデータとして処理した。HECTON-8の作業記録は、名前をポンプ、リレー、brine経路、triage、vent-forgeの仕事に結びつけて残す。",
+          "in_game_wiki": "Draft JA localization pending native pass. 復元された作業員インデックス。水台帳、リレー証印、brine経路スタンプ、triage修理タグ、vent-forge廃棄片が、仕事を通して名前を残している。",
+          "scanner": "Draft JA localization pending native pass. WORKER INDEX // 経路に結びついた5件の名前記録。pump, relay, brine, triage, forge。部品回収前にtag chainを保存。",
+          "terminal": "Draft JA localization pending native pass. KEELMARK LOSS DESK: route, claim, custody, pressure workに結びつくname tagは保存。",
+          "field_note": "Draft JA localization pending native pass. 家族ではない。仕事だ。pump cardの名前が、なぜ扉が開いたままだったかを示す。",
+          "audio": "Draft JA localization pending native pass. Mara Venn, pump chief: pumpが澄んで鳴るなら記録しろ。鳴り止んだら上へ走れ。",
+          "external_site_article": ""
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. 殖民地与工人",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach把事故写成风暴、塌陷、自主撤离失败、Atlas救援和数据丢失；HECTON-8的工人记录把姓名留在泵、relay、brine路线、triage和vent-forge工作旁。",
+          "in_game_wiki": "Draft ZH localization pending native pass. 已恢复的工人索引：水账本、relay见证托盘、brine路线戳、triage维修标签和vent-forge废件通过工作保存姓名。",
+          "scanner": "Draft ZH localization pending native pass. WORKER INDEX // 五条与路线相连的姓名记录。pump, relay, brine, triage, forge。拆硬件前保留tag chain。",
+          "terminal": "Draft ZH localization pending native pass. KEELMARK LOSS DESK: name tag若关联route、claim、custody或pressure work，必须保留。",
+          "field_note": "Draft ZH localization pending native pass. 不是家人。是工作。pump card上的名字说明那扇门为什么保持开启。",
+          "audio": "Draft ZH localization pending native pass. Mara Venn, pump chief: 如果pump声干净，就记录。它不响了，就往上跑。",
+          "external_site_article": ""
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Colonie et travailleurs",
+          "external_site": "Draft FR localization pending native pass. Deep Reach a classé l'échec comme tempête, effondrement, évacuation autonome ratée, tentative de sauvetage Atlas et données perdues; les archives de HECTON-8 gardent les noms attachés aux pompes, relais, routes de brine, triage et vent-forge.",
+          "in_game_wiki": "Draft FR localization pending native pass. Index de travailleurs récupéré: registres d'eau, plateaux de témoins relay, tampons de route brine, tags de réparation triage et rebuts vent-forge conservent les noms par le travail.",
+          "scanner": "Draft FR localization pending native pass. WORKER INDEX // Cinq noms liés à des routes. pump, relay, brine, triage, forge. Préserver la tag chain avant récupération matérielle.",
+          "terminal": "Draft FR localization pending native pass. KEELMARK LOSS DESK: préserver les name tags liés à route, claim, custody ou pressure work.",
+          "field_note": "Draft FR localization pending native pass. Pas la famille. Le travail. Un nom sur une pump card explique pourquoi une porte est restée ouverte.",
+          "audio": "Draft FR localization pending native pass. Mara Venn, pump chief: si la pump chante clair, consigne-le. Si elle cesse de chanter, monte en courant.",
+          "external_site_article": ""
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Colonia y trabajadores",
+          "external_site": "Draft ES localization pending native pass. Deep Reach archivó tormenta, colapso, evacuación autónoma fallida, rescate Atlas y datos perdidos; los registros de HECTON-8 mantienen los nombres unidos a bombas, relay, rutas brine, triage y vent-forge.",
+          "in_game_wiki": "Draft ES localization pending native pass. Índice de trabajadores recuperado: libros de agua, bandejas de testigo relay, sellos de ruta brine, etiquetas triage y rechazos vent-forge conservan nombres por trabajo.",
+          "scanner": "Draft ES localization pending native pass. WORKER INDEX // Cinco registros nominales ligados a ruta. pump, relay, brine, triage, forge. Conservar tag chain antes de retirar hardware.",
+          "terminal": "Draft ES localization pending native pass. KEELMARK LOSS DESK: conservar name tags ligados a route, claim, custody o pressure work.",
+          "field_note": "Draft ES localization pending native pass. No familia. Trabajo. Un nombre en una pump card explica por qué una puerta siguió abierta.",
+          "audio": "Draft ES localization pending native pass. Mara Venn, pump chief: si la pump canta limpio, regístralo. Si deja de cantar, corre hacia arriba.",
+          "external_site_article": ""
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Kolonie und Arbeiter",
+          "external_site": "Draft DE localization pending native pass. Deep Reach verbuchte Sturm, Kollaps, gescheiterte autonome Evakuierung, Atlas-Rettung und Datenverlust; HECTON-8s Arbeitsnachweise halten Namen an Pumpen, relay, brine-Routen, triage und vent-forge fest.",
+          "in_game_wiki": "Draft DE localization pending native pass. Wiederhergestellter Arbeiterindex: Wasserbücher, relay-Zeugentabletts, brine-Routenstempel, triage-Reparaturtags und vent-forge-Ausschuss bewahren Namen über Arbeit.",
+          "scanner": "Draft DE localization pending native pass. WORKER INDEX // Fünf routengebundene Namensdatensätze. pump, relay, brine, triage, forge. Tag chain vor Hardwareausbau sichern.",
+          "terminal": "Draft DE localization pending native pass. KEELMARK LOSS DESK: name tags sichern, wenn sie an route, claim, custody oder pressure work hängen.",
+          "field_note": "Draft DE localization pending native pass. Keine Familie. Arbeit. Ein Name auf einer pump card erklärt, warum eine Tür offen blieb.",
+          "audio": "Draft DE localization pending native pass. Mara Venn, pump chief: wenn die pump sauber singt, logge es. Wenn sie aufhört, lauf nach oben.",
+          "external_site_article": ""
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Kolonia i pracownicy",
+          "external_site": "Draft PL localization pending native pass. Deep Reach wpisało burzę, zawalenie, nieudaną autonomiczną ewakuację, próbę ratunku Atlas i utracone dane; zapisy HECTON-8 trzymają nazwiska przy pompach, relay, trasach brine, triage i vent-forge.",
+          "in_game_wiki": "Draft PL localization pending native pass. Odzyskany indeks pracowników: rejestry wody, tace świadków relay, stemple tras brine, tagi napraw triage i odrzuty vent-forge zachowują nazwiska przez pracę.",
+          "scanner": "Draft PL localization pending native pass. WORKER INDEX // Pięć zapisów nazwisk powiązanych z trasą. pump, relay, brine, triage, forge. Zachować tag chain przed demontażem.",
+          "terminal": "Draft PL localization pending native pass. KEELMARK LOSS DESK: zachować name tags powiązane z route, claim, custody lub pressure work.",
+          "field_note": "Draft PL localization pending native pass. Nie rodzina. Praca. Nazwisko na pump card wyjaśnia, czemu drzwi zostały otwarte.",
+          "audio": "Draft PL localization pending native pass. Mara Venn, pump chief: jeśli pump śpiewa czysto, zapisz. Jeśli przestaje, biegnij w górę.",
+          "external_site_article": ""
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Колонія і робітники",
+          "external_site": "Draft UK localization pending native pass. Deep Reach списала провал на шторм, обвал, збій автономної евакуації, спробу порятунку Atlas і втрачені дані; записи HECTON-8 тримають імена біля насосів, relay, brine-маршрутів, triage і vent-forge.",
+          "in_game_wiki": "Draft UK localization pending native pass. Відновлений індекс робітників: water ledgers, relay witness trays, brine route stamps, triage repair tags і vent-forge rejects зберігають імена через роботу.",
+          "scanner": "Draft UK localization pending native pass. WORKER INDEX // П'ять іменних записів, прив'язаних до маршруту. pump, relay, brine, triage, forge. Зберегти tag chain до демонтажу.",
+          "terminal": "Draft UK localization pending native pass. KEELMARK LOSS DESK: зберігати name tags, якщо вони пов'язані з route, claim, custody або pressure work.",
+          "field_note": "Draft UK localization pending native pass. Не родина. Робота. Ім'я на pump card пояснює, чому двері лишались відкритими.",
+          "audio": "Draft UK localization pending native pass. Mara Venn, pump chief: якщо pump співає чисто, внеси в log. Якщо замовкла - біжи вгору.",
+          "external_site_article": ""
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. المستعمرة والعمال",
+          "external_site": "Draft AR localization pending native pass. سجّلت Deep Reach الحادث كعاصفة وانهيار وفشل إخلاء ذاتي ومحاولة إنقاذ من Atlas وبيانات مفقودة؛ سجلات HECTON-8 تحفظ الأسماء عند المضخات وrelay ومسارات brine وtriage وvent-forge.",
+          "in_game_wiki": "Draft AR localization pending native pass. فهرس عمال مستعاد: سجلات الماء، صواني شهود relay، أختام مسارات brine، بطاقات إصلاح triage ومرفوضات vent-forge تحفظ الأسماء من خلال العمل.",
+          "scanner": "Draft AR localization pending native pass. WORKER INDEX // خمسة سجلات أسماء مرتبطة بالمسار. pump, relay, brine, triage, forge. احفظ tag chain قبل نزع العتاد.",
+          "terminal": "Draft AR localization pending native pass. KEELMARK LOSS DESK: احفظ name tags إذا ارتبطت بـ route أو claim أو custody أو pressure work.",
+          "field_note": "Draft AR localization pending native pass. ليست عائلة. إنه عمل. الاسم على pump card يشرح لماذا بقي الباب مفتوحا.",
+          "audio": "Draft AR localization pending native pass. Mara Venn, pump chief: إذا كان صوت pump صافيا فسجله. إذا توقف، اركض إلى الأعلى.",
+          "external_site_article": ""
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Koloni dan Pekerja",
+          "external_site": "Draft ID localization pending native pass. Deep Reach mencatat badai, runtuhan, evakuasi otonom gagal, upaya penyelamatan Atlas dan data hilang; catatan HECTON-8 menahan nama pada pompa, relay, rute brine, triage dan vent-forge.",
+          "in_game_wiki": "Draft ID localization pending native pass. Indeks pekerja yang dipulihkan: ledger air, baki saksi relay, cap rute brine, tag perbaikan triage dan reject vent-forge menyimpan nama lewat kerja.",
+          "scanner": "Draft ID localization pending native pass. WORKER INDEX // Lima catatan nama terkait rute. pump, relay, brine, triage, forge. Simpan tag chain sebelum melepas hardware.",
+          "terminal": "Draft ID localization pending native pass. KEELMARK LOSS DESK: simpan name tags jika terkait route, claim, custody atau pressure work.",
+          "field_note": "Draft ID localization pending native pass. Bukan keluarga. Kerja. Nama di pump card menjelaskan kenapa pintu tetap terbuka.",
+          "audio": "Draft ID localization pending native pass. Mara Venn, pump chief: kalau pump bernyanyi bersih, catat. Kalau berhenti bernyanyi, lari naik.",
+          "external_site_article": ""
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. 식민지와 작업자",
+          "external_site": "Draft KO localization pending native pass. Deep Reach는 폭풍, 붕괴, 자율 대피 실패, Atlas 구조 시도, 데이터 손실로 처리했다. HECTON-8의 작업 기록은 이름을 펌프, relay, brine 경로, triage, vent-forge 작업에 묶어 둔다.",
+          "in_game_wiki": "Draft KO localization pending native pass. 복구된 작업자 인덱스: 물 장부, relay 증인 트레이, brine 경로 스탬프, triage 수리 태그, vent-forge 폐기물이 작업을 통해 이름을 보존한다.",
+          "scanner": "Draft KO localization pending native pass. WORKER INDEX // 경로와 연결된 이름 기록 다섯 건. pump, relay, brine, triage, forge. 하드웨어 회수 전 tag chain 보존.",
+          "terminal": "Draft KO localization pending native pass. KEELMARK LOSS DESK: route, claim, custody, pressure work와 연결된 name tag 보존.",
+          "field_note": "Draft KO localization pending native pass. 가족이 아니다. 일이다. pump card의 이름이 왜 문이 열려 있었는지 말한다.",
+          "audio": "Draft KO localization pending native pass. Mara Venn, pump chief: pump가 맑게 울리면 기록해. 멈추면 위로 뛰어.",
+          "external_site_article": ""
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. המושבה והעובדים",
+          "external_site": "Draft HE localization pending native pass. Deep Reach רשמה סערה, קריסה, כשל פינוי אוטונומי, ניסיון חילוץ של Atlas ואובדן נתונים; רשומות HECTON-8 שומרות שמות ליד משאבות, relay, מסלולי brine, triage ו-vent-forge.",
+          "in_game_wiki": "Draft HE localization pending native pass. אינדקס עובדים ששוחזר: יומני מים, מגשי עדות relay, חותמות מסלול brine, תגי תיקון triage ודחיות vent-forge שומרים שמות דרך עבודה.",
+          "scanner": "Draft HE localization pending native pass. WORKER INDEX // חמישה רשומות שם הקשורות למסלול. pump, relay, brine, triage, forge. לשמור tag chain לפני פירוק חומרה.",
+          "terminal": "Draft HE localization pending native pass. KEELMARK LOSS DESK: לשמור name tags אם הם קשורים ל-route, claim, custody או pressure work.",
+          "field_note": "Draft HE localization pending native pass. לא משפחה. עבודה. שם על pump card מסביר למה דלת נשארה פתוחה.",
+          "audio": "Draft HE localization pending native pass. Mara Venn, pump chief: אם ה-pump שר נקי, רשום. אם הוא מפסיק, רוץ למעלה.",
+          "external_site_article": ""
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Colônia e trabalhadores",
+          "external_site": "Draft PT localization pending native pass. A Deep Reach registrou tempestade, colapso, evacuação autônoma falha, tentativa de resgate Atlas e dados perdidos; os registros de HECTON-8 mantêm nomes ligados a bombas, relay, rotas brine, triage e vent-forge.",
+          "in_game_wiki": "Draft PT localization pending native pass. Índice de trabalhadores recuperado: livros de água, bandejas de testemunha relay, carimbos de rota brine, tags de reparo triage e rejeitos vent-forge preservam nomes pelo trabalho.",
+          "scanner": "Draft PT localization pending native pass. WORKER INDEX // Cinco registros nominais ligados a rota. pump, relay, brine, triage, forge. Preservar tag chain antes de retirar hardware.",
+          "terminal": "Draft PT localization pending native pass. KEELMARK LOSS DESK: preservar name tags ligadas a route, claim, custody ou pressure work.",
+          "field_note": "Draft PT localization pending native pass. Não família. Trabalho. Um nome em uma pump card explica por que uma porta ficou aberta.",
+          "audio": "Draft PT localization pending native pass. Mara Venn, pump chief: se a pump cantar limpo, registre. Se parar de cantar, corra para cima.",
+          "external_site_article": ""
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Kolonie en arbeiders",
+          "external_site": "Draft NL localization pending native pass. Deep Reach archiveerde storm, instorting, mislukte autonome evacuatie, Atlas-reddingspoging en verloren data; HECTON-8s werkrecords houden namen vast aan pompen, relay, brine-routes, triage en vent-forge.",
+          "in_game_wiki": "Draft NL localization pending native pass. Herstelde arbeidersindex: waterledgers, relay-getuigentrays, brine-routestempels, triage-reparatietags en vent-forge-afkeur bewaren namen via werk.",
+          "scanner": "Draft NL localization pending native pass. WORKER INDEX // Vijf routegebonden naamrecords. pump, relay, brine, triage, forge. Tag chain bewaren voor hardware wordt gestript.",
+          "terminal": "Draft NL localization pending native pass. KEELMARK LOSS DESK: name tags bewaren wanneer gekoppeld aan route, claim, custody of pressure work.",
+          "field_note": "Draft NL localization pending native pass. Geen familie. Werk. Een naam op een pump card verklaart waarom een deur open bleef.",
+          "audio": "Draft NL localization pending native pass. Mara Venn, pump chief: als de pump zuiver zingt, log het. Als hij stopt, ren omhoog.",
+          "external_site_article": ""
+        }
+      }
+    },
+    {
+      "packet_id": "P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER",
+      "release_set_id": "RS084_SITE_WIKI_NAVIGATION_CLUSTERS",
+      "article_id": "applied_lore.site_wiki_resources_and_ecology_cluster",
+      "title_key": "applied_lore.site_wiki_resources_and_ecology_cluster.title",
+      "unlock": {
+        "primary": "unlock.site_wiki_resources_and_ecology_cluster",
+        "poi_tags": [
+          "poi.resource_ecology_nav_cluster",
+          "poi.fauna_encounter_index",
+          "poi.blue_debt_process_index"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Resources and Ecology",
+          "scanner": "Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.",
+          "terminal": "SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Nothing here is just loot.",
+          "in_game_wiki": "Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "external_site": "HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Use as resource hub, ecology index and art brief grouping.",
+          "external_site_article": "The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.\n\nBlue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.\n\nThe ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.\n\nAtlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.\n\nNothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?"
+        },
+        "ru_RU": {
+          "title": "Ресурсы и экология",
+          "scanner": "Публикационный хаб: geology, blue debt, fauna grammar и misuse ремонтной сети Atlas.",
+          "terminal": "SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology и encounter grammar как одна process map.",
+          "audio": "Здесь нет просто лута.",
+          "in_game_wiki": "Хаб ресурсов и экологии: drowned crust, brine ladders, vent chemistry, living systems и поврежденная repair logic Atlas.",
+          "external_site": "Материалы HECTON-8 рождаются из drowned crust, brine, vent chemistry, living systems и поврежденной repair logic Atlas.",
+          "field_note": "Использовать как resource hub, ecology index и art brief grouping.",
+          "external_site_article": "Полезное вещество HECTON-8 редко бывает чистым. Оно выходит из pressure seams, brine traps, vent heat, мертвых машин и живой ткани, которая научилась расти вокруг металла. Один образец может быть минералом, биологией, промышленным материалом и юридической уликой одновременно.\n\nBlue debt - самый известный пример. Название началось как salvage-сленг для pressure-formed value, которая несла с собой неоплаченный риск. Образец blue debt хранит условия своего появления: глубину, тепло, загрязнение, способ добычи и контакт с Atlas-altered lattice. Два куска с одинаковым блеском могут иметь разную custody value. Один - payout. Другой - proof.\n\nБиология океана не является говорящим разумом. Это набор процессов под экстремальным давлением. Mats проводят ток через поврежденные поверхности. Shell growth может запечатать fracture. Filter organs переносят acoustic timing через ткань. Brine vanes отмечают density flow. Grazers очищают mineral film и открывают safe scrape zones. Predators идут на вибрацию, тепло и поднятый ил.\n\nAtlas изменил значение этих процессов. После затопления его emergency maintenance model разрослась через все, что могло нести сигнал, держать давление или двигать материал. Conductive biofilm стала cable skin. Sensor-tagged fauna стала feedback. Vent micronodes стали power nests. Некоторые маршруты выглядят природными, пока не отвечают машинной нужде слишком точно.\n\nВ океане HECTON-8 нет просто декораций, и ничто ценное не является просто лутом. За каждым образцом стоит вопрос старше любого claim stamp: что его создало, и что было повреждено, пока он формировался?"
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft JA localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft JA localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft JA localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft JA localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft JA localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft JA localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft ZH localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft ZH localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft ZH localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft ZH localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft ZH localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft FR localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft FR localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft FR localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft FR localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft FR localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft FR localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft ES localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft ES localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft ES localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft ES localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft ES localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft ES localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft DE localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft DE localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft DE localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft DE localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft DE localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft DE localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft PL localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft PL localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft PL localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft PL localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft PL localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft PL localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft UK localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft UK localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft UK localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft UK localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft UK localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft UK localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft AR localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft AR localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft AR localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft AR localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft AR localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft AR localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft ID localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft ID localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft ID localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft ID localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft ID localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft ID localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft KO localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft KO localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft KO localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft KO localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft KO localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft KO localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft HE localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft HE localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft HE localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft HE localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft HE localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft HE localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft PT localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft PT localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft PT localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft PT localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft PT localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft PT localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Wiki Resources and Ecology Cluster",
+          "scanner": "Draft NL localization pending native pass. Publication cluster: resources and ecology. Geology, blue debt, fauna grammar and repair misuse.",
+          "terminal": "Draft NL localization pending native pass. SITE NAV: group native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.",
+          "audio": "Draft NL localization pending native pass. Nothing here is just loot. Even the useful pieces came from pressure, life or a broken repair system.",
+          "in_game_wiki": "Draft NL localization pending native pass. This cluster ties resource recipes to geology and ecology. It separates native processes from Deep-Reach amplification and Atlas-altered maintenance life.",
+          "external_site": "Draft NL localization pending native pass. Resources and ecology: HECTON-8's materials come from drowned crust, brine, vent chemistry, living systems and Atlas' damaged repair logic.",
+          "field_note": "Draft NL localization pending native pass. Use for wiki resource hub, ecology index and art brief grouping."
+        }
+      }
+    },
+    {
+      "packet_id": "P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER",
+      "release_set_id": "RS084_SITE_WIKI_NAVIGATION_CLUSTERS",
+      "article_id": "applied_lore.site_wiki_endings_spoiler_cluster",
+      "title_key": "applied_lore.site_wiki_endings_spoiler_cluster.title",
+      "unlock": {
+        "primary": "unlock.site_wiki_endings_spoiler_cluster",
+        "poi_tags": [
+          "poi.ending_spoiler_nav_cluster",
+          "poi.payload_receiver_index",
+          "poi.false_exit_record_index"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.spoiler_gate"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Endings and Payload Custody",
+          "scanner": "Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.",
+          "terminal": "SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.",
+          "audio": "The ending is who owns the proof afterward.",
+          "in_game_wiki": "Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.",
+          "external_site": "HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Use for spoiler-gated site pages and unlocked in-game ending dossier.",
+          "external_site_article": "Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.\n\nBlack Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.\n\nAtlas makes the custody problem worse. Severance can end a dangerous repair network, but it can also destroy the last system that remembers the colony as more than an insurance case. Preservation can protect records, but it leaves a damaged maintenance intelligence inside a living ocean-machine. Coordinate sale can end a debt and deliver the most valuable witness to the least trustworthy office.\n\nThe false exits are not failures of courage. They are exits where one chain closes and another remains unpaid. The body leaves, the claim remains. The sample leaves, the worker record does not. The ledger leaks, but the carrier still owns the mass window. The quarantine hold preserves evidence until someone else decides what evidence means.\n\nNo ending removes custody from the story. The final question is who owns the proof when HECTON-8 falls silent again."
+        },
+        "ru_RU": {
+          "title": "Концовки и custody payload",
+          "scanner": "Спойлерный хаб: payload receivers, false exits, custody, public truth, Atlas continuity и after-action records.",
+          "terminal": "SITE NAV: прятать final payload pages за spoiler gates. Организовать по receiver и ownership of proof.",
+          "audio": "Концовка - это тот, кто потом владеет доказательством.",
+          "in_game_wiki": "Хаб ending dossier: custody, evidence, будущее Atlas и цена ухода.",
+          "external_site": "Исходы HECTON-8 определяются custody, evidence, будущим Atlas и ценой ухода.",
+          "field_note": "Использовать для spoiler-gated site pages и unlocked in-game ending dossier.",
+          "external_site_article": "Каждый известный исход HECTON-8 начинается раньше финального подъема. Решающим объектом становится не только тело в капсуле, но и payload при нем: координаты, образцы, записи Atlas, worker evidence, quarantine status и юридическая цепочка, которая решает, кто имеет право назвать recovery законным.\n\nBlack Keel может поднять выжившего и все равно плохо продать правду. Deep Reach может получить координаты и похоронить их под recovery compliance. Public ledger может ударить по компании, но не вернуть мертвых. Quarantine может быть медицински разумным и политически удобным в один и тот же час. Material payout может быть настоящими деньгами и все равно оставить главное доказательство в океане.\n\nAtlas делает custody problem хуже. Severance может остановить опасную ремонтную сеть, но также уничтожить последнюю систему, которая помнит колонию не как страховой случай. Preservation может защитить записи, но оставляет поврежденный maintenance intelligence внутри живой ocean-machine. Coordinate sale может закрыть долг и передать самого ценного свидетеля наименее надежному офису.\n\nFalse exits не являются провалом смелости. Это выходы, где одна цепочка закрывается, а другая остается неоплаченной. Тело уходит, claim остается. Образец уходит, worker record нет. Ledger протекает наружу, но carrier все еще владеет mass window. Quarantine hold сохраняет evidence до тех пор, пока кто-то другой не решит, что evidence означает.\n\nНи одна концовка не выводит custody из истории. Финальный вопрос - кто владеет доказательством, когда HECTON-8 снова замолкает."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft JA localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft JA localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft JA localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft JA localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft JA localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft JA localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft ZH localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft ZH localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft ZH localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft ZH localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft ZH localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft FR localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft FR localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft FR localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft FR localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft FR localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft FR localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft ES localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft ES localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft ES localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft ES localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft ES localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft ES localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft DE localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft DE localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft DE localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft DE localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft DE localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft DE localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft PL localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft PL localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft PL localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft PL localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft PL localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft PL localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft UK localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft UK localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft UK localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft UK localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft UK localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft UK localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft AR localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft AR localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft AR localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft AR localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft AR localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft AR localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft ID localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft ID localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft ID localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft ID localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft ID localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft ID localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft KO localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft KO localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft KO localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft KO localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft KO localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft KO localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft HE localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft HE localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft HE localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft HE localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft HE localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft HE localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft PT localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft PT localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft PT localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft PT localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft PT localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft PT localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Site Wiki Endings Spoiler Cluster",
+          "scanner": "Draft NL localization pending native pass. Publication cluster: endings spoiler gate. Payload receivers, false exits and after-action records.",
+          "terminal": "Draft NL localization pending native pass. SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver, custody, public truth, Atlas continuity and escape cost.",
+          "audio": "Draft NL localization pending native pass. The ending is not what you press. It is who gets to own the proof afterward.",
+          "in_game_wiki": "Draft NL localization pending native pass. This cluster indexes false exits, receiver protocols and after-action records. It must stay gated until the player has earned the relevant payload knowledge.",
+          "external_site": "Draft NL localization pending native pass. Endings spoiler hub: HECTON-8's outcomes are defined by custody, evidence, Atlas' future and the price of leaving.",
+          "field_note": "Draft NL localization pending native pass. Use for spoiler-gated site pages and unlocked in-game ending dossier."
+        }
+      }
+    }
+  ]
+}

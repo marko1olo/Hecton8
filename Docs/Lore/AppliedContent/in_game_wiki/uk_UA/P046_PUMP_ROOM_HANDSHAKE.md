@@ -1,10 +1,17 @@
 ---
 packet_id: P046_PUMP_ROOM_HANDSHAKE
+release_set_id: RS010_PRESSURE_MACHINERY_RETURN_ROUTE
 article_id: hecton8.pump_room_handshake
+unlock_id: unlock.first_pump_room_handshake
+poi_tags: poi.pump_room;poi.sump_control
+biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: uk_UA
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Pump Room Handshake

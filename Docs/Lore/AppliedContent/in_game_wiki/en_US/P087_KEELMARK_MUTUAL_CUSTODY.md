@@ -1,10 +1,17 @@
 ---
 packet_id: P087_KEELMARK_MUTUAL_CUSTODY
+release_set_id: RS018_CARRIER_DEBT_CLAIM_AUTHORITY
 article_id: carrier.keelmark_mutual_custody
+unlock_id: unlock.first_keelmark_mutual_custody
+poi_tags: poi.insurance_custody_plate;poi.keelmark_mutual_cache
+biome_tags: biome.drowned_admin;biome.carrier_link
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Keelmark Mutual Custody

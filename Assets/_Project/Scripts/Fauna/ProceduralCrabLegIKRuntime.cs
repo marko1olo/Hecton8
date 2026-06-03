@@ -518,8 +518,16 @@ namespace Hecton8.AI
         private const int TelemetryCapacity = 300;
         private const int TelemetryDumpHeaderBytes = 8;
         private const int TelemetryDumpEntryBytes = 56;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
         private const string TelemetryDumpPayloadLabel = "proceduralCrabLegIkTelemetryDumpPayload";
+        private const ulong CrabLegVaultMutationGuardMask =
+            (1UL << ((int)BufferID.ProceduralCrabLegEntities & 31)) |
+            (1UL << ((int)BufferID.ProceduralCrabLegFootPositions & 31)) |
+            (1UL << ((int)BufferID.ProceduralCrabLegTargetFootPositions & 31)) |
+            (1UL << ((int)BufferID.ProceduralCrabLegStepStates & 31)) |
+            (1UL << ((int)BufferID.ProceduralCrabBodyPoses & 31)) |
+            (1UL << ((int)BufferID.ProceduralCrabSolvedJointMatrices & 31)) |
+            (1UL << ((int)BufferID.ProceduralCrabIkTelemetryRing & 31));
         private static readonly int BodyPoseBufferId = Shader.PropertyToID("_H8CrabBodyPoseBuffer");
         private static readonly int LegJointBufferId = Shader.PropertyToID("_H8CrabLegJointBuffer");
 
@@ -573,7 +581,7 @@ namespace Hecton8.AI
         [Tooltip("Indirect crab body mesh. The shader reads body and leg buffers.")]
         [SerializeField] private Mesh _crabBodyMesh;
 
-        [Tooltip("Indirect crab material. Material buffers are rebound by this runtime.")]
+        [Tooltip("Indirect crab shared material. Per-runtime buffers are bound through a MaterialPropertyBlock.")]
         [SerializeField] private Material _crabBodyMaterial;
 
         [Tooltip("World-space bounds for crab indirect rendering.")]
@@ -606,12 +614,14 @@ namespace Hecton8.AI
         private GraphicsBuffer _jointMatrixGraphicsBufferB;
         private GraphicsBuffer _activeJointMatrixGraphicsBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
+        private MaterialPropertyBlock _crabBodyMaterialProperties;
         private Mesh _argsUploadMesh;
         private int _argsUploadInstanceCount = -1;
         private int _graphicsUploadBufferIndex;
 
         private JobHandle _pendingHandle;
         private bool _pipelineScheduled;
+        private bool _pipelineMutationGuardHeld;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
@@ -621,8 +631,10 @@ namespace Hecton8.AI
         private int _freeSlotCount;
         private int _frameIndex;
         private int _lastActiveEntityCount;
+        private int _lastRenderEntityCount;
         private int _telemetryCursor;
         private float3 _pendingOriginShiftOffset;
+        private IDataVault _pipelineMutationGuardVault;
 
         internal NativeArray<float3>.ReadOnly FootPositions =>
             TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.FootPositions.AsReadOnly() : default;
@@ -651,6 +663,8 @@ namespace Hecton8.AI
             InitializeFreeSlots();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
+            InitializeCrabMaterialPropertiesCold();
+            EnsureGraphicsBuffersCold();
         }
 
         private void OnEnable()
@@ -659,6 +673,8 @@ namespace Hecton8.AI
             RefreshColdDependencies();
             TryRegisterHotSwapListener();
             EnsurePersistentBuffers();
+            InitializeCrabMaterialPropertiesCold();
+            EnsureGraphicsBuffersCold();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -679,6 +695,12 @@ namespace Hecton8.AI
             JobHandle dependency = _pipelineScheduled ? _pendingHandle : default;
             DisposeBuffers(dependency);
             ReleaseGraphicsBuffers();
+        }
+
+        private void InitializeCrabMaterialPropertiesCold()
+        {
+            if (_crabBodyMaterialProperties == null)
+                _crabBodyMaterialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect crab buffer binding state - owner: ProceduralCrabLegIKRuntime
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -705,19 +727,39 @@ namespace Hecton8.AI
                 _pipelineScheduled = false;
             }
 
-            ApplyOriginShiftRebase(offset);
+            try
+            {
+                ApplyOriginShiftRebase(offset);
+            }
+            finally
+            {
+                ReleasePipelineMutationGuard();
+            }
         }
 
         public void Tick(float deltaTime)
         {
-            if (_pipelineScheduled || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+            if (_pipelineScheduled || !TryEnterCrabMutationGuard(out IDataVault guardVault, out bool guardAcquired))
                 return;
 
-            int activeCount = CaptureFrameState(deltaTime, buffers);
-            if (activeCount <= 0)
-                return;
+            bool releaseGuard = guardAcquired;
+            try
+            {
+                if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                    return;
 
-            ScheduleGroundAndStepPipeline(in buffers);
+                int activeCount = CaptureFrameState(deltaTime, buffers);
+                if (activeCount <= 0)
+                    return;
+
+                ScheduleGroundAndStepPipeline(in buffers);
+                RetainPipelineMutationGuard(guardVault);
+                releaseGuard = false;
+            }
+            finally
+            {
+                ReleaseCrabMutationGuard(guardVault, releaseGuard);
+            }
         }
 
         public void LateFrameTick()
@@ -732,86 +774,140 @@ namespace Hecton8.AI
                 return;
 
             _pipelineScheduled = false;
-            if (ApplyPendingOriginShiftRebase())
-                return;
+            try
+            {
+                if (ApplyPendingOriginShiftRebase())
+                    return;
 
-            WriteTelemetryFrame();
-            UploadAndRenderIndirect();
+                WriteTelemetryFrame();
+                UploadAndRenderIndirect();
+            }
+            finally
+            {
+                ReleasePipelineMutationGuard();
+            }
         }
 
         private void CompletePendingPipelineForTeardown()
         {
             if (!_pipelineScheduled)
+            {
+                ReleasePipelineMutationGuard();
                 return;
+            }
 
             DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _pendingHandle = default;
             _pipelineScheduled = false;
+            ReleasePipelineMutationGuard();
         }
 
         internal bool TryRegisterEntity(float3 rootPosition, quaternion rootRotation, int legCount, float scale, out int slotIndex)
         {
             slotIndex = -1;
+            if (_pipelineScheduled)
+                return false;
+
             EnsureManagedSlotBuffers();
             EnsurePersistentBuffers();
-            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+            if (!TryEnterCrabMutationGuard(out IDataVault guardVault, out bool guardAcquired))
                 return false;
 
-            if (_freeSlotCount <= 0)
-                return false;
+            try
+            {
+                if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                    return false;
 
-            int freeStackIndex = _freeSlotCount - 1;
-            slotIndex = _freeSlots[freeStackIndex];
-            _freeSlotCount = freeStackIndex;
-            _slotActive[slotIndex] = true;
+                if (_freeSlotCount <= 0)
+                    return false;
 
-            ProceduralCrabLegEntityState entity = BuildDefaultEntityState(slotIndex, rootPosition, rootRotation, legCount, scale);
-            buffers.Entities[slotIndex] = entity;
-            SeedLegTargets(in entity, buffers);
-            return true;
+                int freeStackIndex = _freeSlotCount - 1;
+                slotIndex = _freeSlots[freeStackIndex];
+                _freeSlotCount = freeStackIndex;
+                _slotActive[slotIndex] = true;
+
+                ProceduralCrabLegEntityState entity = BuildDefaultEntityState(slotIndex, rootPosition, rootRotation, legCount, scale);
+                buffers.Entities[slotIndex] = entity;
+                SeedLegTargets(in entity, buffers);
+                return true;
+            }
+            finally
+            {
+                ReleaseCrabMutationGuard(guardVault, guardAcquired);
+            }
         }
 
         internal void UnregisterEntity(int slotIndex)
         {
-            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+            if (_pipelineScheduled || !TryEnterCrabMutationGuard(out IDataVault guardVault, out bool guardAcquired))
                 return;
 
-            _slotActive[slotIndex] = false;
-            ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
-            ClearLegRange(in entity, buffers);
-            buffers.Entities[slotIndex] = default;
-            buffers.BodyPoses[slotIndex] = default;
-            _freeSlots[_freeSlotCount] = slotIndex;
-            _freeSlotCount++;
+            try
+            {
+                if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                    return;
+
+                _slotActive[slotIndex] = false;
+                ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
+                ClearLegRange(in entity, buffers);
+                buffers.Entities[slotIndex] = default;
+                buffers.BodyPoses[slotIndex] = default;
+                _freeSlots[_freeSlotCount] = slotIndex;
+                _freeSlotCount++;
+            }
+            finally
+            {
+                ReleaseCrabMutationGuard(guardVault, guardAcquired);
+            }
         }
 
         internal void SetEntityPose(int slotIndex, float3 rootPosition, quaternion rootRotation, float3 velocity, int health)
         {
-            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+            if (_pipelineScheduled || !TryEnterCrabMutationGuard(out IDataVault guardVault, out bool guardAcquired))
                 return;
 
-            ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
-            entity.RootPosition = SanitizeFiniteFloat3(rootPosition, entity.RootPosition);
-            entity.RootRotation = SanitizeFiniteQuaternion(rootRotation, entity.RootRotation);
-            entity.Velocity = SanitizeFiniteFloat3(velocity, float3.zero);
-            entity.Health = health;
-            if (health <= 0)
+            try
             {
-                entity.CorpseState = 1;
-                entity.StateFlags |= EntityFlagCorpse;
+                if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                    return;
+
+                ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
+                entity.RootPosition = SanitizeFiniteFloat3(rootPosition, entity.RootPosition);
+                entity.RootRotation = SanitizeFiniteQuaternion(rootRotation, entity.RootRotation);
+                entity.Velocity = SanitizeFiniteFloat3(velocity, float3.zero);
+                entity.Health = health;
+                if (health <= 0)
+                {
+                    entity.CorpseState = 1;
+                    entity.StateFlags |= EntityFlagCorpse;
+                }
+                buffers.Entities[slotIndex] = entity;
             }
-            buffers.Entities[slotIndex] = entity;
+            finally
+            {
+                ReleaseCrabMutationGuard(guardVault, guardAcquired);
+            }
         }
 
         internal void SetSpatialHashAvoidance(int slotIndex, float3 separationOffset, float strength)
         {
-            if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+            if (_pipelineScheduled || !TryEnterCrabMutationGuard(out IDataVault guardVault, out bool guardAcquired))
                 return;
 
-            ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
-            entity.SpatialHashAvoidanceOffset = math.select(separationOffset, float3.zero, !math.all(math.isfinite(separationOffset)));
-            entity.SpatialHashAvoidanceStrength = math.isfinite(strength) ? math.saturate(strength) : 0f;
-            buffers.Entities[slotIndex] = entity;
+            try
+            {
+                if (!IsValidSlot(slotIndex) || !_slotActive[slotIndex] || !TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                    return;
+
+                ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
+                entity.SpatialHashAvoidanceOffset = math.select(separationOffset, float3.zero, !math.all(math.isfinite(separationOffset)));
+                entity.SpatialHashAvoidanceStrength = math.isfinite(strength) ? math.saturate(strength) : 0f;
+                buffers.Entities[slotIndex] = entity;
+            }
+            finally
+            {
+                ReleaseCrabMutationGuard(guardVault, guardAcquired);
+            }
         }
 
         private void EnsureManagedSlotBuffers()
@@ -831,10 +927,12 @@ namespace Hecton8.AI
                 return;
 
             _freeSlotCount = _freeSlots.Length;
+            _lastActiveEntityCount = 0;
+            _lastRenderEntityCount = 0;
             for (int i = 0; i < _freeSlots.Length; i++)
             {
                 _slotActive[i] = false;
-                _freeSlots[i] = i;
+                _freeSlots[i] = (_freeSlots.Length - 1) - i;
             }
         }
 
@@ -873,6 +971,7 @@ namespace Hecton8.AI
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _pendingHandle);
 
             DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
+            ReleasePipelineMutationGuard();
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _pendingHandle = default;
@@ -984,6 +1083,49 @@ namespace Hecton8.AI
                    handle.SystemID == (uint)SystemID.AnimationFauna;
         }
 
+        private bool TryEnterCrabMutationGuard(out IDataVault vault, out bool acquired)
+        {
+            acquired = false;
+            vault = _pipelineMutationGuardHeld ? _pipelineMutationGuardVault : _dataVault;
+            if (vault == null)
+                return false;
+
+            if (_pipelineMutationGuardHeld)
+                return true;
+
+            if (!vault.TryAcquireMutationGuard(CrabLegVaultMutationGuardMask))
+            {
+                vault = null;
+                return false;
+            }
+
+            acquired = true;
+            return true;
+        }
+
+        private void RetainPipelineMutationGuard(IDataVault vault)
+        {
+            _pipelineMutationGuardVault = vault;
+            _pipelineMutationGuardHeld = vault != null;
+        }
+
+        private void ReleasePipelineMutationGuard()
+        {
+            if (!_pipelineMutationGuardHeld)
+                return;
+
+            IDataVault vault = _pipelineMutationGuardVault;
+            _pipelineMutationGuardHeld = false;
+            _pipelineMutationGuardVault = null;
+            vault?.ReleaseMutationGuard(CrabLegVaultMutationGuardMask);
+        }
+
+        private static void ReleaseCrabMutationGuard(IDataVault vault, bool acquired)
+        {
+            if (acquired)
+                vault?.ReleaseMutationGuard(CrabLegVaultMutationGuardMask);
+        }
+
         private void TryRegister()
         {
             if (_registeredUpdate || !Application.isPlaying)
@@ -1083,6 +1225,7 @@ namespace Hecton8.AI
         private int CaptureFrameState(float deltaTime, CrabLegVaultBuffers buffers)
         {
             int activeCount = 0;
+            int maxActiveSlotIndex = -1;
             const int surfaceProbeBudgetMode = SurfaceProbeBudgetAllLegs;
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
@@ -1098,9 +1241,11 @@ namespace Hecton8.AI
                 entity.SurfaceProbeBudgetMode = surfaceProbeBudgetMode;
                 buffers.Entities[slotIndex] = entity;
                 activeCount++;
+                maxActiveSlotIndex = slotIndex;
             }
 
             _lastActiveEntityCount = activeCount;
+            _lastRenderEntityCount = maxActiveSlotIndex + 1;
             return activeCount;
         }
 
@@ -1154,7 +1299,6 @@ namespace Hecton8.AI
             if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
                 return;
 
-            EnsureGraphicsBuffers();
             if (_bodyPoseGraphicsBufferA == null ||
                 _bodyPoseGraphicsBufferB == null ||
                 _jointMatrixGraphicsBufferA == null ||
@@ -1162,19 +1306,30 @@ namespace Hecton8.AI
                 _indirectArgsBuffer == null)
                 return;
 
+            int renderEntityCount = math.clamp(_lastRenderEntityCount, 0, EntityCapacity);
+            if (renderEntityCount <= 0)
+                return;
+
+            int renderLegCount = math.min(LegCapacity, renderEntityCount * MaxLegsPerEntity);
             GraphicsBuffer bodyWriteBuffer = _graphicsUploadBufferIndex == 0 ? _bodyPoseGraphicsBufferA : _bodyPoseGraphicsBufferB;
             GraphicsBuffer jointWriteBuffer = _graphicsUploadBufferIndex == 0 ? _jointMatrixGraphicsBufferA : _jointMatrixGraphicsBufferB;
-            GraphicsBufferUploadUtility.UploadNativeArray(bodyWriteBuffer, buffers.BodyPoses, EntityCapacity);
-            GraphicsBufferUploadUtility.UploadNativeArray(jointWriteBuffer, buffers.SolvedJointMatrices, LegCapacity);
+            GraphicsBufferUploadUtility.UploadNativeArray(bodyWriteBuffer, buffers.BodyPoses, renderEntityCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(jointWriteBuffer, buffers.SolvedJointMatrices, renderLegCount);
             _activeBodyPoseGraphicsBuffer = bodyWriteBuffer;
             _activeJointMatrixGraphicsBuffer = jointWriteBuffer;
             _graphicsUploadBufferIndex ^= 1;
-            _crabBodyMaterial.SetBuffer(BodyPoseBufferId, _activeBodyPoseGraphicsBuffer);
-            _crabBodyMaterial.SetBuffer(LegJointBufferId, _activeJointMatrixGraphicsBuffer);
-            UploadIndirectArgs(EntityCapacity);
+            UploadIndirectArgs(renderEntityCount);
+
+            MaterialPropertyBlock materialProperties = _crabBodyMaterialProperties;
+            if (materialProperties == null)
+                return;
+
+            materialProperties.SetBuffer(BodyPoseBufferId, _activeBodyPoseGraphicsBuffer);
+            materialProperties.SetBuffer(LegJointBufferId, _activeJointMatrixGraphicsBuffer);
 
             RenderParams renderParams = new RenderParams(_crabBodyMaterial)
             {
+                matProps = materialProperties,
                 worldBounds = _renderBounds,
                 layer = gameObject.layer,
                 shadowCastingMode = _shadowCastingMode,
@@ -1184,8 +1339,11 @@ namespace Hecton8.AI
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, _crabBodyMesh, _indirectArgsBuffer, 1, 0);
         }
 
-        private void EnsureGraphicsBuffers()
+        private void EnsureGraphicsBuffersCold()
         {
+            if (!_renderIndirect || _crabBodyMesh == null || _crabBodyMaterial == null)
+                return;
+
             if (_bodyPoseGraphicsBufferA == null)
                 _bodyPoseGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabBodyPose>(EntityCapacity); // COLD ALLOC: GraphicsBuffer[body poses A] - indirect crab body S.O.A. upload - owner: ProceduralCrabLegIKRuntime
 
@@ -1404,7 +1562,7 @@ namespace Hecton8.AI
             float3 safeRootPosition = SanitizeFiniteFloat3(rootPosition, float3.zero);
             quaternion safeRootRotation = SanitizeFiniteQuaternion(rootRotation, quaternion.identity);
             int requestedLegCount = legCount > 0 ? legCount : _defaultLegCount;
-            int safeLegCount = requestedLegCount <= MinLegsPerEntity ? MinLegsPerEntity : MaxLegsPerEntity;
+            int safeLegCount = math.clamp(requestedLegCount, MinLegsPerEntity, MaxLegsPerEntity);
             return new ProceduralCrabLegEntityState
             {
                 IsActive = 1,
@@ -1452,43 +1610,53 @@ namespace Hecton8.AI
 
         private void ApplyOriginShiftRebase(float3 offset)
         {
-            if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+            if (!TryEnterCrabMutationGuard(out IDataVault guardVault, out bool guardAcquired))
                 return;
 
-            if (!math.all(math.isfinite(offset)))
+            try
             {
-                DumpTelemetryBlackBoxOnce();
-                return;
-            }
+                if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
+                    return;
 
-            for (int slotIndex = 0; slotIndex < EntityCapacity; slotIndex++)
-            {
-                if (!_slotActive[slotIndex])
-                    continue;
-
-                ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
-                entity.RootPosition -= offset;
-                buffers.Entities[slotIndex] = entity;
-
-                for (int localLegIndex = 0; localLegIndex < MaxLegsPerEntity; localLegIndex++)
+                if (!math.all(math.isfinite(offset)))
                 {
-                    int legIndex = entity.LegStartIndex + localLegIndex;
-                    buffers.FootPositions[legIndex] -= offset;
-                    buffers.TargetFootPositions[legIndex] -= offset;
-
-                    ProceduralCrabLegStepState state = buffers.StepStates[legIndex];
-                    state.StepFrom -= offset;
-                    state.StepTo -= offset;
-                    buffers.StepStates[legIndex] = state;
+                    DumpTelemetryBlackBoxOnce();
+                    return;
                 }
 
-                ProceduralCrabBodyPose pose = buffers.BodyPoses[slotIndex];
-                if (pose.IsActive == 0)
-                    continue;
+                for (int slotIndex = 0; slotIndex < EntityCapacity; slotIndex++)
+                {
+                    if (!_slotActive[slotIndex])
+                        continue;
 
-                float4 c3 = pose.BodyMatrix.c3;
-                pose.BodyMatrix.c3 = new float4(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z, c3.w);
-                buffers.BodyPoses[slotIndex] = pose;
+                    ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
+                    entity.RootPosition -= offset;
+                    buffers.Entities[slotIndex] = entity;
+
+                    for (int localLegIndex = 0; localLegIndex < MaxLegsPerEntity; localLegIndex++)
+                    {
+                        int legIndex = entity.LegStartIndex + localLegIndex;
+                        buffers.FootPositions[legIndex] -= offset;
+                        buffers.TargetFootPositions[legIndex] -= offset;
+
+                        ProceduralCrabLegStepState state = buffers.StepStates[legIndex];
+                        state.StepFrom -= offset;
+                        state.StepTo -= offset;
+                        buffers.StepStates[legIndex] = state;
+                    }
+
+                    ProceduralCrabBodyPose pose = buffers.BodyPoses[slotIndex];
+                    if (pose.IsActive == 0)
+                        continue;
+
+                    float4 c3 = pose.BodyMatrix.c3;
+                    pose.BodyMatrix.c3 = new float4(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z, c3.w);
+                    buffers.BodyPoses[slotIndex] = pose;
+                }
+            }
+            finally
+            {
+                ReleaseCrabMutationGuard(guardVault, guardAcquired);
             }
         }
 

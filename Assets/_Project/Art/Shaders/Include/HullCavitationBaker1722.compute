@@ -1,0 +1,246 @@
+#pragma kernel CSBakeHullAlbedo
+#pragma kernel CSBakeHullDisplacement
+#pragma kernel CSBakeHullMrao
+#pragma kernel CSBakeCavitationFlipbook
+
+RWTexture2D<float4> _OutputAlbedo;
+RWTexture2D<float4> _OutputDisplacement;
+RWTexture2D<float4> _OutputMrao;
+RWTexture2D<float4> _OutputCavitation;
+
+StructuredBuffer<float3> _SourceMeshVertices;
+int _SourceMeshVertexCount;
+float4 _BakeParams;        // x=quality weight, y=seed, z=dent count, w=scar gain
+float4 _CavitationParams;  // x=frame count, y=tiles per axis, z=swirl gain, w=bubble gain
+
+static const float H8_PI_1722 = 3.14159265359;
+
+float H8Hash11_1722(float n)
+{
+    return frac(sin(n) * 43758.5453123);
+}
+
+float2 H8Hash22_1722(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float H8Hash31_1722(float3 p)
+{
+    p = frac(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return frac((p.x + p.y) * p.z);
+}
+
+float H8ValueNoise3_1722(float3 p)
+{
+    float3 i = floor(p);
+    float3 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float n000 = H8Hash31_1722(i + float3(0.0, 0.0, 0.0));
+    float n100 = H8Hash31_1722(i + float3(1.0, 0.0, 0.0));
+    float n010 = H8Hash31_1722(i + float3(0.0, 1.0, 0.0));
+    float n110 = H8Hash31_1722(i + float3(1.0, 1.0, 0.0));
+    float n001 = H8Hash31_1722(i + float3(0.0, 0.0, 1.0));
+    float n101 = H8Hash31_1722(i + float3(1.0, 0.0, 1.0));
+    float n011 = H8Hash31_1722(i + float3(0.0, 1.0, 1.0));
+    float n111 = H8Hash31_1722(i + float3(1.0, 1.0, 1.0));
+
+    float nx00 = lerp(n000, n100, f.x);
+    float nx10 = lerp(n010, n110, f.x);
+    float nx01 = lerp(n001, n101, f.x);
+    float nx11 = lerp(n011, n111, f.x);
+    float nxy0 = lerp(nx00, nx10, f.y);
+    float nxy1 = lerp(nx01, nx11, f.y);
+    return lerp(nxy0, nxy1, f.z);
+}
+
+float H8Triangle01_1722(float x)
+{
+    return 1.0 - abs(frac(x) * 2.0 - 1.0);
+}
+
+float H8MeshInfluence_1722(float2 uv)
+{
+    if (_SourceMeshVertexCount <= 0)
+        return 0.0;
+
+    float selector = frac(dot(uv, float2(73.13, 19.71)) + _BakeParams.y * 0.001);
+    uint index = (uint)min(floor(selector * (float)_SourceMeshVertexCount), (float)(_SourceMeshVertexCount - 1));
+    float3 vertex = _SourceMeshVertices[index];
+    return frac(dot(abs(vertex), float3(0.1031, 0.1137, 0.0979)));
+}
+
+float H8PanelLine_1722(float2 uv, float density, float width)
+{
+    float2 cell = abs(frac(uv * density) - 0.5);
+    float panelLineMask = max(1.0 - smoothstep(0.0, width, cell.x), 1.0 - smoothstep(0.0, width, cell.y));
+    return saturate(panelLineMask);
+}
+
+float H8LongitudinalRib_1722(float2 uv, float density, float width)
+{
+    float band = abs(frac((uv.y + uv.x * 0.075) * density) - 0.5);
+    return 1.0 - smoothstep(0.0, width, band);
+}
+
+float H8DentField_1722(float2 uv, float quality, float seed, out float scar)
+{
+    scar = 0.0;
+    float dent = 0.0;
+    int dentCount = (int)clamp(_BakeParams.z, 6.0, 32.0);
+
+    [loop]
+    for (int i = 0; i < 32; i++)
+    {
+        if (i >= dentCount)
+            break;
+
+        float fi = (float)i + seed * 19.173;
+        float2 center = H8Hash22_1722(float2(fi, fi * 1.913));
+        center.x = lerp(0.08, 0.92, center.x);
+        center.y = lerp(0.05, 0.95, center.y);
+        float radius = lerp(0.012, 0.052, H8Hash11_1722(fi * 2.317)) * lerp(0.72, 1.25, quality);
+        float oval = lerp(0.42, 1.65, H8Hash11_1722(fi * 5.731));
+        float2 d = uv - center;
+        d.x *= oval;
+        float dist01 = length(d) / max(radius, 0.0001);
+        float core = saturate(1.0 - dist01);
+        float lip = (1.0 - smoothstep(0.62, 1.0, dist01)) * smoothstep(0.08, 0.42, dist01);
+        float grit = H8ValueNoise3_1722(float3(uv * lerp(75.0, 210.0, quality), fi * 0.17));
+        float impact = core * core * lerp(0.55, 1.0, grit);
+        dent += impact * lerp(0.03, 0.16, H8Hash11_1722(fi * 7.07));
+        scar = max(scar, saturate((lip + impact * 0.65) * lerp(0.25, 0.90, quality)));
+    }
+
+    return dent;
+}
+
+float4 H8EvaluateHull1722(float2 uv)
+{
+    float quality = saturate(_BakeParams.x);
+    float seed = _BakeParams.y;
+    float meshInfluence = H8MeshInfluence_1722(uv);
+    float scar;
+    float dent = H8DentField_1722(uv, quality, seed + meshInfluence * 37.0, scar);
+    float panel = H8PanelLine_1722(uv + seed * 0.013 + meshInfluence * 0.021, lerp(18.0, 44.0, quality), lerp(0.018, 0.010, quality));
+    float rib = H8LongitudinalRib_1722(uv + meshInfluence * 0.017, lerp(9.0, 27.0, quality), lerp(0.016, 0.008, quality));
+    float corrosion = H8ValueNoise3_1722(float3(uv * lerp(36.0, 96.0, quality), seed * 0.031 + meshInfluence));
+    float micro = (corrosion - 0.5) * lerp(0.008, 0.028, quality);
+    float raisedWeld = panel * lerp(0.016, 0.044, quality) + rib * lerp(0.010, 0.032, quality);
+    float height = saturate(0.5 + raisedWeld + micro - dent);
+    scar = saturate(max(scar, panel * 0.42 + rib * 0.26 + corrosion * 0.18) * max(_BakeParams.w, 0.0));
+
+    float2 slope;
+    slope.x = H8ValueNoise3_1722(float3(uv * 128.0 + float2(17.0, 0.0), seed)) - 0.5;
+    slope.y = H8ValueNoise3_1722(float3(uv * 128.0 + float2(0.0, 29.0), seed + 11.0)) - 0.5;
+    slope += float2(panel, rib) * 0.24;
+    slope = clamp(slope * lerp(0.35, 0.95, quality), -1.0, 1.0);
+
+    return float4(height, slope * 0.5 + 0.5, scar);
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeHullAlbedo(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputAlbedo.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    float quality = saturate(_BakeParams.x);
+    float4 hull = H8EvaluateHull1722(uv);
+    float rustNoise = H8ValueNoise3_1722(float3(uv * lerp(18.0, 64.0, quality), _BakeParams.y));
+    float salt = saturate(H8PanelLine_1722(uv.yx + 0.19, lerp(9.0, 22.0, quality), 0.035) * 0.34 + rustNoise * 0.18);
+    float3 pressurePaint = lerp(float3(0.038, 0.055, 0.062), float3(0.115, 0.148, 0.150), uv.y);
+    float3 wornMetal = float3(0.23, 0.255, 0.25);
+    float3 oxidized = float3(0.185, 0.142, 0.092);
+    float wear = saturate(hull.a * 0.82 + rustNoise * 0.22 + salt * 0.15);
+    float3 color = lerp(pressurePaint, wornMetal, wear * lerp(0.22, 0.58, quality));
+    color = lerp(color, oxidized, saturate((rustNoise - 0.63) * 1.9) * lerp(0.12, 0.48, quality));
+    color = lerp(color, float3(0.78, 0.82, 0.76), salt * lerp(0.08, 0.32, quality));
+    _OutputAlbedo[id.xy] = float4(saturate(color), 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeHullDisplacement(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputDisplacement.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    _OutputDisplacement[id.xy] = saturate(H8EvaluateHull1722(uv));
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeHullMrao(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputMrao.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    float quality = saturate(_BakeParams.x);
+    float4 hull = H8EvaluateHull1722(uv);
+    float grime = H8ValueNoise3_1722(float3(uv * lerp(21.0, 88.0, quality), _BakeParams.y + 37.0));
+    float salt = H8LongitudinalRib_1722(uv + 0.37, lerp(8.0, 24.0, quality), 0.021);
+    float metallic = saturate(0.34 + hull.a * 0.42 + grime * 0.18);
+    float roughness = saturate(0.62 + hull.a * 0.22 + salt * 0.12 - metallic * 0.08);
+    float ao = saturate(1.0 - hull.a * lerp(0.12, 0.34, quality) - salt * 0.10);
+    float biolum = saturate(pow(max(0.0, grime - 0.62), 2.2) * lerp(0.18, 0.75, quality) + salt * 0.08);
+
+    _OutputMrao[id.xy] = float4(metallic, roughness, ao, biolum);
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeCavitationFlipbook(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputCavitation.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    uint tiles = (uint)max(_CavitationParams.y, 1.0);
+    uint frames = (uint)max(_CavitationParams.x, 1.0);
+    uint tileWidth = max(width / tiles, 1u);
+    uint tileHeight = max(height / tiles, 1u);
+    uint tileX = min(id.x / tileWidth, tiles - 1u);
+    uint tileY = min(id.y / tileHeight, tiles - 1u);
+    uint frame = tileY * tiles + tileX;
+    if (frame >= frames)
+    {
+        _OutputCavitation[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
+
+    float2 localUv = (float2(id.x - tileX * tileWidth, id.y - tileY * tileHeight) + 0.5) / float2(tileWidth, tileHeight);
+    float phase01 = frames > 1 ? (float)frame / (float)(frames - 1) : 0.0;
+    float phase = phase01 * H8_PI_1722 * 2.0;
+    float2 centered = localUv * 2.0 - 1.0;
+    float radius = length(centered);
+    float angle = atan2(centered.y, centered.x);
+    float swirl = angle * 3.0 + phase * 7.0 + radius * lerp(5.5, 12.0, saturate(_BakeParams.x));
+    float bladeWake = pow(saturate(cos(swirl) * 0.5 + 0.5), 4.0);
+    float ring = 1.0 - smoothstep(0.18, 0.58, abs(radius - 0.43));
+    float cone = 1.0 - smoothstep(0.20, 1.05, radius);
+    float2 loop = float2(cos(phase), sin(phase));
+    float n0 = H8ValueNoise3_1722(float3(localUv * 18.0 + loop * 1.7, loop.y * 2.3 + _BakeParams.y));
+    float n1 = H8ValueNoise3_1722(float3(localUv * 47.0 - loop.yx * 2.1, loop.x * 2.7 + _BakeParams.y * 0.71));
+    float bubble = saturate((n0 * 0.62 + n1 * 0.38 - 0.42) * 2.4);
+    float alpha = saturate((bladeWake * 0.55 + bubble * 0.68) * ring * cone * max(_CavitationParams.w, 0.0));
+    float3 foam = lerp(float3(0.55, 0.80, 0.88), float3(0.92, 0.985, 1.0), bubble);
+    foam *= saturate(alpha * (1.15 + bladeWake * max(_CavitationParams.z, 0.0)));
+
+    _OutputCavitation[id.xy] = float4(foam, alpha);
+}

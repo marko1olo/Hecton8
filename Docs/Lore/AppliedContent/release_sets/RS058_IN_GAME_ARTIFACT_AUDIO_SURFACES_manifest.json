@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS058_IN_GAME_ARTIFACT_AUDIO_SURFACES",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P286_CAPSULE_BLACKBOX_AUDIO_01",
+    "P287_P63_PUMP_ROOM_WORK_ORDER",
+    "P288_WORKER_LOCKER_NAMEPLATE_SAMPLE",
+    "P289_MARAUDER_CORRECTION_NOTE_SAMPLE",
+    "P290_QUARANTINE_RELAY_FRAGMENT"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS058_IN_GAME_ARTIFACT_AUDIO_SURFACES.packets.json"
+  ]
+}

@@ -1,10 +1,17 @@
 ---
 packet_id: P077_AEGIR_MOON_LADDER
+release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.moon_ladder
+unlock_id: unlock.first_aegir_moon_ladder
+poi_tags: poi.moon_ladder_chart;poi.transfer_window_strip
+biome_tags: biome.orbital_window;biome.relay_spine
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Aegir Moon Ladder

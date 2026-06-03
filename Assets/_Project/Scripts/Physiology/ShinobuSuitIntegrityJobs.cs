@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;

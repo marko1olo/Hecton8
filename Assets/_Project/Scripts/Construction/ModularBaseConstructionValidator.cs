@@ -144,7 +144,7 @@ namespace Hecton8.Construction
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct MockWorldSampler
+    public partial struct ConstructionTerrainSampler
     {
         [FieldOffset(0)] public double3 RootAUP;
         [FieldOffset(24)] public float PlaneLocalY;
@@ -213,7 +213,6 @@ namespace Hecton8.Construction
         public const int TelemetryCapacity = 300;
         public const int BoundsOverrideCapacity = 512;
         public const int OccupancyHashTableCapacity = 4096;
-        public const int EmergencyMockBoundsCount = 16;
         public const string DefaultDumpPath = "Docs/AgentLogs/Dump_1306_ConstructionValidation.bin";
         public const uint OccupancyFlagOccupied = 1u;
         public const int ConstructionRequestSizeBytes = 64;
@@ -240,7 +239,7 @@ namespace Hecton8.Construction
         private static ConstructionValidationResultDTO s_LastValidationResult;
         private static ConstructionRequestDTO s_LastRequest;
         private static StructuralBoundsDTO s_LastBounds;
-        private static MockWorldSampler s_LastSampler;
+        private static ConstructionTerrainSampler s_LastSampler;
         private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
         private static VaultGenerationHandle<ConstructionValidationSettingsDTO> s_TuningHandle;
@@ -316,24 +315,7 @@ namespace Hecton8.Construction
                 WriteTunerSettingsToVault(vault);
             EnsureTelemetryRing(vault, out _);
             EnsureOccupancyHashTable(vault, out _);
-            if (TryAcquireValidationWriteBuffer(
-                    vault,
-                    BufferID.ConstructionBuilderBounds,
-                    BoundsOverrideCapacity,
-                    NativeArrayOptions.ClearMemory,
-                    ref s_BoundsOverrideHandle,
-                    out NativeArray<StructuralBoundsDTO> boundsBuffer))
-            {
-                try
-                {
-                    if (boundsBuffer.Length > 0 && boundsBuffer[0].BoundsHash == 0u)
-                        GenerateEmergencyMockBounds(boundsBuffer, EmergencyMockBoundsCount, s_TunerSettings.GridSizeMeters);
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in s_BoundsOverrideHandle, SystemID.Construction);
-                }
-            }
+            EnsureBoundsOverrideBuffer(vault, out _);
         }
 
         public static ConstructionValidationSettingsDTO CreateDefaultSettings(float globalQualityWeight)
@@ -425,9 +407,9 @@ namespace Hecton8.Construction
             return math.saturate(qualityWeight);
         }
 
-        public static MockWorldSampler CreateMockWorldSampler(double3 rootAup, float planeLocalY, uint seed)
+        public static ConstructionTerrainSampler CreateTerrainSampler(double3 rootAup, float planeLocalY, uint seed)
         {
-            MockWorldSampler sampler = default;
+            ConstructionTerrainSampler sampler = default;
             sampler.RootAUP = rootAup;
             sampler.PlaneLocalY = math.isfinite(planeLocalY) ? planeLocalY : 0f;
             sampler.RidgeAmplitudeMeters = 0f;
@@ -498,34 +480,11 @@ namespace Hecton8.Construction
             return bounds;
         }
 
-        public static int GenerateEmergencyMockBounds(
-            NativeArray<StructuralBoundsDTO> boundsBuffer,
-            int requestedCount,
-            float gridSizeMeters)
-        {
-            if (!boundsBuffer.IsCreated || boundsBuffer.Length <= 0)
-                return 0;
-
-            int count = math.clamp(requestedCount, 1, math.min(boundsBuffer.Length, EmergencyMockBoundsCount));
-            float grid = SanitizePositive(gridSizeMeters, DefaultGridSizeMeters);
-            float3 size = new float3(grid * 0.92f, grid * 0.78f, grid * 0.92f);
-            for (int i = 0; i < count; i++)
-            {
-                uint hash = FnvOffset ^ (uint)(i + 1) * FnvPrime;
-                boundsBuffer[i] = BuildBounds(float3.zero, size, hash);
-            }
-
-            for (int i = count; i < boundsBuffer.Length; i++)
-                boundsBuffer[i] = default;
-
-            return count;
-        }
-
         public static ConstructionValidationResultDTO ValidatePlacementNoOccupancy(
             in ConstructionRequestDTO request,
             in StructuralBoundsDTO bounds,
             in ConstructionValidationSettingsDTO settings,
-            in MockWorldSampler sampler,
+            in ConstructionTerrainSampler sampler,
             in ConstructionSipBudgetDTO sipBudget)
         {
             ConstructionValidationResultDTO result;
@@ -549,7 +508,7 @@ namespace Hecton8.Construction
         public static bool TryGetLastValidation(
             out ConstructionRequestDTO request,
             out StructuralBoundsDTO bounds,
-            out MockWorldSampler sampler,
+            out ConstructionTerrainSampler sampler,
             out ConstructionValidationResultDTO result)
         {
             request = s_LastRequest;
@@ -1060,7 +1019,7 @@ namespace Hecton8.Construction
             in ConstructionRequestDTO request,
             in StructuralBoundsDTO bounds,
             in ConstructionValidationSettingsDTO settings,
-            in MockWorldSampler sampler,
+            in ConstructionTerrainSampler sampler,
             in ConstructionSipBudgetDTO sipBudget,
             bool hasOccupancy,
             NativeParallelMultiHashMap<int, BaseModuleOccupancyDTO> occupancy,
@@ -1446,7 +1405,7 @@ namespace Hecton8.Construction
         public StructuralBoundsDTO Bounds;
         public ConstructionValidationSettingsDTO Settings;
         public ConstructionSipBudgetDTO SipBudget;
-        public MockWorldSampler WorldSampler;
+        public ConstructionTerrainSampler WorldSampler;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<ConstructionValidationResultDTO> Result;
 
         public void Execute()

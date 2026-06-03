@@ -19,10 +19,13 @@ namespace Hecton8.Rendering.Scatter
         private const int MetadataStrideBytes = 64;
         private const int QualityIndexStrideBytes = 4;
         private const int MaxRuntimeInstanceCount = 1048576;
+        private const double UriLoadTimeoutSeconds = 30.0d;
         private const uint FileFlagHasQualityIndex = 1u << 0;
         private const uint FileFlagHasMetadata = 1u << 1;
         private const uint RequiredFileFlags = FileFlagHasQualityIndex | FileFlagHasMetadata;
         private const string StreamingAssetsPrefix = "Assets/StreamingAssets/";
+        private const string UriCacheDirectoryName = "ScatterBrg";
+        private const string UriCacheFileExtension = ".h8brg";
 
         [SerializeField] private GpuScatterLodManager targetRenderer;
         [SerializeField] private string brgDataAssetPath;
@@ -41,6 +44,9 @@ namespace Hecton8.Rendering.Scatter
         private bool _loaded;
         private UnityWebRequest _uriRequest;
         private UnityWebRequestAsyncOperation _uriOperation;
+        private double _uriRequestStartTime;
+        private string _uriCachePathCold;
+        private string _uriTempPathCold;
 
         public void ConfigureCold(
             GpuScatterLodManager renderer,
@@ -93,8 +99,21 @@ namespace Hecton8.Rendering.Scatter
 
         public void SlowTick()
         {
-            if (_uriOperation == null || !_uriOperation.isDone)
+            if (_uriOperation == null)
                 return;
+
+            if (!_uriOperation.isDone)
+            {
+                if (Time.realtimeSinceStartupAsDouble - _uriRequestStartTime >= UriLoadTimeoutSeconds)
+                {
+                    DisposeUriRequestCold();
+                    UnregisterSlowTickCold();
+                    _loadRequested = false;
+                    LogWarningCold(this, "[1614] BRG scatter bootstrap URI load timed out.");
+                }
+
+                return;
+            }
 
             CompleteUriLoadCold();
         }
@@ -155,7 +174,24 @@ namespace Hecton8.Rendering.Scatter
             DisposeUriRequestCold();
             try
             {
-                _uriRequest = UnityWebRequest.Get(uri);
+                if (!TryPrepareUriCachePathsCold(out string cachePath, out string tempPath, out string pathFailure))
+                {
+                    _loadRequested = false;
+                    LogWarningCold(this, "[1614] BRG scatter bootstrap URI cache path failed: " + pathFailure);
+                    return;
+                }
+
+                TryDeleteFileCold(tempPath);
+                _uriCachePathCold = cachePath;
+                _uriTempPathCold = tempPath;
+                _uriRequest = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbGET);
+                _uriRequest.downloadHandler = new DownloadHandlerFile(tempPath)
+                {
+                    removeFileOnAbort = true
+                };
+                _uriRequest.disposeDownloadHandlerOnDispose = true;
+                _uriRequest.timeout = (int)UriLoadTimeoutSeconds;
+                _uriRequestStartTime = Time.realtimeSinceStartupAsDouble;
                 _uriOperation = _uriRequest.SendWebRequest();
                 if (!RegisterSlowTickCold())
                 {
@@ -194,20 +230,38 @@ namespace Hecton8.Rendering.Scatter
                     return;
                 }
 
-                byte[] payload = request.downloadHandler == null ? null : request.downloadHandler.data;
-                if (payload == null || payload.Length == 0)
+                string tempPath = _uriTempPathCold;
+                string cachePath = _uriCachePathCold;
+                if (string.IsNullOrEmpty(tempPath) || string.IsNullOrEmpty(cachePath) || !File.Exists(tempPath))
                 {
-                    LogWarningCold(this, "[1614] BRG scatter bootstrap URI returned empty payload.");
+                    LogWarningCold(this, "[1614] BRG scatter bootstrap URI returned no file payload.");
                     _loadRequested = false;
                     return;
                 }
 
-                if (!TryLoadFromBytesCold(payload, out string failure))
+                request.Dispose();
+                request = null;
+
+                TryDeleteFileCold(cachePath);
+                File.Move(tempPath, cachePath);
+                _uriTempPathCold = null;
+
+                if (!TryLoadFromFileCold(cachePath, out string failure))
                     LogWarningCold(this, "[1614] BRG scatter bootstrap failed: " + failure);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
+            {
+                TryDeleteFileCold(_uriTempPathCold);
+                _loadRequested = false;
+                LogWarningCold(this, "[1614] BRG scatter bootstrap URI cache commit failed: " + exception.GetType().Name);
             }
             finally
             {
-                request.Dispose();
+                if (request != null)
+                    request.Dispose();
+                _uriRequestStartTime = 0d;
+                _uriCachePathCold = null;
+                _uriTempPathCold = null;
             }
         }
 
@@ -233,11 +287,63 @@ namespace Hecton8.Rendering.Scatter
         {
             _uriOperation = null;
             if (_uriRequest == null)
+            {
+                _uriRequestStartTime = 0d;
+                TryDeleteFileCold(_uriTempPathCold);
+                _uriCachePathCold = null;
+                _uriTempPathCold = null;
                 return;
+            }
 
             _uriRequest.Abort();
             _uriRequest.Dispose();
             _uriRequest = null;
+            _uriRequestStartTime = 0d;
+            TryDeleteFileCold(_uriTempPathCold);
+            _uriCachePathCold = null;
+            _uriTempPathCold = null;
+        }
+
+        private bool TryPrepareUriCachePathsCold(out string cachePath, out string tempPath, out string failure)
+        {
+            cachePath = null;
+            tempPath = null;
+            failure = string.Empty;
+
+            try
+            {
+                string cacheDirectory = Path.Combine(Application.temporaryCachePath, "Hecton8", UriCacheDirectoryName);
+                Directory.CreateDirectory(cacheDirectory);
+                string fileName = "scatter_" +
+                    expectedContentHash.ToString("X8") +
+                    "_" +
+                    expectedHeaderHash.ToString("X8") +
+                    UriCacheFileExtension;
+                cachePath = Path.Combine(cacheDirectory, fileName);
+                tempPath = cachePath + ".tmp";
+                return true;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
+            {
+                failure = exception.GetType().Name;
+                return false;
+            }
+        }
+
+        private static void TryDeleteFileCold(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            catch (ArgumentException) { }
+            catch (NotSupportedException) { }
         }
 
         private bool TryLoadFromFileCold(string filePath, out string failure)
@@ -264,15 +370,6 @@ namespace Hecton8.Rendering.Scatter
                 failure = exception.GetType().Name + " " + exception.Message;
                 _loadRequested = false;
                 return false;
-            }
-        }
-
-        private bool TryLoadFromBytesCold(byte[] bytes, out string failure)
-        {
-            using (MemoryStream stream = new MemoryStream(bytes, writable: false))
-            using (BinaryReader reader = new BinaryReader(stream))
-            {
-                return TryReadAndPublishPayloadCold(reader, bytes.Length, out failure);
             }
         }
 
@@ -335,7 +432,8 @@ namespace Hecton8.Rendering.Scatter
             for (int i = 0; i < header.QualityIndexCount; i++)
                 payload.QualityIndices[i] = reader.ReadInt32();
 
-            return ValidateQualityMap(payload.QualityIndices, header.MatrixCount, out failure);
+            return ValidateQualityMap(payload.QualityIndices, header.MatrixCount, out failure) &&
+                   ApplyQualityMapCold(ref payload, out failure);
         }
 
         private bool TryPublishPayloadCold(LoadedBrgPayload payload, out string failure)
@@ -380,8 +478,7 @@ namespace Hecton8.Rendering.Scatter
                 }
 
                 lockAcquired = true;
-                for (int dst = 0; dst < payload.Header.MatrixCount; dst++)
-                    buffer[dst] = payload.Matrices[payload.QualityIndices[dst]];
+                NativeArray<Matrix4x4>.Copy(payload.Matrices, 0, buffer, 0, payload.Header.MatrixCount);
 
                 return true;
             }
@@ -413,8 +510,7 @@ namespace Hecton8.Rendering.Scatter
                 }
 
                 lockAcquired = true;
-                for (int dst = 0; dst < payload.Header.MetadataCount; dst++)
-                    buffer[dst] = payload.Metadata[payload.QualityIndices[dst]];
+                NativeArray<GpuScatterFloraInstanceData>.Copy(payload.Metadata, 0, buffer, 0, payload.Header.MetadataCount);
 
                 return true;
             }
@@ -510,6 +606,54 @@ namespace Hecton8.Rendering.Scatter
             }
 
             return true;
+        }
+
+        private static bool ApplyQualityMapCold(ref LoadedBrgPayload payload, out string failure)
+        {
+            failure = string.Empty;
+            int count = payload.Header.MatrixCount;
+            if (!payload.Matrices.IsCreated ||
+                !payload.Metadata.IsCreated ||
+                !payload.QualityIndices.IsCreated ||
+                payload.Matrices.Length < count ||
+                payload.Metadata.Length < count ||
+                payload.QualityIndices.Length < count)
+            {
+                failure = "quality map payload buffers invalid";
+                return false;
+            }
+
+            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<GpuScatterFloraInstanceData> metadata = new NativeArray<GpuScatterFloraInstanceData>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            bool transferred = false;
+            try
+            {
+                for (int dst = 0; dst < count; dst++)
+                {
+                    int src = payload.QualityIndices[dst];
+                    matrices[dst] = payload.Matrices[src];
+                    metadata[dst] = payload.Metadata[src];
+                }
+
+                payload.Matrices.Dispose();
+                payload.Metadata.Dispose();
+                payload.QualityIndices.Dispose();
+                payload.Matrices = matrices;
+                payload.Metadata = metadata;
+                payload.QualityIndices = default;
+                transferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!transferred)
+                {
+                    if (matrices.IsCreated)
+                        matrices.Dispose();
+                    if (metadata.IsCreated)
+                        metadata.Dispose();
+                }
+            }
         }
 
         private static BrgRuntimeHeader ReadHeader(BinaryReader reader)

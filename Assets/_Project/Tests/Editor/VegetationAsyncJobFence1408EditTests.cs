@@ -200,24 +200,26 @@ namespace Hecton8.Tests.Editor
             string scheduleBody = ExtractMethodBody(source, "ScheduleRadarJob");
             string completeBody = ExtractMethodBody(source, "CompleteRadarJob");
 
-            AssertOrdered(scheduleBody, "TryCreateRadarPendingJob(out pending)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
-            AssertOrdered(scheduleBody, "TryCopyCurrentGprStateToPending(ref pending)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
-            AssertOrdered(scheduleBody, "TryStageNearestSdf(probeOrigin, ref pending", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
+            AssertOrdered(scheduleBody, "TryCreateRadarPendingJob()", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
+            AssertOrdered(scheduleBody, "TryCopyCurrentGprStateToPending(ref _radarJob)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
+            AssertOrdered(scheduleBody, "TryStageNearestSdf(probeOrigin, ref _radarJob", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
             AssertOrdered(scheduleBody, "JobHandle handle = job.Schedule()", "_radarJobScheduled = 1");
             AssertOrdered(scheduleBody, "oreDependencySink == null", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
-            AssertOrdered(scheduleBody, "TryStageNearestSdf(probeOrigin, ref pending", "EncodedSdf = encodedSdf");
+            AssertOrdered(scheduleBody, "TryStageNearestSdf(probeOrigin, ref _radarJob", "EncodedSdf = encodedSdf");
             Assert.That(scheduleBody, Does.Not.Contain("_radarSdfSnapshotLocked"));
             Assert.That(scheduleBody, Does.Not.Contain("CommitCompletedScan"));
+            Assert.That(scheduleBody, Does.Not.Contain("ReleaseRadarPendingJob"));
             Assert.That(scheduleBody, Does.Not.Contain(".Run("));
 
-            AssertOrdered(completeBody, "DispatcherJobFence.TryComplete(ref _radarJobHandle, forceComplete)", "CommitCompletedScan(ref pending)");
-            AssertOrdered(completeBody, "CommitCompletedScan(ref pending)", "ReleaseRadarPendingJob(ref pending)");
+            AssertOrdered(completeBody, "DispatcherJobFence.TryComplete(ref _radarJobHandle, forceComplete)", "CommitCompletedScan(ref _radarJob)");
+            AssertOrdered(completeBody, "CommitCompletedScan(ref _radarJob)", "RetireRadarPendingJobForReuse(ref _radarJob)");
             Assert.That(completeBody, Does.Contain("_radarJobScheduled = 0"));
+            Assert.That(completeBody, Does.Not.Contain("ReleaseRadarPendingJob"));
             Assert.That(completeBody, Does.Not.Contain(".Complete("));
         }
 
         [Test]
-        public void GroundRadarRaymarch_UsesTempStagingAndShortWriteLockPublish()
+        public void GroundRadarRaymarch_UsesReusableStagingAndShortWriteLockPublish()
         {
             string source = ReadProjectScript("World/GroundPenetratingRadarRuntime.cs");
             string scheduleBody = ExtractMethodBody(source, "ScheduleRadarJob");
@@ -226,17 +228,18 @@ namespace Hecton8.Tests.Editor
             string sdfStageBody = ExtractMethodBody(source, "TryStageSdfLeaseToPendingSnapshot");
             string releaseBody = ExtractMethodBody(source, "ReleaseRadarPendingJob");
             string publishBody = ExtractMethodBody(source, "TryPublishRadarPendingJob");
+            string publishHelperBody = ExtractMethodBody(source, "TryCopyPendingBufferToVault");
 
             Assert.That(createBody, Does.Contain("Allocator.Persistent"));
             Assert.That(createBody, Does.Not.Contain("Allocator.TempJob"));
-            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float3>(pending.Hits)"));
-            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float>(pending.SignalStrength)"));
-            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float4>(pending.PingGpu)"));
+            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float3>(_radarJob.Hits)"));
+            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float>(_radarJob.SignalStrength)"));
+            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float4>(_radarJob.PingGpu)"));
             Assert.That(scheduleBody, Does.Not.Contain("new NativeSlice<float3>(hits)"));
             Assert.That(scheduleBody, Does.Not.Contain("new NativeSlice<float4>(pingGpu)"));
 
-            AssertOrdered(copyBody, "TryLockScanJobBuffers()", "NativeArray<float3>.Copy(hits, pending.Hits");
-            AssertOrdered(copyBody, "NativeArray<float4>.Copy(pingGpu, pending.PingGpu", "ReleaseScanJobBufferLocks()");
+            AssertOrdered(copyBody, "TryPinScanJobBuffers(vault)", "NativeArray<float3>.Copy(hits, pending.Hits");
+            AssertOrdered(copyBody, "NativeArray<float4>.Copy(pingGpu, pending.PingGpu", "ReleaseScanJobBufferPins()");
             Assert.That(sdfStageBody, Does.Contain("Allocator.Persistent"));
             Assert.That(sdfStageBody, Does.Not.Contain("Allocator.TempJob"));
             AssertOrdered(sdfStageBody, "H8Memory.Allocate<byte>", "snapshotSdf = pending.SdfSnapshot.AsReadOnly()");
@@ -244,12 +247,12 @@ namespace Hecton8.Tests.Editor
             Assert.That(sdfStageBody, Does.Not.Contain("TryResolveHandle"));
             Assert.That(releaseBody, Does.Contain("pending.SdfSnapshot"));
 
-            AssertOrdered(publishBody, "TryAcquireWriteLock(in _gprHitsHandle", "NativeArray<float3>.Copy(pending.Hits, hits");
-            AssertOrdered(publishBody, "TryAcquireWriteLock(in _gprPingGpuHandle", "NativeArray<float4>.Copy(pending.PingGpu, pingGpu");
-            AssertOrdered(publishBody, "NativeArray<float4>.Copy(pending.PingGpu, pingGpu", "ReleaseWriteLock(in _gprPingGpuHandle");
-            AssertOrdered(publishBody, "NativeArray<float3>.Copy(pending.Hits, hits", "ReleaseWriteLock(in _gprHitsHandle");
-            Assert.That(publishBody, Does.Contain("ReleaseWriteLock(in _maxSignalStrengthHandle"));
-            Assert.That(publishBody, Does.Contain("finally"));
+            AssertOrdered(publishBody, "in _maxSignalStrengthHandle", "in _gprCountersHandle");
+            Assert.That(publishBody, Does.Contain("TryCopyPendingBufferToVault"));
+            Assert.That(publishBody, Does.Not.Contain("TryResolveHandle"));
+            AssertOrdered(publishHelperBody, "TryAcquireWriteLock(in handle", "NativeArray<T>.Copy(source, target, copyLength)");
+            AssertOrdered(publishHelperBody, "NativeArray<T>.Copy(source, target, copyLength)", "ReleaseWriteLock(in handle");
+            Assert.That(publishHelperBody, Does.Contain("finally"));
         }
 
         [Test]
@@ -416,9 +419,65 @@ namespace Hecton8.Tests.Editor
 
         private static string ExtractMethodBody(string source, string methodName)
         {
-            int methodIndex = source.IndexOf(methodName + "(", StringComparison.Ordinal);
+            int methodIndex = FindMethodDeclarationIndex(source, methodName);
             Assert.GreaterOrEqual(methodIndex, 0, methodName);
             return ExtractBodyFromIndex(source, methodIndex, methodName);
+        }
+
+        private static int FindMethodDeclarationIndex(string source, string methodName)
+        {
+            int searchIndex = 0;
+            while (searchIndex < source.Length)
+            {
+                int methodIndex = source.IndexOf(methodName, searchIndex, StringComparison.Ordinal);
+                if (methodIndex < 0)
+                    return -1;
+
+                int afterName = methodIndex + methodName.Length;
+                if (afterName < source.Length && source[afterName] == '<')
+                {
+                    int genericClose = source.IndexOf('>', afterName + 1);
+                    if (genericClose < 0)
+                        return -1;
+
+                    afterName = genericClose + 1;
+                }
+
+                while (afterName < source.Length && char.IsWhiteSpace(source[afterName]))
+                    afterName++;
+
+                if (afterName < source.Length &&
+                    source[afterName] == '(' &&
+                    IsMethodDeclarationLine(source, methodIndex))
+                {
+                    return methodIndex;
+                }
+
+                searchIndex = methodIndex + methodName.Length;
+            }
+
+            return -1;
+        }
+
+        private static bool IsMethodDeclarationLine(string source, int methodIndex)
+        {
+            int lineStart = source.LastIndexOf('\n', Math.Max(0, methodIndex - 1));
+            lineStart = lineStart < 0 ? 0 : lineStart + 1;
+            int firstNonWhitespace = lineStart;
+            while (firstNonWhitespace < methodIndex && char.IsWhiteSpace(source[firstNonWhitespace]))
+                firstNonWhitespace++;
+
+            return StartsWithOrdinal(source, firstNonWhitespace, "public ") ||
+                   StartsWithOrdinal(source, firstNonWhitespace, "private ") ||
+                   StartsWithOrdinal(source, firstNonWhitespace, "internal ") ||
+                   StartsWithOrdinal(source, firstNonWhitespace, "protected ");
+        }
+
+        private static bool StartsWithOrdinal(string source, int index, string prefix)
+        {
+            return index >= 0 &&
+                   index + prefix.Length <= source.Length &&
+                   string.CompareOrdinal(source, index, prefix, 0, prefix.Length) == 0;
         }
 
         private static string ExtractMethodBodyFromSignature(string source, string signature)

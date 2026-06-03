@@ -45,19 +45,17 @@ namespace Hecton8.Tests.Editor
         public void RuntimeBakerHasNoPrivateUnityUpdateScheduler()
         {
             string source = ReadProjectFile(RuntimeBakerPath);
-            StringAssert.Contains("RuntimePhysicsBakeJob1609", source);
-            StringAssert.Contains("POST_SIMULATION", source);
-            StringAssert.Contains("VISUAL_SYNC", source);
-            StringAssert.Contains("UnityEngine.Physics.BakeMesh", source);
             StringAssert.Contains("RuntimePhysicsBakeCommitPhase1609", source);
             StringAssert.Contains("IsCommitPhaseAllowed", source);
             StringAssert.Contains("RuntimePhysicsBakeCommitPhase1609.PostSimulation", source);
             StringAssert.Contains("RuntimePhysicsBakeCommitPhase1609.VisualSync", source);
             StringAssert.Contains("RefreshBakeIdentityCold", source);
             StringAssert.Contains("meshEntityId = cachedCollisionProxyMeshEntityId", source);
-            StringAssert.Contains("meshKey == cachedCollisionProxyMeshKey", source);
-            StringAssert.Contains("MeshColliderCookingOptions", source);
-            StringAssert.Contains("UnityEngine.Physics.BakeMesh(MeshEntityId, Convex, CookingOptions)", source);
+            StringAssert.Contains("Runtime sharedMesh reassignment is forbidden.", source);
+            Assert.IsFalse(source.Contains("RuntimePhysicsBakeJob1609", StringComparison.Ordinal));
+            Assert.IsFalse(source.Contains("Physics.BakeMesh", StringComparison.Ordinal));
+            Assert.IsFalse(source.Contains("UnityEngine.Physics.BakeMesh", StringComparison.Ordinal));
+            Assert.IsFalse(source.Contains("MeshColliderCookingOptions", StringComparison.Ordinal));
             Assert.IsFalse(source.Contains(Token("Global", "Registry.", "Get"), StringComparison.Ordinal));
             Assert.IsFalse(source.Contains(Token("Get", "Component("), StringComparison.Ordinal));
             Assert.IsFalse(source.Contains(Token("void ", "Update("), StringComparison.Ordinal));
@@ -72,7 +70,6 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile(RuntimeBakerPath);
 
-            AssertRuntimeBodyIsLookupLockAndAllocationFree(source, "public void Execute()");
             AssertRuntimeBodyIsLookupLockAndAllocationFree(source, "public bool TryResolveBakeRequest");
             AssertRuntimeBodyIsLookupLockAndAllocationFree(source, "public bool CommitBakedCollider");
         }
@@ -88,6 +85,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("cachedCollisionProxyMeshKey == 0ul", source);
             StringAssert.Contains("EntityId.ToULong(cachedCollisionProxyMeshEntityId) != cachedCollisionProxyMeshKey", source);
             StringAssert.Contains("lastCommitPhase = (byte)phase", source);
+            StringAssert.Contains("targetCollider.sharedMesh != collisionProxyMesh", source);
 
             int commitIndex = source.IndexOf("public bool CommitBakedCollider", StringComparison.Ordinal);
             int keyGuardIndex = source.IndexOf("cachedCollisionProxyMeshKey == 0ul", commitIndex, StringComparison.Ordinal);
@@ -95,7 +93,7 @@ namespace Hecton8.Tests.Editor
 
             Assert.GreaterOrEqual(commitIndex, 0);
             Assert.Greater(keyGuardIndex, commitIndex);
-            Assert.Greater(assignmentIndex, keyGuardIndex);
+            Assert.AreEqual(-1, assignmentIndex);
         }
 
         [Test]
@@ -170,6 +168,9 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile(EnginePath);
             StringAssert.Contains("BuildRootAabbProxyMesh", source);
+            StringAssert.Contains("LegacyCompoundRootName = \"__CompoundCollider_1609\"", source);
+            StringAssert.Contains("GeneratedCompoundRootName = \"COL_CompoundProxy_1716\"", source);
+            StringAssert.Contains("GeneratedConvexRootName = \"COL_ConvexProxy_1716\"", source);
             StringAssert.Contains("rootTransform.worldToLocalMatrix * filter.transform.localToWorldMatrix", source);
             StringAssert.Contains("BuildRootAabbProxyMesh(root, root.name, settings.ProxyPaddingMeters)", source);
             StringAssert.Contains("float safePadding = Mathf.Clamp(paddingMeters, MinProxyPaddingMeters, MaxProxyPaddingMeters)", source);
@@ -182,9 +183,12 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("!IsPrimaryCollisionVisual(filter)", source);
             StringAssert.Contains("Object.DestroyImmediate(proxy)", source);
             StringAssert.Contains("RemoveExistingProxyBakeArtifacts", source);
+            StringAssert.Contains("RemoveGeneratedChildRoot(rootTransform, GeneratedConvexRootName)", source);
             StringAssert.Contains("AssetDatabase.DeleteAsset(oldProxyPath)", source);
             StringAssert.Contains("RemoveProxyBakerComponent(baker)", source);
             StringAssert.Contains("IsOwnedByBakerRoot", source);
+            StringAssert.Contains("MeshCollider collider = colliderRoot.AddComponent<MeshCollider>()", source);
+            Assert.IsFalse(source.Contains("MeshCollider collider = root.AddComponent<MeshCollider>()", StringComparison.Ordinal));
             Assert.IsFalse(source.Contains(Token(".", "Complete()"), StringComparison.Ordinal));
         }
 
@@ -200,7 +204,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("IsGeneratedCollisionName", engine);
             StringAssert.Contains("UnityEngine.PhysicsMaterial material = null", engine);
             StringAssert.Contains("ProxyMeshesDeleted", engine);
-            StringAssert.Contains("baker.ConfigureAuthoring(proxy, collider, bootstrap, true, collider.cookingOptions)", engine);
+            StringAssert.Contains("collider.sharedMesh = proxy", engine);
+            StringAssert.Contains("baker.ConfigureAuthoring(proxy, collider, bootstrap, true)", engine);
 
             Assert.IsFalse(combined.Contains(Token("Global", "Registry.", "Get"), StringComparison.Ordinal));
             Assert.IsFalse(combined.Contains(Token("Data", "Vault"), StringComparison.Ordinal));

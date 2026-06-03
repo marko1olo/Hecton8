@@ -1,30 +1,37 @@
 ---
 packet_id: P095_PRESSURE_CONTAINMENT_FAILURE
+release_set_id: RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS
 article_id: hecton8.pressure_containment_failure
+unlock_id: unlock.first_pressure_containment_failure
+poi_tags: poi.pressure_casket_stage_chart;poi.blue_debt_seal_failure
+biome_tags: biome.resource_pressure;biome.vent_forge
 locale: pl_PL
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Pressure Containment Failure
 
-Draft PL localization pending native pass. Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
+Pressure Containment Failure defines Xenon-Omega handling stages for gameplay and wiki use: sealed, drifting, fractured, blooming, and dead-but-contaminating.
 
 ## Scanner
 
-Draft PL localization pending native pass. Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
+Casket stage chart. Blue debt fails by pressure, signal and bloom, not by curse.
 
 ## Terminal
 
-Draft PL localization pending native pass. CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
+CONTAINMENT STAGES: 0 sealed. 1 signal drift. 2 lattice fracture. 3 brine/biological bloom. 4 dead sample, live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Draft PL localization pending native pass. The sample does not hate you. It just remembers the wrong pressure.
+The sample does not hate you. It just remembers the wrong pressure.
 
 ## Field Note
 
-Draft PL localization pending native pass. Containment gives gameplay thresholds without making the resource magic.
+Containment gives gameplay thresholds without making the resource magic.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/pl_PL. -->

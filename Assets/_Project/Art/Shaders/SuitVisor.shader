@@ -25,6 +25,10 @@ Shader "NASAPunk/SuitVisor"
         _FingerprintTex ("Fingerprint Smudge (R=mask)", 2D) = "black" {}
         _FingerprintStrength ("Fingerprint Strength", Range(0, 1)) = 0.3
         _LensGrimeIntensity ("Blue Noise Lens Grime", Range(0, 2)) = 1
+        _VisorMaskTex ("Packed Visor Wear Mask (R Dirt G Scratch B Salt A Condensation)", 2D) = "black" {}
+        _VisorMaskStrengths ("Packed Visor Mask Strengths", Vector) = (0, 0, 0, 0)
+        _VisorMaskUvShift ("Packed Visor UV Shift xy Base zw Condensation", Vector) = (0, 0, 0, 0)
+        _VisorCondensationFlipbook ("Condensation Flipbook xy Grid z Frame w Blend", Vector) = (8, 8, -1, 0)
 
         [Header(Water Runoff)]
         _WaterRunoffStrength ("Water Runoff Strength", Range(0, 1)) = 0
@@ -161,6 +165,10 @@ Shader "NASAPunk/SuitVisor"
                 float4 _FingerprintTex_ST;
                 float  _FingerprintStrength;
                 float  _LensGrimeIntensity;
+                float4 _VisorMaskTex_ST;
+                float4 _VisorMaskStrengths;
+                float4 _VisorMaskUvShift;
+                float4 _VisorCondensationFlipbook;
 
                 float  _WaterRunoffStrength;
                 float  _DropletAlpha;
@@ -222,6 +230,7 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_HUD_RenderTexture); SAMPLER(sampler_HUD_RenderTexture);
             TEXTURE2D(_ScratchNormalMap); SAMPLER(sampler_ScratchNormalMap);
             TEXTURE2D(_FingerprintTex); SAMPLER(sampler_FingerprintTex);
+            TEXTURE2D(_VisorMaskTex); SAMPLER(sampler_VisorMaskTex);
             TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
             TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
             float4 _HectonHudFogPerturbation;
@@ -493,6 +502,34 @@ Shader "NASAPunk/SuitVisor"
                 return saturate(dot(rgb, float3(0.2126, 0.7152, 0.0722)));
             }
 
+            float SampleVisorCondensationAtlas(float2 uv, float timeValue, float driftSpeed, float4 flipbookParams, float4 uvShift)
+            {
+                float4 safeFlipbook = HectonFinite4(flipbookParams, float4(8.0, 8.0, -1.0, 0.0));
+                float2 grid = max(floor(abs(safeFlipbook.xy) + 0.5), float2(1.0, 1.0));
+                float frameCount = max(1.0, grid.x * grid.y);
+                float safeTime = HectonFiniteValue(timeValue, 0.0);
+                float safeSpeed = max(0.001, HectonFiniteValue(driftSpeed, 0.18));
+                float manualFrame = HectonFiniteValue(safeFlipbook.z, -1.0);
+                float frameBase = manualFrame >= 0.0
+                    ? manualFrame
+                    : safeTime * safeSpeed * frameCount;
+                float frameA = floor(frameBase);
+                float blend = manualFrame >= 0.0
+                    ? saturate(HectonFiniteValue(safeFlipbook.w, frac(frameBase)))
+                    : frac(frameBase);
+                float frameB = frameA + 1.0;
+                float frameAWrapped = frameA - floor(frameA * rcp(frameCount)) * frameCount;
+                float frameBWrapped = frameB - floor(frameB * rcp(frameCount)) * frameCount;
+                float2 localUv = frac(HectonFinite2(uv + uvShift.zw, float2(0.5, 0.5)));
+                localUv = lerp(float2(0.003, 0.003), float2(0.997, 0.997), localUv);
+                float2 invGrid = rcp(grid);
+                float2 tileA = float2(frameAWrapped - floor(frameAWrapped * invGrid.x) * grid.x, floor(frameAWrapped * invGrid.x));
+                float2 tileB = float2(frameBWrapped - floor(frameBWrapped * invGrid.x) * grid.x, floor(frameBWrapped * invGrid.x));
+                float alphaA = SAMPLE_TEXTURE2D(_VisorMaskTex, sampler_VisorMaskTex, (tileA + localUv) * invGrid).a;
+                float alphaB = SAMPLE_TEXTURE2D(_VisorMaskTex, sampler_VisorMaskTex, (tileB + localUv) * invGrid).a;
+                return saturate(lerp(alphaA, alphaB, blend));
+            }
+
             float ComputeProceduralScratchMask(float2 uv)
             {
                 uv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
@@ -734,22 +771,72 @@ Shader "NASAPunk/SuitVisor"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
-                float2 scratchUV = TRANSFORM_TEX(IN.uv, _ScratchNormalMap);
-                float4 scratchPacked = SAMPLE_TEXTURE2D(_ScratchNormalMap, sampler_ScratchNormalMap, scratchUV);
-                float3 scratchNormalTS = UnpackScaledNormal(scratchPacked, _ScratchNormalStrength);
-                float scratchTextureMask = ApproximateMagnitude2D(scratchNormalTS.xy);
-                float proceduralScratchMask = ComputeProceduralScratchMask(IN.uv);
-                float2 proceduralScratchXY = clamp(
-                    float2(ddx(proceduralScratchMask), ddy(proceduralScratchMask)) * (_ScratchNormalStrength * 12.0),
-                    -0.22,
-                    0.22);
+                float4 visorMaskStrengths = saturate(HectonFinite4(_VisorMaskStrengths, float4(0.0, 0.0, 0.0, 0.0)));
+                float bakedRgbWeight = saturate(max(max(visorMaskStrengths.x, visorMaskStrengths.y), visorMaskStrengths.z));
+                float visorMaskActive = saturate(max(bakedRgbWeight, visorMaskStrengths.w));
+                float proceduralRgbWearWeight = 1.0 - bakedRgbWeight;
+                float authoredScratchWeight = 1.0 - visorMaskStrengths.y;
+                float proceduralCondensationWeight = 1.0 - visorMaskStrengths.w;
+                float2 visorMaskUv = saturate(TRANSFORM_TEX(IN.uv + _VisorMaskUvShift.xy, _VisorMaskTex));
+                float4 bakedVisorMask = 0.0;
+                [branch]
+                if (visorMaskActive > 0.001)
+                {
+                    bakedVisorMask = SAMPLE_TEXTURE2D(_VisorMaskTex, sampler_VisorMaskTex, visorMaskUv);
+                }
+                float bakedDirtMask = HectonFinite01(bakedVisorMask.r) * visorMaskStrengths.x;
+                float bakedScratchMask = HectonFinite01(bakedVisorMask.g) * visorMaskStrengths.y;
+                float bakedSaltMask = HectonFinite01(bakedVisorMask.b) * visorMaskStrengths.z;
+                float bakedMaskPresence = step(0.0001, bakedVisorMask.r + bakedVisorMask.g + bakedVisorMask.b);
+                float bakedCondensationTemplate = 0.0;
+                [branch]
+                if (visorMaskStrengths.w > 0.001)
+                {
+                    bakedCondensationTemplate = SampleVisorCondensationAtlas(
+                        IN.uv,
+                        _Time.y,
+                        _CondensationDriftSpeed,
+                        _VisorCondensationFlipbook,
+                        _VisorMaskUvShift) * visorMaskStrengths.w * bakedMaskPresence;
+                }
+
+                float3 scratchNormalTS = float3(0.0, 0.0, 1.0);
+                float scratchTextureMask = 0.0;
+                [branch]
+                if (authoredScratchWeight > 0.001)
+                {
+                    float2 scratchUV = TRANSFORM_TEX(IN.uv, _ScratchNormalMap);
+                    float4 scratchPacked = SAMPLE_TEXTURE2D(_ScratchNormalMap, sampler_ScratchNormalMap, scratchUV);
+                    scratchNormalTS = UnpackScaledNormal(scratchPacked, _ScratchNormalStrength);
+                    scratchNormalTS.xy *= authoredScratchWeight;
+                    scratchTextureMask = ApproximateMagnitude2D(scratchNormalTS.xy);
+                }
+                float proceduralScratchMask = 0.0;
+                float2 proceduralScratchXY = 0.0;
+                [branch]
+                if (proceduralRgbWearWeight > 0.001)
+                {
+                    proceduralScratchMask = ComputeProceduralScratchMask(IN.uv) * proceduralRgbWearWeight;
+                    proceduralScratchXY = clamp(
+                        float2(ddx(proceduralScratchMask), ddy(proceduralScratchMask)) * (_ScratchNormalStrength * 12.0),
+                        -0.22,
+                        0.22);
+                }
                 float proceduralScratchBlend = saturate(1.0 - scratchTextureMask * 3.0);
                 scratchNormalTS.xy = clamp(
                     scratchNormalTS.xy + proceduralScratchXY * proceduralScratchBlend,
                     -0.48,
                     0.48);
+                float2 bakedScratchXY = clamp(
+                    float2(ddx(bakedScratchMask), ddy(bakedScratchMask)) * (_ScratchNormalStrength * 9.0),
+                    -0.18,
+                    0.18);
+                scratchNormalTS.xy = clamp(
+                    scratchNormalTS.xy + bakedScratchXY * saturate(1.0 - scratchTextureMask * 2.0),
+                    -0.48,
+                    0.48);
                 scratchNormalTS.z = ApproximateNormalZ(scratchNormalTS.xy);
-                float scratchMask = saturate(max(scratchTextureMask, proceduralScratchMask));
+                float scratchMask = saturate(max(max(scratchTextureMask, proceduralScratchMask), bakedScratchMask));
 
                 float3x3 TBN = float3x3(
                     NormalizeApprox3D(IN.tangentWS),
@@ -807,14 +894,20 @@ Shader "NASAPunk/SuitVisor"
                 float fingerprint = 0.0;
                 float smudgeOpacity = 0.0;
                 float2 fpUV = TRANSFORM_TEX(IN.uv, _FingerprintTex);
-                float smudgeConsumer = max(max(saturate(fingerprintStrength), runoffStrength), condensationStrength);
+                float bakedStaticGlassWear = max(bakedDirtMask, bakedSaltMask);
+                float smudgeConsumer = max(max(saturate(fingerprintStrength) * proceduralRgbWearWeight, runoffStrength), max(condensationStrength, bakedStaticGlassWear));
                 [branch]
                 if (smudgeConsumer > 0.001)
                 {
-                    float fingerprintSample = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, fpUV).r;
-                    proceduralSmudgeMask = ComputeProceduralSmudgeMask(IN.uv);
-                    fingerprint = max(fingerprintSample, proceduralSmudgeMask) * fingerprintStrength;
-                    smudgeOpacity = fingerprint * 0.4;
+                    float fingerprintSample = 0.0;
+                    [branch]
+                    if (proceduralRgbWearWeight > 0.001)
+                    {
+                        fingerprintSample = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, fpUV).r;
+                        proceduralSmudgeMask = ComputeProceduralSmudgeMask(IN.uv) * proceduralRgbWearWeight;
+                    }
+                    fingerprint = saturate(max(fingerprintSample, proceduralSmudgeMask) * fingerprintStrength + bakedDirtMask * 0.86);
+                    smudgeOpacity = saturate(fingerprint * 0.4 + bakedSaltMask * 0.16);
                 }
 
                 float3 viewDir = NormalizeApprox3D(IN.viewDirWS);
@@ -847,8 +940,8 @@ Shader "NASAPunk/SuitVisor"
                 {
                     ComputeBlueNoiseLensGrime(IN.uv, _Time.y, blueNoiseDustMask, blueNoiseMoistureMask);
                     blueNoiseGrimeMask = saturate((blueNoiseDustMask * 0.55 + blueNoiseMoistureMask * 0.75) * lensGrimeIntensity);
-                    fingerprint = saturate(fingerprint + blueNoiseGrimeMask * 0.42);
-                    smudgeOpacity = saturate(fingerprint * 0.4 + blueNoiseDustMask * 0.08);
+                    fingerprint = saturate(fingerprint + blueNoiseGrimeMask * 0.42 + bakedDirtMask * 0.12);
+                    smudgeOpacity = saturate(fingerprint * 0.4 + blueNoiseDustMask * 0.08 + bakedSaltMask * 0.16);
                 }
                 float2 distortionOffset = scratchNormalTS.xy * _DistortionStrength;
                 distortionOffset += edgeDist * normalWS.xy * _DistortionStrength * 0.5;
@@ -885,15 +978,25 @@ Shader "NASAPunk/SuitVisor"
                 float condensationMask = 0.0;
                 if (condensationStrength > 0.001)
                 {
-                    float condensationTime = _Time.y * _CondensationDriftSpeed;
-                    float2 condensationUV = fpUV + float2(condensationTime * 0.021, condensationTime * -0.047);
-                    float condensationTextureMask = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, condensationUV).r;
-                    float condensationProceduralMask = ComputeProceduralSmudgeMask(
-                        IN.uv + float2(condensationTime * 0.012, condensationTime * -0.018));
-                    float condensationWarp = (ResolveFrostBlueNoise(IN.uv + float2(condensationTime * 0.014, condensationTime * -0.021), _Time.y + 9.0) - 0.5) * 0.16;
-                    float condensationEdge = FastPowerCurve01(
-                        saturate(ResolveLinearRamp01(0.04, 0.96, edgeDist + condensationWarp)),
-                        max(0.5, _CondensationEdgeExponent));
+                    float condensationTextureMask = bakedCondensationTemplate;
+                    float condensationProceduralMask = 0.0;
+                    float condensationEdge = 1.0;
+                    [branch]
+                    if (proceduralCondensationWeight > 0.001)
+                    {
+                        float condensationTime = _Time.y * _CondensationDriftSpeed;
+                        float2 condensationUV = fpUV + float2(condensationTime * 0.021, condensationTime * -0.047);
+                        condensationTextureMask = max(
+                            SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, condensationUV).r * proceduralCondensationWeight,
+                            bakedCondensationTemplate);
+                        condensationProceduralMask = ComputeProceduralSmudgeMask(
+                            IN.uv + float2(condensationTime * 0.012, condensationTime * -0.018)) * proceduralCondensationWeight;
+                        float condensationWarp = (ResolveFrostBlueNoise(IN.uv + float2(condensationTime * 0.014, condensationTime * -0.021), _Time.y + 9.0) - 0.5) * 0.16;
+                        float proceduralCondensationEdge = FastPowerCurve01(
+                            saturate(ResolveLinearRamp01(0.04, 0.96, edgeDist + condensationWarp)),
+                            max(0.5, _CondensationEdgeExponent));
+                        condensationEdge = lerp(1.0, proceduralCondensationEdge, proceduralCondensationWeight);
+                    }
                     condensationMask = saturate(
                         max(condensationTextureMask, condensationProceduralMask * 1.2)
                         * condensationEdge
@@ -989,6 +1092,8 @@ Shader "NASAPunk/SuitVisor"
                     scratchMask * 0.22 +
                     fingerprint * 0.25 +
                     blueNoiseGrimeMask * 0.35 +
+                    bakedDirtMask * 0.18 +
+                    bakedSaltMask * 0.24 +
                     runoffMask * 0.12 +
                     condensationMask * 0.18 +
                     frostMask * 0.62 +
@@ -1057,6 +1162,7 @@ Shader "NASAPunk/SuitVisor"
                 sceneColor += _HUD_Color.rgb * (0.012 + sceneSurrogateEdge * 0.018);
                 sceneColor += (sceneSurrogateNoise - 0.5) * (0.006 + scalableRefractionScale * 0.008);
                 sceneColor += sceneSurrogateGlare * float3(0.026, 0.034, 0.036);
+                sceneColor += bakedSaltMask * float3(0.018, 0.024, 0.022) * (0.45 + IN.glareData.y * 0.55);
                 sceneColor = max(sceneColor, float3(0.0015, 0.0022, 0.0030));
 
                 float chromaticConsumer = max(chromaStrength, max(hazardGlitch, criticalHealthGlitch) * scalableChromaticScale);

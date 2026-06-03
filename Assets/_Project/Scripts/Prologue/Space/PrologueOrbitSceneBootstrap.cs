@@ -44,7 +44,7 @@ namespace Hecton8.Prologue.Space
         private const float OrbitBloomFullIntensity = 0.46f;
         private const float OrbitBloomMinimumScatter = 0.05f;
         private const float OrbitBloomFullScatter = 0.84f;
-        private const float OrbitOpticalMinimumWeight = 0.08f;
+        private const float OrbitOpticalQualityFloor = 0.18f;
 
         private static readonly Color OrbitCameraBackground = new Color(0.012f, 0.026f, 0.048f, 1f);
         private static readonly Color OrbitAmbientColor = new Color(0.018f, 0.032f, 0.052f, 1f);
@@ -290,6 +290,8 @@ namespace Hecton8.Prologue.Space
                 camera.clearFlags = useSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
                 camera.backgroundColor = OrbitCameraBackground;
                 camera.allowHDR = true;
+                camera.allowMSAA = false;
+                camera.allowDynamicResolution = true;
             }
         }
 
@@ -312,8 +314,8 @@ namespace Hecton8.Prologue.Space
                 light.type = LightType.Directional;
                 light.intensity = OrbitKeyLightIntensity;
                 light.color = OrbitKeyLightColor;
-                light.shadows = LightShadows.Hard;
-                light.shadowStrength = 1f;
+                light.shadows = LightShadows.None;
+                light.shadowStrength = 0f;
                 light.bounceIntensity = 0f;
             }
         }
@@ -402,7 +404,7 @@ namespace Hecton8.Prologue.Space
                 bloom = profile.Add<Bloom>(true);
 
             float quality = ResolveQuality01();
-            float bloomWeight = math.lerp(OrbitOpticalMinimumWeight, 1f, quality * quality);
+            float bloomWeight = ResolveOrbitOpticalWeight01(quality);
             bool postProcessingEnabled = bloomWeight > 0f;
             volume.enabled = postProcessingEnabled;
             volume.weight = bloomWeight;
@@ -415,6 +417,13 @@ namespace Hecton8.Prologue.Space
             bloom.maxIterations.Override((int)math.round(math.lerp(2f, 7f, bloomWeight)));
             if (cameraData != null)
                 cameraData.renderPostProcessing = postProcessingEnabled;
+        }
+
+        private static float ResolveOrbitOpticalWeight01(float quality01)
+        {
+            float quality = math.saturate(quality01);
+            float t = math.smoothstep(OrbitOpticalQualityFloor, 1f, quality);
+            return t * t;
         }
 
         private static float ResolveQuality01()

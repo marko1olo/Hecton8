@@ -1,10 +1,17 @@
 ---
 packet_id: P027_BARNARD_YARDS_ORIGIN
+release_set_id: RS006_HUMANITY_TRANSIT_SEED_LOGISTICS
 article_id: player.barnard_yards_origin
+unlock_id: unlock.first_barnard_yards_origin_record
+poi_tags: poi.worker_locker;poi.tool_stamp
+biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: id_ID
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Asal Barnard Yards

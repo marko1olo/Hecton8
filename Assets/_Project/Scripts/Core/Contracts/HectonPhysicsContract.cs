@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Core.Contracts
 {
@@ -29,6 +30,28 @@ namespace Hecton8.Core.Contracts
         /// </summary>
         /// <param name="allowSimplifiedColliderLod">True after the body stays outside the LOD0 radius long enough.</param>
         void SetColliderLodDistanceGate(bool allowSimplifiedColliderLod);
+    }
+
+    /// <summary>
+    /// Extended collider LOD sink that reports actual Unity Collider.enabled transitions.
+    /// This expands the legacy contract without changing its public signature.
+    /// </summary>
+    public interface IPhysicsColliderLodTransitionSink : IPhysicsColliderLodHysteresisSink
+    {
+        /// <summary>
+        /// Enables or disables simplified collider LOD and returns the number of applied Collider.enabled transitions.
+        /// </summary>
+        int SetColliderLodDistanceGateAndCountTransitions(bool allowSimplifiedColliderLod);
+    }
+
+    /// <summary>
+    /// Cold prefab-authored collider reference cache consumed by physics registration.
+    /// Implementations must return serialized, prebuilt arrays and must not search scene hierarchies.
+    /// Consumers filter this shared cache for sleep-culling primitives, mesh-collider stripping, or other owned physics gates.
+    /// </summary>
+    public interface IPhysicsCullingColliderCache
+    {
+        bool TryGetPhysicsCullingColliders(out Collider[] colliders, out int count);
     }
 
     public static class HectonPhysicsContract

@@ -455,6 +455,8 @@ namespace Hecton8.Visor
 
         public override void Create()
         {
+            HectonDrsRenderFeatureGate.PrimeCold();
+
 #if UNITY_EDITOR
             if (settings != null && settings.shader == null)
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
@@ -463,14 +465,11 @@ namespace Hecton8.Visor
             Shader shader = settings != null ? settings.shader : null;
             if (shader == null)
                 RuntimeShaderReferenceCatalog.TryGetStochasticSsrShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Hidden/Hecton8/StochasticSSR");
-#endif
             RecreateMaterial(ref _material, shader);
             _pass ??= new ReflectionSheenPass();
             CacheGraphicsCapabilitiesCold();
-            _pass.PrepareResources();
+            if (!Application.isPlaying)
+                _pass.Dispose();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -482,6 +481,9 @@ namespace Hecton8.Visor
                 return;
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
+                return;
+
+            if (!_pass.PrepareResources())
                 return;
 
             _pass.Setup(settings, _material);

@@ -12,6 +12,11 @@ namespace Hecton8.Editor
     internal static class ResourceDistributionBootstrapAuthoring
     {
         private const string ManagersRootName = "__WORLD_MANAGERS";
+        private const string RuntimeOrePrefabFolder = "Assets/_Project/Prefabs/Resources/Nodes";
+        private const string RuntimeOreMaterialPath = "Assets/_Project/Art/Materials/Resources/Mat_Runtime_OreGeneric.mat";
+        private const string RuntimeMagmaVentMaterialPath = "Assets/_Project/Art/Materials/Resources/Mat_Runtime_MagmaVent.mat";
+        private const string RuntimeOrePrefabPath = RuntimeOrePrefabFolder + "/PFB_Ore_Generic.prefab";
+        private const string RuntimeMagmaVentPrefabPath = RuntimeOrePrefabFolder + "/PFB_Ore_MagmaVentMarker.prefab";
         private const string ThermalDiamondTemplateAssetPath = "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_ThermalDiamond.asset";
 
         private static readonly string[] TemplateAssetPaths =
@@ -44,15 +49,17 @@ namespace Hecton8.Editor
             ResourceDistributionDirector director = Object.FindAnyObjectByType<ResourceDistributionDirector>(FindObjectsInactive.Include);
             if (director == null)
             {
-                GameObject managersRoot = GameObject.Find(ManagersRootName);
-                if (managersRoot == null)
-                    managersRoot = new GameObject(ManagersRootName);
+                GameObject managersRoot = EnsureManagersRoot();
 
                 if (!managersRoot.TryGetComponent(out ResourceDistributionDirector existingDirector))
                     director = Undo.AddComponent<ResourceDistributionDirector>(managersRoot);
                 else
                     director = existingDirector;
             }
+
+            GameObject orePrefab = CreateOrUpdateOreNodePrefab();
+            GameObject magmaVentPrefab = CreateOrUpdateMagmaVentPrefab();
+            EnsureScavengingLootOracleHost(EnsureManagersRoot());
 
             SerializedObject serializedDirector = new SerializedObject(director);
             AssignObject(serializedDirector, "playerTransform", ResolveSceneObject<Transform>("Player"));
@@ -61,6 +68,8 @@ namespace Hecton8.Editor
             AssignObject(serializedDirector, "voxelEngine", Object.FindAnyObjectByType<HectonVoxelEngine>(FindObjectsInactive.Include));
             AssignTemplates(serializedDirector.FindProperty("resourceTemplates"));
             AssignObject(serializedDirector, "thermalDiamondTemplate", AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(ThermalDiamondTemplateAssetPath));
+            AssignObject(serializedDirector, "_authoredOrePrefab", orePrefab);
+            AssignObject(serializedDirector, "_authoredMagmaVentPrefab", magmaVentPrefab);
             serializedDirector.ApplyModifiedPropertiesWithoutUndo();
 
             EditorUtility.SetDirty(director);
@@ -69,6 +78,102 @@ namespace Hecton8.Editor
 
             Selection.activeObject = director.gameObject;
             Debug.Log("[ResourceDistributionBootstrap] Director installed and scene marked dirty. Auto-save intentionally not performed.", director.gameObject);
+        }
+
+        private static GameObject EnsureManagersRoot()
+        {
+            GameObject managersRoot = GameObject.Find(ManagersRootName);
+            if (managersRoot != null)
+                return managersRoot;
+
+            managersRoot = new GameObject(ManagersRootName);
+            Undo.RegisterCreatedObjectUndo(managersRoot, "Create world managers root");
+            return managersRoot;
+        }
+
+        private static void EnsureScavengingLootOracleHost(GameObject managersRoot)
+        {
+            ScavengingLootOracleRuntime oracle = Object.FindAnyObjectByType<ScavengingLootOracleRuntime>(FindObjectsInactive.Include);
+            if (oracle != null || managersRoot == null)
+                return;
+
+            Undo.AddComponent<ScavengingLootOracleRuntime>(managersRoot);
+        }
+
+        private static GameObject CreateOrUpdateOreNodePrefab()
+        {
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Materials");
+            EnsureFolder("Assets/_Project/Art/Materials/Resources");
+            EnsureFolder("Assets/_Project/Prefabs");
+            EnsureFolder("Assets/_Project/Prefabs/Resources");
+            EnsureFolder(RuntimeOrePrefabFolder);
+
+            Material material = CreateOrUpdateMaterial(RuntimeOreMaterialPath, new Color(0.78f, 0.47f, 0.22f, 1f));
+            GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            root.name = "PFB_Ore_Generic";
+            root.transform.localScale = Vector3.one;
+            if (root.TryGetComponent(out Renderer renderer))
+                renderer.sharedMaterial = material;
+
+            SphereCollider sphereCollider = root.AddComponent<SphereCollider>();
+            sphereCollider.enabled = false;
+            sphereCollider.radius = 0.5f;
+
+            ResourceNode node = root.AddComponent<ResourceNode>();
+            SerializedObject serializedNode = new SerializedObject(node);
+            serializedNode.FindProperty("autoGenerateId").boolValue = true;
+            serializedNode.FindProperty("lootLifetime").floatValue = 90f;
+            serializedNode.FindProperty("scatterRadius").floatValue = 0.22f;
+            serializedNode.FindProperty("scatterForce").floatValue = 1.4f;
+            serializedNode.FindProperty("upwardBias").floatValue = 0.7f;
+            serializedNode.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, RuntimeOrePrefabPath);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static GameObject CreateOrUpdateMagmaVentPrefab()
+        {
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Materials");
+            EnsureFolder("Assets/_Project/Art/Materials/Resources");
+            EnsureFolder("Assets/_Project/Prefabs");
+            EnsureFolder("Assets/_Project/Prefabs/Resources");
+            EnsureFolder(RuntimeOrePrefabFolder);
+
+            Material material = CreateOrUpdateMaterial(RuntimeMagmaVentMaterialPath, new Color(1f, 0.42f, 0.12f, 0.72f));
+            GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            root.name = "PFB_Ore_MagmaVentMarker";
+            if (root.TryGetComponent(out Renderer renderer))
+                renderer.sharedMaterial = material;
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, RuntimeMagmaVentPrefabPath);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static Material CreateOrUpdateMaterial(string path, Color color)
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null)
+                    shader = Shader.Find("Standard");
+
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+            if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
+
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static void AssignTemplates(SerializedProperty templatesProperty)
@@ -108,6 +213,23 @@ namespace Hecton8.Editor
             }
 
             return null;
+        }
+
+        private static void EnsureFolder(string folderPath)
+        {
+            if (AssetDatabase.IsValidFolder(folderPath))
+                return;
+
+            string[] split = folderPath.Split('/');
+            string current = split[0];
+            for (int i = 1; i < split.Length; i++)
+            {
+                string next = current + "/" + split[i];
+                if (!AssetDatabase.IsValidFolder(next))
+                    AssetDatabase.CreateFolder(current, split[i]);
+
+                current = next;
+            }
         }
     }
 }

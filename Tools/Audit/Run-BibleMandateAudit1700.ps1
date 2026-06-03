@@ -37,9 +37,9 @@ $Groups = @(
     [ordered]@{
         Id = "00_mandate_registry"
         Title = "Mandate Registry Currency and Routing"
-        Bibles = @("AGENTS.md","PROJECT_BIBLES.md",".agents-skills\README.md","Docs\Actual Domains of Project.txt")
+        Bibles = @("AGENTS.md","PROJECT_BIBLES.md",".agents-skills\README.md","Docs\PROJECT_ATLAS.md","Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md")
         MandatePatterns = @("ARCH_","OPT_","REND_","PHYS_","UI_","DATA_","STRM_","AI_","VOX_","AUD_","AUDIO_","GPU_","CORE_","LOGI_","MATH_","DBG_","QA_","NET_","TOOL_","CTRL_","ANIM_","PROG_","PROJECT_","CI_","MANDATE")
-        Roots = @(".agents-skills","AGENTS.md","PROJECT_BIBLES.md","Docs\Actual Domains of Project.txt")
+        Roots = @(".agents-skills","AGENTS.md","PROJECT_BIBLES.md","Docs\PROJECT_ATLAS.md","Docs\ARCHITECTURE\DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md")
         EvidenceRegex = "RULE|FORBID|REQ|GlobalQualityWeight|Engineering Data|Status|Scope|Authority|Evidence"
         Proof = "Mandate files exist, route docs point agents to the right bibles, and stale or conflicting mandate language is promoted into root authority before implementation."
     },

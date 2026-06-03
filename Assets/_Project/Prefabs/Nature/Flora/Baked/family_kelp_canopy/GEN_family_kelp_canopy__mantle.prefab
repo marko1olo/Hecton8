@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2836736536419590771}
   - component: {fileID: 404765680726916661}
+  - component: {fileID: 1023318378492470199}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__mantle
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4567651665433878157}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.7319076, y: 3.1823435, z: 0.21225524}
-  m_Size: 6.364687
+  m_LocalReferencePoint: {x: -0.67908347, y: 3.2542548, z: 0.24747324}
+  m_Size: 6.5085096
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 1832183450937473566}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &1023318378492470199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4567651665433878157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: ea5b6fb5543980f4aaaa1d3e4cd09ddb, type: 2}

@@ -17,6 +17,14 @@ Every location must provide:
 
 Pretty emptiness is rejected. Random scatter is rejected. Biomes that differ only by color are rejected.
 
+## 0.1 Surface And Photic Zone Law
+
+The surface, shoreline, exposed rock, ocean skin, sky, Aegir view, moon silhouettes, and photic shallows are the beauty counterweight to the abyss. They must be bright, readable, and materially rich, not gloomy by default.
+
+Darkness starts with depth, caves, storm occlusion, industrial interiors, and temporary route events. Surface world art must show terrain form, water clarity, wet rock, sediment, cloud motion, celestial scale, and approach routes. If a surface area needs tension, use weather, route cost, radiation timing, wave state, sound, and visible engineering risk instead of crushing the image to black.
+
+Compact keeps clean silhouettes, ocean color, wet material breakup, and authored landmarks. Middle adds denser shoreline detail and richer water response. High and Ultra spend saved cycles on terrain microdetail, cloud depth, reflections, foam, caustic hints, and celestial atmosphere.
+
 ## 1. World Layers
 
 A strong location has layered logic:

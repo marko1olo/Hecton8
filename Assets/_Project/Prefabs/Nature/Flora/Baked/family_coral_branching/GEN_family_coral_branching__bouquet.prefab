@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7523097905822338584}
   - component: {fileID: 923436367247190756}
+  - component: {fileID: 3622437004467987454}
   m_Layer: 0
   m_Name: GEN_family_coral_branching__bouquet
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4603684706225177590}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.027920455, y: 0.9967145, z: -0.2949428}
-  m_Size: 1.993429
+  m_LocalReferencePoint: {x: 0.027915657, y: 0.9967149, z: -0.29498357}
+  m_Size: 1.9934298
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 5269456073168290894}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &3622437004467987454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4603684706225177590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: bf2c68f285d179041ad66b3a114f1b2d, type: 2}
 --- !u!1 &6782654959074602421
 GameObject:
   m_ObjectHideFlags: 0

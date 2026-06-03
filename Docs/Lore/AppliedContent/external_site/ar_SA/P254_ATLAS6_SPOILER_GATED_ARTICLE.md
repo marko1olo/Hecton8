@@ -1,0 +1,37 @@
+---
+packet_id: P254_ATLAS6_SPOILER_GATED_ARTICLE
+release_set_id: RS051_PUBLIC_SITE_PILLAR_ARTICLES
+article_id: applied_lore.atlas6_spoiler_gated_article
+unlock_id: unlock.atlas6_spoiler_gated_article
+poi_tags: poi.public_atlas_article;poi.spoiler_gate_plate
+biome_tags: biome.publication;biome.atlas_maintenance
+locale: ar_SA
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_native_pass_pending
+localization_flags: 1
+---
+
+# Atlas-6 Spoiler-Gated Article
+
+Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice.
+
+## Scanner
+
+This page should not open before the player has chosen what Atlas is allowed to mean.
+
+## Terminal
+
+PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.
+
+## Audio
+
+Do not explain the bottom before the player has heard it breathe.
+
+## Field Note
+
+Atlas public text must stay gated until the game has earned the broken guardian question.
+
+<!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/ar_SA. -->

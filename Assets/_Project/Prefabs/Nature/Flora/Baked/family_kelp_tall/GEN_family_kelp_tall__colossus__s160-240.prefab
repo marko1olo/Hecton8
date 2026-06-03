@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 514332603248230283}
   - component: {fileID: 4229090807356224239}
+  - component: {fileID: 6735040946164321208}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__colossus__s160-240
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5191632906961439022}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -1.8039036, y: 18.077648, z: -1.2586987}
-  m_Size: 36.155296
+  m_LocalReferencePoint: {x: -1.8042045, y: 18.80923, z: -1.1248229}
+  m_Size: 37.61846
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 42709782738892648}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &6735040946164321208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5191632906961439022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 78f4d8d5a33b8064a8c80751d33de3de, type: 2}
 --- !u!1 &8673197877360771370
 GameObject:
   m_ObjectHideFlags: 0

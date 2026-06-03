@@ -1,30 +1,37 @@
 ---
 packet_id: P107_SELENE_ARENDT_ATLAS_WEIGHTING
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.selene_arendt_atlas_weighting
+unlock_id: unlock.first_selene_arendt_atlas_weighting
+poi_tags: poi.atlas_weighting_memo;poi.continuity_lab_panel
+biome_tags: biome.cable_reef;biome.factory_temple
 locale: ar_SA
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Selene Arendt Atlas Weighting
 
-Draft AR localization pending native pass. Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
+Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
 
 ## Scanner
 
-Draft AR localization pending native pass. Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
+Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
 
 ## Terminal
 
-Draft AR localization pending native pass. ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
+ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
 
 ## Audio
 
-Draft AR localization pending native pass. She used the word safety. Atlas kept the word and lost the people.
+She used the word safety. Atlas kept the word and lost the people.
 
 ## Field Note
 
-Draft AR localization pending native pass. She should sound rational enough to be frightening.
+She should sound rational enough to be frightening.
 
 <!-- In-Game Wiki; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/ar_SA. -->

@@ -18,13 +18,29 @@ namespace Hecton8.World.GPR
         public const int MaxRaymarchSteps = 10;
         public const int MaxPings = 128;
         public const int TelemetryFrames = 300;
+        public const int SdfSnapshotGridSide = 64;
+        public const int SdfSnapshotByteCapacity = SdfSnapshotGridSide * SdfSnapshotGridSide * SdfSnapshotGridSide;
         public const float SolidDensityThreshold = 0.5f;
         public const float OreMatchDistanceMeters = 5f;
         public const float OreMatchDistanceSq = OreMatchDistanceMeters * OreMatchDistanceMeters;
         public const float FilteredOreAlphaScale = 0.1f;
         public const float ScanDecaySeconds = 3f;
+        public const float InverseByteMax = 0.0039215686f;
         public const uint ScanFlag = 1u << 0;
         public const uint AupShiftFlag = 1u << 1;
+
+        public static int ResolveRayGridSide(int rayCount)
+        {
+            int clamped = math.clamp(rayCount, 1, MaxRays);
+            int side = 2;
+            side += math.select(0, 1, clamped > 4);
+            side += math.select(0, 1, clamped > 9);
+            side += math.select(0, 1, clamped > 16);
+            side += math.select(0, 1, clamped > 25);
+            side += math.select(0, 1, clamped > 36);
+            side += math.select(0, 1, clamped > 49);
+            return side;
+        }
     }
 
     [StructLayout(LayoutKind.Explicit, Size = GroundRadarJobLayout.GroundRadarTelemetryEntryStrideBytes)]
@@ -85,7 +101,7 @@ namespace Hecton8.World.GPR
             {
                 float scanRadius = math.max(1f, ScanRadiusMeters);
                 float stepMeters = math.max(0.5f, StepMeters);
-                int side = math.clamp((int)math.ceil(math.sqrt((float)rayCount)), 2, 8);
+                int side = GroundRadarConstants.ResolveRayGridSide(rayCount);
                 float invSideMinusOne = math.rcp(math.max(1, side - 1));
                 int oreCount = math.min(math.min(OreScanCount, OrePositions.Length), OreTypes.Length);
 
@@ -222,7 +238,7 @@ namespace Hecton8.World.GPR
             if ((uint)index >= (uint)EncodedSdf.Length)
                 return 0f;
 
-            float normalized = EncodedSdf[index] * math.rcp(255f);
+            float normalized = EncodedSdf[index] * GroundRadarConstants.InverseByteMax;
             float signedDistance = (normalized * 2f - 1f) * SdfRange;
             return math.saturate(0.5f - signedDistance * math.rcp(math.max(0.001f, SdfRange)));
         }

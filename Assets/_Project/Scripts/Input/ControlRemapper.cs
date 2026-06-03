@@ -21,6 +21,16 @@ namespace Hecton8.Input
         private const int MaxUnknownJsonValueDepth = 16;
         private const string PlayerActionMapName = "Player";
         private const string UiActionMapName = "UI";
+        private const string PauseActionName = "Pause";
+        private const string CancelActionName = "Cancel";
+        private const string KeyboardEscapePath = "<Keyboard>/escape";
+        private const string KeyboardTabPath = "<Keyboard>/tab";
+        private const string GamepadStartPath = "<Gamepad>/start";
+        private const string XInputStartPath = "<XInputController>/start";
+        private const string DualShockStartPath = "<DualShockGamepad>/start";
+        private const string DualSenseStartPath = "<DualSenseGamepadHID>/start";
+        private const string SteamDeckStartPath = "<SteamDeckGamepad>/start";
+        private const string TabNextActionName = "TabNext";
         private const ulong Fnv64Offset = 14695981039346656037UL;
         private const ulong Fnv64Prime = 1099511628211UL;
         private const uint Fnv32Offset = 2166136261u;
@@ -217,6 +227,20 @@ namespace Hecton8.Input
                     return false;
                 }
 
+                if (HasRuntimeBindingPathConflict(inputManager))
+                {
+                    MarkFailure(
+                        ref result,
+                        InputBindingTelemetryOperation.Save,
+                        InputBindingTelemetryResult.UnsupportedPath,
+                        InputBindingFaultFlags.UnsupportedPath,
+                        0,
+                        0,
+                        0,
+                        startTicks);
+                    return false;
+                }
+
                 buffer = new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
                 int index = 0;
@@ -376,6 +400,17 @@ namespace Hecton8.Input
                         result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Load, result.ResultCode, result.FaultFlags, byteCount, ComputeHash64(bytesPtr, byteCount), 0, pathBytes, startTicks);
                         return false;
                     }
+                }
+
+                if (HasLoadBindingPathConflict(inputManager, records, recordCount, bytesPtr))
+                {
+                    result.RecordCount = 0;
+                    result.ByteCount = byteCount;
+                    result.PathBytes = pathBytes;
+                    result.ResultCode = InputBindingTelemetryResult.UnsupportedPath;
+                    result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
+                    result.Telemetry = BuildTelemetry(InputBindingTelemetryOperation.Load, result.ResultCode, result.FaultFlags, byteCount, ComputeHash64(bytesPtr, byteCount), 0, pathBytes, startTicks);
+                    return false;
                 }
 
                 ulong payloadHash = ComputeHash64(bytesPtr, byteCount);
@@ -570,6 +605,122 @@ namespace Hecton8.Input
             }
 
             return true;
+        }
+
+        private static bool HasRuntimeBindingPathConflict(INativeInputManagerRuntime inputManager)
+        {
+            if (inputManager == null)
+                return false;
+
+            return HasRuntimeMapBindingPathConflict(inputManager.GetActionMap(PlayerActionMapName)) ||
+                   HasRuntimeMapBindingPathConflict(inputManager.GetActionMap(UiActionMapName));
+        }
+
+        private static bool HasRuntimeMapBindingPathConflict(InputActionMap map)
+        {
+            if (map == null)
+                return false;
+
+            int actionCount = map.actions.Count;
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
+            {
+                InputAction action = map.actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                int bindingCount = action.bindings.Count;
+                for (int bindingIndex = 0; bindingIndex < bindingCount; bindingIndex++)
+                {
+                    InputBinding binding = action.bindings[bindingIndex];
+                    if (binding.isComposite ||
+                        binding.isPartOfComposite ||
+                        binding.overridePath == null ||
+                        binding.overridePath.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    if (IsProtectedPlayerStartOverride(map.name, action.name, binding.overridePath) ||
+                        IsProtectedKeyboardEscapeOverride(map.name, action.name, binding.overridePath) ||
+                        IsProtectedKeyboardTabOverride(map.name, action.name, binding.overridePath) ||
+                        HasRuntimeOverrideDuplicate(map, actionIndex, bindingIndex, binding.overridePath) ||
+                        HasRuntimeDefaultPathConflict(map, actionIndex, bindingIndex, binding.overridePath))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasRuntimeOverrideDuplicate(
+            InputActionMap map,
+            int ownerActionIndex,
+            int ownerBindingIndex,
+            string overridePath)
+        {
+            int actionCount = map.actions.Count;
+            for (int actionIndex = ownerActionIndex; actionIndex < actionCount; actionIndex++)
+            {
+                InputAction action = map.actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                int startBindingIndex = actionIndex == ownerActionIndex ? ownerBindingIndex + 1 : 0;
+                int bindingCount = action.bindings.Count;
+                for (int bindingIndex = startBindingIndex; bindingIndex < bindingCount; bindingIndex++)
+                {
+                    InputBinding binding = action.bindings[bindingIndex];
+                    if (binding.isComposite ||
+                        binding.isPartOfComposite ||
+                        binding.overridePath == null ||
+                        binding.overridePath.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    if (StringEqualsControlPath(binding.overridePath, overridePath))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasRuntimeDefaultPathConflict(
+            InputActionMap map,
+            int ownerActionIndex,
+            int ownerBindingIndex,
+            string overridePath)
+        {
+            int actionCount = map.actions.Count;
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
+            {
+                InputAction action = map.actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                int bindingCount = action.bindings.Count;
+                for (int bindingIndex = 0; bindingIndex < bindingCount; bindingIndex++)
+                {
+                    if (actionIndex == ownerActionIndex && bindingIndex == ownerBindingIndex)
+                        continue;
+
+                    InputBinding binding = action.bindings[bindingIndex];
+                    if (binding.isComposite ||
+                        binding.isPartOfComposite ||
+                        binding.overridePath != null)
+                    {
+                        continue;
+                    }
+
+                    if (StringEqualsControlPath(binding.path, overridePath))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private static InputActionStateDTO BuildStateDto(string mapName, string actionName, InputBinding binding, int bindingIndex, byte displayStyle)
@@ -1079,6 +1230,14 @@ namespace Hecton8.Input
                 return false;
             }
 
+            if (IsProtectedPlayerStartOverride(in record, pathUtf8) ||
+                IsProtectedKeyboardEscapeOverride(in record, pathUtf8) ||
+                IsProtectedKeyboardTabOverride(in record, pathUtf8))
+            {
+                result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
+                return false;
+            }
+
             if (record.PathByteLength == 0)
             {
                 return TryApplyOverridePath(action, record.BindingIndex, string.Empty, ref result);
@@ -1149,11 +1308,178 @@ namespace Hecton8.Input
                 return false;
             }
 
+            if (IsProtectedPlayerStartOverride(in record, pathUtf8) ||
+                IsProtectedKeyboardEscapeOverride(in record, pathUtf8) ||
+                IsProtectedKeyboardTabOverride(in record, pathUtf8))
+            {
+                result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
+                return false;
+            }
+
             if (record.PathByteLength == 0 || IsValidControlPathBytes(pathUtf8))
                 return true;
 
             result.FaultFlags |= InputBindingFaultFlags.UnsupportedPath;
             return false;
+        }
+
+        private static bool HasLoadBindingPathConflict(
+            INativeInputManagerRuntime inputManager,
+            NativeArray<InputActionStateDTO> records,
+            int recordCount,
+            byte* bytes)
+        {
+            if (inputManager == null || !records.IsCreated || recordCount <= 0 || bytes == null)
+                return false;
+
+            int safeCount = recordCount < records.Length ? recordCount : records.Length;
+            for (int i = 0; i < safeCount; i++)
+            {
+                InputActionStateDTO record = records[i];
+                if (record.PathByteLength == 0)
+                    continue;
+
+                if (HasRecordPathConflict(records, safeCount, bytes, i, in record))
+                    return true;
+
+                ReadOnlySpan<byte> pathUtf8 = new ReadOnlySpan<byte>(bytes + record.PathByteOffset, record.PathByteLength);
+                if (HasDefaultPathConflict(inputManager, records, safeCount, in record, pathUtf8))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasRecordPathConflict(
+            NativeArray<InputActionStateDTO> records,
+            int recordCount,
+            byte* bytes,
+            int recordIndex,
+            in InputActionStateDTO record)
+        {
+            for (int otherIndex = recordIndex + 1; otherIndex < recordCount; otherIndex++)
+            {
+                InputActionStateDTO other = records[otherIndex];
+                if (other.PathByteLength == 0 ||
+                    other.ActionMapHash != record.ActionMapHash ||
+                    other.OverridePathHash64 != record.OverridePathHash64 ||
+                    other.PathByteLength != record.PathByteLength)
+                {
+                    continue;
+                }
+
+                if (PathBytesEqual(bytes, in record, in other))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasDefaultPathConflict(
+            INativeInputManagerRuntime inputManager,
+            NativeArray<InputActionStateDTO> records,
+            int recordCount,
+            in InputActionStateDTO record,
+            ReadOnlySpan<byte> pathUtf8)
+        {
+            InputActionMap map = ResolveActionMapByHash(inputManager, record.ActionMapHash);
+            if (map == null)
+                return false;
+
+            int actionCount = map.actions.Count;
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
+            {
+                InputAction action = map.actions[actionIndex];
+                if (action == null)
+                    continue;
+
+                uint actionHash = HashString32(action.name);
+                int bindingCount = action.bindings.Count;
+                for (int bindingIndex = 0; bindingIndex < bindingCount; bindingIndex++)
+                {
+                    InputBinding binding = action.bindings[bindingIndex];
+                    if (binding.isComposite || binding.isPartOfComposite)
+                        continue;
+
+                    ulong bindingGuidHash64 = ComputeBindingGuidHash64(binding);
+                    if (IsSameBindingRecord(in record, actionHash, bindingIndex, bindingGuidHash64))
+                        continue;
+
+                    if (HasLoadRecordForBinding(records, recordCount, record.ActionMapHash, actionHash, bindingIndex, bindingGuidHash64))
+                        continue;
+
+                    if (StringMatchesAscii(binding.path, pathUtf8))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasLoadRecordForBinding(
+            NativeArray<InputActionStateDTO> records,
+            int recordCount,
+            uint mapHash,
+            uint actionHash,
+            int bindingIndex,
+            ulong bindingGuidHash64)
+        {
+            for (int i = 0; i < recordCount; i++)
+            {
+                InputActionStateDTO record = records[i];
+                if (record.ActionMapHash == mapHash &&
+                    record.ActionNameHash == actionHash &&
+                    record.BindingIndex == bindingIndex &&
+                    record.BindingGuidHash64 == bindingGuidHash64)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsSameBindingRecord(
+            in InputActionStateDTO record,
+            uint actionHash,
+            int bindingIndex,
+            ulong bindingGuidHash64)
+        {
+            return record.ActionNameHash == actionHash &&
+                   record.BindingIndex == bindingIndex &&
+                   record.BindingGuidHash64 == bindingGuidHash64;
+        }
+
+        private static bool PathBytesEqual(byte* bytes, in InputActionStateDTO first, in InputActionStateDTO second)
+        {
+            if (first.PathByteLength != second.PathByteLength)
+                return false;
+
+            byte* firstPtr = bytes + first.PathByteOffset;
+            byte* secondPtr = bytes + second.PathByteOffset;
+            for (int i = 0; i < first.PathByteLength; i++)
+            {
+                if (firstPtr[i] != secondPtr[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static InputActionMap ResolveActionMapByHash(INativeInputManagerRuntime inputManager, uint mapHash)
+        {
+            if (inputManager == null)
+                return null;
+
+            InputActionMap playerMap = inputManager.GetActionMap(PlayerActionMapName);
+            if (playerMap != null && HashString32(playerMap.name) == mapHash)
+                return playerMap;
+
+            InputActionMap uiMap = inputManager.GetActionMap(UiActionMapName);
+            if (uiMap != null && HashString32(uiMap.name) == mapHash)
+                return uiMap;
+
+            return null;
         }
 
         private static bool TryFindAction(INativeInputManagerRuntime inputManager, uint mapHash, uint actionHash, out InputAction action)
@@ -1162,6 +1488,80 @@ namespace Hecton8.Input
             if (TryFindActionInMap(inputManager.GetActionMap(PlayerActionMapName), mapHash, actionHash, out action))
                 return true;
             return TryFindActionInMap(inputManager.GetActionMap(UiActionMapName), mapHash, actionHash, out action);
+        }
+
+        private static bool IsProtectedPlayerStartOverride(in InputActionStateDTO record, ReadOnlySpan<byte> pathUtf8)
+        {
+            return record.ActionMapHash == HashString32(PlayerActionMapName) &&
+                   record.ActionNameHash != HashString32(PauseActionName) &&
+                   IsGamepadStartPath(pathUtf8);
+        }
+
+        private static bool IsProtectedPlayerStartOverride(string mapName, string actionName, string path)
+        {
+            return StringEqualsControlPath(mapName, PlayerActionMapName) &&
+                   !StringEqualsControlPath(actionName, PauseActionName) &&
+                   IsGamepadStartPath(path);
+        }
+
+        private static bool IsProtectedKeyboardEscapeOverride(in InputActionStateDTO record, ReadOnlySpan<byte> pathUtf8)
+        {
+            if (!StringMatchesAscii(KeyboardEscapePath, pathUtf8))
+                return false;
+
+            bool isPlayerPause = record.ActionMapHash == HashString32(PlayerActionMapName) &&
+                                 record.ActionNameHash == HashString32(PauseActionName);
+            bool isUiCancel = record.ActionMapHash == HashString32(UiActionMapName) &&
+                              record.ActionNameHash == HashString32(CancelActionName);
+            return !isPlayerPause && !isUiCancel;
+        }
+
+        private static bool IsProtectedKeyboardEscapeOverride(string mapName, string actionName, string path)
+        {
+            if (!StringEqualsControlPath(path, KeyboardEscapePath))
+                return false;
+
+            bool isPlayerPause = StringEqualsControlPath(mapName, PlayerActionMapName) &&
+                                 StringEqualsControlPath(actionName, PauseActionName);
+            bool isUiCancel = StringEqualsControlPath(mapName, UiActionMapName) &&
+                              StringEqualsControlPath(actionName, CancelActionName);
+            return !isPlayerPause && !isUiCancel;
+        }
+
+        private static bool IsProtectedKeyboardTabOverride(in InputActionStateDTO record, ReadOnlySpan<byte> pathUtf8)
+        {
+            if (!StringMatchesAscii(KeyboardTabPath, pathUtf8))
+                return false;
+
+            return !(record.ActionMapHash == HashString32(UiActionMapName) &&
+                     record.ActionNameHash == HashString32(TabNextActionName));
+        }
+
+        private static bool IsProtectedKeyboardTabOverride(string mapName, string actionName, string path)
+        {
+            if (!StringEqualsControlPath(path, KeyboardTabPath))
+                return false;
+
+            return !(StringEqualsControlPath(mapName, UiActionMapName) &&
+                     StringEqualsControlPath(actionName, TabNextActionName));
+        }
+
+        private static bool IsGamepadStartPath(ReadOnlySpan<byte> pathUtf8)
+        {
+            return StringMatchesAscii(GamepadStartPath, pathUtf8) ||
+                   StringMatchesAscii(XInputStartPath, pathUtf8) ||
+                   StringMatchesAscii(DualShockStartPath, pathUtf8) ||
+                   StringMatchesAscii(DualSenseStartPath, pathUtf8) ||
+                   StringMatchesAscii(SteamDeckStartPath, pathUtf8);
+        }
+
+        private static bool IsGamepadStartPath(string path)
+        {
+            return StringEqualsControlPath(path, GamepadStartPath) ||
+                   StringEqualsControlPath(path, XInputStartPath) ||
+                   StringEqualsControlPath(path, DualShockStartPath) ||
+                   StringEqualsControlPath(path, DualSenseStartPath) ||
+                   StringEqualsControlPath(path, SteamDeckStartPath);
         }
 
         private static bool TryFindActionInMap(InputActionMap map, uint mapHash, uint actionHash, out InputAction action)
@@ -1974,6 +2374,26 @@ namespace Hecton8.Input
             {
                 char c = value[i];
                 if (c > 127 || (byte)c != ascii[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool StringEqualsControlPath(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right) || left.Length != right.Length)
+                return false;
+
+            for (int i = 0; i < left.Length; i++)
+            {
+                char a = left[i];
+                char b = right[i];
+                if (a >= 'A' && a <= 'Z')
+                    a = (char)(a + 32);
+                if (b >= 'A' && b <= 'Z')
+                    b = (char)(b + 32);
+                if (a != b)
                     return false;
             }
 

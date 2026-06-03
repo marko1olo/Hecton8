@@ -51,31 +51,26 @@ namespace Hecton8.UI
 
         public static RectTransform FindExistingChild(Transform parent, string childName)
         {
+            return FindExistingChild(parent, childName, 0);
+        }
+
+        public static RectTransform FindExistingChild(Transform parent, string childName, int occurrenceIndex)
+        {
             ReadOnlySpan<Transform> children = SnapshotChildren(parent);
+            int matchingIndex = 0;
             for (int i = 0; i < children.Length; i++)
             {
                 Transform child = children[i];
-                if (child != null && child.name == childName)
+                if (child == null || child.name != childName)
+                    continue;
+
+                if (matchingIndex == occurrenceIndex)
                     return child as RectTransform;
+
+                matchingIndex++;
             }
 
             return null;
-        }
-
-        public static void DestroyChildren(Transform parent)
-        {
-            ReadOnlySpan<Transform> children = SnapshotChildren(parent);
-            for (int i = children.Length - 1; i >= 0; i--)
-            {
-                Transform child = children[i];
-                if (child == null)
-                    continue;
-
-                if (Application.isPlaying)
-                    UnityEngine.Object.Destroy(child.gameObject);
-                else
-                    UnityEngine.Object.DestroyImmediate(child.gameObject);
-            }
         }
 
         private static ReadOnlySpan<Transform> SnapshotChildren(Transform parent)
@@ -111,6 +106,9 @@ namespace Hecton8.UI
         private const float FadeDuration = 0.42f;
         private const float PulseDecaySharpness = 3.6f;
         private const float AnchorClassificationRadius = 112f;
+        private const float LeviathanClassificationRadius = 64f;
+        private const float LeviathanClassificationRadiusSq = LeviathanClassificationRadius * LeviathanClassificationRadius;
+        private const float LeviathanClassificationSearchPaddingMeters = 10f;
         private const int MaxBioformContacts = 24;
         private const int MaxAbyssalAnchorClassificationScan = 64;
         private const int HeaderTextCapacity = 64;
@@ -509,7 +507,17 @@ namespace Hecton8.UI
             if (!SpatialSonarSnapshot.HasNearestBioform(in snapshot))
                 return false;
 
-            float searchRadius = math.clamp(snapshot.NearestBioformDistanceMeters + 12f, 18f, 180f);
+            float snapshotDistance = math.select(
+                float.MaxValue,
+                (float)snapshot.NearestBioformDistanceMeters,
+                snapshot.NearestBioformDistanceMeters > 0);
+            if (snapshotDistance > LeviathanClassificationRadius)
+                return false;
+
+            float searchRadius = math.clamp(
+                snapshotDistance + LeviathanClassificationSearchPaddingMeters,
+                18f,
+                LeviathanClassificationRadius);
             if (!TryResolveClassificationOriginAup(out AbsoluteUniversePosition originAup))
                 return false;
 
@@ -532,8 +540,12 @@ namespace Hecton8.UI
                     continue;
 
                 float candidateDistanceSqr = contact.DistanceSqr;
-                if (candidateDistanceSqr >= nearestDistanceSqr)
+                if (!math.isfinite(candidateDistanceSqr) ||
+                    candidateDistanceSqr > LeviathanClassificationRadiusSq ||
+                    candidateDistanceSqr >= nearestDistanceSqr)
+                {
                     continue;
+                }
 
                 nearestDistanceSqr = candidateDistanceSqr;
                 if (contact.HasAbsolutePosition)
@@ -892,13 +904,7 @@ namespace Hecton8.UI
 
             _root = FindExistingChild(canvasRoot, OverlayName);
             if (_root == null)
-            {
-                // COLD ALLOC: GameObject[1] - sonar translator HUD panel host - owner: AcousticEcholocationTranslator
-                GameObject rootObject = new GameObject(OverlayName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
-                rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _root);
-                _root.SetParent(canvasRoot, false);
-            }
+                return;
 
             _root.anchorMin = new Vector2(1f, 1f);
             _root.anchorMax = new Vector2(1f, 1f);
@@ -909,25 +915,30 @@ namespace Hecton8.UI
             _root.SetAsLastSibling();
             _dynamicCanvas = EnsureDynamicOverlayCanvas(_root, _targetCanvas, _dynamicCanvas);
 
-            _root.TryGetComponent(out _group);
-            if (_group == null)
-                _group = _root.gameObject.AddComponent<CanvasGroup>();
+            if (!_root.TryGetComponent(out _group) || _group == null)
+                return;
             _group.alpha = 0f;
             _group.interactable = false;
             _group.blocksRaycasts = false;
 
-            _root.TryGetComponent(out _background);
+            if (!_root.TryGetComponent(out _background) || _background == null)
+                return;
             _background.color = FrameColor;
             _background.raycastTarget = false;
 
-            ClearChildren(_root);
-            CreateRule(new Vector2(18f, -18f), new Vector2(-18f, -18f));
-            CreateRule(new Vector2(18f, -74f), new Vector2(-18f, -74f));
+            ConfigureExistingRule(0, new Vector2(18f, -18f), new Vector2(-18f, -18f));
+            ConfigureExistingRule(1, new Vector2(18f, -74f), new Vector2(-18f, -74f));
 
-            _headerLabel = CreateText("Header", labelFont, 12f, FontStyles.Bold, HeaderColor, TextAlignmentOptions.Left);
+            _headerLabel = BindExistingText("Header", labelFont, 12f, FontStyles.Bold, HeaderColor, TextAlignmentOptions.Left);
+            if (_headerLabel == null)
+                return;
+
             Anchor(_headerLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(20f, -12f), new Vector2(-20f, -34f));
 
-            _classificationLabel = CreateText("Classification", numericFont, 13f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
+            _classificationLabel = BindExistingText("Classification", numericFont, 13f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
+            if (_classificationLabel == null)
+                return;
+
             Anchor(_classificationLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(20f, -34f), new Vector2(-20f, -72f));
 
             _uiBuilt = true;
@@ -940,7 +951,7 @@ namespace Hecton8.UI
 
             Canvas canvas = existingCanvas;
             if (canvas == null && !root.TryGetComponent(out canvas))
-                canvas = root.gameObject.AddComponent<Canvas>(); // COLD ALLOC: Canvas[1] - acoustic bark dynamic dirty-rectangle root - owner: AcousticEcholocationTranslator
+                return existingCanvas;
 
             canvas.renderMode = targetCanvas.renderMode;
             canvas.worldCamera = targetCanvas.worldCamera;
@@ -954,6 +965,18 @@ namespace Hecton8.UI
                 raycaster.enabled = false;
 
             return canvas;
+        }
+
+        private void ConfigureExistingRule(int occurrenceIndex, Vector2 leftOffset, Vector2 rightOffset)
+        {
+            RectTransform rule = UiChildSpanUtility.FindExistingChild(_root, "Rule", occurrenceIndex);
+            if (rule == null || !rule.TryGetComponent(out Image image) || image == null)
+                return;
+
+            image.color = AccentColor;
+            image.raycastTarget = false;
+            Anchor(rule, new Vector2(0f, 1f), new Vector2(1f, 1f), leftOffset, rightOffset);
+            rule.sizeDelta = new Vector2(0f, 1f);
         }
 
         private void CacheRegistryServicesCold()
@@ -1009,10 +1032,10 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+            if (overlay == null)
                 return null;
 
-            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            overlay.TryGetComponent(out Canvas canvas);
             return canvas;
         }
 
@@ -1022,20 +1045,12 @@ namespace Hecton8.UI
             return manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
         }
 
-        private void CreateRule(Vector2 leftOffset, Vector2 rightOffset)
+        private TextMeshProUGUI BindExistingText(string name, TMP_FontAsset fontAsset, float size, FontStyles style, Color color, TextAlignmentOptions alignment)
         {
-            RectTransform rule = CreateRect(_root, "Rule");
-            Image image = rule.gameObject.AddComponent<Image>();
-            image.color = AccentColor;
-            image.raycastTarget = false;
-            Anchor(rule, new Vector2(0f, 1f), new Vector2(1f, 1f), leftOffset, rightOffset);
-            rule.sizeDelta = new Vector2(0f, 1f);
-        }
+            RectTransform rect = FindExistingChild(_root, name);
+            if (rect == null || !rect.TryGetComponent(out TextMeshProUGUI text) || text == null)
+                return null;
 
-        private TextMeshProUGUI CreateText(string name, TMP_FontAsset fontAsset, float size, FontStyles style, Color color, TextAlignmentOptions alignment)
-        {
-            RectTransform rect = CreateRect(_root, name);
-            TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
             text.font = fontAsset;
             text.fontSize = size;
             text.fontStyle = style;
@@ -1071,21 +1086,6 @@ namespace Hecton8.UI
             return AbsoluteUniversePosition.IsFinite(in positionAup);
         }
 
-        private static void ClearChildren(Transform parent)
-        {
-            UiChildSpanUtility.DestroyChildren(parent);
-        }
-
-        private static RectTransform CreateRect(Transform parent, string name)
-        {
-            GameObject go = new GameObject(name, typeof(RectTransform));
-            go.layer = parent.gameObject.layer;
-            go.TryGetComponent(out RectTransform rect);
-            rect.SetParent(parent, false);
-            rect.localScale = Vector3.one;
-            return rect;
-        }
-
         private static void Anchor(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
         {
             rect.anchorMin = anchorMin;
@@ -1100,7 +1100,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Terminal Boot Sequence")]
-    public sealed class TerminalBootSequence : MonoBehaviour, ILateFrameTickable, ISonarPingEventListener
+    public sealed class TerminalBootSequence : MonoBehaviour, ILateFrameTickable, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
         private enum SequenceState : byte
         {
@@ -1135,13 +1135,15 @@ namespace Hecton8.UI
         private float _stateTimer;
         private float _visibleCharacterProgress;
         private int _visibleCharacterTarget;
-        private HectonSurvivalSystem _survivalSystem;
-        private readonly char[] _sequenceTextBuffer = new char[SequenceTextCapacity]; // COLD ALLOC: char[192] - sonar boot sequence TMP buffer - owner: TerminalBootSequence
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapListenerRegistered;
+        private readonly char[] _sequenceTextBuffer = new char[SequenceTextCapacity]; // COLD ALLOC: char[256] - sonar boot sequence TMP buffer - owner: TerminalBootSequence
 
         private void OnEnable()
         {
             font = LocalizedFontResolver.ResolveReadableFont(font);
-            ResolveTerminalOwners();
+            CachePlayerRuntimeContextCold();
+            TryRegisterHotSwapListener();
             EnsureUiBuilt();
             RegisterToTickManager();
             SpectrumEvents.RegisterSonarPingListener(this);
@@ -1150,6 +1152,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             HideOverlay();
         }
@@ -1157,7 +1160,36 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _tickRegistered = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled)
+                {
+                    UnregisterFromTickManager();
+                    RegisterToTickManager();
+                }
+            }
         }
 
         /// <inheritdoc />
@@ -1203,7 +1235,6 @@ namespace Hecton8.UI
             if (intensity <= 0.001f)
                 return;
 
-            ResolveTerminalOwners();
             EnsureUiBuilt();
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
@@ -1226,17 +1257,12 @@ namespace Hecton8.UI
             HandleSonarPingSent(intensity);
         }
 
-        private void ResolveTerminalOwners()
-        {
-            if (_survivalSystem == null)
-                TryGetComponent(out _survivalSystem);
-        }
-
         private int BuildSequenceText(char[] buffer)
         {
-            float integrity01 = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
-            float energy01 = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 0f;
-            float hullStress01 = _survivalSystem != null ? math.saturate(1f - integrity01) : 1f;
+            bool hasSurvivalState = TryReadSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState);
+            float integrity01 = hasSurvivalState ? Sanitize01(survivalState.IntegrityNormalized) : 0f;
+            float energy01 = hasSurvivalState ? Sanitize01(survivalState.EnergyNormalized) : 0f;
+            float hullStress01 = hasSurvivalState ? math.saturate(1f - integrity01) : 1f;
             ReadOnlySpan<char> hullStatus = ResolveIntegrityStatusChars(integrity01);
             ReadOnlySpan<char> powerStatus = energy01 >= 0.25f ? StatusOkChars : StatusDegradedChars;
             ReadOnlySpan<char> linkStatus = hullStress01 <= 0.18f ? StatusOkChars : StatusDegradedChars;
@@ -1254,18 +1280,50 @@ namespace Hecton8.UI
             cursor = AppendLine(buffer, cursor, " CALIBRATING LIDAR ARRAY...".AsSpan());
             cursor = AppendSpan(buffer, cursor, linkStatus);
             cursor = AppendSpan(buffer, cursor, " ACOUSTIC BUS LINK... HULL ".AsSpan());
-            cursor = AppendInt(buffer, cursor, _survivalSystem != null ? (int)math.round(integrity01 * 100f) : 0);
+            cursor = AppendInt(buffer, cursor, hasSurvivalState ? (int)math.round(integrity01 * 100f) : 0);
             cursor = AppendChar(buffer, cursor, '%');
             cursor = AppendChar(buffer, cursor, '\n');
             cursor = AppendSpan(buffer, cursor, powerStatus);
             cursor = AppendSpan(buffer, cursor, " POWER FEED... ".AsSpan());
-            cursor = AppendInt(buffer, cursor, _survivalSystem != null ? (int)math.round(energy01 * 100f) : 0);
+            cursor = AppendInt(buffer, cursor, hasSurvivalState ? (int)math.round(energy01 * 100f) : 0);
             cursor = AppendChar(buffer, cursor, '%');
             cursor = AppendChar(buffer, cursor, '\n');
             cursor = AppendSpan(buffer, cursor, hullStatus);
             cursor = AppendSpan(buffer, cursor, " NOISE FILTER... STRESS ".AsSpan());
-            cursor = AppendInt(buffer, cursor, _survivalSystem != null ? (int)math.round(hullStress01 * 100f) : 100);
+            cursor = AppendInt(buffer, cursor, hasSurvivalState ? (int)math.round(hullStress01 * 100f) : 100);
             return AppendChar(buffer, cursor, '%');
+        }
+
+        private bool TryReadSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null && playerContext.TryGetSurvivalRuntimeState(out survivalState))
+                return true;
+
+            survivalState = default;
+            return false;
+        }
+
+        private void CachePlayerRuntimeContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private static int AppendLine(char[] buffer, int cursor, ReadOnlySpan<char> value)
@@ -1336,6 +1394,11 @@ namespace Hecton8.UI
             return StatusOkChars;
         }
 
+        private static float Sanitize01(float value)
+        {
+            return math.select(0f, math.saturate(value), math.isfinite(value));
+        }
+
         private void EnsureUiBuilt()
         {
             if (_uiBuilt)
@@ -1351,17 +1414,7 @@ namespace Hecton8.UI
 
             _overlayRoot = FindExistingChild(contentRoot, OverlayName);
             if (_overlayRoot == null)
-            {
-                // COLD ALLOC: GameObject[1] - sonar terminal boot overlay host - owner: TerminalBootSequence
-                GameObject overlayObject = new GameObject(
-                    OverlayName,
-                    typeof(RectTransform),
-                    typeof(CanvasGroup),
-                    typeof(Image));
-                overlayObject.layer = contentRoot.gameObject.layer;
-                overlayObject.TryGetComponent(out _overlayRoot);
-                _overlayRoot.SetParent(contentRoot, false);
-            }
+                return;
 
             _overlayRoot.anchorMin = new Vector2(0f, 1f);
             _overlayRoot.anchorMax = new Vector2(0f, 1f);
@@ -1371,31 +1424,26 @@ namespace Hecton8.UI
             _overlayRoot.localScale = Vector3.one;
             _overlayRoot.SetAsLastSibling();
 
-            _overlayRoot.TryGetComponent(out _overlayGroup);
-            if (_overlayGroup == null)
-                _overlayGroup = _overlayRoot.gameObject.AddComponent<CanvasGroup>();
+            if (!_overlayRoot.TryGetComponent(out _overlayGroup) || _overlayGroup == null)
+                return;
             _overlayGroup.alpha = 0f;
             _overlayGroup.blocksRaycasts = false;
             _overlayGroup.interactable = false;
 
-            _overlayRoot.TryGetComponent(out Image background);
-            if (background == null)
-                background = _overlayRoot.gameObject.AddComponent<Image>();
+            if (!_overlayRoot.TryGetComponent(out Image background) || background == null)
+                return;
             background.color = new Color(0.02f, 0.07f, 0.08f, 0.72f);
             background.raycastTarget = false;
 
-            ClearChildren(_overlayRoot);
+            RectTransform textRoot = FindExistingChild(_overlayRoot, "ConsoleText");
+            if (textRoot == null || !textRoot.TryGetComponent(out _consoleLabel) || _consoleLabel == null)
+                return;
 
-            GameObject textObject = new GameObject("ConsoleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            textObject.layer = _overlayRoot.gameObject.layer;
-            textObject.TryGetComponent(out RectTransform textRoot);
-            textRoot.SetParent(_overlayRoot, false);
             textRoot.anchorMin = Vector2.zero;
             textRoot.anchorMax = Vector2.one;
             textRoot.offsetMin = new Vector2(16f, 12f);
             textRoot.offsetMax = new Vector2(-16f, -12f);
 
-            textObject.TryGetComponent(out _consoleLabel);
             if (font != null)
                 _consoleLabel.font = font;
 
@@ -1450,10 +1498,10 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+            if (overlay == null)
                 return null;
 
-            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            overlay.TryGetComponent(out Canvas canvas);
             return canvas;
         }
 
@@ -1462,10 +1510,6 @@ namespace Hecton8.UI
             return UiChildSpanUtility.FindExistingChild(parent, childName);
         }
 
-        private static void ClearChildren(Transform parent)
-        {
-            UiChildSpanUtility.DestroyChildren(parent);
-        }
     }
 
     /// <summary>
@@ -1725,13 +1769,7 @@ namespace Hecton8.UI
 
             _overlayRoot = FindExistingChild(contentRoot, OverlayName);
             if (_overlayRoot == null)
-            {
-                // COLD ALLOC: GameObject[1] - spatial audio caption host - owner: AudioCaptionOverlay
-                GameObject overlayObject = new GameObject(OverlayName, typeof(RectTransform));
-                overlayObject.layer = contentRoot.gameObject.layer;
-                overlayObject.TryGetComponent(out _overlayRoot);
-                _overlayRoot.SetParent(contentRoot, false);
-            }
+                return;
 
             _overlayRoot.anchorMin = new Vector2(0.5f, 0.5f);
             _overlayRoot.anchorMax = new Vector2(0.5f, 0.5f);
@@ -1741,47 +1779,59 @@ namespace Hecton8.UI
             _overlayRoot.localScale = Vector3.one;
             _overlayRoot.SetAsLastSibling();
 
-            ClearChildren(_overlayRoot);
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                if (!TryResolveSlotView(i, out _, out _, out _))
+                    return;
+            }
 
             for (int i = 0; i < _slots.Length; i++)
-                BuildSlot(i);
+                BindExistingSlot(i);
 
             ResolveViewCamera();
             _uiBuilt = true;
         }
 
-        private void BuildSlot(int index)
+        private bool TryResolveSlotView(
+            int index,
+            out RectTransform slotRoot,
+            out CanvasGroup group,
+            out TextMeshProUGUI text)
         {
-            // COLD ALLOC: GameObject[1] - pooled caption slot root - owner: AudioCaptionOverlay
-            GameObject slotObject = new GameObject(
-                SlotName,
-                typeof(RectTransform),
-                typeof(CanvasGroup));
-            slotObject.layer = _overlayRoot.gameObject.layer;
-            slotObject.TryGetComponent(out RectTransform slotRoot);
-            slotRoot.SetParent(_overlayRoot, false);
+            slotRoot = UiChildSpanUtility.FindExistingChild(_overlayRoot, SlotName, index);
+            group = null;
+            text = null;
+            if (slotRoot == null || !slotRoot.TryGetComponent(out group) || group == null)
+                return false;
+
+            RectTransform textRoot = FindExistingChild(slotRoot, TextName);
+            if (textRoot == null || !textRoot.TryGetComponent(out text) || text == null)
+                return false;
+
+            return true;
+        }
+
+        private void BindExistingSlot(int index)
+        {
+            if (!TryResolveSlotView(index, out RectTransform slotRoot, out CanvasGroup group, out TextMeshProUGUI text))
+                return;
+
             slotRoot.anchorMin = new Vector2(0.5f, 0.5f);
             slotRoot.anchorMax = new Vector2(0.5f, 0.5f);
             slotRoot.pivot = new Vector2(0.5f, 0.5f);
             slotRoot.sizeDelta = CaptionSize;
             slotRoot.anchoredPosition = CaptionVerticalOffset;
 
-            slotObject.TryGetComponent(out CanvasGroup group);
             group.alpha = 0f;
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            // COLD ALLOC: GameObject[1] - pooled caption text owner - owner: AudioCaptionOverlay
-            GameObject textObject = new GameObject(TextName, typeof(RectTransform));
-            textObject.layer = slotObject.layer;
-            textObject.TryGetComponent(out RectTransform textRect);
-            textRect.SetParent(slotRoot, false);
+            RectTransform textRect = text.rectTransform;
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
 
-            TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
             text.font = labelFont != null ? labelFont : TMP_Settings.defaultFontAsset;
             text.fontSize = 13f;
             text.textWrappingMode = TextWrappingModes.NoWrap;
@@ -1791,7 +1841,10 @@ namespace Hecton8.UI
             text.outlineWidth = 0.18f;
             text.raycastTarget = false;
 
-            char[] textBuffer = new char[CaptionTextCapacity]; // COLD ALLOC: char[128] - pooled spatial caption TMP buffer - owner: AudioCaptionOverlay
+            char[] textBuffer = _slots[index].TextBuffer;
+            if (textBuffer == null || textBuffer.Length < CaptionTextCapacity)
+                textBuffer = new char[CaptionTextCapacity]; // COLD ALLOC: char[128] - pooled spatial caption TMP buffer - owner: AudioCaptionOverlay
+
             text.SetCharArray(textBuffer, 0, 0);
 
             _slots[index] = new CaptionSlot
@@ -2146,21 +2199,16 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            if (!allowComponentFallback || SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+            if (!allowComponentFallback || overlay == null)
                 return null;
 
-            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            overlay.TryGetComponent(out Canvas canvas);
             return canvas;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
         {
             return UiChildSpanUtility.FindExistingChild(parent, childName);
-        }
-
-        private static void ClearChildren(Transform parent)
-        {
-            UiChildSpanUtility.DestroyChildren(parent);
         }
     }
 }

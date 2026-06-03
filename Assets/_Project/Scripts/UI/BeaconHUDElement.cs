@@ -40,10 +40,7 @@ namespace Hecton8.UI
         // --------------------------------------------------------------------------
 
         [Header("-- References --------------------------------")]
-        [Tooltip("Icon prefab to instantiate for each beacon.")]
-        [SerializeField] private GameObject beaconIconPrefab;
-
-        [Tooltip("Parent transform for beacon icons.")]
+        [Tooltip("Parent transform containing pre-authored beacon icon children. Each child root must include CanvasGroup.")]
         [SerializeField] private Transform iconContainer;
 
         [Header("-- Display Settings --------------------------")]
@@ -105,39 +102,15 @@ namespace Hecton8.UI
             _idlePollTimer = 0f;
             RefreshScreenSnapshotCold();
 
-            // Pre-create icon pool
-            if (beaconIconPrefab != null && iconContainer != null)
-            {
-                for (int i = 0; i < _iconDisplays.Length; i++)
-                {
-                    GameObject icon = Instantiate(beaconIconPrefab, iconContainer);
-                    if (!icon.TryGetComponent(out CanvasGroup canvasGroup))
-                    {
-                        // COLD ALLOC: CanvasGroup[1] - missing beacon icon visibility proxy - owner: BeaconHUDElement
-                        canvasGroup = icon.AddComponent<CanvasGroup>();
-                    }
-                    DisableGraphicRaycasts(icon);
-
-                    _iconDisplays[i] = new BeaconIconDisplay // COLD ALLOC: BeaconIconDisplay[1] — pooled beacon HUD icon state — owner: BeaconHUDElement
-                    {
-                        gameObject = icon,
-                        transform = icon.transform,
-                        canvasGroup = canvasGroup,
-                        labelText = ResolveChildText(icon.transform, "Label"),
-                        distanceText = ResolveChildText(icon.transform, "Distance"),
-                        labelBuffer = new char[BeaconLabelTextCapacity], // COLD ALLOC: char[96] — beacon HUD label text staging buffer — owner: BeaconHUDElement
-                        distanceBuffer = new char[DistanceTextCapacity] // COLD ALLOC: char[32] — beacon HUD distance text staging buffer — owner: BeaconHUDElement
-                    };
-
-                    ApplyDisplayVisible(_iconDisplays[i], false, 0f);
-                }
-            }
+            AllocateDisplaySlotsCold();
+            BindAuthoredIconInstancesCold();
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
             RefreshScreenSnapshotCold();
+            BindAuthoredIconInstancesCold();
             TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             _pendingDistanceLanguage = ResolveCachedDistanceLanguage();
@@ -350,6 +323,82 @@ namespace Hecton8.UI
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             if (_mainCamera == null && _cachedPlayerContext != null)
                 _mainCamera = _cachedPlayerContext.PlayerCamera;
+        }
+
+        private void AllocateDisplaySlotsCold()
+        {
+            for (int i = 0; i < _iconDisplays.Length; i++)
+            {
+                if (_iconDisplays[i] != null)
+                    continue;
+
+                _iconDisplays[i] = new BeaconIconDisplay
+                {
+                    labelBuffer = new char[BeaconLabelTextCapacity],
+                    distanceBuffer = new char[DistanceTextCapacity]
+                };
+            }
+        }
+
+        private void BindAuthoredIconInstancesCold()
+        {
+            AllocateDisplaySlotsCold();
+            if (iconContainer == null)
+                return;
+
+            int childCount = math.min(iconContainer.childCount, _iconDisplays.Length);
+            for (int i = 0; i < _iconDisplays.Length; i++)
+            {
+                BeaconIconDisplay display = _iconDisplays[i];
+                if (display == null || display.gameObject != null)
+                    continue;
+
+                if (i >= childCount)
+                    continue;
+
+                Transform iconTransform = iconContainer.GetChild(i);
+                if (iconTransform == null)
+                    continue;
+
+                BindDisplayInstance(display, iconTransform.gameObject);
+            }
+        }
+
+        private void BindDisplayInstance(BeaconIconDisplay display, GameObject icon)
+        {
+            if (display == null || icon == null)
+                return;
+
+            Transform iconTransform = icon.transform;
+            if (!icon.TryGetComponent(out CanvasGroup canvasGroup) || canvasGroup == null)
+                return;
+
+            DisableGraphicRaycasts(icon);
+            display.gameObject = icon;
+            display.transform = iconTransform;
+            display.canvasGroup = canvasGroup;
+            display.labelText = ResolveChildText(iconTransform, "Label");
+            display.distanceText = ResolveChildText(iconTransform, "Distance");
+            ResetDisplayCaches(display);
+            ApplyDisplayVisible(display, false, 0f);
+        }
+
+        private static void ResetDisplayCaches(BeaconIconDisplay display)
+        {
+            if (display == null)
+                return;
+
+            display.CachedLabelLength = 0;
+            display.CachedLabelHash = LabelHashSeed;
+            display.HasCachedLabel = false;
+            display.CachedDistanceMeters = 0;
+            display.HasCachedDistance = false;
+            display.CachedVisible = false;
+            display.CachedAlpha = -1f;
+            display.HasCachedVisibility = false;
+            display.CachedPixelX = 0;
+            display.CachedPixelY = 0;
+            display.HasCachedPosition = false;
         }
 
         private void UpdateBeaconIcon(

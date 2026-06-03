@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Data;
+using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -40,6 +41,7 @@ namespace Hecton8.UI
         private const uint FaultDecryptionBudget = 1u << 4;
         private const uint FaultDecryptionNonFinite = 1u << 5;
         private const uint FaultDecryptionDumpBackpressure = 1u << 6;
+        private const ushort DialogueDecisionSaveFacilityMask = 1 << 0;
         private const uint DecryptionDumpBackpressureHash = 0x53483237u; // SH27
         private const uint DecryptionDumpContextHash = 0x54444457u; // TDDW
         private const string NativeOwner = nameof(TerminalOsRuntime);
@@ -102,14 +104,33 @@ namespace Hecton8.UI
         private static readonly int HectonDiegeticGlitchQualityWeightId = Shader.PropertyToID("_HectonDiegeticGlitchQualityWeight");
         private static readonly int HectonDecryptionNoiseDensityId = Shader.PropertyToID("_HectonDecryptionNoiseDensity");
         private static readonly int HectonTerminalInstancedModeId = Shader.PropertyToID("_HectonTerminalInstancedMode");
+        private static readonly int TerminalOsStyleColorId = Shader.PropertyToID("_TerminalOsStyleColor");
+        private static readonly int TerminalOsStyleBlendId = Shader.PropertyToID("_TerminalOsStyleBlend");
+        private static readonly int TerminalOsStyleFlagsId = Shader.PropertyToID("_TerminalOsStyleFlags");
         private static readonly int GlobalDecryptionPuzzlesId = Shader.PropertyToID("_GlobalDecryptionPuzzles");
         private static readonly int GlobalDecryptionPuzzleCountId = Shader.PropertyToID("_GlobalDecryptionPuzzleCount");
+        private static readonly int TerminalScreenAlbedoAtlasId = Shader.PropertyToID("_TerminalScreenAlbedoAtlas");
+        private static readonly int TerminalScreenProjectionLutId = Shader.PropertyToID("_TerminalScreenProjectionLut");
+        private static readonly int TerminalScreenPackedMraoId = Shader.PropertyToID("_TerminalScreenPackedMrao");
+        private static readonly int TerminalScreenBakedProjectionReadyId = Shader.PropertyToID("_TerminalScreenBakedProjectionReady");
+        private static readonly int TerminalScreenBakedProjectionWeightId = Shader.PropertyToID("_TerminalScreenBakedProjectionWeight");
+        private static readonly int TerminalScreenBurnInWeightId = Shader.PropertyToID("_TerminalScreenBurnInWeight");
+        private static readonly int TerminalScreenGlassWeightId = Shader.PropertyToID("_TerminalScreenGlassWeight");
 
         [Header("GPU")]
         [SerializeField] private ComputeShader terminalBlitCompute;
         [SerializeField] private Texture2D fontSdfAtlas;
         [SerializeField] private Material terminalArrayMaterial;
         [SerializeField] private Mesh terminalPanelMesh;
+
+        [Header("Baked CRT Projection 1721")]
+        [SerializeField] private bool bakedCrtProjectionEnabled = true;
+        [SerializeField] private Texture2D bakedScreenAlbedoAtlas;
+        [SerializeField] private Texture2D bakedScreenProjectionLut;
+        [SerializeField] private Texture2D bakedScreenPackedMrao;
+        [SerializeField, Range(0f, 1f)] private float bakedScreenProjectionWeight = 1f;
+        [SerializeField, Range(0f, 1f)] private float bakedScreenBurnInWeight = 0.68f;
+        [SerializeField, Range(0f, 1f)] private float bakedScreenGlassWeight = 0.42f;
 
         [Header("Scene Binding")]
         [SerializeField] private Camera attentionCameraOverride;
@@ -119,7 +140,9 @@ namespace Hecton8.UI
 
         [Header("Cold Data")]
         [SerializeField] private bool mockGeneratorEnabled = true;
+#if UNITY_EDITOR
         [SerializeField] private string layoutCsvRelativePath = "Assets/_SourceData/UI/TerminalOS/terminal_ui_layouts.csv";
+#endif
 
         [Header("Interaction Solver")]
         [SerializeField, Range(0.5f, 30f)] private float interactionMaxDistanceMeters = 10f;
@@ -138,7 +161,9 @@ namespace Hecton8.UI
         [SerializeField, Range(0.01f, 0.5f)] private float decryptionPhaseWeight = 0.08f;
         [SerializeField, Range(0.001f, 0.5f)] private float decryptionFrequencySensitivity = 0.035f;
         [SerializeField, Range(0.001f, 0.5f)] private float decryptionPhaseSensitivity = 0.08f;
+#if UNITY_EDITOR
         [SerializeField] private string decryptionCsvRelativePath = "Assets/_SourceData/UI/TerminalOS/decryption_puzzles.csv";
+#endif
 
         private IDataVault _vault;
         private VaultGenerationHandle<TerminalStateDTO> _terminalStatesHandle;
@@ -194,6 +219,9 @@ namespace Hecton8.UI
         private bool _glyphUploadDirty;
         private int _dirtyIndexUploadBufferIndex;
         private bool _bindingsDirty;
+        private bool _bakedCrtBindingDirty = true;
+        private bool _bakedCrtProjectionReady;
+        private int _bakedCrtBindingHash;
         private bool _panelInstanceUploadDirty;
         private bool _decryptionBufferUploadDirty;
         private bool _blackBoxDumped;
@@ -219,8 +247,10 @@ namespace Hecton8.UI
         private int _threadsY;
         private int _telemetryCursor;
         private int _decryptionTelemetryCursor;
+#if UNITY_EDITOR
         private int _csvProbeFrame;
         private int _decryptionCsvProbeFrame;
+#endif
         private int _nextQualityRefreshFrame;
         private int _nextCameraResolveFrame;
         private int _nextNativeResourceRetryFrame;
@@ -248,18 +278,27 @@ namespace Hecton8.UI
         private float _lastPanelInstanceQualityWeight = -1f;
         private float _lastPanelInstanceGlitchIntensity = -1f;
         private float _globalQualityWeight = 1f;
+        private float _dialogueChoiceVisualBlend = -1f;
+        private float _lastUploadedDialogueChoiceVisualBlend = -1f;
+        private ushort _lastUploadedDialogueChoiceFlags = ushort.MaxValue;
         private AbsoluteUniversePosition _cachedRuntimeOriginAup;
         private IInputService _input;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private SaveManager _cachedSaveManager;
         private bool _registeredHotSwapListener;
+#if UNITY_EDITOR
         private string _csvFullPath;
         private string _decryptionCsvFullPath;
+#endif
         private string _dumpFullPath;
         private string _dumpMirrorFullPath;
         private string _decryptionDumpFullPath;
         private DecryptionBlackBoxDumpWriter _decryptionDumpWriter;
+#if UNITY_EDITOR
         private DateTime _csvLastWriteUtc;
         private DateTime _decryptionCsvLastWriteUtc;
+#endif
+        private bool _coldPathsReady;
 
         public void LateFrameTick()
         {
@@ -273,7 +312,9 @@ namespace Hecton8.UI
             TryFinalizeClickResolveJob();
             TryFinalizeTerminalInteractionJob();
             TryFinalizeDecryptionJob();
+            UpdateDialogueChoiceVisualSync();
             ConsumeAppliedLoreTerminalPreviewSignals();
+            RefreshBakedCrtBindingDirtyState();
 
             bool visualPipelineBlocked = false;
             if (_formatScheduled)
@@ -428,7 +469,7 @@ namespace Hecton8.UI
 
         public bool TryGetTerminalInteractionCopy(int index, out TerminalInteractionDTO interaction)
         {
-            if (!TryReadVaultBuffer(in _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> interactions) ||
+            if (!TryReadVaultBuffer(in _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO>.ReadOnly interactions) ||
                 index < 0 ||
                 index >= math.min(_terminalCount, interactions.Length))
             {
@@ -443,7 +484,7 @@ namespace Hecton8.UI
         public bool TryGetDecryptionPuzzleCopy(int index, out DecryptionPuzzleDTO puzzle)
         {
             if (_decryptionScheduled ||
-                !TryReadVaultBuffer(in _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles) ||
+                !TryReadVaultBuffer(in _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO>.ReadOnly puzzles) ||
                 index < 0 ||
                 index >= math.min(_terminalCount, puzzles.Length))
             {
@@ -457,7 +498,7 @@ namespace Hecton8.UI
 
         public bool TryGetLatestDecryptionTelemetryCopy(out DecryptionTelemetryEntry entry)
         {
-            if (!TryReadVaultBuffer(in _decryptionTelemetryRingHandle, out NativeArray<DecryptionTelemetryEntry> telemetryRing) ||
+            if (!TryReadVaultBuffer(in _decryptionTelemetryRingHandle, out NativeArray<DecryptionTelemetryEntry>.ReadOnly telemetryRing) ||
                 telemetryRing.Length == 0)
             {
                 entry = default;
@@ -575,7 +616,7 @@ namespace Hecton8.UI
 
         public bool TryGetTerminalStateCopy(int index, out TerminalStateDTO state)
         {
-            if (!TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
+            if (!TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO>.ReadOnly terminalStates) ||
                 index < 0 ||
                 index >= math.min(_terminalCount, terminalStates.Length))
             {
@@ -589,7 +630,7 @@ namespace Hecton8.UI
 
         public bool TryGetScreenCommandCopy(int index, out ScreenCommandDTO command)
         {
-            if (!TryReadVaultBuffer(in _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands) ||
+            if (!TryReadVaultBuffer(in _screenCommandsHandle, out NativeArray<ScreenCommandDTO>.ReadOnly screenCommands) ||
                 index < 0 ||
                 index >= math.min(_terminalCount, screenCommands.Length))
             {
@@ -641,13 +682,13 @@ namespace Hecton8.UI
             H8AppliedLoreSurface surface = H8AppliedLoreSurface.Title)
         {
             if (packetHash == 0u ||
+                !TryGetTerminalPreviewAppliedLoreUtf8(packetHash, localeHash, surface, out ReadOnlySpan<byte> utf8Bytes) ||
                 !TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
                 !TryResolveTerminalPreviewIndex(
                     terminalStates,
                     index,
                     expectedTerminalHash,
-                    out int resolvedIndex) ||
-                !TryGetTerminalPreviewAppliedLoreUtf8(packetHash, localeHash, surface, out ReadOnlySpan<byte> utf8Bytes))
+                    out int resolvedIndex))
             {
                 return false;
             }
@@ -1062,6 +1103,8 @@ namespace Hecton8.UI
             _supportsTerminalComputeCold = SystemInfo.supportsComputeShaders;
             _nextNativeResourceRetryFrame = 0;
             _nextLateFrameRegisterRetryFrame = 0;
+            _bakedCrtBindingDirty = true;
+            _bindingsDirty = true;
             EnsureColdPaths();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -1070,6 +1113,14 @@ namespace Hecton8.UI
             RegisterActiveRuntime();
             TryRegisterLateFrame();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _bakedCrtBindingDirty = true;
+            _bindingsDirty = true;
+        }
+#endif
 
         private void OnDisable()
         {
@@ -1111,15 +1162,18 @@ namespace Hecton8.UI
             if (_attentionCameraCache == null && attentionCameraOverride != null)
                 _attentionCameraCache = attentionCameraOverride;
 
-            if (string.IsNullOrEmpty(_csvFullPath))
+            if (!_coldPathsReady)
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+#if UNITY_EDITOR
                 _csvFullPath = Path.GetFullPath(Path.Combine(projectRoot, layoutCsvRelativePath));
                 _decryptionCsvFullPath = Path.GetFullPath(Path.Combine(projectRoot, decryptionCsvRelativePath));
+#endif
                 _dumpFullPath = DumpRelativePath;
                 _dumpMirrorFullPath = DumpMirrorRelativePath;
                 _decryptionDumpFullPath = DecryptionDumpRelativePath;
                 EnsureTerminalProjectionColdPaths(projectRoot);
+                _coldPathsReady = true;
             }
 
             EnsureDecryptionDumpWriterCold();
@@ -1174,6 +1228,7 @@ namespace Hecton8.UI
         {
             _input = GlobalRegistry.Input;
             BindDataVaultForLifecycle(GlobalRegistry.DataVault, _vault);
+            _cachedSaveManager = GlobalRegistry.SaveRuntime;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             _cachedPlayerContext = playerContext;
             RefreshRuntimeOriginSnapshotForOwner();
@@ -1301,6 +1356,41 @@ namespace Hecton8.UI
             return math.saturate(_globalQualityWeight);
         }
 
+        private void UpdateDialogueChoiceVisualSync()
+        {
+            SaveManager saveManager = _cachedSaveManager;
+            ushort flags = saveManager != null ? saveManager.PlayerDialogueChoiceFlags : (ushort)0;
+            bool facilitySaved = (flags & DialogueDecisionSaveFacilityMask) != 0;
+            float targetBlend = math.select(0f, 1f, facilitySaved);
+            if (_dialogueChoiceVisualBlend < 0f)
+            {
+                _dialogueChoiceVisualBlend = targetBlend;
+            }
+            else
+            {
+                float quality = math.saturate(_globalQualityWeight);
+                float step = math.lerp(1f, 0.055f, quality);
+                _dialogueChoiceVisualBlend = math.lerp(_dialogueChoiceVisualBlend, targetBlend, step);
+            }
+
+            if (flags == _lastUploadedDialogueChoiceFlags &&
+                math.abs(_dialogueChoiceVisualBlend - _lastUploadedDialogueChoiceVisualBlend) <= 0.0005f)
+            {
+                return;
+            }
+
+            float4 cold = new float4(0.82f, 0.95f, 1f, 1f);
+            float4 facilitySavedColor = new float4(1f, 0.46f, 0.16f, 1f);
+            float4 color = math.lerp(cold, facilitySavedColor, _dialogueChoiceVisualBlend);
+            Shader.SetGlobalVector(
+                TerminalOsStyleColorId,
+                new Vector4(color.x, color.y, color.z, color.w));
+            Shader.SetGlobalFloat(TerminalOsStyleBlendId, _dialogueChoiceVisualBlend);
+            Shader.SetGlobalFloat(TerminalOsStyleFlagsId, flags);
+            _lastUploadedDialogueChoiceFlags = flags;
+            _lastUploadedDialogueChoiceVisualBlend = _dialogueChoiceVisualBlend;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -1320,6 +1410,10 @@ namespace Hecton8.UI
                             : null;
                         _nextCameraResolveFrame = 0;
                     }
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _cachedSaveManager = currentService as SaveManager;
+                    _lastUploadedDialogueChoiceFlags = ushort.MaxValue;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
@@ -1562,13 +1656,13 @@ namespace Hecton8.UI
                    buffer.IsCreated;
         }
 
-        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
+        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : unmanaged
         {
             buffer = default;
             if (_vault == null || _vault.IsCompactionFenceActive || !IsTerminalOsVaultHandle(in handle))
                 return false;
 
-            return _vault.TryReadHandle(in handle, out buffer) &&
+            return _vault.TryReadOnlyHandle(in handle, out buffer) &&
                    !_vault.IsCompactionFenceActive &&
                    buffer.IsCreated;
         }
@@ -1809,7 +1903,7 @@ namespace Hecton8.UI
 
         private void EnsureGraphicsResources()
         {
-            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> _))
+            if (!TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO>.ReadOnly _))
                 return;
 
             EnsureTextureArray();
@@ -2194,7 +2288,7 @@ namespace Hecton8.UI
                 return new float3(position.x, position.y, position.z);
             }
 
-            return TryOpenVaultBuffer(ref _terminalPositionsHandle, out NativeArray<float4> terminalPositions) && index < terminalPositions.Length
+            return TryReadVaultBuffer(in _terminalPositionsHandle, out NativeArray<float4>.ReadOnly terminalPositions) && index < terminalPositions.Length
                 ? terminalPositions[index].xyz
                 : default;
         }
@@ -2874,11 +2968,36 @@ namespace Hecton8.UI
                 faultFlags |= FaultDecryptionNonFinite;
 
             _lastDecryptionFaultFlags = faultFlags;
+            RecordSolvedDecryptionDialogueChoice();
             RecordDecryptionTelemetry(simulationFrame, faultFlags);
             _decryptionBufferUploadDirty = true;
             UploadDecryptionPuzzles();
             if ((faultFlags & (FaultDecryptionBudget | FaultDecryptionNonFinite)) != 0u)
                 QueueDecryptionBlackBoxDump(faultFlags);
+        }
+
+        private void RecordSolvedDecryptionDialogueChoice()
+        {
+            SaveManager saveManager = _cachedSaveManager;
+            if (saveManager == null ||
+                (saveManager.PlayerDialogueChoiceFlags & DialogueDecisionSaveFacilityMask) != 0)
+            {
+                return;
+            }
+
+            if (!TryReadVaultBuffer(in _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO>.ReadOnly puzzles))
+                return;
+
+            int count = math.min(_terminalCount, puzzles.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if ((puzzles[i].Flags & TerminalOsConstants.DecryptionFlagSolved) == 0u)
+                    continue;
+
+                saveManager.RecordPlayerDialogueChoiceFlag(DialogueDecisionSaveFacilityMask);
+                _lastUploadedDialogueChoiceFlags = ushort.MaxValue;
+                return;
+            }
         }
 
         private void CaptureDecryptionKnobInputForOwner(int simulationFrame, NativeArray<DecryptionKnobInputDTO> knobInput)
@@ -2894,7 +3013,7 @@ namespace Hecton8.UI
             };
 
             float2 analogDeltaSource = default;
-            if (TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> gazeRays) && gazeRays.Length > 0)
+            if (TryReadVaultBuffer(in _gazeRayHandle, out NativeArray<GazeRayDTO>.ReadOnly gazeRays) && gazeRays.Length > 0)
             {
                 GazeRayDTO gaze = gazeRays[0];
                 input.PlayerAupMeters = gaze.OriginAup.ToAbsoluteDouble3();
@@ -3015,7 +3134,7 @@ namespace Hecton8.UI
 
         private void RefreshTerminalPlaneAvailability(NativeArray<TerminalPlaneDTO> terminalPlanes)
         {
-            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
+            if (!TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO>.ReadOnly terminalStates))
                 return;
 
             int count = math.min(_terminalCount, math.min(terminalPlanes.Length, terminalStates.Length));
@@ -3503,7 +3622,7 @@ namespace Hecton8.UI
 
         private int FindTerminalIndex(uint hash)
         {
-            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
+            if (!TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO>.ReadOnly terminalStates))
                 return -1;
 
             int count = math.min(_terminalCount, terminalStates.Length);
@@ -3523,7 +3642,7 @@ namespace Hecton8.UI
                 return;
 
             bool hasPlanes = TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> terminalPlanes);
-            bool hasStates = TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates);
+            bool hasStates = TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO>.ReadOnly terminalStates);
             float quality = _globalQualityWeight;
             float glitch = _lastDiegeticGlitchIntensity;
             bool scalarChanged = math.abs(_lastPanelInstanceQualityWeight - quality) > 0.0005f ||
@@ -3628,16 +3747,16 @@ namespace Hecton8.UI
         private void OnDrawGizmos()
         {
             if (!drawTerminalDebugGizmos ||
-                !TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> terminalPlanes) ||
-                !TryOpenVaultBuffer(ref _buttonAabbHandle, out NativeArray<ButtonAABBDTO> buttons))
+                !TryReadVaultBuffer(in _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO>.ReadOnly terminalPlanes) ||
+                !TryReadVaultBuffer(in _buttonAabbHandle, out NativeArray<ButtonAABBDTO>.ReadOnly buttons))
             {
                 return;
             }
 
-            TryOpenVaultBuffer(ref _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> interactions);
-            TryOpenVaultBuffer(ref _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO> inputStates);
-            TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> gazeRays);
-            TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles);
+            TryReadVaultBuffer(in _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO>.ReadOnly interactions);
+            TryReadVaultBuffer(in _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO>.ReadOnly inputStates);
+            TryReadVaultBuffer(in _gazeRayHandle, out NativeArray<GazeRayDTO>.ReadOnly gazeRays);
+            TryReadVaultBuffer(in _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO>.ReadOnly puzzles);
             int count = math.min(_terminalCount, terminalPlanes.Length);
             for (int i = 0; i < count; i++)
             {
@@ -3656,7 +3775,7 @@ namespace Hecton8.UI
 
         private static void DrawTerminalPlaneGizmo(
             in TerminalPlaneDTO plane,
-            NativeArray<ButtonAABBDTO> buttons,
+            NativeArray<ButtonAABBDTO>.ReadOnly buttons,
             in TerminalInteractionDTO interaction)
         {
             float3 center = ResolveRuntimeLocalPosition(plane.CenterAup, default);
@@ -3746,7 +3865,7 @@ namespace Hecton8.UI
 
         private void RecalculatePanelRenderBounds()
         {
-            if (!TryOpenVaultBuffer(ref _panelInstancesHandle, out NativeArray<TerminalPanelInstanceDTO> panelInstances) ||
+            if (!TryReadVaultBuffer(in _panelInstancesHandle, out NativeArray<TerminalPanelInstanceDTO>.ReadOnly panelInstances) ||
                 _terminalCount <= 0)
             {
                 _panelRenderBounds = new Bounds(transform.position, Vector3.one);
@@ -3855,6 +3974,7 @@ namespace Hecton8.UI
                 return;
 
             Shader.SetGlobalTexture(TerminalTextureArrayId, _terminalTextureArray);
+            BindBakedCrtProjectionGlobals(_bakedCrtProjectionReady);
             if (terminalArrayMaterial != null)
             {
                 terminalArrayMaterial.SetTexture(TerminalTextureArrayId, _terminalTextureArray);
@@ -3869,10 +3989,109 @@ namespace Hecton8.UI
                     terminalArrayMaterial.SetBuffer(GlobalDecryptionPuzzlesId, _decryptionPuzzleBuffer);
                 if (_panelInstanceBuffer != null)
                     terminalArrayMaterial.SetBuffer(TerminalPanelInstancesId, _panelInstanceBuffer);
+                BindBakedCrtProjectionMaterial(terminalArrayMaterial, _bakedCrtProjectionReady);
                 BindTerminalProjectionBuffers();
             }
 
             _bindingsDirty = false;
+        }
+
+        private void BindBakedCrtProjectionGlobals(bool ready)
+        {
+            float ready01 = ready ? 1f : 0f;
+            Shader.SetGlobalFloat(TerminalScreenBakedProjectionReadyId, ready01);
+            Shader.SetGlobalFloat(TerminalScreenBakedProjectionWeightId, ready ? math.saturate(bakedScreenProjectionWeight) : 0f);
+            Shader.SetGlobalFloat(TerminalScreenBurnInWeightId, ready ? math.saturate(bakedScreenBurnInWeight) : 0f);
+            Shader.SetGlobalFloat(TerminalScreenGlassWeightId, ready ? math.saturate(bakedScreenGlassWeight) : 0f);
+            if (!ready)
+                return;
+
+            Shader.SetGlobalTexture(TerminalScreenAlbedoAtlasId, bakedScreenAlbedoAtlas);
+            Shader.SetGlobalTexture(TerminalScreenProjectionLutId, bakedScreenProjectionLut);
+            Shader.SetGlobalTexture(TerminalScreenPackedMraoId, bakedScreenPackedMrao);
+        }
+
+        private void BindBakedCrtProjectionMaterial(Material material, bool ready)
+        {
+            if (material == null)
+                return;
+
+            material.SetFloat(TerminalScreenBakedProjectionReadyId, ready ? 1f : 0f);
+            material.SetFloat(TerminalScreenBakedProjectionWeightId, ready ? math.saturate(bakedScreenProjectionWeight) : 0f);
+            material.SetFloat(TerminalScreenBurnInWeightId, ready ? math.saturate(bakedScreenBurnInWeight) : 0f);
+            material.SetFloat(TerminalScreenGlassWeightId, ready ? math.saturate(bakedScreenGlassWeight) : 0f);
+            if (!ready)
+                return;
+
+            material.SetTexture(TerminalScreenAlbedoAtlasId, bakedScreenAlbedoAtlas);
+            material.SetTexture(TerminalScreenProjectionLutId, bakedScreenProjectionLut);
+            material.SetTexture(TerminalScreenPackedMraoId, bakedScreenPackedMrao);
+        }
+
+        private bool ResolveBakedCrtProjectionReady()
+        {
+            if (!bakedCrtProjectionEnabled ||
+                bakedScreenAlbedoAtlas == null ||
+                bakedScreenProjectionLut == null ||
+                bakedScreenPackedMrao == null)
+                return false;
+
+            int albedoWidth = bakedScreenAlbedoAtlas.width;
+            int albedoHeight = bakedScreenAlbedoAtlas.height;
+            int mraoWidth = bakedScreenPackedMrao.width;
+            int mraoHeight = bakedScreenPackedMrao.height;
+            int lutWidth = bakedScreenProjectionLut.width;
+            int lutHeight = bakedScreenProjectionLut.height;
+            return albedoWidth > 1 &&
+                   albedoHeight > 1 &&
+                   lutWidth > 1 &&
+                   lutHeight > 1 &&
+                   albedoWidth == albedoHeight &&
+                   mraoWidth == albedoWidth &&
+                   mraoHeight == albedoHeight &&
+                   lutWidth == lutHeight;
+        }
+
+        private void RefreshBakedCrtBindingDirtyState()
+        {
+            if (!_bakedCrtBindingDirty)
+                return;
+
+            bool ready = ResolveBakedCrtProjectionReady();
+            int hash = ResolveBakedCrtBindingHash(ready);
+            if (hash == _bakedCrtBindingHash)
+            {
+                _bakedCrtProjectionReady = ready;
+                _bakedCrtBindingDirty = false;
+                return;
+            }
+
+            _bakedCrtBindingHash = hash;
+            _bakedCrtProjectionReady = ready;
+            _bakedCrtBindingDirty = false;
+            _bindingsDirty = true;
+        }
+
+        private int ResolveBakedCrtBindingHash(bool ready)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + (bakedCrtProjectionEnabled ? 1 : 0);
+                hash = hash * 31 + (ready ? 1 : 0);
+                hash = hash * 31 + FoldUnityObjectEntityId(bakedScreenAlbedoAtlas);
+                hash = hash * 31 + FoldUnityObjectEntityId(bakedScreenProjectionLut);
+                hash = hash * 31 + FoldUnityObjectEntityId(bakedScreenPackedMrao);
+                hash = hash * 31 + math.asint(math.saturate(bakedScreenProjectionWeight));
+                hash = hash * 31 + math.asint(math.saturate(bakedScreenBurnInWeight));
+                hash = hash * 31 + math.asint(math.saturate(bakedScreenGlassWeight));
+                return hash;
+            }
+        }
+
+        private static int FoldUnityObjectEntityId(UnityEngine.Object value)
+        {
+            return value != null ? unchecked((int)UnityEngine.EntityId.ToULong(value.GetEntityId())) : 0;
         }
 
         private void TryRegisterLateFrame()
@@ -3934,10 +4153,9 @@ namespace Hecton8.UI
 
         private void RecordTelemetry(int frame, int dirtyCount, int dispatchedCount, uint faultFlags)
         {
-            if (!TryOpenVaultBuffer(ref _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing))
-                return;
-
             int terminalCountSnapshot = math.min(_terminalCount, TerminalOsConstants.TerminalCapacity);
+            uint layoutHashSnapshot = ComputeLayoutHash();
+
             TerminalTelemetryEntry entry = new TerminalTelemetryEntry
             {
                 Frame = frame,
@@ -3948,7 +4166,7 @@ namespace Hecton8.UI
                 UploadMicroseconds = _lastUploadMicroseconds,
                 DispatchMicroseconds = _lastDispatchMicroseconds,
                 FaultFlags = faultFlags,
-                LayoutHash = ComputeLayoutHash(),
+                LayoutHash = layoutHashSnapshot,
                 HoveredTerminalHash = _lastHoveredTerminalHash,
                 LastPower01 = _lastPower01,
                 LastDamage01 = _lastDamage01,
@@ -3957,16 +4175,13 @@ namespace Hecton8.UI
                 IntersectionMicroseconds = _lastIntersectionMicroseconds,
                 GlobalQualityWeight = _globalQualityWeight
             };
-            telemetryRing[_telemetryCursor] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % TerminalOsConstants.BlackBoxFrameCount;
+            TryWriteTerminalTelemetryEntry(in entry);
         }
 
         private void RecordDecryptionTelemetry(int simulationFrame, uint faultFlags)
         {
-            if (!TryOpenVaultBuffer(ref _decryptionTelemetryRingHandle, out NativeArray<DecryptionTelemetryEntry> telemetryRing) ||
-                !TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles) ||
-                !TryOpenVaultBuffer(ref _decryptionTerminalsHandle, out NativeArray<DecryptionTerminalDTO> decryptionTerminals) ||
-                telemetryRing.Length == 0 ||
+            if (!TryReadVaultBuffer(in _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO>.ReadOnly puzzles) ||
+                !TryReadVaultBuffer(in _decryptionTerminalsHandle, out NativeArray<DecryptionTerminalDTO>.ReadOnly decryptionTerminals) ||
                 puzzles.Length == 0)
             {
                 return;
@@ -3980,8 +4195,8 @@ namespace Hecton8.UI
             DecryptionTerminalDTO terminal = decryptionTerminals.IsCreated && puzzleIndex < decryptionTerminals.Length
                 ? decryptionTerminals[puzzleIndex]
                 : default;
-            int telemetryIndex = math.clamp(_decryptionTelemetryCursor, 0, telemetryRing.Length - 1);
-            telemetryRing[telemetryIndex] = new DecryptionTelemetryEntry
+
+            DecryptionTelemetryEntry entry = new DecryptionTelemetryEntry
             {
                 Frame = (uint)simulationFrame,
                 PuzzleID = puzzle.PuzzleID,
@@ -3996,13 +4211,75 @@ namespace Hecton8.UI
                 TerminalHash = terminal.TerminalHash,
                 FaultFlags = faultFlags
             };
-            _lastDecryptionTelemetryFrame = simulationFrame;
-            _decryptionTelemetryCursor = (_decryptionTelemetryCursor + 1) % telemetryRing.Length;
+            if (TryWriteDecryptionTelemetryEntry(in entry))
+                _lastDecryptionTelemetryFrame = simulationFrame;
+        }
+
+        private bool TryWriteTerminalTelemetryEntry(in TerminalTelemetryEntry entry)
+        {
+            IDataVault vault = _vault;
+            NativeArray<TerminalTelemetryEntry> telemetryRing = default;
+            bool locked = false;
+            try
+            {
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    !IsTerminalOsVaultHandle(in _telemetryRingHandle) ||
+                    !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.UI, out telemetryRing))
+                {
+                    return false;
+                }
+
+                locked = true;
+                if (!telemetryRing.IsCreated || telemetryRing.Length == 0)
+                    return false;
+
+                int telemetryIndex = math.clamp(_telemetryCursor, 0, telemetryRing.Length - 1);
+                telemetryRing[telemetryIndex] = entry;
+                _telemetryCursor = (telemetryIndex + 1) % telemetryRing.Length;
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.UI);
+            }
+        }
+
+        private bool TryWriteDecryptionTelemetryEntry(in DecryptionTelemetryEntry entry)
+        {
+            IDataVault vault = _vault;
+            NativeArray<DecryptionTelemetryEntry> telemetryRing = default;
+            bool locked = false;
+            try
+            {
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    !IsTerminalOsVaultHandle(in _decryptionTelemetryRingHandle) ||
+                    !vault.TryAcquireWriteLock(in _decryptionTelemetryRingHandle, SystemID.UI, out telemetryRing))
+                {
+                    return false;
+                }
+
+                locked = true;
+                if (!telemetryRing.IsCreated || telemetryRing.Length == 0)
+                    return false;
+
+                int telemetryIndex = math.clamp(_decryptionTelemetryCursor, 0, telemetryRing.Length - 1);
+                telemetryRing[telemetryIndex] = entry;
+                _decryptionTelemetryCursor = (telemetryIndex + 1) % telemetryRing.Length;
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in _decryptionTelemetryRingHandle, SystemID.UI);
+            }
         }
 
         private uint ComputeLayoutHash()
         {
-            if (!TryOpenVaultBuffer(ref _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands))
+            if (!TryReadVaultBuffer(in _screenCommandsHandle, out NativeArray<ScreenCommandDTO>.ReadOnly screenCommands))
                 return 0u;
 
             uint hash = 2166136261u;
@@ -4015,7 +4292,7 @@ namespace Hecton8.UI
                 hash = (hash ^ math.asuint(command.Scale)) * 16777619u;
             }
 
-            if (TryOpenVaultBuffer(ref _buttonAabbHandle, out NativeArray<ButtonAABBDTO> buttons))
+            if (TryReadVaultBuffer(in _buttonAabbHandle, out NativeArray<ButtonAABBDTO>.ReadOnly buttons))
             {
                 int buttonCount = math.min(_buttonCount, buttons.Length);
                 for (int i = 0; i < buttonCount; i++)
@@ -4116,7 +4393,7 @@ namespace Hecton8.UI
             telemetryLength = 0;
             telemetryRingLength = 0;
             telemetryCursor = 0;
-            if (!TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+            if (!TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry>.ReadOnly telemetryRing) ||
                 telemetryRing.Length == 0)
             {
                 return false;
@@ -4136,7 +4413,7 @@ namespace Hecton8.UI
         private bool TryReadTerminalTelemetryDumpEntry(int index, out TerminalTelemetryEntry entry)
         {
             entry = default;
-            if (!TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+            if (!TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry>.ReadOnly telemetryRing) ||
                 (uint)index >= (uint)telemetryRing.Length)
             {
                 return false;
@@ -4151,7 +4428,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(path) ||
                 telemetryLength <= 0 ||
                 telemetryRingLength <= 0 ||
-                !TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+                !TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry>.ReadOnly telemetryRing) ||
                 !telemetryRing.IsCreated ||
                 telemetryRing.Length <= 0)
             {
@@ -4325,7 +4602,13 @@ namespace Hecton8.UI
         private void DisposeGraphicsResources()
         {
             if (terminalArrayMaterial != null)
+            {
                 terminalArrayMaterial.SetFloat(GlobalDecryptionPuzzleCountId, 0f);
+                terminalArrayMaterial.SetFloat(TerminalScreenBakedProjectionReadyId, 0f);
+            }
+            Shader.SetGlobalFloat(TerminalScreenBakedProjectionReadyId, 0f);
+            _bakedCrtProjectionReady = false;
+            _bakedCrtBindingDirty = true;
 
             ReleaseBuffer(ref _stateBuffer0);
             ReleaseBuffer(ref _stateBuffer1);

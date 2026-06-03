@@ -536,8 +536,6 @@ namespace Hecton8.UI
             }
 
             ILocalizationStressPresentationReadModel manager = _localization;
-            if (_intrusionManager == null)
-                _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
@@ -824,9 +822,6 @@ namespace Hecton8.UI
         {
             if (!_built)
                 return;
-
-            if (_intrusionManager == null)
-                _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
 
             ILocalizationStressPresentationReadModel manager = _localization;
             bool rtl = manager != null &&
@@ -1700,30 +1695,14 @@ namespace Hecton8.UI
 
         private static void EnsureGraphicMaterialInstance(Graphic graphic, ref Material material)
         {
-            if (graphic == null || material != null)
-                return;
-
-            Material source = graphic.materialForRendering;
-            if (source == null)
-                return;
-
-            material = new Material(source); // COLD ALLOC: Material[1] — UI chrome palette instance — owner: PDAShellChrome
-            material.name = "PDAShellChromeMaterial";
-            graphic.material = material;
+            if (material != null)
+                DestroyMaterialInstance(ref material);
         }
 
         private static void EnsureTextMaterialInstance(TextMeshProUGUI text, ref Material material)
         {
-            if (text == null || material != null)
-                return;
-
-            Material source = text.fontSharedMaterial;
-            if (source == null)
-                return;
-
-            material = new Material(source); // COLD ALLOC: Material[1] — TMP chrome palette instance — owner: PDAShellChrome
-            material.name = "PDAShellChromeTextMaterial";
-            text.fontSharedMaterial = material;
+            if (material != null)
+                DestroyMaterialInstance(ref material);
         }
 
         private static void ApplyGraphicMaterialColor(Graphic graphic, Material material, Color color)

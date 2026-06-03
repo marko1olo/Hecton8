@@ -1488,11 +1488,16 @@ namespace Crest
 
             // Smoothly varying version of viewer height to combat sudden changes in water level that are possible
             // when there are local bodies of water
+            bool forceImmediateHeight =
+                _teleportTimerForHeightQueries > 0f ||
+                _lodDataSeaDepths == null ||
+                !_lodDataSeaDepths.Settings._allowVaryingWaterLevel;
+
             _viewerHeightAboveWaterSmooth = Mathf.Lerp
             (
                 _viewerHeightAboveWaterSmooth,
                 ViewerHeightAboveWater,
-                _teleportTimerForHeightQueries > 0f || !_lodDataSeaDepths.Settings._allowVaryingWaterLevel ? 1f : 0.05f
+                forceImmediateHeight ? 1f : 0.05f
             );
         }
 

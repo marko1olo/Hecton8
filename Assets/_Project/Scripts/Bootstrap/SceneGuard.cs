@@ -63,7 +63,14 @@ namespace Hecton8.Guardian
             GameStartContextHolder.Reset();
 
             // ── Zagruzhaem bootstrap ──
-            SceneManager.LoadScene(BootstrapSceneName);
+            AsyncOperation operation = SceneManager.LoadSceneAsync(
+                BootstrapSceneName,
+                LoadSceneMode.Single);
+            if (operation == null)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    $"[SceneGuard] Failed to schedule async bootstrap recovery load for '{targetSceneName}'.");
+            }
 
             // Primechanie: Pravilnyy perehod (bootstrap → menu → world) budet
             // kogda user nazhimaet knopki v UI. Etot guard prosto vosstanavlivaet

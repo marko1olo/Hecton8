@@ -1,0 +1,21 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+  "title": "Deep Reach Lower Signatures",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS041_DEEP_REACH_LOWER_SIGNATURES.packets.json"
+  ],
+  "packets": [
+    "P201_CONTRACT_CONTINUITY_DESK_SIGNATURES",
+    "P202_PACKET_NOTARY_INTERFACE_SIGNATURES",
+    "P203_QUARANTINE_REVIEW_GATE_SIGNATURES",
+    "P204_ASSET_SILENCE_BOARD_SIGNATURES",
+    "P205_RETURN_ACTION_QUEUE_SIGNATURES"
+  ],
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  }
+}

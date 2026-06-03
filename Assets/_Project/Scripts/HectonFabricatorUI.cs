@@ -16,16 +16,12 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     public sealed class HectonFabricatorUI : MonoBehaviour, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener, IOriginShiftListener, ILocalizationLanguageChangedListener
     {
-        private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
         private const int MaxVisibleRecipeEntries = 8;
         private const int RecipeLabelBufferCapacity = 128;
@@ -79,17 +75,6 @@ namespace Hecton8.UI
         private static readonly int HologramSwayFrequencyId = Shader.PropertyToID("_HologramSwayFrequency");
         private static readonly int HologramPulseAmplitudeId = Shader.PropertyToID("_HologramPulseAmplitude");
         private static readonly int HologramPulseFrequencyId = Shader.PropertyToID("_HologramPulseFrequency");
-        // COLD ALLOC: Vector3[4] - shared fabricator hologram billboard vertices - owner: HectonFabricatorUI
-        private static readonly Vector3[] s_billboardQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        };
-
-        // COLD ALLOC: int[6] - shared fabricator hologram billboard indices - owner: HectonFabricatorUI
-        private static readonly int[] s_billboardQuadTriangles = { 0, 2, 1, 0, 3, 2 };
         // COLD ALLOC: FabricationGroup[7] - stable recipe group cycle order - owner: HectonFabricatorUI
         private static readonly FabricationGroup[] s_fabricationGroupCycle =
         {
@@ -105,7 +90,10 @@ namespace Hecton8.UI
         [Header("References")]
         [SerializeField] private Camera hudCamera;
         [SerializeField] private PlayerInventory playerInventory;
-        [SerializeField] private Shader hologramShader;
+        [SerializeField, Tooltip("Required authored billboard/preview mesh. Runtime mesh generation is forbidden.")]
+        private Mesh hologramMesh;
+        [SerializeField, Tooltip("Required authored instanced hologram material. Runtime material generation is forbidden.")]
+        private Material hologramMaterial;
 
         [Header("Runtime Compatibility")]
         [SerializeField] private bool useCullingMasks;
@@ -165,8 +153,10 @@ namespace Hecton8.UI
         // COLD ALLOC: char[64] — CharBufferPool failure fallback for scarcity inflation labels — owner: HectonFabricatorUI
         private readonly char[] _fallbackBuffer = new char[FallbackBufferCapacity];
 
-        private Material _runtimeHologramMaterial;
-        private Mesh _runtimeHologramMesh;
+        // COLD ALLOC: MaterialPropertyBlock - shared hologram draw properties - owner: HectonFabricatorUI
+        private MaterialPropertyBlock _hologramProperties;
+        private Material _resolvedHologramMaterial;
+        private Mesh _resolvedHologramMesh;
         private bool _hologramHasBaseColor;
         private bool _hologramHasColor;
         private bool _hologramHasCraftProgress;
@@ -315,17 +305,10 @@ namespace Hecton8.UI
             TryUnregisterLocalizationListener();
             UnregisterLateFrameTick();
 
-            if (_runtimeHologramMaterial != null)
-            {
-                Destroy(_runtimeHologramMaterial);
-                _runtimeHologramMaterial = null;
-            }
-
-            if (_runtimeHologramMesh != null)
-            {
-                Destroy(_runtimeHologramMesh);
-                _runtimeHologramMesh = null;
-            }
+            if (_hologramProperties != null)
+                _hologramProperties.Clear();
+            _resolvedHologramMaterial = null;
+            _resolvedHologramMesh = null;
 
             if (_recipeListRoot != null)
             {
@@ -986,7 +969,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_runtimeHologramMaterial == null || _runtimeHologramMesh == null)
+            if (_resolvedHologramMaterial == null || _resolvedHologramMesh == null)
             {
                 _debugVisibleInstanceCount = 0;
                 return;
@@ -1005,12 +988,12 @@ namespace Hecton8.UI
             RenderSelectedRecipeHologram(recipe, deltaTime);
 
             UnityEngine.Graphics.DrawMeshInstanced(
-                _runtimeHologramMesh,
+                _resolvedHologramMesh,
                 0,
-                _runtimeHologramMaterial,
+                _resolvedHologramMaterial,
                 _hologramMatrixBuffer,
                 visibleCount,
-                null,
+                _hologramProperties,
                 ShadowCastingMode.Off,
                 false,
                 0,
@@ -1024,7 +1007,7 @@ namespace Hecton8.UI
             if (_currentFabricator == null || recipe == null)
                 return;
 
-            if (_runtimeHologramMesh == null || _runtimeHologramMaterial == null)
+            if (_resolvedHologramMesh == null || _resolvedHologramMaterial == null)
                 return;
 
             Transform anchor = _currentFabricator.transform;
@@ -1044,13 +1027,13 @@ namespace Hecton8.UI
             UpdateHologramMaterialState(recipe);
 
             UnityEngine.Graphics.DrawMesh(
-                _runtimeHologramMesh,
+                _resolvedHologramMesh,
                 previewUnityMatrix,
-                _runtimeHologramMaterial,
+                _resolvedHologramMaterial,
                 0,
                 null,
                 0,
-                null,
+                _hologramProperties,
                 ShadowCastingMode.Off,
                 false,
                 null,
@@ -1104,17 +1087,17 @@ namespace Hecton8.UI
 
         private void UpdateHologramMaterialState(RecipeData recipe)
         {
-            if (_runtimeHologramMaterial == null)
+            if (_resolvedHologramMaterial == null)
                 return;
 
             float progress = ResolveHologramRevealProgress(recipe);
             if (math.abs(progress - _lastHologramMaterialProgress) > 0.0005f)
             {
                 if (_hologramHasCraftProgress)
-                    _runtimeHologramMaterial.SetFloat(CraftProgressId, progress);
+                    _hologramProperties.SetFloat(CraftProgressId, progress);
 
                 if (_hologramHasScanProgress)
-                    _runtimeHologramMaterial.SetFloat(ScanProgressId, progress);
+                    _hologramProperties.SetFloat(ScanProgressId, progress);
 
                 _lastHologramMaterialProgress = progress;
             }
@@ -1124,7 +1107,7 @@ namespace Hecton8.UI
                 : math.lerp(0.05f, 0.28f, 1f - math.abs((progress * 2f) - 1f));
             if (_hologramHasGlitchAmount && math.abs(glitch - _lastHologramMaterialGlitch) > 0.0005f)
             {
-                _runtimeHologramMaterial.SetFloat(GlitchAmountId, glitch);
+                _hologramProperties.SetFloat(GlitchAmountId, glitch);
                 _lastHologramMaterialGlitch = glitch;
             }
 
@@ -1254,72 +1237,95 @@ namespace Hecton8.UI
 
         private void EnsureHologramResources()
         {
-            if (_runtimeHologramMesh == null)
-                _runtimeHologramMesh = CreateBillboardQuadMesh();
+            EnsureHologramPropertyBlockCold();
 
-            if (_runtimeHologramMaterial == null)
+            if (_resolvedHologramMesh == null)
             {
-#if UNITY_EDITOR
-                if (hologramShader == null)
-                    hologramShader = AssetDatabase.LoadAssetAtPath<Shader>(HologramShaderPath);
-#endif
-                if (hologramShader != null)
-                {
-                    _runtimeHologramMaterial = new Material(hologramShader)
-                    {
-                        enableInstancing = true,
-                        hideFlags = HideFlags.DontSave
-                    };
-                    _lastHologramMaterialProgress = -1f;
-                    _lastHologramMaterialGlitch = -1f;
-
-                    CacheHologramMaterialProperties();
-
-                    if (_hologramHasBaseColor)
-                        _runtimeHologramMaterial.SetColor(BaseColorId, hologramColor);
-                    else if (_hologramHasColor)
-                        _runtimeHologramMaterial.SetColor(ColorId, hologramColor);
-
-                    ApplyHologramMaterialStaticState();
-                }
+                UnityEngine.Assertions.Assert.IsNotNull(
+                    hologramMesh,
+                    "Fatal: HectonFabricatorUI requires an authored hologram mesh. Runtime mesh generation is forbidden.");
+                _resolvedHologramMesh = hologramMesh;
             }
+
+            if (_resolvedHologramMaterial == null)
+            {
+                UnityEngine.Assertions.Assert.IsNotNull(
+                    hologramMaterial,
+                    "Fatal: HectonFabricatorUI requires an authored hologram material. Runtime material generation is forbidden.");
+                _resolvedHologramMaterial = hologramMaterial;
+                if (_resolvedHologramMaterial == null)
+                    return;
+
+                bool authoredMaterialValid = _resolvedHologramMaterial.enableInstancing;
+                UnityEngine.Assertions.Assert.IsTrue(
+                    authoredMaterialValid,
+                    "Fatal: HectonFabricatorUI hologram material must enable instancing in the authored asset.");
+                if (!authoredMaterialValid)
+                {
+                    _resolvedHologramMaterial = null;
+                    return;
+                }
+
+                _lastHologramMaterialProgress = -1f;
+                _lastHologramMaterialGlitch = -1f;
+                _hologramProperties.Clear();
+
+                CacheHologramMaterialProperties();
+
+                if (_hologramHasBaseColor)
+                    _hologramProperties.SetColor(BaseColorId, hologramColor);
+                else if (_hologramHasColor)
+                    _hologramProperties.SetColor(ColorId, hologramColor);
+
+                ApplyHologramMaterialStaticState();
+            }
+        }
+
+        private void EnsureHologramPropertyBlockCold()
+        {
+            if (_hologramProperties != null)
+                return;
+
+            _hologramProperties = new MaterialPropertyBlock();
+            _lastHologramMaterialProgress = -1f;
+            _lastHologramMaterialGlitch = -1f;
         }
 
         private void CacheHologramMaterialProperties()
         {
-            if (_runtimeHologramMaterial == null)
+            if (_resolvedHologramMaterial == null)
                 return;
 
-            _hologramHasBaseColor = _runtimeHologramMaterial.HasProperty(BaseColorId);
-            _hologramHasColor = _runtimeHologramMaterial.HasProperty(ColorId);
-            _hologramHasCraftProgress = _runtimeHologramMaterial.HasProperty(CraftProgressId);
-            _hologramHasScanProgress = _runtimeHologramMaterial.HasProperty(ScanProgressId);
-            _hologramHasGlitchAmount = _runtimeHologramMaterial.HasProperty(GlitchAmountId);
-            _hologramHasBobAmplitude = _runtimeHologramMaterial.HasProperty(HologramBobAmplitudeId);
-            _hologramHasBobFrequency = _runtimeHologramMaterial.HasProperty(HologramBobFrequencyId);
-            _hologramHasSwayAmplitude = _runtimeHologramMaterial.HasProperty(HologramSwayAmplitudeId);
-            _hologramHasSwayFrequency = _runtimeHologramMaterial.HasProperty(HologramSwayFrequencyId);
-            _hologramHasPulseAmplitude = _runtimeHologramMaterial.HasProperty(HologramPulseAmplitudeId);
-            _hologramHasPulseFrequency = _runtimeHologramMaterial.HasProperty(HologramPulseFrequencyId);
+            _hologramHasBaseColor = _resolvedHologramMaterial.HasProperty(BaseColorId);
+            _hologramHasColor = _resolvedHologramMaterial.HasProperty(ColorId);
+            _hologramHasCraftProgress = _resolvedHologramMaterial.HasProperty(CraftProgressId);
+            _hologramHasScanProgress = _resolvedHologramMaterial.HasProperty(ScanProgressId);
+            _hologramHasGlitchAmount = _resolvedHologramMaterial.HasProperty(GlitchAmountId);
+            _hologramHasBobAmplitude = _resolvedHologramMaterial.HasProperty(HologramBobAmplitudeId);
+            _hologramHasBobFrequency = _resolvedHologramMaterial.HasProperty(HologramBobFrequencyId);
+            _hologramHasSwayAmplitude = _resolvedHologramMaterial.HasProperty(HologramSwayAmplitudeId);
+            _hologramHasSwayFrequency = _resolvedHologramMaterial.HasProperty(HologramSwayFrequencyId);
+            _hologramHasPulseAmplitude = _resolvedHologramMaterial.HasProperty(HologramPulseAmplitudeId);
+            _hologramHasPulseFrequency = _resolvedHologramMaterial.HasProperty(HologramPulseFrequencyId);
         }
 
         private void ApplyHologramMaterialStaticState()
         {
-            if (_runtimeHologramMaterial == null)
+            if (_resolvedHologramMaterial == null)
                 return;
 
             if (_hologramHasBobAmplitude)
-                _runtimeHologramMaterial.SetFloat(HologramBobAmplitudeId, math.max(0f, hologramBobAmplitude));
+                _hologramProperties.SetFloat(HologramBobAmplitudeId, math.max(0f, hologramBobAmplitude));
             if (_hologramHasBobFrequency)
-                _runtimeHologramMaterial.SetFloat(HologramBobFrequencyId, math.max(0f, hologramBobFrequency));
+                _hologramProperties.SetFloat(HologramBobFrequencyId, math.max(0f, hologramBobFrequency));
             if (_hologramHasSwayAmplitude)
-                _runtimeHologramMaterial.SetFloat(HologramSwayAmplitudeId, math.max(0f, hologramOrbitAmplitude));
+                _hologramProperties.SetFloat(HologramSwayAmplitudeId, math.max(0f, hologramOrbitAmplitude));
             if (_hologramHasSwayFrequency)
-                _runtimeHologramMaterial.SetFloat(HologramSwayFrequencyId, math.max(0f, hologramOrbitFrequency));
+                _hologramProperties.SetFloat(HologramSwayFrequencyId, math.max(0f, hologramOrbitFrequency));
             if (_hologramHasPulseAmplitude)
-                _runtimeHologramMaterial.SetFloat(HologramPulseAmplitudeId, math.max(0f, hologramPulseAmplitude));
+                _hologramProperties.SetFloat(HologramPulseAmplitudeId, math.max(0f, hologramPulseAmplitude));
             if (_hologramHasPulseFrequency)
-                _runtimeHologramMaterial.SetFloat(HologramPulseFrequencyId, math.max(0f, hologramPulseFrequency));
+                _hologramProperties.SetFloat(HologramPulseFrequencyId, math.max(0f, hologramPulseFrequency));
         }
 
         private void BindRuntimeReferencesCold(bool allowFallbackLookup)
@@ -2154,21 +2160,6 @@ namespace Hecton8.UI
             int writable = Mathf.Min(value.Length, buffer.Length);
             value.Slice(0, writable).CopyTo(buffer.AsSpan(0, writable));
             return writable;
-        }
-
-        private static Mesh CreateBillboardQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "FabricatorHologramBillboard"
-            };
-
-            mesh.SetVertices(s_billboardQuadVertices);
-            mesh.SetTriangles(s_billboardQuadTriangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(false);
-            return mesh;
         }
 
         private void UpdateDiagnostics()

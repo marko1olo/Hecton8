@@ -6,10 +6,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.UI
 {
     /// <summary>
@@ -21,9 +17,6 @@ namespace Hecton8.UI
     {
         private const int MaxBlips = 64;
         private const int MinimumQualityBlipCapacity = 16;
-#if UNITY_EDITOR
-        private const string VoxelShaderPath = "Assets/_Project/Art/Shaders/Hecton_AcousticRadarVoxel.shader";
-#endif
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int PulseIntensityId = Shader.PropertyToID("_PulseIntensity");
@@ -36,7 +29,7 @@ namespace Hecton8.UI
 
         [Header("Rendering")]
         [SerializeField] private Mesh voxelMesh = null;
-        [SerializeField] private Shader voxelShader = null;
+        [SerializeField] private Material voxelMaterial = null;
         [SerializeField] private Color voxelColor = new Color(0.38f, 0.98f, 0.88f, 0.72f);
         [SerializeField, Range(0.05f, 1.5f)] private float sphereRadius = 0.32f;
         [SerializeField, Range(0.002f, 0.08f)] private float voxelSizeMeters = 0.014f;
@@ -55,10 +48,10 @@ namespace Hecton8.UI
         private readonly Matrix4x4[] _matrices = new Matrix4x4[MaxBlips];
 
         private bool _registeredLateFrame;
-        private bool _ownsRuntimeVoxelMesh;
         private int _matrixCount;
-        private Material _runtimeMaterial;
-        private Mesh _runtimeVoxelMesh;
+        private MaterialPropertyBlock _materialProperties;
+        private Material _resolvedMaterial;
+        private Mesh _resolvedVoxelMesh;
         private Camera _viewCamera;
         private ISpatialAudioImpactEmitterReadModel _cachedAudioManager;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -66,8 +59,8 @@ namespace Hecton8.UI
         private float _appliedPulseIntensity;
         private bool _hotSwapListenerRegistered;
         private bool _materialPropertiesDirty = true;
-        private bool _runtimeMaterialHasBaseColor;
-        private bool _runtimeMaterialHasPulseIntensity;
+        private bool _materialHasBaseColor;
+        private bool _materialHasPulseIntensity;
         private int _qualityMatrixCapacity = MaxBlips;
 
         private void OnEnable()
@@ -96,18 +89,8 @@ namespace Hecton8.UI
         {
             TryUnregisterTickManager();
             TryUnregisterHotSwapListener();
-            if (_runtimeMaterial != null)
-            {
-                DestroyUnityObject(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
-            if (_ownsRuntimeVoxelMesh && _runtimeVoxelMesh != null)
-            {
-                DestroyUnityObject(_runtimeVoxelMesh);
-                _runtimeVoxelMesh = null;
-                _ownsRuntimeVoxelMesh = false;
-            }
+            _resolvedMaterial = null;
+            _resolvedVoxelMesh = null;
         }
 
         private void RefreshMatricesForLateFrame()
@@ -115,7 +98,7 @@ namespace Hecton8.UI
             RefreshQualityPolicy();
             ApplyMaterialPropertiesIfNeeded();
             _matrixCount = 0;
-            if (_runtimeMaterial == null || _runtimeVoxelMesh == null)
+            if (_resolvedMaterial == null || _resolvedVoxelMesh == null)
                 return;
 
             ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
@@ -350,7 +333,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             RefreshMatricesForLateFrame();
-            if (_matrixCount <= 0 || _runtimeMaterial == null || _runtimeVoxelMesh == null)
+            if (_matrixCount <= 0 || _resolvedMaterial == null || _resolvedVoxelMesh == null)
                 return;
 
             Camera renderCamera = ResolveRenderCamera();
@@ -358,12 +341,12 @@ namespace Hecton8.UI
                 return;
 
             UnityEngine.Graphics.DrawMeshInstanced(
-                _runtimeVoxelMesh,
+                _resolvedVoxelMesh,
                 0,
-                _runtimeMaterial,
+                _resolvedMaterial,
                 _matrices,
                 _matrixCount,
-                null,
+                _materialProperties,
                 ShadowCastingMode.Off,
                 false,
                 renderLayer,
@@ -411,46 +394,49 @@ namespace Hecton8.UI
 
         private void EnsureResources()
         {
-            if (_runtimeVoxelMesh == null)
+            EnsureMaterialPropertiesCold();
+            UnityEngine.Assertions.Assert.IsNotNull(voxelMaterial, "Fatal: Missing Authored Acoustic Radar Voxel Material.");
+            UnityEngine.Assertions.Assert.IsNotNull(voxelMesh, "Fatal: Missing Authored Acoustic Radar Voxel Mesh.");
+            bool authoredMaterialValid = voxelMaterial != null && voxelMaterial.enableInstancing;
+            bool authoredMeshValid = voxelMesh != null && voxelMesh.subMeshCount > 0 && voxelMesh.GetIndexCount(0) > 0u;
+            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: Acoustic Radar Voxel Material must have Enable GPU Instancing authored.");
+            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: Acoustic Radar Voxel Mesh must provide indexed submesh 0.");
+            if (!authoredMaterialValid || !authoredMeshValid)
             {
-                if (voxelMesh != null)
-                {
-                    _runtimeVoxelMesh = voxelMesh;
-                    _ownsRuntimeVoxelMesh = false;
-                }
-                else
-                {
-                    _runtimeVoxelMesh = CreateVoxelMesh();
-                    _ownsRuntimeVoxelMesh = true;
-                }
+                _resolvedMaterial = null;
+                _resolvedVoxelMesh = null;
+                return;
             }
 
-#if UNITY_EDITOR
-            if (voxelShader == null)
-                voxelShader = AssetDatabase.LoadAssetAtPath<Shader>(VoxelShaderPath);
-#endif
-            if (_runtimeMaterial == null && voxelShader != null)
+            if (!ReferenceEquals(_resolvedMaterial, voxelMaterial))
             {
-                _runtimeMaterial = new Material(voxelShader)
-                {
-                    enableInstancing = true,
-                    hideFlags = HideFlags.DontSave
-                };
-                _runtimeMaterialHasBaseColor = _runtimeMaterial.HasProperty(BaseColorId);
-                _runtimeMaterialHasPulseIntensity = _runtimeMaterial.HasProperty(PulseIntensityId);
+                _resolvedMaterial = voxelMaterial;
+                _materialHasBaseColor = _resolvedMaterial.HasProperty(BaseColorId);
+                _materialHasPulseIntensity = _resolvedMaterial.HasProperty(PulseIntensityId);
                 _materialPropertiesDirty = true;
             }
 
-            if (_runtimeMaterial == null)
-                return;
+            _resolvedVoxelMesh = voxelMesh;
 
             ApplyMaterialPropertiesIfNeeded();
         }
 
+        private void EnsureMaterialPropertiesCold()
+        {
+            if (_materialProperties != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] -- acoustic radar voxel per-draw payload -- owner: AcousticRadarSphereRenderer.
+            _materialProperties = new MaterialPropertyBlock();
+            _materialPropertiesDirty = true;
+        }
+
         private void ApplyMaterialPropertiesIfNeeded()
         {
-            if (_runtimeMaterial == null)
+            if (_resolvedMaterial == null)
                 return;
+
+            EnsureMaterialPropertiesCold();
 
             if (!_materialPropertiesDirty &&
                 SameColor(_appliedVoxelColor, voxelColor) &&
@@ -459,10 +445,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_runtimeMaterialHasBaseColor)
-                _runtimeMaterial.SetColor(BaseColorId, voxelColor);
-            if (_runtimeMaterialHasPulseIntensity)
-                _runtimeMaterial.SetFloat(PulseIntensityId, pulseIntensity);
+            if (_materialHasBaseColor)
+                _materialProperties.SetColor(BaseColorId, voxelColor);
+            if (_materialHasPulseIntensity)
+                _materialProperties.SetFloat(PulseIntensityId, pulseIntensity);
 
             _appliedVoxelColor = voxelColor;
             _appliedPulseIntensity = pulseIntensity;
@@ -492,60 +478,6 @@ namespace Hecton8.UI
                 SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
-        }
-
-        private static Mesh CreateVoxelMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "AcousticRadarVoxel",
-                hideFlags = HideFlags.DontSave
-            };
-
-            // COLD ALLOC: Vector3[8] -- one-time fallback voxel cube vertices -- owner: AcousticRadarSphereRenderer
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, -0.5f),
-                new Vector3( 0.5f, -0.5f, -0.5f),
-                new Vector3( 0.5f,  0.5f, -0.5f),
-                new Vector3(-0.5f,  0.5f, -0.5f),
-                new Vector3(-0.5f, -0.5f,  0.5f),
-                new Vector3( 0.5f, -0.5f,  0.5f),
-                new Vector3( 0.5f,  0.5f,  0.5f),
-                new Vector3(-0.5f,  0.5f,  0.5f)
-            };
-
-            // COLD ALLOC: int[36] -- one-time fallback voxel cube indices -- owner: AcousticRadarSphereRenderer
-            int[] triangles =
-            {
-                0, 2, 1, 0, 3, 2,
-                1, 2, 6, 1, 6, 5,
-                5, 6, 7, 5, 7, 4,
-                4, 7, 3, 4, 3, 0,
-                3, 7, 6, 3, 6, 2,
-                4, 0, 1, 4, 1, 5
-            };
-
-            mesh.SetVertices(vertices);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(true);
-            return mesh;
-        }
-
-        private static void DestroyUnityObject(Object target)
-        {
-            if (target == null)
-                return;
-
-            if (Application.isPlaying)
-            {
-                Destroy(target);
-                return;
-            }
-
-            DestroyImmediate(target);
         }
 
 #if UNITY_EDITOR

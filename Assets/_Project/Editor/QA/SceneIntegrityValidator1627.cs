@@ -1406,7 +1406,7 @@ namespace Hecton8.Editor.QA
 
         private static Type FindType(string fullName)
         {
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
                 Type type = assemblies[i].GetType(fullName, false);

@@ -335,19 +335,18 @@ namespace Hecton8.Construction
     public static unsafe class ShinobuSocketConstructionRuntime
     {
         public const int TelemetryCapacity = 300;
-        public const int MockModuleCount = 500;
-        public const int MockSocketsPerModule = 6;
-        public const int MockSocketCount = MockModuleCount * MockSocketsPerModule;
+        public const int ModuleCapacity = 500;
+        public const int SocketsPerModuleCapacity = 6;
+        public const int SocketCapacity = ModuleCapacity * SocketsPerModuleCapacity;
         public const int GhostSocketCapacity = 64;
         public const int SnapResultCapacity = GhostSocketCapacity + 1;
         public const int SocketDirectionCount = 6;
         public const int SocketCsrRangeCapacity = GhostSocketCapacity + SocketDirectionCount;
-        public const int SocketCsrTargetIndexCapacity = MockSocketCount;
+        public const int SocketCsrTargetIndexCapacity = SocketCapacity;
         public const int BuilderGhostStateCapacity = 128;
         public const int BuilderGhostVisualCapacity = 128;
         public const int BuilderGhostSdfCornerCount = 8;
         public const int BuilderGhostSdfSampleCapacity = BuilderGhostStateCapacity * BuilderGhostSdfCornerCount;
-        public const int BuilderGhostMockValidationCount = 10000;
         public const int BuilderGhostProceduralVertexCount = 36;
         public const BufferID GhostPreviewBufferId = (BufferID)70370;
         public const BufferID SocketCsrRangesBufferId = (BufferID)70371;
@@ -355,7 +354,6 @@ namespace Hecton8.Construction
         public const BufferID BuilderGhostStateBufferId = (BufferID)70940;
         public const BufferID BuilderGhostVisualBufferId = (BufferID)70941;
         public const BufferID BuilderGhostTelemetryBufferId = (BufferID)70942;
-        public const BufferID BuilderGhostMockStateBufferId = (BufferID)70943;
         public const BufferID BuilderGhostSdfSamplesBufferId = (BufferID)70944;
         public const BufferID BuilderGhostIndirectArgsBufferId = (BufferID)70945;
         public const string DefaultDumpPath = "Docs/AgentLogs/Dump_1306_Construction_SocketTelemetry.bin";
@@ -401,18 +399,11 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<BuilderGhostStateDTO> s_BuilderGhostStateHandle;
         private static VaultGenerationHandle<BuilderGhostVisualDTO> s_BuilderGhostVisualHandle;
         private static VaultGenerationHandle<HolographyTelemetryEntry> s_HolographyTelemetryHandle;
-        private static VaultGenerationHandle<BuilderGhostStateDTO> s_BuilderGhostMockStateHandle;
         private static VaultGenerationHandle<byte> s_BuilderGhostSdfSamplesHandle;
         private static VaultGenerationHandle<BuilderGhostIndirectArgsDTO> s_BuilderGhostIndirectArgsHandle;
         private static bool s_HolographyTelemetryDumped;
         private static int s_ModuleReadFenceDepth;
         private static int s_ModuleWriteFence;
-        private static ConstructionSocketModuleDTO[] s_MockModules;
-        private static SocketStateDTO[] s_MockSockets;
-        private static double3[] s_MockSocketAups;
-        private static int[] s_MockCounters;
-        private static int2[] s_MockCsrRanges;
-        private static int[] s_MockCsrTargetIndices;
 
         public static bool ValidateStructLayout()
         {
@@ -508,8 +499,8 @@ namespace Hecton8.Construction
             ResetVaultDescriptorsIfOwnerChanged(vault);
             bool resetCounters = ShouldResetCounterLane(vault);
             s_Tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            s_SocketStatesHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketStates, MockSocketCount, ref s_SocketStatesHandle);
-            s_SocketAupHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketAup, MockSocketCount, ref s_SocketAupHandle);
+            s_SocketStatesHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketStates, SocketCapacity, ref s_SocketStatesHandle);
+            s_SocketAupHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketAup, SocketCapacity, ref s_SocketAupHandle);
             s_GhostSocketStatesHandle = EnsureVaultHandle(vault, BufferID.ConstructionGhostSocketStates, GhostSocketCapacity, ref s_GhostSocketStatesHandle);
             s_GhostSocketAupHandle = EnsureVaultHandle(vault, BufferID.ConstructionGhostSocketAup, GhostSocketCapacity, ref s_GhostSocketAupHandle);
             s_GhostPreviewHandle = EnsureVaultHandle(vault, GhostPreviewBufferId, 1, ref s_GhostPreviewHandle);
@@ -518,14 +509,13 @@ namespace Hecton8.Construction
             s_SnapResultsHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketSnapResults, SnapResultCapacity, ref s_SnapResultsHandle);
             s_TelemetryHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketTelemetry, TelemetryCapacity, ref s_TelemetryHandle);
             s_TuningHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketTuning, 1, ref s_TuningHandle);
-            s_ModuleHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketModules, MockModuleCount, ref s_ModuleHandle);
+            s_ModuleHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketModules, ModuleCapacity, ref s_ModuleHandle);
             s_CountersHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketCounters, 8, ref s_CountersHandle);
-            s_BoundsHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketBounds, MockModuleCount, ref s_BoundsHandle);
-            s_ConnectionsHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketConnections, MockSocketCount, ref s_ConnectionsHandle);
+            s_BoundsHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketBounds, ModuleCapacity, ref s_BoundsHandle);
+            s_ConnectionsHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketConnections, SocketCapacity, ref s_ConnectionsHandle);
             s_BuilderGhostStateHandle = EnsureVaultHandle(vault, BuilderGhostStateBufferId, BuilderGhostStateCapacity, ref s_BuilderGhostStateHandle);
             s_BuilderGhostVisualHandle = EnsureVaultHandle(vault, BuilderGhostVisualBufferId, BuilderGhostVisualCapacity, ref s_BuilderGhostVisualHandle);
             s_HolographyTelemetryHandle = EnsureVaultHandle(vault, BuilderGhostTelemetryBufferId, TelemetryCapacity, ref s_HolographyTelemetryHandle);
-            s_BuilderGhostMockStateHandle = EnsureVaultHandle(vault, BuilderGhostMockStateBufferId, BuilderGhostMockValidationCount, ref s_BuilderGhostMockStateHandle);
             s_BuilderGhostSdfSamplesHandle = EnsureVaultHandle(vault, BuilderGhostSdfSamplesBufferId, BuilderGhostSdfSampleCapacity, ref s_BuilderGhostSdfSamplesHandle);
             s_BuilderGhostIndirectArgsHandle = EnsureVaultHandle(vault, BuilderGhostIndirectArgsBufferId, 1, ref s_BuilderGhostIndirectArgsHandle);
 
@@ -582,7 +572,6 @@ namespace Hecton8.Construction
             s_BuilderGhostStateHandle = default;
             s_BuilderGhostVisualHandle = default;
             s_HolographyTelemetryHandle = default;
-            s_BuilderGhostMockStateHandle = default;
             s_BuilderGhostSdfSamplesHandle = default;
             s_BuilderGhostIndirectArgsHandle = default;
         }
@@ -681,113 +670,6 @@ namespace Hecton8.Construction
         public static void EndModuleWriteFence()
         {
             Interlocked.Exchange(ref s_ModuleWriteFence, 0);
-        }
-
-        public static bool GenerateMockBaseConstructionGrid(IDataVault vault)
-        {
-            if (vault == null)
-                return false;
-
-            if (!TryBeginModuleWriteFence())
-                return false;
-
-            try
-            {
-                InitializeVault(vault);
-                if (!EnsureMockGenerationScratchCold())
-                    return false;
-
-                int moduleCount = math.min(MockModuleCount, s_MockModules.Length);
-                int socketCapacity = math.min(MockSocketCount, math.min(s_MockSockets.Length, s_MockSocketAups.Length));
-                int csrTargetCapacity = math.min(SocketCsrTargetIndexCapacity, s_MockCsrTargetIndices.Length);
-                const float spacing = 6f;
-
-                ClearCounterLane(s_MockCounters);
-
-                for (int i = 0; i < moduleCount; i++)
-                {
-                    int gridX = i % 25;
-                    int gridZ = i / 25;
-                    double3 root = new double3(gridX * spacing, -40.0, gridZ * spacing);
-                    int socketStart = i * MockSocketsPerModule;
-                    ConstructionSocketModuleDTO module;
-                    module.RootAup = root;
-                    module.Rotation = quaternion.identity;
-                    module.BoundsCenter = float3.zero;
-                    module.BoundsExtents = new float3(2f, 1.5f, 2f);
-                    module.ModuleHash = 0x53484E00u + (uint)i;
-                    module.SocketStart = socketStart;
-                    module.SocketCount = socketStart + MockSocketsPerModule <= socketCapacity ? MockSocketsPerModule : 0;
-                    module.Flags = 0u;
-                    module.TopologyVersion = 1u;
-                    module.DearLieDampen = 0f;
-                    module.ConnectedMask = 0u;
-                    module.SceneModuleListIndex = -1;
-                    s_MockModules[i] = module;
-
-                    for (int s = 0; s < module.SocketCount; s++)
-                    {
-                        int socketIndex = socketStart + s;
-                        byte direction = (byte)s;
-                        float3 normal = DirectionToNormal(direction);
-                        double3 local = new double3(normal.x * 2.0, normal.y * 1.5, normal.z * 2.0);
-                        SocketStateDTO socket = default;
-                        socket.LocalOffset = local;
-                        socket.NormalDirection = normal;
-                        socket.AllowedConnectionBitmask = PackAllowedConnectionBitmask(direction, UniversalCompatibilityHash24);
-                        socket.ParentModuleHash = module.ModuleHash;
-                        socket.ConnectionStatus = 0u;
-                        s_MockSockets[socketIndex] = socket;
-                        s_MockSocketAups[socketIndex] = root + local;
-                    }
-                }
-
-                int activeSocketCount = math.min(moduleCount * MockSocketsPerModule, socketCapacity);
-                if (s_MockCounters.Length >= 4)
-                {
-                    s_MockCounters[0] = moduleCount;
-                    s_MockCounters[1] = activeSocketCount;
-                    s_MockCounters[2] = 1;
-                    s_MockCounters[3] = 0;
-                    if (s_MockCounters.Length > CounterMagicIndex)
-                        s_MockCounters[CounterMagicIndex] = CounterMagic;
-                }
-
-                if (!BuildSocketDirectionCsrStaged(s_MockSockets, activeSocketCount, s_MockCsrRanges, s_MockCsrTargetIndices))
-                    return false;
-
-                if (!TryInvalidateCounterLane(vault))
-                    return false;
-
-                return TryPublishWriteLane(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules, s_MockModules, moduleCount) &&
-                       TryPublishWriteLane(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates, s_MockSockets, socketCapacity) &&
-                       TryPublishWriteLane(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup, s_MockSocketAups, socketCapacity) &&
-                       TryPublishWriteLane(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId, s_MockCsrRanges, SocketDirectionCount) &&
-                       TryPublishWriteLane(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId, s_MockCsrTargetIndices, math.min(activeSocketCount, csrTargetCapacity)) &&
-                       TryPublishWriteLane(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, s_MockCounters, math.min(s_MockCounters.Length, CounterMagicIndex + 1));
-            }
-            finally
-            {
-                EndModuleWriteFence();
-            }
-        }
-
-        private static bool EnsureMockGenerationScratchCold()
-        {
-            if (s_MockModules == null || s_MockModules.Length < MockModuleCount)
-                s_MockModules = new ConstructionSocketModuleDTO[MockModuleCount];
-            if (s_MockSockets == null || s_MockSockets.Length < MockSocketCount)
-                s_MockSockets = new SocketStateDTO[MockSocketCount];
-            if (s_MockSocketAups == null || s_MockSocketAups.Length < MockSocketCount)
-                s_MockSocketAups = new double3[MockSocketCount];
-            if (s_MockCounters == null || s_MockCounters.Length < CounterMagicIndex + 1)
-                s_MockCounters = new int[CounterMagicIndex + 1];
-            if (s_MockCsrRanges == null || s_MockCsrRanges.Length < SocketDirectionCount)
-                s_MockCsrRanges = new int2[SocketDirectionCount];
-            if (s_MockCsrTargetIndices == null || s_MockCsrTargetIndices.Length < SocketCsrTargetIndexCapacity)
-                s_MockCsrTargetIndices = new int[SocketCsrTargetIndexCapacity];
-
-            return true;
         }
 
         public static bool BuildSocketDirectionCsr(
@@ -1001,9 +883,9 @@ namespace Hecton8.Construction
                 return true;
             }
 
-            int moduleCapacity = MockModuleCount;
-            int socketCapacity = MockSocketCount;
-            int connectionCapacity = MockSocketCount;
+            int moduleCapacity = ModuleCapacity;
+            int socketCapacity = SocketCapacity;
+            int connectionCapacity = SocketCapacity;
             return counters[CounterMagicIndex] != CounterMagic ||
                    counters[0] < 0 ||
                    counters[0] > moduleCapacity ||

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL",
+      "release_set_id": "RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS",
+      "article_id": "applied_lore.payload_sell_coordinates_receiver_protocol",
+      "title_key": "applied_lore.payload_sell_coordinates_receiver_protocol.title",
+      "unlock": {
+        "primary": "unlock.payload_sell_coordinates_receiver_protocol",
+        "poi_tags": [
+          "poi.coordinate_sale_socket",
+          "poi.xo_proof_vault",
+          "poi.recovery_compliance_receiver"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Use for material ending UI and spoiler-gated site pages."
+        },
+        "ru_RU": {
+          "title": "Протокол приемника: продать координаты",
+          "scanner": "Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Это самый чистый выход, если читать только сумму.",
+          "in_game_wiki": "Маршрут продажи не fake bad ending. Он платит и возвращает игрока, но отдает Deep Reach путь обратно на HECTON-8.",
+          "external_site": "Одна концовка HECTON-8 продает crime scene обратно создателю. Материально успешно, морально грязно.",
+          "field_note": "Для material ending UI и spoiler-gated site pages."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft JA localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft JA localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft JA localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft JA localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft JA localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft JA localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft ZH localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft ZH localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft ZH localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft ZH localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft ZH localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft FR localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft FR localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft FR localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft FR localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft FR localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft FR localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft ES localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft ES localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft ES localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft ES localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft ES localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft ES localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft DE localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft DE localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft DE localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft DE localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft DE localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft DE localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft PL localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft PL localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft PL localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft PL localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft PL localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft PL localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft UK localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft UK localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft UK localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft UK localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft UK localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft UK localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft AR localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft AR localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft AR localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft AR localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft AR localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft AR localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft ID localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft ID localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft ID localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft ID localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft ID localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft ID localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft KO localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft KO localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft KO localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft KO localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft KO localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft KO localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft HE localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft HE localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft HE localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft HE localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft HE localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft HE localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft PT localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft PT localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft PT localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft PT localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft PT localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft PT localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Payload Sell Coordinates Receiver Protocol",
+          "scanner": "Draft NL localization pending native pass. Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.",
+          "terminal": "Draft NL localization pending native pass. PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.",
+          "audio": "Draft NL localization pending native pass. This is the cleanest way out if you stop reading after the amount.",
+          "in_game_wiki": "Draft NL localization pending native pass. The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.",
+          "external_site": "Draft NL localization pending native pass. One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.",
+          "field_note": "Draft NL localization pending native pass. Use for material ending UI and spoiler-gated site pages."
+        }
+      }
+    },
+    {
+      "packet_id": "P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL",
+      "release_set_id": "RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS",
+      "article_id": "applied_lore.payload_sever_atlas_receiver_protocol",
+      "title_key": "applied_lore.payload_sever_atlas_receiver_protocol.title",
+      "unlock": {
+        "primary": "unlock.payload_sever_atlas_receiver_protocol",
+        "poi_tags": [
+          "poi.atlas_severance_key",
+          "poi.factory_temple_cutline",
+          "poi.guardian_shutdown_rail"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Payload Sever Atlas Receiver Protocol",
+          "scanner": "Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Use for factory-temple threshold and final severance UI."
+        },
+        "ru_RU": {
+          "title": "Протокол приемника: разорвать Atlas",
+          "scanner": "Severance route armed. Цель не boss; это damaged continuity system.",
+          "terminal": "PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Если это милость, она все равно оставляет тело.",
+          "in_game_wiki": "Atlas severance должен оставаться морально нестабильным: остановить repair logic, уничтожить emergent ecology, отказать Deep Reach или стереть witness.",
+          "external_site": "Концовки Atlas-6 строятся на интерпретации, не на clean victory. Severance - ethical action with damaged evidence.",
+          "field_note": "Для factory-temple threshold и final severance UI."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft JA localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft JA localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft JA localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft JA localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft JA localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft JA localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft ZH localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft ZH localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft ZH localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft ZH localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft ZH localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft FR localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft FR localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft FR localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft FR localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft FR localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft ES localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft ES localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft ES localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft ES localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft ES localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft DE localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft DE localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft DE localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft DE localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft DE localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft PL localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft PL localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft PL localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft PL localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft PL localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft UK localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft UK localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft UK localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft UK localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft UK localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft AR localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft AR localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft AR localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft AR localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft AR localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft ID localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft ID localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft ID localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft ID localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft ID localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft KO localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft KO localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft KO localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft KO localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft KO localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft HE localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft HE localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft HE localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft HE localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft HE localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft PT localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft PT localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft PT localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft PT localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft PT localization pending native pass. Use for factory-temple threshold and final severance UI."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Payload Sever Atlas Receiver Protocol",
+          "scanner": "Draft NL localization pending native pass. Severance route armed. The target is not a boss; it is a damaged continuity system.",
+          "terminal": "Draft NL localization pending native pass. PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.",
+          "audio": "Draft NL localization pending native pass. If this is mercy, it still leaves a body.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.",
+          "external_site": "Draft NL localization pending native pass. Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.",
+          "field_note": "Draft NL localization pending native pass. Use for factory-temple threshold and final severance UI."
+        }
+      }
+    },
+    {
+      "packet_id": "P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL",
+      "release_set_id": "RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS",
+      "article_id": "applied_lore.payload_preserve_quarantine_receiver_protocol",
+      "title_key": "applied_lore.payload_preserve_quarantine_receiver_protocol.title",
+      "unlock": {
+        "primary": "unlock.payload_preserve_quarantine_receiver_protocol",
+        "poi_tags": [
+          "poi.preserve_quarantine_socket",
+          "poi.ocean_machine_custody_mark",
+          "poi.no_ownership_transfer_tag"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Preserve route. No clean owner. No clean release.",
+          "terminal": "PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "ru_RU": {
+          "title": "Протокол приемника: сохранить и карантинировать",
+          "scanner": "Preserve route. No clean owner. No clean release.",
+          "terminal": "PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Сохранить живым не значит сохранить свободным.",
+          "in_game_wiki": "Preserve route защищает ocean-machine ecology от прямого corporate reclamation, но quarantine может стать другой формой custody.",
+          "external_site": "Лучшие endings HECTON-8 должны спасать что-то настоящее и оставлять damage, delay или uncertainty.",
+          "field_note": "Для preserve/quarantine ending record и public-spoiler copy."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft JA localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft JA localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft JA localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft JA localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft JA localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft JA localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft ZH localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft ZH localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft ZH localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft ZH localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft ZH localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft FR localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft FR localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft FR localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft FR localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft FR localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft FR localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft ES localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft ES localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft ES localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft ES localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft ES localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft ES localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft DE localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft DE localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft DE localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft DE localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft DE localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft DE localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft PL localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft PL localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft PL localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft PL localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft PL localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft PL localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft UK localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft UK localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft UK localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft UK localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft UK localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft UK localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft AR localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft AR localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft AR localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft AR localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft AR localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft AR localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft ID localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft ID localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft ID localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft ID localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft ID localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft ID localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft KO localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft KO localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft KO localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft KO localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft KO localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft KO localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft HE localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft HE localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft HE localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft HE localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft HE localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft HE localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft PT localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft PT localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft PT localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft PT localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft PT localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft PT localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Payload Preserve Quarantine Receiver Protocol",
+          "scanner": "Draft NL localization pending native pass. Preserve route. No clean owner. No clean release.",
+          "terminal": "Draft NL localization pending native pass. PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.",
+          "audio": "Draft NL localization pending native pass. Keeping it alive does not mean keeping it free.",
+          "in_game_wiki": "Draft NL localization pending native pass. The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.",
+          "external_site": "Draft NL localization pending native pass. The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.",
+          "field_note": "Draft NL localization pending native pass. Use for preserve/quarantine ending record and public-spoiler copy."
+        }
+      }
+    },
+    {
+      "packet_id": "P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL",
+      "release_set_id": "RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS",
+      "article_id": "applied_lore.payload_public_ledger_receiver_protocol",
+      "title_key": "applied_lore.payload_public_ledger_receiver_protocol.title",
+      "unlock": {
+        "primary": "unlock.payload_public_ledger_receiver_protocol",
+        "poi_tags": [
+          "poi.public_ledger_uplink",
+          "poi.witness_hash_stack",
+          "poi.delayed_tau_lane_packet"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.claim_route"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Payload Public Ledger Receiver Protocol",
+          "scanner": "Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Use as spoiler-gated article and late-game uplink record."
+        },
+        "ru_RU": {
+          "title": "Протокол приемника: публичный ledger",
+          "scanner": "Ledger route. Public proof уходит из океана раньше, чем кто-то сможет cleanly own the story.",
+          "terminal": "PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Когда это уйдет, это уже не твоя truth. В этом смысл и цена.",
+          "in_game_wiki": "Public ledger route раскрывает proof через delayed external custody. Он мешает erasure, но создает новое political/corporate pressure.",
+          "external_site": "Public truth в HECTON-8 не clean win. Он ломает silence, но игрок теряет контроль над тем, кто использует evidence.",
+          "field_note": "Для spoiler-gated article и late-game uplink record."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft JA localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft JA localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft JA localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft JA localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft JA localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft JA localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft ZH localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft ZH localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft ZH localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft ZH localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft ZH localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft FR localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft FR localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft FR localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft FR localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft FR localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft FR localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft ES localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft ES localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft ES localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft ES localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft ES localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft ES localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft DE localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft DE localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft DE localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft DE localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft DE localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft DE localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft PL localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft PL localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft PL localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft PL localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft PL localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft PL localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft UK localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft UK localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft UK localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft UK localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft UK localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft UK localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft AR localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft AR localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft AR localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft AR localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft AR localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft AR localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft ID localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft ID localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft ID localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft ID localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft ID localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft ID localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft KO localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft KO localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft KO localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft KO localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft KO localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft KO localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft HE localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft HE localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft HE localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft HE localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft HE localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft HE localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft PT localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft PT localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft PT localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft PT localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft PT localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft PT localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Payload Public Ledger Receiver Protocol",
+          "scanner": "Draft NL localization pending native pass. Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.",
+          "terminal": "Draft NL localization pending native pass. PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.",
+          "audio": "Draft NL localization pending native pass. Once it leaves, it is no longer your truth. That is the point and the cost.",
+          "in_game_wiki": "Draft NL localization pending native pass. The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.",
+          "external_site": "Draft NL localization pending native pass. Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.",
+          "field_note": "Draft NL localization pending native pass. Use as spoiler-gated article and late-game uplink record."
+        }
+      }
+    },
+    {
+      "packet_id": "P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL",
+      "release_set_id": "RS076_ATLAS_FINAL_PAYLOAD_RECEIVER_PROTOCOLS",
+      "article_id": "applied_lore.payload_withhold_blind_return_protocol",
+      "title_key": "applied_lore.payload_withhold_blind_return_protocol.title",
+      "unlock": {
+        "primary": "unlock.payload_withhold_blind_return_protocol",
+        "poi_tags": [
+          "poi.blind_return_abort",
+          "poi.payload_blackout_key",
+          "poi.deep_reach_denial_socket"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Payload Withhold Blind Return Protocol",
+          "scanner": "Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Use for no-clean ending dossier and refusal branch."
+        },
+        "ru_RU": {
+          "title": "Протокол приемника: withheld blind return",
+          "scanner": "Blind return route. Deep Reach не получает map. Игрок не получает clean receipt.",
+          "terminal": "PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Иногда не отправить - единственное, что еще принадлежит тебе.",
+          "in_game_wiki": "Withholding payload - это route agency, не perfect ending. Он отказывает corporate access, но рискует proof, payout и rescue clarity.",
+          "external_site": "Концовка HECTON-8 может быть отказом: игрок оставляет Deep Reach blind, но платит unresolved survival и unresolved truth.",
+          "field_note": "Для no-clean ending dossier и refusal branch."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft JA localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft JA localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft JA localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft JA localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft JA localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft JA localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft ZH localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft ZH localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft ZH localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft ZH localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft ZH localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft FR localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft FR localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft FR localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft FR localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft FR localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft ES localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft ES localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft ES localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft ES localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft ES localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft DE localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft DE localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft DE localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft DE localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft DE localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft PL localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft PL localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft PL localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft PL localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft PL localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft UK localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft UK localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft UK localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft UK localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft UK localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft UK localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft AR localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft AR localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft AR localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft AR localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft AR localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft ID localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft ID localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft ID localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft ID localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft ID localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft KO localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft KO localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft KO localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft KO localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft KO localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft KO localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft HE localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft HE localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft HE localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft HE localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft HE localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft PT localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft PT localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft PT localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft PT localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft PT localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft PT localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Payload Withhold Blind Return Protocol",
+          "scanner": "Draft NL localization pending native pass. Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.",
+          "terminal": "Draft NL localization pending native pass. PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.",
+          "audio": "Draft NL localization pending native pass. Sometimes not sending is the only thing that still belongs to you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.",
+          "external_site": "Draft NL localization pending native pass. A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.",
+          "field_note": "Draft NL localization pending native pass. Use for no-clean ending dossier and refusal branch."
+        }
+      }
+    }
+  ]
+}

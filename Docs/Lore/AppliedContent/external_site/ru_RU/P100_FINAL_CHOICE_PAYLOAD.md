@@ -1,10 +1,17 @@
 ---
 packet_id: P100_FINAL_CHOICE_PAYLOAD
+release_set_id: RS020_ATLAS_ENDING_AGENCY_DOSSIER
 article_id: endings.final_choice_payload
+unlock_id: unlock.first_final_choice_payload
+poi_tags: poi.final_payload_matrix;poi.atlas_choice_interface
+biome_tags: biome.factory_temple;biome.atlas_basin
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Final Choice Payload

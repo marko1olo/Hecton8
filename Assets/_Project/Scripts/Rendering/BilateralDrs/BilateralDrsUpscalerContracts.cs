@@ -111,14 +111,11 @@ namespace Hecton8.Rendering
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct CalculateUpscalerParamsJob : IJob
+    public struct CalculateUpscalerParamsJob : IJob
     {
-        // SAFETY: Runtime invokes this scalar kernel inline from Simulation while holding only
-        // the pending parameter lane. Telemetry is emitted as a value snapshot and committed by
-        // the owner through separate one-lock DataVault windows after the parameter lock exits.
-        [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<UpscalerParamsDTO> Parameters;
-        [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<UpscalerTelemetryEntry> Telemetry;
-        [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<int> TelemetryCursor;
+        [WriteOnly] [NoAlias] public NativeArray<UpscalerParamsDTO> Parameters;
+        [WriteOnly] [NoAlias] public NativeArray<UpscalerTelemetryEntry> Telemetry;
+        [NoAlias] public NativeArray<int> TelemetryCursor;
         [ReadOnly] [NoAlias] public NativeArray<UpscalerTuningDTO>.ReadOnly Tuning;
         [ReadOnly] [NoAlias] public NativeArray<UpscalerProfileDTO>.ReadOnly Profiles;
         public ResolutionScaleState ScaleStateSnapshot;
@@ -136,12 +133,13 @@ namespace Hecton8.Rendering
         public byte UseMockState;
         public UpscalerTelemetryEntry LastTelemetry;
         public byte HasLastTelemetry;
+        public UpscalerParamsDTO LastParameters;
+        public byte HasLastParameters;
 
         public void Execute()
         {
             HasLastTelemetry = 0;
-            if (!Parameters.IsCreated || Parameters.Length < 1)
-                return;
+            HasLastParameters = 0;
 
             UpscalerTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0
                 ? SanitizeTuning(Tuning[0])
@@ -210,10 +208,11 @@ namespace Hecton8.Rendering
                           fullHeight > 0;
             flags |= finite ? 0u : BilateralDrsUpscalerConstants.FaultNonFinite;
 
-            int output = ClampOutputIndex(OutputIndex, Parameters.Length);
-            UpscalerParamsDTO* parameterPtr = (UpscalerParamsDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(Parameters);
-            ref UpscalerParamsDTO outputDto = ref UnsafeUtility.AsRef<UpscalerParamsDTO>(parameterPtr + output);
-            outputDto = dto;
+            LastParameters = dto;
+            HasLastParameters = 1;
+            if (Parameters.IsCreated && Parameters.Length > 0)
+                Parameters[ClampOutputIndex(OutputIndex, Parameters.Length)] = dto;
+
             UpscalerTelemetryEntry telemetry = BuildTelemetryEntry(in dto, flags, currentScale, targetScale, quality, radius, depthWeight, drop01, FrameIndex);
             LastTelemetry = telemetry;
             HasLastTelemetry = 1;

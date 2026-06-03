@@ -118,7 +118,7 @@ namespace Hecton8.Rendering
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GenerateMockCausticLightingJob
     {
-        // SAFETY: Parameters is the 13KRA-owned Vault lane for caustic CBuffer DTOs.
+        // SAFETY: Parameters is the caustics-owned Vault lane for caustic CBuffer DTOs.
         // The runtime resolves a minimum capacity before invocation and this kernel writes
         // exactly one clamped element, so the unsafe pointer never crosses the lane bounds.
         [NoAlias] [NativeDisableUnsafePtrRestriction] public CausticsParametersDTO* Parameters;
@@ -221,7 +221,7 @@ namespace Hecton8.Rendering
         // one int. The kernel does not resize, release, or retain any memory view.
         //
         // SAFETY: [NoAlias] is valid because each pointer comes from a different
-        // 13KRA-owned BufferID and optional external inputs are value snapshots.
+        // caustics-owned BufferID and optional external inputs are value snapshots.
         [NoAlias] [NativeDisableUnsafePtrRestriction] public CausticsParametersDTO* Parameters;
         public int ParameterLength;
         [NoAlias] [NativeDisableUnsafePtrRestriction] public CausticsTelemetryEntry* Telemetry;

@@ -1,10 +1,17 @@
 ---
 packet_id: P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER
+release_set_id: RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION
 article_id: atlas.classified_weighting_layer
+unlock_id: unlock.atlas_classified_weighting_layer
+poi_tags: poi.weighting_table_fragment;poi.xo_continuity_priority
+biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Секретный weighting layer Atlas

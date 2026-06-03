@@ -41,7 +41,15 @@ namespace Hecton8.Bootstrap
                 $"Reloading {BootstrapSceneName} to restore the required route.");
 
             GameStartContextHolder.Reset();
-            SceneManager.LoadScene(BootstrapSceneName);
+            AsyncOperation operation = SceneManager.LoadSceneAsync(
+                BootstrapSceneName,
+                LoadSceneMode.Single);
+            if (operation == null)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    $"[{ownerName}] Failed to schedule async bootstrap recovery load.");
+            }
+
             return false;
         }
     }

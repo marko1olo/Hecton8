@@ -201,6 +201,14 @@ namespace Hecton8.Lighting
         public const int MaxAmbientProfileCount = 64;
         public const int TelemetryCapacity = 300;
         public const int CsvBufferBytes = 32768;
+        public const int CustomLightProbeDtoSizeBytes = 128;
+        public const int InteriorGISourceDtoSizeBytes = 96;
+        public const int InteriorGIOcclusionCellDtoSizeBytes = 32;
+        public const int InteriorGITuningDtoSizeBytes = 128;
+        public const int MockPowerStateSizeBytes = 32;
+        public const int InteriorGITelemetryEntrySizeBytes = 64;
+        public const int CustomDynamicProbeLightDtoSizeBytes = 64;
+        public const int AmbientLightingProfileDtoSizeBytes = 64;
         private const int TelemetryDumpHeaderBytes = 40;
 
         public const uint SourceFlagPowered = 1u << 0;
@@ -219,6 +227,28 @@ namespace Hecton8.Lighting
         public const uint TelemetryFlagNan = 1u << 0;
         public const uint TelemetryFlagEmergency = 1u << 1;
         public const uint TelemetryFlagMock = 1u << 2;
+
+        public static bool ValidateStructLayouts(out uint failureMask)
+        {
+            failureMask = 0u;
+            ValidateLayoutSize<CustomLightProbeDTO>(CustomLightProbeDtoSizeBytes, 1u << 0, ref failureMask);
+            ValidateLayoutSize<InteriorGISourceDTO>(InteriorGISourceDtoSizeBytes, 1u << 1, ref failureMask);
+            ValidateLayoutSize<InteriorGIOcclusionCellDTO>(InteriorGIOcclusionCellDtoSizeBytes, 1u << 2, ref failureMask);
+            ValidateLayoutSize<InteriorGITuningDTO>(InteriorGITuningDtoSizeBytes, 1u << 3, ref failureMask);
+            ValidateLayoutSize<MockPowerState>(MockPowerStateSizeBytes, 1u << 4, ref failureMask);
+            ValidateLayoutSize<InteriorGITelemetryEntry>(InteriorGITelemetryEntrySizeBytes, 1u << 5, ref failureMask);
+            ValidateLayoutSize<CustomDynamicProbeLightDTO>(CustomDynamicProbeLightDtoSizeBytes, 1u << 6, ref failureMask);
+            ValidateLayoutSize<AmbientLightingProfileDTO>(AmbientLightingProfileDtoSizeBytes, 1u << 7, ref failureMask);
+            return failureMask == 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ValidateLayoutSize<T>(int expectedBytes, uint bit, ref uint failureMask) where T : struct
+        {
+            int actualBytes = UnsafeUtility.SizeOf<T>();
+            if (actualBytes != expectedBytes || (actualBytes & 7) != 0)
+                failureMask |= bit;
+        }
 
         private const SystemID MemoryOwner = SystemID.GraphicsScalability;
         private const BufferID ProbeFrontBuffer = (BufferID)0x630800;
@@ -482,14 +512,13 @@ namespace Hecton8.Lighting
             rootAup = _rootAup;
             cellSize = cellSizeMeters;
             version = _gridVersion;
-            if (_scheduledBootClear || _simulationJobActive || !HasInteriorGIHandle(in _probeFront, ProbeFrontBuffer))
+            if (_scheduledBootClear ||
+                _simulationJobActive ||
+                !TryReadOnlyArray(in _probeFront, ProbeFrontBuffer, MaxCellCount, out probes))
+            {
                 return false;
+            }
 
-            NativeArray<CustomLightProbeDTO> mutableProbes = ResolveProbeFront();
-            if (!mutableProbes.IsCreated)
-                return false;
-
-            probes = mutableProbes.AsReadOnly();
             return probes.Length > 0;
         }
 
@@ -497,14 +526,13 @@ namespace Hecton8.Lighting
         {
             occlusion = default;
             resolution = _activeResolution;
-            if (_scheduledBootClear || _simulationJobActive || !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer))
+            if (_scheduledBootClear ||
+                _simulationJobActive ||
+                !TryReadOnlyArray(in _occlusion, ProbeOcclusionBuffer, MaxCellCount, out occlusion))
+            {
                 return false;
+            }
 
-            NativeArray<InteriorGIOcclusionCellDTO> mutableOcclusion = ResolveOcclusion();
-            if (!mutableOcclusion.IsCreated)
-                return false;
-
-            occlusion = mutableOcclusion.AsReadOnly();
             return occlusion.Length > 0;
         }
 
@@ -512,14 +540,12 @@ namespace Hecton8.Lighting
         {
             telemetry = default;
             cursor = _telemetryCursor;
-            if (_simulationJobActive || !HasInteriorGIHandle(in _telemetryRing, ProbeTelemetryRingBuffer))
+            if (_simulationJobActive ||
+                !TryReadOnlyArray(in _telemetryRing, ProbeTelemetryRingBuffer, TelemetryCapacity, out telemetry))
+            {
                 return false;
+            }
 
-            NativeArray<InteriorGITelemetryEntry> mutableTelemetry = ResolveTelemetryRing();
-            if (!mutableTelemetry.IsCreated)
-                return false;
-
-            telemetry = mutableTelemetry.AsReadOnly();
             return telemetry.Length > 0;
         }
 
@@ -534,55 +560,96 @@ namespace Hecton8.Lighting
 
         public bool TryWriteOcclusionCell(int3 cell, float signedDistanceMeters, uint wallMask, float water01, float transferScale01, float floraGlow01, uint roomHash)
         {
-            if (_simulationJobActive || !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer))
+            if (_simulationJobActive || !IsInside(cell, _activeResolution))
                 return false;
 
-            if (!IsInside(cell, _activeResolution))
-                return false;
-
-            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveOcclusion();
-            int index = ToIndex(cell, _activeResolution);
-            occlusion[index] = new InteriorGIOcclusionCellDTO
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer))
             {
-                SignedDistanceMeters = math.isfinite(signedDistanceMeters) ? signedDistanceMeters : cellSizeMeters,
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _occlusion, MemoryOwner, out NativeArray<InteriorGIOcclusionCellDTO> occlusion))
+                return false;
+
+            int index = ToIndex(cell, _activeResolution);
+            float safeSignedDistance = math.isfinite(signedDistanceMeters) ? signedDistanceMeters : cellSizeMeters;
+            InteriorGIOcclusionCellDTO requestedCell = new InteriorGIOcclusionCellDTO
+            {
+                SignedDistanceMeters = safeSignedDistance,
                 Water01 = math.saturate(water01),
                 TransferScale01 = math.saturate(transferScale01),
                 WallMask = wallMask,
                 FloraGlow01 = math.saturate(floraGlow01),
                 EmergencyReflectance01 = 0.2f,
                 RoomHash = roomHash,
-                Flags = signedDistanceMeters <= 0f ? OcclusionFlagSolid : 0u
+                Flags = safeSignedDistance <= 0f ? OcclusionFlagSolid : 0u
             };
-            _visualDirty = true;
-            return true;
+
+            try
+            {
+                if (!occlusion.IsCreated || occlusion.Length <= index)
+                    return false;
+
+                occlusion[index] = requestedCell;
+                _visualDirty = true;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _occlusion, MemoryOwner);
+            }
         }
 
         public bool TryUpsertSource(uint sourceHash, double3 aup, float3 color, float intensity, float radiusMeters, uint flags, float3 direction)
         {
-            if (sourceHash == 0u || _simulationJobActive || !HasInteriorGIHandle(in _sources, ProbeSourcesBuffer) || !math.all(math.isfinite(aup)))
+            if (sourceHash == 0u || _simulationJobActive || !math.all(math.isfinite(aup)))
                 return false;
 
-            NativeArray<InteriorGISourceDTO> sources = ResolveSources();
             float safeIntensity = math.max(0f, math.isfinite(intensity) ? intensity : 0f);
             float safeRadius = math.max(0.25f, math.isfinite(radiusMeters) ? radiusMeters : 1f);
             float3 safeColor = math.select(new float3(1f, 0.2f, 0.1f), math.max(new float3(0f), color), math.all(math.isfinite(color)));
             float3 safeDirection = math.normalizesafe(direction, new float3(0f, 0f, 1f));
 
-            for (int i = 0; i < _sourceCount; i++)
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !HasInteriorGIHandle(in _sources, ProbeSourcesBuffer))
             {
-                if (sources[i].SourceHash != sourceHash)
-                    continue;
-
-                sources[i] = BuildSource(sourceHash, aup, safeColor, safeIntensity, safeRadius, flags, safeDirection, i);
-                return true;
+                return false;
             }
 
-            if (_sourceCount >= MaxSourceCount)
+            if (!vault.TryAcquireWriteLock(in _sources, MemoryOwner, out NativeArray<InteriorGISourceDTO> sources))
                 return false;
 
-            sources[_sourceCount] = BuildSource(sourceHash, aup, safeColor, safeIntensity, safeRadius, flags, safeDirection, _sourceCount);
-            _sourceCount++;
-            return true;
+            try
+            {
+                if (!sources.IsCreated || sources.Length < MaxSourceCount)
+                    return false;
+
+                int sourceCount = math.min(_sourceCount, MaxSourceCount);
+                for (int i = 0; i < sourceCount; i++)
+                {
+                    if (sources[i].SourceHash != sourceHash)
+                        continue;
+
+                    sources[i] = BuildSource(sourceHash, aup, safeColor, safeIntensity, safeRadius, flags, safeDirection, i);
+                    return true;
+                }
+
+                if (_sourceCount >= MaxSourceCount)
+                    return false;
+
+                sources[_sourceCount] = BuildSource(sourceHash, aup, safeColor, safeIntensity, safeRadius, flags, safeDirection, _sourceCount);
+                _sourceCount++;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _sources, MemoryOwner);
+            }
         }
 
         public void RequestCsvReload()
@@ -743,7 +810,7 @@ namespace Hecton8.Lighting
         private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length, bool allowAllocation) where T : struct
         {
             IDataVault vault = _vault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return default;
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) &&
@@ -824,7 +891,7 @@ namespace Hecton8.Lighting
             int requiredLength) where T : struct
         {
             IDataVault vault = _vault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return default;
 
             if (IsInteriorGIHandle(in handle, bufferId) &&
@@ -845,6 +912,27 @@ namespace Hecton8.Lighting
             }
 
             return buffer;
+        }
+
+        private bool TryReadOnlyArray<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsInteriorGIHandle(in handle, bufferId) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private NativeArray<CustomLightProbeDTO> ResolveProbeFront()
@@ -905,8 +993,7 @@ namespace Hecton8.Lighting
         private bool TryReadTuning(out InteriorGITuningDTO tuning)
         {
             tuning = default;
-            NativeArray<InteriorGITuningDTO> rows = ResolveArray(ref _tuning, ProbeTuningBuffer, 1);
-            if (!rows.IsCreated)
+            if (!TryReadOnlyArray(in _tuning, ProbeTuningBuffer, 1, out NativeArray<InteriorGITuningDTO>.ReadOnly rows))
                 return false;
 
             tuning = rows[0];
@@ -915,12 +1002,29 @@ namespace Hecton8.Lighting
 
         private bool TryWriteTuning(in InteriorGITuningDTO tuning)
         {
-            NativeArray<InteriorGITuningDTO> rows = ResolveArray(ref _tuning, ProbeTuningBuffer, 1);
-            if (!rows.IsCreated)
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !HasInteriorGIHandle(in _tuning, ProbeTuningBuffer))
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _tuning, MemoryOwner, out NativeArray<InteriorGITuningDTO> rows))
                 return false;
 
-            rows[0] = tuning;
-            return true;
+            try
+            {
+                if (!rows.IsCreated || rows.Length < 1)
+                    return false;
+
+                rows[0] = tuning;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuning, MemoryOwner);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1371,23 +1475,41 @@ namespace Hecton8.Lighting
 
         private void CommitTelemetryScratch()
         {
-            if (!HasInteriorGIHandle(in _telemetryScratch, ProbeTelemetryScratchBuffer) ||
+            if (!TryReadOnlyArray(in _telemetryScratch, ProbeTelemetryScratchBuffer, 1, out NativeArray<InteriorGITelemetryEntry>.ReadOnly scratch))
+            {
+                return;
+            }
+
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !HasInteriorGIHandle(in _telemetryRing, ProbeTelemetryRingBuffer))
             {
                 return;
             }
 
-            NativeArray<InteriorGITelemetryEntry> scratch = ResolveTelemetryScratch();
-            NativeArray<InteriorGITelemetryEntry> ring = ResolveTelemetryRing();
-            if (!scratch.IsCreated || !ring.IsCreated || ring.Length < TelemetryCapacity)
+            if (!vault.TryAcquireWriteLock(in _telemetryRing, MemoryOwner, out NativeArray<InteriorGITelemetryEntry> ring))
                 return;
 
             InteriorGITelemetryEntry entry = scratch[0];
             entry.SolverCompleteMs = _lastCompleteMs;
-            ring[_telemetryCursor % TelemetryCapacity] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            bool dumpNan = false;
 
-            if ((entry.Flags & TelemetryFlagNan) != 0u && !_nanDumpWritten)
+            try
+            {
+                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
+                    return;
+
+                ring[_telemetryCursor % TelemetryCapacity] = entry;
+                _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+                dumpNan = (entry.Flags & TelemetryFlagNan) != 0u && !_nanDumpWritten;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRing, MemoryOwner);
+            }
+
+            if (dumpNan)
             {
                 _nanDumpWritten = true;
                 DumpTelemetryRing();

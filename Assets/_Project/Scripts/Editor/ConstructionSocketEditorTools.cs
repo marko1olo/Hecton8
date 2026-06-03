@@ -59,16 +59,6 @@ namespace Hecton8.Editor
             };
             rootVisualElement.Add(initVault);
 
-            Button mock = new Button(() =>
-            {
-                bool ok = ShinobuSocketConstructionRuntime.GenerateMockBaseConstructionGrid(GlobalRegistry.DataVault);
-                _summary.text = "Mock grid: " + ok + " | modules " + ShinobuSocketConstructionRuntime.MockModuleCount;
-            })
-            {
-                text = "Generate 500 Module Mock Grid"
-            };
-            rootVisualElement.Add(mock);
-
             Button csv = new Button(() =>
             {
                 bool ok = ConstructionSocketProfilesCsvImporter.TryImportDefaultProfile(out string message);

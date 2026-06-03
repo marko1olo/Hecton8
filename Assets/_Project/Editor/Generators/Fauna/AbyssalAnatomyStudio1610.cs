@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -8,13 +7,16 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
@@ -89,6 +91,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
         [FieldOffset(28)] public uint _pad3;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 96)]
     internal struct FaunaRigMetrics1610
     {
         public int SourceVertexCount;
@@ -451,6 +454,9 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 return false;
             }
 
+            if (!ValidateUnmanagedStructAlignment())
+                return false;
+
             EnsureFolder(MeshOutputRoot);
             EnsureFolder(VatOutputRoot);
             EnsureFolder(SpineMetadataOutputRoot);
@@ -484,7 +490,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
                     LengthMeters = 48f,
                     RadiusMeters = 1.4f
                 }.Schedule(vertexCount, 128);
-                seedHandle.Complete();
+                CompleteEditorBakeJobCold(ref seedHandle);
 
                 for (int i = 0; i < segments.Length; i++)
                 {
@@ -503,7 +509,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
                     MaxInfluenceDistanceMeters = 12f,
                     FalloffPower = 2f
                 }.Schedule(vertexCount, 128);
-                handle.Complete();
+                CompleteEditorBakeJobCold(ref handle);
                 stopwatch.Stop();
 
                 int failures = CountWeightFailures(audits, 0.0001f, out int isolated);
@@ -625,9 +631,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
             out FaunaRigOutput1610 output)
         {
             output = default;
-            List<Vector3> vertexList = new List<Vector3>(sourceMesh.vertexCount); // COLD ALLOC: List<Vector3>[source vertex count] - editor mesh extraction scratch - owner: FaunaOfflineRigger1610
-            sourceMesh.GetVertices(vertexList);
-            int vertexCount = vertexList.Count;
+            int vertexCount = sourceMesh.vertexCount;
             int triangleCount = CountMeshTriangles(sourceMesh);
             int boneLimit = ResolveBoneLimit(preset);
             int minimumBoneCount = ResolveMinimumSkinnedBoneCount(preset);
@@ -646,12 +650,12 @@ namespace Hecton8.EditorTools.Generators.Fauna
             NativeArray<byte> bonesPerVertex = default;
             NativeArray<BoneWeight1> weights = default;
             NativeArray<FaunaVertexWeightAuditDTO1610> audits = default;
+            Mesh riggedMesh = null;
             try
             {
                 bones = CreateBoneHierarchy(root.transform, axis, sourceMesh.bounds, spineCount, secondaryCount, globalQualityWeight, out bindposes, out FaunaSpineIkConfigDTO1610 config, out FaunaSpineBoneDTO1610[] spineRows);
-                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                for (int i = 0; i < vertexCount; i++)
-                    vertices[i] = vertexList[i];
+                CopyMeshVerticesToNative(sourceMesh, Allocator.TempJob, out vertices);
+                vertexCount = vertices.Length;
 
                 segments = BuildSegmentMatrices(bones, root.transform);
                 bonesPerVertex = new NativeArray<byte>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -671,7 +675,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
                     MaxInfluenceDistanceMeters = influenceRadiusMeters,
                     FalloffPower = math.lerp(1.4f, 2.8f, math.saturate(globalQualityWeight))
                 }.Schedule(vertexCount, 128);
-                handle.Complete();
+                CompleteEditorBakeJobCold(ref handle);
                 skinningStopwatch.Stop();
 
                 int failures = CountWeightFailures(audits, 0.0001f, out int isolated);
@@ -690,7 +694,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
                     return false;
                 }
 
-                Mesh riggedMesh = Object.Instantiate(sourceMesh);
+                riggedMesh = Object.Instantiate(sourceMesh);
                 riggedMesh.name = "GEN_FaunaRig1610_" + presetToken + "_" + safeToken + "_Mesh";
                 riggedMesh.bindposes = bindposes;
                 riggedMesh.SetBoneWeights(bonesPerVertex, weights);
@@ -730,6 +734,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
 
                 string meshPath = MeshOutputRoot + "/" + riggedMesh.name + ".asset";
                 Mesh meshAsset = CreateOrUpdateMeshAsset(meshPath, riggedMesh);
+                riggedMesh = null;
                 SkinnedMeshRenderer renderer = root.AddComponent<SkinnedMeshRenderer>();
                 renderer.sharedMesh = meshAsset;
                 renderer.bones = bones;
@@ -771,6 +776,8 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 if (bonesPerVertex.IsCreated) bonesPerVertex.Dispose();
                 if (segments.IsCreated) segments.Dispose();
                 if (vertices.IsCreated) vertices.Dispose();
+                if (riggedMesh != null && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(riggedMesh)))
+                    Object.DestroyImmediate(riggedMesh);
                 Object.DestroyImmediate(root);
             }
         }
@@ -785,9 +792,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
             out FaunaRigOutput1610 output)
         {
             output = default;
-            List<Vector3> vertexList = new List<Vector3>(sourceMesh.vertexCount); // COLD ALLOC: List<Vector3>[source vertex count] - editor VAT extraction scratch - owner: FaunaOfflineRigger1610
-            sourceMesh.GetVertices(vertexList);
-            int vertexCount = vertexList.Count;
+            int vertexCount = sourceMesh.vertexCount;
             int safeFrameCount = math.max(1, frameCount);
             int maxTextureWidth = math.max(1, SystemInfo.maxTextureSize);
             if (!SystemInfo.SupportsTextureFormat(TextureFormat.RGBAFloat))
@@ -834,12 +839,12 @@ namespace Hecton8.EditorTools.Generators.Fauna
             NativeArray<float3> vertices = default;
             NativeArray<float4> pixels = default;
             Texture2D vatTexture = null;
+            Mesh vatMesh = null;
             GameObject root = null;
             try
             {
-                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                for (int i = 0; i < vertexCount; i++)
-                    vertices[i] = vertexList[i];
+                CopyMeshVerticesToNative(sourceMesh, Allocator.TempJob, out vertices);
+                vertexCount = vertices.Length;
 
                 pixels = new NativeArray<float4>(vertexCount * safeFrameCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 Stopwatch vatStopwatch = Stopwatch.StartNew();
@@ -857,7 +862,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
                     WaveCycles = math.lerp(1.25f, 2.75f, math.saturate(globalQualityWeight)),
                     GlobalQualityWeight = globalQualityWeight
                 }.Schedule(pixels.Length, 128);
-                handle.Complete();
+                CompleteEditorBakeJobCold(ref handle);
                 vatStopwatch.Stop();
 
                 vatTexture = new Texture2D(vertexCount, safeFrameCount, TextureFormat.RGBAFloat, false, true);
@@ -868,7 +873,9 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 Texture2D vatAsset = CreateOrUpdateTextureAsset(vatPath, vatTexture);
                 vatTexture = null;
 
-                Mesh meshAsset = CreateOrUpdateMeshAsset(MeshOutputRoot + "/" + "GEN_FaunaVAT1610_" + safeToken + "_Mesh.asset", Object.Instantiate(sourceMesh));
+                vatMesh = Object.Instantiate(sourceMesh);
+                Mesh meshAsset = CreateOrUpdateMeshAsset(MeshOutputRoot + "/" + "GEN_FaunaVAT1610_" + safeToken + "_Mesh.asset", vatMesh);
+                vatMesh = null;
                 root = new GameObject("GEN_FaunaVAT1610_" + safeToken);
                 MeshFilter filter = root.AddComponent<MeshFilter>();
                 filter.sharedMesh = meshAsset;
@@ -909,6 +916,8 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 if (root != null) Object.DestroyImmediate(root);
                 if (vatTexture != null && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(vatTexture)))
                     Object.DestroyImmediate(vatTexture);
+                if (vatMesh != null && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(vatMesh)))
+                    Object.DestroyImmediate(vatMesh);
             }
         }
 
@@ -996,6 +1005,59 @@ namespace Hecton8.EditorTools.Generators.Fauna
             return bones;
         }
 
+        private static bool ValidateUnmanagedStructAlignment()
+        {
+            int axisSize = UnsafeUtility.SizeOf<FaunaMeshAxisDTO1610>();
+            int configSize = UnsafeUtility.SizeOf<FaunaSpineIkConfigDTO1610>();
+            int boneSize = UnsafeUtility.SizeOf<FaunaSpineBoneDTO1610>();
+            int auditSize = UnsafeUtility.SizeOf<FaunaVertexWeightAuditDTO1610>();
+            int metricsSize = UnsafeUtility.SizeOf<FaunaRigMetrics1610>();
+            if (((axisSize | configSize | boneSize | auditSize | metricsSize) & 7) == 0)
+                return true;
+
+            Debug.LogError("[FaunaRigger1610] Unmanaged DTO alignment rejected. Struct sizes must be multiples of 8 bytes.");
+            return false;
+        }
+
+        private static void CompleteEditorBakeJobCold(ref JobHandle handle)
+        {
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+        }
+
+        private static void CopyMeshVerticesToNative(Mesh sourceMesh, Allocator allocator, out NativeArray<float3> vertices)
+        {
+            vertices = default;
+            Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
+            try
+            {
+                Mesh.MeshData meshData = meshDataArray[0];
+                vertices = new NativeArray<float3>(meshData.vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+                CopyMeshDataPositions(meshData, vertices);
+            }
+            finally
+            {
+                meshDataArray.Dispose();
+            }
+        }
+
+        private static void CopyMeshDataPositions(Mesh.MeshData meshData, NativeArray<float3> vertices)
+        {
+            NativeArray<Vector3> sourceVertices = default;
+            try
+            {
+                sourceVertices = new NativeArray<Vector3>(meshData.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                meshData.GetVertices(sourceVertices);
+                int count = math.min(vertices.Length, sourceVertices.Length);
+                for (int i = 0; i < count; i++)
+                    vertices[i] = (float3)sourceVertices[i];
+            }
+            finally
+            {
+                if (sourceVertices.IsCreated)
+                    sourceVertices.Dispose();
+            }
+        }
+
         private static NativeArray<float4x4> BuildSegmentMatrices(Transform[] bones, Transform root)
         {
             NativeArray<float4x4> segments = new NativeArray<float4x4>(math.max(1, bones.Length), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -1026,22 +1088,60 @@ namespace Hecton8.EditorTools.Generators.Fauna
 
         private static void BakeWrinkleMask(Mesh mesh, FaunaMeshAxisDTO1610 axis, int spineCount)
         {
-            List<Vector3> vertices = new List<Vector3>(mesh.vertexCount); // COLD ALLOC: List<Vector3>[mesh vertex count] - editor wrinkle mask scratch - owner: FaunaOfflineRigger1610
-            List<Color32> colors = new List<Color32>(mesh.vertexCount); // COLD ALLOC: List<Color32>[mesh vertex count] - editor wrinkle mask output - owner: FaunaOfflineRigger1610
-            mesh.GetVertices(vertices);
-            float length = math.max(0.0001f, axis.Length);
-            float3 start = axis.Center - axis.Axis * length * 0.5f;
-            int jointCount = math.max(2, spineCount);
-            for (int i = 0; i < vertices.Count; i++)
+            NativeArray<float3> vertices = default;
+            NativeArray<Color32> sourceColors = default;
+            NativeArray<Color32> colors = default;
+            Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(mesh);
+            try
             {
-                float t = math.saturate(math.dot((float3)vertices[i] - start, axis.Axis) * math.rcp(length));
-                float joint = math.round(t * (jointCount - 1)) * math.rcp(jointCount - 1);
-                float tension = 1f - math.saturate(math.abs(t - joint) * jointCount * 2f);
-                byte green = (byte)math.clamp((int)math.round(tension * 255f), 0, 255);
-                colors.Add(new Color32(32, green, 24, 255));
-            }
+                Mesh.MeshData meshData = meshDataArray[0];
+                int vertexCount = meshData.vertexCount;
+                vertices = new NativeArray<float3>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                colors = new NativeArray<Color32>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                CopyMeshDataPositions(meshData, vertices);
 
-            mesh.SetColors(colors);
+                bool hasSourceColors = meshData.HasVertexAttribute(VertexAttribute.Color);
+                if (hasSourceColors)
+                {
+                    sourceColors = new NativeArray<Color32>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    meshData.GetColors(sourceColors);
+                }
+
+                float length = math.max(0.0001f, axis.Length);
+                float3 start = axis.Center - axis.Axis * length * 0.5f;
+                float invLength = math.rcp(length);
+                float invArmorRadius = math.rcp(math.max(0.0001f, length * 0.35f));
+                int jointCount = math.max(2, spineCount);
+                float invJointDenominator = math.rcp(jointCount - 1);
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    float3 vertex = vertices[i];
+                    float t = math.saturate(math.dot(vertex - start, axis.Axis) * invLength);
+                    float3 core = start + axis.Axis * (t * length);
+                    float radial01 = math.saturate(math.length(vertex - core) * invArmorRadius);
+                    float endCap01 = math.saturate(math.abs(t - 0.5f) * 2f);
+                    float joint = math.round(t * (jointCount - 1)) * invJointDenominator;
+                    float tension = 1f - math.saturate(math.abs(t - joint) * jointCount * 2f);
+                    byte green = (byte)math.clamp((int)math.round(tension * 255f), 0, 255);
+                    byte armorAlpha = (byte)math.clamp((int)math.round(math.max(radial01, endCap01) * 255f), 0, 255);
+                    Color32 color = hasSourceColors ? sourceColors[i] : new Color32(32, 0, 24, 255);
+                    color.g = green;
+                    color.a = armorAlpha;
+                    colors[i] = color;
+                }
+
+                mesh.SetColors(colors);
+            }
+            finally
+            {
+                if (sourceColors.IsCreated)
+                    sourceColors.Dispose();
+                if (colors.IsCreated)
+                    colors.Dispose();
+                if (vertices.IsCreated)
+                    vertices.Dispose();
+                meshDataArray.Dispose();
+            }
         }
 
         private static int CountWeightFailures(NativeArray<FaunaVertexWeightAuditDTO1610> audits, float tolerance, out int isolated)
@@ -1183,7 +1283,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
 
         private static Type ResolveTypeByFullName(string fullName)
         {
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
                 Type type = assemblies[i].GetType(fullName, false);
@@ -1474,7 +1574,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
             if (sourceMaterial == null)
                 return null;
 
-            Material material = new Material(sourceMaterial);
+            Material material = Object.Instantiate(sourceMaterial);
             material.name = "MAT_FaunaVAT1610_" + safeToken;
             float quality = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
             if (material.HasProperty("_VatEnabled"))
@@ -1525,18 +1625,31 @@ namespace Hecton8.EditorTools.Generators.Fauna
             if (mesh == null)
                 return 0ul;
 
-            List<Vector3> vertices = new List<Vector3>(mesh.vertexCount); // COLD ALLOC: List<Vector3>[mesh vertex count] - editor hash scratch - owner: FaunaOfflineRigger1610
-            mesh.GetVertices(vertices);
-            ulong hash = 1469598103934665603ul;
-            for (int i = 0; i < vertices.Count; i++)
+            Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(mesh);
+            NativeArray<float3> vertices = default;
+            try
             {
-                Vector3 v = vertices[i];
-                hash = MixHash(hash, (uint)BitConverter.SingleToInt32Bits(v.x));
-                hash = MixHash(hash, (uint)BitConverter.SingleToInt32Bits(v.y));
-                hash = MixHash(hash, (uint)BitConverter.SingleToInt32Bits(v.z));
-            }
+                Mesh.MeshData meshData = meshDataArray[0];
+                vertices = new NativeArray<float3>(meshData.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                CopyMeshDataPositions(meshData, vertices);
 
-            return hash;
+                ulong hash = 1469598103934665603ul;
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    float3 v = vertices[i];
+                    hash = MixHash(hash, (uint)BitConverter.SingleToInt32Bits(v.x));
+                    hash = MixHash(hash, (uint)BitConverter.SingleToInt32Bits(v.y));
+                    hash = MixHash(hash, (uint)BitConverter.SingleToInt32Bits(v.z));
+                }
+
+                return hash;
+            }
+            finally
+            {
+                if (vertices.IsCreated)
+                    vertices.Dispose();
+                meshDataArray.Dispose();
+            }
         }
 
         private static ulong ComputeWeightHash(NativeArray<BoneWeight1> weights)

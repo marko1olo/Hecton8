@@ -35,8 +35,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.StressedMeshHash), 4);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.RupturedMeshHash), 8);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.CollapsedMeshHash), 12);
-            ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO._pad0), 16);
-            ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO._pad1), 24);
+            ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.MappingVersion), 16);
+            ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.ArtifactVersion), 20);
+            ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO._pad0), 24);
             ok &= ValidateSize<OfflineWreckageBakeVertexDTO>(BakeVertexStrideBytes);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Position), 0);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Normal), 12);
@@ -51,8 +52,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.DegenerateTriangleCount), 8);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.HullVertexCount), 12);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.WarningFlags), 16);
-            ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad0), 20);
-            ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad1), 24);
+            ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.ActiveIndexCount), 20);
+            ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.FractureHoleTriangleCount), 24);
+            ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad0), 28);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad2), 32);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad3), 40);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad4), 48);
@@ -65,7 +67,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             ok &= ValidateOffset<OfflineWreckageSubMeshIndexRangeDTO>(nameof(OfflineWreckageSubMeshIndexRangeDTO.BaseVertex), 12);
 
             if (ok && logSuccess)
-                Debug.Log("[SHINOBU_209] Offline wreckage DTO layout validated.");
+                Debug.Log("[WRECKAGE_1717] Offline wreckage DTO layout validated.");
 
             return ok;
         }
@@ -76,7 +78,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             if (observed == expected)
                 return true;
 
-            Debug.LogError("[SHINOBU_209] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+            Debug.LogError("[WRECKAGE_1717] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
             return false;
         }
 
@@ -87,7 +89,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             if (observed == expected)
                 return true;
 
-            Debug.LogError("[SHINOBU_209] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+            Debug.LogError("[WRECKAGE_1717] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
             return false;
         }
     }

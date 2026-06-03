@@ -15,8 +15,8 @@ Shader "Hidden/Hecton8/DeferredCaustics"
 
         HLSLINCLUDE
         #pragma target 3.5
-        // This fullscreen composite is LIGHT_COOKIE independent. LIGHT_COOKIE variants are stripped deliberately:
-        // caustics come from screen depth + procedural math, not from LIGHT_COOKIE or PROJECTOR passes.
+        // This fullscreen composite stays LIGHT_COOKIE independent. Optional 1719-baked atlas input is a
+        // precompressed offline visual fake; null atlas keeps the procedural fallback path.
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
         #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
@@ -31,6 +31,13 @@ Shader "Hidden/Hecton8/DeferredCaustics"
 
         TEXTURE2D_X(_HectonDeferredCausticsSource);
         TEXTURE2D_X_FLOAT(_HectonDeferredCausticsDepth);
+        TEXTURE2D(_HectonBakedCausticAtlas);
+        SAMPLER(sampler_HectonBakedCausticAtlas);
+        TEXTURE2D(_HectonBakedCausticWaterlineMask);
+        SAMPLER(sampler_HectonBakedCausticWaterlineMask);
+        float4 _HectonBakedCausticAtlasParams;     // x=atlas weight, y=columns, z=rows, w=frame count
+        float4 _HectonBakedCausticAtlasTexelParams; // xy=local texel size inside one atlas cell
+        float4 _HectonBakedCausticWaterlineParams; // x=mask weight, y=min world Y, z=inv world Y range
         TEXTURE3D(_HectonCaveVoxelSdfTex);
         SAMPLER(sampler_HectonCaveVoxelSdfTex);
         float _HectonCaveVoxelActive;
@@ -127,6 +134,52 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             return lineMask * lineMask;
         }
 
+        float2 ResolveBakedAtlasUv(float2 localUv, float frameIndex, float columns, float rows)
+        {
+            float safeColumns = max(columns, 1.0);
+            float safeRows = max(rows, 1.0);
+            float cellY = floor(frameIndex / safeColumns);
+            float cellX = frameIndex - cellY * safeColumns;
+            float2 cellSize = rcp(float2(safeColumns, safeRows));
+            float2 inset = min(max(_HectonBakedCausticAtlasTexelParams.xy, 0.0) * 1.5, 0.25);
+            float2 safeLocalUv = lerp(inset, 1.0 - inset, frac(localUv));
+            return (float2(cellX, cellY) + safeLocalUv) * cellSize;
+        }
+
+        half3 SampleBakedCausticAtlas(float2 uv, float flowPhase, float quality)
+        {
+            float columns = max(floor(_HectonBakedCausticAtlasParams.y + 0.5), 1.0);
+            float rows = max(floor(_HectonBakedCausticAtlasParams.z + 0.5), 1.0);
+            float frameLimit = max(columns * rows, 1.0);
+            float frameCount = clamp(floor(_HectonBakedCausticAtlasParams.w + 0.5), 1.0, frameLimit);
+            float frameCursor = frac(flowPhase * 0.125) * frameCount;
+            float frame0 = floor(frameCursor);
+            float frame1 = frame0 + 1.0;
+            frame1 = frame1 - floor(frame1 / frameCount) * frameCount;
+            float frameBlend = frac(frameCursor) * smoothstep(0.24, 0.76, saturate(quality));
+            half3 caustic0 = SAMPLE_TEXTURE2D(_HectonBakedCausticAtlas, sampler_HectonBakedCausticAtlas, ResolveBakedAtlasUv(uv, frame0, columns, rows)).rgb;
+            [branch]
+            if (frameBlend > 0.0001)
+            {
+                half3 caustic1 = SAMPLE_TEXTURE2D(_HectonBakedCausticAtlas, sampler_HectonBakedCausticAtlas, ResolveBakedAtlasUv(uv, frame1, columns, rows)).rgb;
+                return lerp(caustic0, caustic1, (half)frameBlend);
+            }
+
+            return caustic0;
+        }
+
+        float ResolveBakedWaterlineMask(float3 worldPos)
+        {
+            float maskWeight = saturate(_HectonBakedCausticWaterlineParams.x);
+            [branch]
+            if (maskWeight <= 0.0001)
+                return 1.0;
+
+            float maskV = saturate((worldPos.y - _HectonBakedCausticWaterlineParams.y) * max(_HectonBakedCausticWaterlineParams.z, 0.0001));
+            float mask = SAMPLE_TEXTURE2D(_HectonBakedCausticWaterlineMask, sampler_HectonBakedCausticWaterlineMask, float2(0.5, maskV)).r;
+            return lerp(1.0, mask, maskWeight);
+        }
+
         float SampleCaveVoxelSignedDistance(float3 positionWS)
         {
             if (_HectonCaveVoxelActive <= 0.5)
@@ -209,33 +262,49 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             float baseScale = max(SafeFinite(ProjectionVectorAndScale.w, 0.05), 0.001);
             float2 uv0 = ProjectCausticUv(worldPos, sunToSurface, baseScale);
 
-            float layer0 = CausticLineLayer(uv0);
-            float secondWeight = smoothstep(0.34, 0.82, quality);
-            float chromaWeight = smoothstep(0.62, 1.0, quality);
-            float caustic = layer0;
+            float atlasWeight = saturate(_HectonBakedCausticAtlasParams.x);
+            float proceduralWeight = 1.0 - atlasWeight;
+            half3 causticRgb = half3(0.0, 0.0, 0.0);
             [branch]
-            if (secondWeight > 0.0001)
+            if (atlasWeight > 0.0001)
             {
-                float2 uv1 = uv0 * (1.731 + quality * 0.19) + float2(17.31, -9.42) + NoiseAnimationSpeed.z * float2(-0.019, 0.027);
-                caustic += CausticLineLayer(uv1) * secondWeight * 0.62;
+                causticRgb += SampleBakedCausticAtlas(uv0, NoiseAnimationSpeed.z, quality) * (half)atlasWeight;
+            }
+
+            [branch]
+            if (proceduralWeight > 0.0001)
+            {
+                float layer0 = CausticLineLayer(uv0);
+                float secondWeight = smoothstep(0.34, 0.82, quality);
+                float chromaWeight = smoothstep(0.62, 1.0, quality);
+                float caustic = layer0;
+                [branch]
+                if (secondWeight > 0.0001)
+                {
+                    float2 uv1 = uv0 * (1.731 + quality * 0.19) + float2(17.31, -9.42) + NoiseAnimationSpeed.z * float2(-0.019, 0.027);
+                    caustic += CausticLineLayer(uv1) * secondWeight * 0.62;
+                }
+
+                float chromaticDispersion = saturate(NoiseAnimationSpeed.w) * chromaWeight;
+                float causticR = caustic;
+                float causticB = caustic;
+                [branch]
+                if (chromaticDispersion > 0.0001)
+                {
+                    causticR = lerp(caustic, CausticLineLayer(uv0 + sunToSurface.xz * (0.035 + chromaticDispersion * 0.055)), chromaticDispersion);
+                    causticB = lerp(caustic, CausticLineLayer(uv0 - sunToSurface.xz * (0.029 + chromaticDispersion * 0.051)), chromaticDispersion);
+                }
+
+                causticRgb += half3(causticR, caustic, causticB) * (half)proceduralWeight;
             }
 
             float depthFade = saturate(1.0 - linearEyeDepth * max(IntensityAndDepthFalloff.y, 0.00001));
             depthFade *= depthFade;
             float sdfOcclusion = ResolveSdfCavernOcclusion(worldPos, sunToSurface, quality, IntensityAndDepthFalloff.w);
-            float chromaticDispersion = saturate(NoiseAnimationSpeed.w) * chromaWeight;
-            float causticR = caustic;
-            float causticB = caustic;
-            [branch]
-            if (chromaticDispersion > 0.0001)
-            {
-                causticR = lerp(caustic, CausticLineLayer(uv0 + sunToSurface.xz * (0.035 + chromaticDispersion * 0.055)), chromaticDispersion);
-                causticB = lerp(caustic, CausticLineLayer(uv0 - sunToSurface.xz * (0.029 + chromaticDispersion * 0.051)), chromaticDispersion);
-            }
-
+            float waterlineMask = ResolveBakedWaterlineMask(worldPos);
             half3 causticTint = half3(QualityAndColor.y, QualityAndColor.z, QualityAndColor.w);
-            half3 causticRgb = half3(causticR, caustic, causticB) * causticTint;
-            half energy = (half)(intensity * depthFade * sdfOcclusion);
+            causticRgb *= causticTint;
+            half energy = (half)(intensity * depthFade * sdfOcclusion * waterlineMask);
             sourceColor.rgb = sourceColor.rgb + sourceColor.rgb * causticRgb * energy;
             return sourceColor;
         }

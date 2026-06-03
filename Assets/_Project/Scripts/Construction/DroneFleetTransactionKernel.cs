@@ -199,59 +199,6 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct GenerateMockDroneTransactionsJob : IJobParallelFor
-    {
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTaskDTO> Tasks;
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTransactionIntegrityDTO> Integrity;
-        public int RequestedCount;
-        public uint RepairTaskHash;
-        public uint MiningTaskHash;
-        public uint InventoryPayloadHash;
-        public float GlobalQualityWeight;
-
-        public void Execute(int index)
-        {
-            if ((uint)index >= (uint)RequestedCount || (uint)index >= (uint)Tasks.Length)
-                return;
-
-            bool repair = (index & 1) == 0;
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
-            DroneTaskDTO task = default;
-            task.TargetEntityHash = HashIndex(index);
-            task.TaskTypeHash = repair ? RepairTaskHash : MiningTaskHash;
-            task.TaskProgress01 = repair ? 0f : math.saturate((index & 3) * 0.2f);
-            task.TaskEfficiencyScalar = repair ? math.lerp(0.002f, 0.012f, quality) : math.lerp(0.25f, 1f, quality);
-            task.InventoryPayloadHash = repair ? 0u : InventoryPayloadHash;
-            Tasks[index] = task;
-
-            if (Integrity.IsCreated && (uint)index < (uint)Integrity.Length)
-            {
-                DroneTransactionIntegrityDTO integrity = default;
-                integrity.TargetEntityHash = task.TargetEntityHash;
-                integrity.CurrentIntegrityMilli = repair ? 550 : 1000;
-                integrity.MaxRecoverableIntegrityMilli = 1000;
-                integrity.RepairBudgetMilli = repair ? math.max(1, (int)math.round(math.lerp(2f, 12f, quality))) : 0;
-                integrity.Flags = 1u;
-                integrity.CommandIndex = index;
-                integrity.Slot = index;
-                Integrity[index] = integrity;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint HashIndex(int index)
-        {
-            uint value = (uint)index + 0x9E3779B9u;
-            value ^= value >> 16;
-            value *= 0x7FEB352Du;
-            value ^= value >> 15;
-            value *= 0x846CA68Bu;
-            value ^= value >> 16;
-            return value == 0u ? 1u : value;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct EvaluateDroneTransactionsJob : IJobParallelFor
     {
         private const int InventoryQuantityPerMiningCompletion = 1;

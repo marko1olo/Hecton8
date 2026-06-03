@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7419018022176660366}
   - component: {fileID: 1131986098855177611}
+  - component: {fileID: 4723622994608766939}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__frilltuft__s75-125
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 12876709050151065}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.004529357, y: 1.4029058, z: 0.030276656}
-  m_Size: 2.8058116
+  m_LocalReferencePoint: {x: -0.0045044124, y: 1.4830837, z: 0.039093643}
+  m_Size: 2.9661674
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 5963046109706840546}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &4723622994608766939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12876709050151065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 7f30b73bb946bc040a2cd8ba778888f1, type: 2}
 --- !u!1 &4836713238588853525
 GameObject:
   m_ObjectHideFlags: 0

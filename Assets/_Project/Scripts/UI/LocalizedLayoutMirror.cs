@@ -15,7 +15,11 @@ namespace Hecton8.UI
         private static bool s_isRebuildingLayout;
         private static ILocalizationTextReadModel s_cachedLocalization;
         private static bool s_localizationColdResolved;
+        private static int s_failedLocalizationResolveFrame = -1;
         private const int MaxMirroredIconRoots = 32;
+        private const int MaxMirrorAppliesPerLateFrame = 18;
+        private static int s_applyBudgetFrame = -1;
+        private static int s_applyBudgetUsed;
 
         [Header("References")]
         [Tooltip("Target layout group to mirror. Defaults to the component on the same GameObject.")]
@@ -206,10 +210,18 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (!_applyMirroringPending)
+            {
+                TryUnregisterFromTick();
+                return;
+            }
+
+            if (!TryConsumeApplyBudget())
                 return;
 
             _applyMirroringPending = false;
             ApplyMirroring();
+            if (!_applyMirroringPending)
+                TryUnregisterFromTick();
         }
 
         private void TryRegisterForTick()
@@ -290,14 +302,36 @@ namespace Hecton8.UI
             if (s_localizationColdResolved && s_cachedLocalization != null)
                 return;
 
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (s_failedLocalizationResolveFrame == frame)
+                return;
+
             s_cachedLocalization = GlobalRegistry.LocalizationText;
             s_localizationColdResolved = s_cachedLocalization != null;
+            if (s_cachedLocalization == null)
+                s_failedLocalizationResolveFrame = frame;
         }
 
         private static GameLanguage ResolveCurrentLanguage()
         {
             ILocalizationTextReadModel manager = s_cachedLocalization;
             return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
+        }
+
+        private static bool TryConsumeApplyBudget()
+        {
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (s_applyBudgetFrame != frame)
+            {
+                s_applyBudgetFrame = frame;
+                s_applyBudgetUsed = 0;
+            }
+
+            if (s_applyBudgetUsed >= MaxMirrorAppliesPerLateFrame)
+                return false;
+
+            s_applyBudgetUsed++;
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -653,7 +687,7 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Configure runtime-created layout roots for localization mirroring.
+        /// Configure authored layout roots for localization mirroring.
         /// </summary>
         public static void ConfigureRuntime(
             HorizontalOrVerticalLayoutGroup layoutGroup,
@@ -670,7 +704,7 @@ namespace Hecton8.UI
                 : rectTransform.gameObject;
             owner.TryGetComponent(out LocalizedLayoutMirror mirror);
             if (mirror == null)
-                mirror = owner.AddComponent<LocalizedLayoutMirror>();
+                return;
 
             mirror.targetLayoutGroup = layoutGroup;
             mirror.targetRect = rectTransform;

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P446_FIRST_HOUR_PLACEMENT_BRIEF",
+      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+      "article_id": "applied_lore.first_hour_placement_brief",
+      "title_key": "applied_lore.first_hour_placement_brief.title",
+      "unlock": {
+        "primary": "unlock.first_hour_placement_brief",
+        "poi_tags": [
+          "poi.first_hour_anchor_batch",
+          "poi.capsule_p63_lie_trace",
+          "poi.unity_scene_anchor_brief"
+        ],
+        "biome_tags": [
+          "biome.first_hour",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "First Hour Placement Brief",
+          "scanner": "Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "ru_RU": {
+          "title": "Brief расстановки первого часа",
+          "scanner": "Placement brief: capsule scar, P-63 pump/fabricator, первая ложь Deep Reach и первый Atlas repair trace требуют физические anchors.",
+          "terminal": "PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Правило opening: заставь игрока чинить до того, как мир начнет объясняться.",
+          "in_game_wiki": "Первому часу нужны objects, а не lore walls. Каждый anchor учит действию и противоречит чистой corporate surface.",
+          "external_site": "Production screenshots открытия должны показывать pressure repair, route sound и красивые shallows под реальным damage.",
+          "field_note": "Unity pass: расставить это первым, потому что это несет vertical slice identity. Не тратить terminal slots на broad encyclopedia text до этих anchors."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft JA localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft JA localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft JA localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft JA localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft JA localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft JA localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft ZH localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft ZH localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft ZH localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft ZH localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft ZH localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft FR localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft FR localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft FR localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft FR localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft FR localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft FR localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft ES localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft ES localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft ES localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft ES localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft ES localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft ES localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft DE localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft DE localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft DE localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft DE localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft DE localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft DE localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft PL localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft PL localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft PL localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft PL localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft PL localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft PL localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft UK localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft UK localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft UK localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft UK localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft UK localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft UK localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft AR localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft AR localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft AR localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft AR localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft AR localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft AR localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft ID localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft ID localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft ID localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft ID localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft ID localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft ID localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft KO localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft KO localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft KO localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft KO localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft KO localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft KO localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft HE localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft HE localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft HE localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft HE localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft HE localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft HE localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft PT localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft PT localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft PT localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft PT localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft PT localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft PT localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. First Hour Placement Brief",
+          "scanner": "Draft NL localization pending native pass. Placement brief: capsule scar, P-63 pump/fabricator, first Deep Reach lie and first Atlas repair trace need physical anchors.",
+          "terminal": "Draft NL localization pending native pass. PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+          "audio": "Draft NL localization pending native pass. Opening rule: make the player fix something before the world explains itself.",
+          "in_game_wiki": "Draft NL localization pending native pass. The first hour needs objects, not lore walls. Each anchor should teach an action and contradict a clean corporate surface.",
+          "external_site": "Draft NL localization pending native pass. Opening production screenshots should show pressure repair, route sound and beautiful shallows under real damage.",
+          "field_note": "Draft NL localization pending native pass. Unity pass: place these first because they carry the vertical slice identity. Do not spend terminal slots on broad encyclopedia text before these anchors exist."
+        }
+      }
+    },
+    {
+      "packet_id": "P447_MID_DEPTH_ROUTE_PLACEMENT_BRIEF",
+      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+      "article_id": "applied_lore.mid_depth_route_placement_brief",
+      "title_key": "applied_lore.mid_depth_route_placement_brief.title",
+      "unlock": {
+        "primary": "unlock.mid_depth_route_placement_brief",
+        "poi_tags": [
+          "poi.mid_depth_route_anchor_batch",
+          "poi.brine_relay_seal_objects",
+          "poi.route_cost_brief"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.cable_reef"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Mid Depth Route Placement Brief",
+          "scanner": "Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "ru_RU": {
+          "title": "Brief расстановки mid-depth routes",
+          "scanner": "Placement brief: mid-depth routes требуют pinger loss, brine density errors, relay scars, evacuation clocks и seal-rate failures.",
+          "terminal": "PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Route note: если комната доказывает delay, terminal может быть коротким.",
+          "in_game_wiki": "Mid-depth placement должен делать culpability Deep Reach читаемой через route damage, не через monologues.",
+          "external_site": "Article imagery должна показывать brine machinery, failed evacuation timing и practical route evidence вместе.",
+          "field_note": "Unity pass: приоритет у objects, которые соединяют route affordance и proof. Prop, который только объясняет lore и не меняет route judgment, ниже."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft JA localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft JA localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft JA localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft JA localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft JA localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft JA localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft ZH localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft ZH localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft ZH localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft ZH localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft ZH localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft FR localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft FR localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft FR localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft FR localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft FR localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft FR localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft ES localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft ES localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft ES localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft ES localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft ES localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft ES localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft DE localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft DE localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft DE localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft DE localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft DE localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft DE localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft PL localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft PL localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft PL localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft PL localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft PL localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft PL localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft UK localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft UK localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft UK localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft UK localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft UK localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft UK localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft AR localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft AR localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft AR localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft AR localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft AR localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft AR localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft ID localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft ID localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft ID localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft ID localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft ID localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft ID localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft KO localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft KO localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft KO localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft KO localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft KO localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft KO localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft HE localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft HE localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft HE localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft HE localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft HE localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft HE localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft PT localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft PT localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft PT localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft PT localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft PT localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft PT localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Mid Depth Route Placement Brief",
+          "scanner": "Draft NL localization pending native pass. Placement brief: mid-depth routes need pinger loss, brine density errors, relay scars, evacuation clocks and seal-rate failures.",
+          "terminal": "Draft NL localization pending native pass. PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+          "audio": "Draft NL localization pending native pass. Route note: if the room proves a delay, the terminal can stay short.",
+          "in_game_wiki": "Draft NL localization pending native pass. Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+          "external_site": "Draft NL localization pending native pass. Article imagery should show brine machinery, failed evacuation timing and practical route evidence together.",
+          "field_note": "Draft NL localization pending native pass. Unity pass: prioritize objects that combine route affordance and proof. A prop that only explains lore without changing route judgment is lower priority."
+        }
+      }
+    },
+    {
+      "packet_id": "P448_ECOLOGY_SCAN_PLACEMENT_BRIEF",
+      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+      "article_id": "applied_lore.ecology_scan_placement_brief",
+      "title_key": "applied_lore.ecology_scan_placement_brief.title",
+      "unlock": {
+        "primary": "unlock.ecology_scan_placement_brief",
+        "poi_tags": [
+          "poi.ecology_scan_anchor_batch",
+          "poi.fauna_route_grammar_anchor",
+          "poi.repair_network_scan_brief"
+        ],
+        "biome_tags": [
+          "biome.deep_ecology",
+          "biome.scanner_ui"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ecology Scan Placement Brief",
+          "scanner": "Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "ru_RU": {
+          "title": "Brief расстановки ecology scans",
+          "scanner": "Placement brief: fauna/flora scan anchors подходят только когда меняют sound, route safety, resource handling или suspicion на Atlas-contamination.",
+          "terminal": "PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Scan rule: creature является хорошим content только если меняет следующее действие игрока.",
+          "in_game_wiki": "Ecology надо расставлять как route grammar. Scan card должен заслужить codex entry через физическое решение.",
+          "external_site": "Публичные ecology articles должны показывать beauty under pressure и более позднее вмешательство Atlas repair logic.",
+          "field_note": "Unity pass: scatter by decision pressure, не by species checklist. Использовать absence, sound и route deformation до full reveal."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft JA localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft JA localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft JA localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft JA localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft JA localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft JA localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft ZH localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft ZH localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft ZH localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft ZH localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft ZH localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft FR localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft FR localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft FR localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft FR localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft FR localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft FR localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft ES localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft ES localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft ES localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft ES localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft ES localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft ES localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft DE localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft DE localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft DE localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft DE localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft DE localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft DE localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft PL localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft PL localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft PL localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft PL localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft PL localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft UK localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft UK localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft UK localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft UK localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft UK localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft UK localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft AR localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft AR localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft AR localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft AR localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft AR localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft AR localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft ID localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft ID localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft ID localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft ID localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft ID localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft ID localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft KO localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft KO localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft KO localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft KO localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft KO localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft KO localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft HE localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft HE localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft HE localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft HE localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft HE localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft HE localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft PT localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft PT localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft PT localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft PT localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft PT localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft PT localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Ecology Scan Placement Brief",
+          "scanner": "Draft NL localization pending native pass. Placement brief: fauna/flora scan anchors only qualify when they change sound, route safety, resource handling or Atlas-contamination suspicion.",
+          "terminal": "Draft NL localization pending native pass. PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+          "audio": "Draft NL localization pending native pass. Scan rule: the creature is good content only if it changes what the player does next.",
+          "in_game_wiki": "Draft NL localization pending native pass. Ecology should be placed as route grammar. A scan card must earn its codex entry through a physical decision.",
+          "external_site": "Draft NL localization pending native pass. Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+          "field_note": "Draft NL localization pending native pass. Unity pass: scatter these by decision pressure, not by species checklist. Use absence, sound and route deformation before full reveal."
+        }
+      }
+    },
+    {
+      "packet_id": "P449_FINAL_DESCENT_PLACEMENT_BRIEF",
+      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+      "article_id": "applied_lore.final_descent_placement_brief",
+      "title_key": "applied_lore.final_descent_placement_brief.title",
+      "unlock": {
+        "primary": "unlock.final_descent_placement_brief",
+        "poi_tags": [
+          "poi.final_descent_anchor_batch",
+          "poi.atlas_basin_gate_brief",
+          "poi.payload_receiver_socket_brief"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Final Descent Placement Brief",
+          "scanner": "Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "ru_RU": {
+          "title": "Brief расстановки final descent",
+          "scanner": "Placement brief: final descent требует warning, gate, factory-threshold, service basin и payload receiver sockets до ending text.",
+          "terminal": "PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Bottom rule: final question должен выглядеть как industrial connection, не dialogue wheel.",
+          "in_game_wiki": "Atlas basin должен ощущаться как factory ship, который стал shrine только потому что maintenance потерял categories.",
+          "external_site": "Spoiler-gated imagery должна показывать custody hardware, pressure scale и living industrial tissue без публичного объяснения final outcomes.",
+          "field_note": "Unity pass: final anchors должны поддерживать multiple receiver endings. Не ставить single moral pedestal; ставить industrial sockets with consequences."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft JA localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft JA localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft JA localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft JA localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft JA localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft JA localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft ZH localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft ZH localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft ZH localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft ZH localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft ZH localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft FR localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft FR localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft FR localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft FR localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft FR localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft ES localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft ES localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft ES localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft ES localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft ES localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft DE localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft DE localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft DE localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft DE localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft DE localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft PL localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft PL localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft PL localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft PL localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft PL localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft UK localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft UK localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft UK localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft UK localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft UK localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft AR localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft AR localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft AR localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft AR localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft AR localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft ID localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft ID localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft ID localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft ID localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft ID localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft KO localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft KO localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft KO localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft KO localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft KO localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft HE localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft HE localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft HE localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft HE localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft HE localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft PT localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft PT localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft PT localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft PT localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft PT localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft PT localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Final Descent Placement Brief",
+          "scanner": "Draft NL localization pending native pass. Placement brief: final descent needs warning, gate, factory-threshold, service basin and payload receiver sockets before ending text.",
+          "terminal": "Draft NL localization pending native pass. PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+          "audio": "Draft NL localization pending native pass. Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+          "external_site": "Draft NL localization pending native pass. Spoiler-gated imagery should show custody hardware, pressure scale and living industrial tissue without explaining final outcomes publicly.",
+          "field_note": "Draft NL localization pending native pass. Unity pass: final anchors must support multiple receiver endings. Do not place a single moral pedestal; place industrial sockets with consequences."
+        }
+      }
+    },
+    {
+      "packet_id": "P450_TERMINAL_SLOT_PROMOTION_BRIEF",
+      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+      "article_id": "applied_lore.terminal_slot_promotion_brief",
+      "title_key": "applied_lore.terminal_slot_promotion_brief.title",
+      "unlock": {
+        "primary": "unlock.terminal_slot_promotion_brief",
+        "poi_tags": [
+          "poi.terminal_slot_promotion_brief",
+          "poi.message_terminal_triage",
+          "poi.narrative_discovery_backlog_rule"
+        ],
+        "biome_tags": [
+          "biome.authoring",
+          "biome.terminal_ui"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Terminal Slot Promotion Brief",
+          "scanner": "Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "ru_RU": {
+          "title": "Brief продвижения terminal slots",
+          "scanner": "Placement brief: terminal promotion только для first-hour orders, legal contradictions, receiver choices и proof chains.",
+          "terminal": "PROMOTE TERMINAL: если меняет immediate action, доказывает lie, открывает route или меняет ending custody. Иначе оставить NarrativeDiscovery.",
+          "audio": "Operator rule: hardware space - это claim. Не тратить его на decoration.",
+          "in_game_wiki": "Terminal slots должны оставаться diegetic и useful. Backlog может держать много codex facts; real terminals должны влиять на decision.",
+          "external_site": "Production notes могут говорить, что HECTON-8 uses terminals as instruments, not lore dump billboards.",
+          "field_note": "Unity pass: текущая TerminalOS capacity остается 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft JA localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft JA localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft JA localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft JA localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft JA localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft JA localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft ZH localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft ZH localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft ZH localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft ZH localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft ZH localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft FR localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft FR localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft FR localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft FR localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft FR localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft FR localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft ES localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft ES localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft ES localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft ES localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft ES localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft ES localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft DE localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft DE localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft DE localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft DE localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft DE localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft DE localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft PL localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft PL localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft PL localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft PL localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft PL localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft PL localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft UK localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft UK localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft UK localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft UK localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft UK localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft UK localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft AR localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft AR localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft AR localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft AR localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft AR localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft AR localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft ID localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft ID localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft ID localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft ID localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft ID localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft ID localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft KO localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft KO localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft KO localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft KO localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft KO localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft KO localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft HE localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft HE localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft HE localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft HE localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft HE localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft HE localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft PT localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft PT localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft PT localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft PT localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft PT localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft PT localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Terminal Slot Promotion Brief",
+          "scanner": "Draft NL localization pending native pass. Placement brief: terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices and proof chains.",
+          "terminal": "Draft NL localization pending native pass. PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+          "audio": "Draft NL localization pending native pass. Operator rule: hardware space is a claim. Do not spend it on decoration.",
+          "in_game_wiki": "Draft NL localization pending native pass. Terminal slots should stay diegetic and useful. The backlog can hold many codex facts; real terminals must affect a decision.",
+          "external_site": "Draft NL localization pending native pass. Production notes can state that HECTON-8 uses terminals as instruments, not as lore dump billboards.",
+          "field_note": "Draft NL localization pending native pass. Unity pass: current TerminalOS capacity remains 27 verified slots. New rows stay NarrativeDiscovery until a terminal row has route or ending value."
+        }
+      }
+    }
+  ]
+}

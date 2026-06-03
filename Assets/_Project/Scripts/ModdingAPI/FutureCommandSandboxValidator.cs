@@ -567,6 +567,7 @@ namespace Hecton8.Modding
         private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.ExitingEditMode ||
                 state == PlayModeStateChange.EnteredEditMode)
             {
                 Shutdown();
@@ -576,6 +577,10 @@ namespace Hecton8.Modding
 
         internal static void Initialize()
         {
+#if UNITY_EDITOR
+            InstallEditorLifecycleShutdownHook();
+#endif
+
             if (_initialized)
                 return;
 
@@ -593,15 +598,27 @@ namespace Hecton8.Modding
 
         internal static void Shutdown()
         {
-            CompleteScheduledPreSimulationForBarrier();
-            ReleaseVaultHandles(_dataVault);
-            ReleaseValidationScratchBuffers();
-            _dataVault = null;
-            _scheduledValidationHandle = default;
-            _scheduledValidationState = default;
-            _scheduledValidationActive = false;
-            _lastLocalDumpFrame = -1;
-            _initialized = false;
+            try
+            {
+                CompleteScheduledPreSimulationForBarrier();
+            }
+            finally
+            {
+                try
+                {
+                    ReleaseVaultHandles(_dataVault);
+                }
+                finally
+                {
+                    ReleaseValidationScratchBuffers();
+                    _dataVault = null;
+                    _scheduledValidationHandle = default;
+                    _scheduledValidationState = default;
+                    _scheduledValidationActive = false;
+                    _lastLocalDumpFrame = -1;
+                    _initialized = false;
+                }
+            }
         }
 
         internal static void BindRegistryServicesCold()
@@ -2506,11 +2523,35 @@ namespace Hecton8.Modding
 
         private static void ReleaseValidationScratchBuffers()
         {
-            ReleaseValidationScratchBuffer(ref _validationScratchState);
-            ReleaseValidationScratchBuffer(ref _validationCounterScratch);
-            ReleaseValidationScratchBuffer(ref _validationMemoryWriteScratch);
-            ReleaseValidationScratchBuffer(ref _validationDevNullScratch);
-            ReleaseValidationScratchBuffer(ref _validationCameraImpulseScratch);
+            try
+            {
+                ReleaseValidationScratchBuffer(ref _validationScratchState);
+            }
+            finally
+            {
+                try
+                {
+                    ReleaseValidationScratchBuffer(ref _validationCounterScratch);
+                }
+                finally
+                {
+                    try
+                    {
+                        ReleaseValidationScratchBuffer(ref _validationMemoryWriteScratch);
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            ReleaseValidationScratchBuffer(ref _validationDevNullScratch);
+                        }
+                        finally
+                        {
+                            ReleaseValidationScratchBuffer(ref _validationCameraImpulseScratch);
+                        }
+                    }
+                }
+            }
         }
 
         private static void ReleaseValidationScratchBuffer<T>(ref NativeArray<T> buffer) where T : struct
@@ -2518,7 +2559,13 @@ namespace Hecton8.Modding
             if (!buffer.IsCreated)
                 return;
 
-            H8Memory.Release(ref buffer, SystemID.ModSandbox);
+            bool memoryTrackerAvailable = H8Memory.IsInitialized;
+            if (memoryTrackerAvailable)
+                H8Memory.Release(ref buffer, SystemID.ModSandbox);
+
+            if (buffer.IsCreated)
+                buffer.Dispose();
+
             buffer = default;
         }
 

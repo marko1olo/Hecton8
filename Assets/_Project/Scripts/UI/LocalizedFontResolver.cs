@@ -11,12 +11,21 @@ namespace Hecton8.UI
     /// </summary>
     public static class LocalizedFontResolver
     {
-        private const string PrimaryPdaFontName = "\u0442\u0435\u043A\u0441\u0442 SDF";
-        private const string TextFontToken = "\u0442\u0435\u043A\u0441\u0442";
         private const string NumericFontToken = "\u0446\u0438\u0444";
         private const string CjkScFontToken = "notosanscjksc";
         private const string CjkJpFontToken = "notosanscjkjp";
+        private const string GeneratedCjkScFontToken = "cjk_sc";
+        private const string GeneratedCjkJpFontToken = "cjk_jp";
         private const string ArabicFontToken = "arabic";
+        private const uint CjkUnifiedOneGlyph = 0x4E00u;
+        private const uint CjkUnifiedMiddleGlyph = 0x4E2Du;
+        private const uint HiraganaA = 0x3042u;
+        private const uint KatakanaA = 0x30A2u;
+        private const uint HangulHan = 0xD55Cu;
+        private const uint HangulGeul = 0xAE00u;
+        private const uint ArabicAlef = 0x0627u;
+        private const uint ArabicBeh = 0x0628u;
+        private const uint ArabicMeem = 0x0645u;
 
         private static TMP_FontAsset _cachedReadableFont;
         private static TMP_FontAsset _cachedReadableFontCjkSc;
@@ -66,6 +75,7 @@ namespace Hecton8.UI
         public static TMP_FontAsset ResolveReadableFontForLanguage(TMP_FontAsset preferred, GameLanguage language)
         {
             if (preferred != null &&
+                IsFontReady(preferred) &&
                 !IsNumericOnlyFont(preferred) &&
                 FontSupportsLanguage(preferred, language))
             {
@@ -73,12 +83,22 @@ namespace Hecton8.UI
             }
 
             TMP_FontAsset cached = GetCachedLanguageFont(language);
-            if (cached != null)
+            if (IsFontReady(cached))
                 return cached;
 
             CacheLanguageFonts(preferred);
             TMP_FontAsset resolved = GetCachedLanguageFont(language);
-            return resolved != null ? resolved : TMP_Settings.defaultFontAsset;
+            if (IsFontReady(resolved))
+                return resolved;
+
+            TMP_FontAsset biosFallback = ResolveBiosFallbackFont();
+            if ((IsCjkLanguage(language) || language == GameLanguage.Arabic) &&
+                !FontSupportsLanguage(biosFallback, language))
+            {
+                return null;
+            }
+
+            return biosFallback;
         }
 
         /// <summary>
@@ -86,11 +106,11 @@ namespace Hecton8.UI
         /// </summary>
         public static TMP_FontAsset ResolveNumericFont(TMP_FontAsset preferred, TMP_FontAsset readableFallback)
         {
-            if (preferred != null)
+            if (IsFontReady(preferred))
                 return preferred;
 
             TMP_FontAsset resolvedReadable = ResolveReadableFont(readableFallback);
-            return resolvedReadable != null ? resolvedReadable : TMP_Settings.defaultFontAsset;
+            return IsFontReady(resolvedReadable) ? resolvedReadable : null;
         }
 
         /// <summary>
@@ -101,11 +121,11 @@ namespace Hecton8.UI
             TMP_FontAsset readableFallback,
             LocalizationManager manager)
         {
-            if (preferred != null)
+            if (IsFontReady(preferred))
                 return preferred;
 
             TMP_FontAsset resolvedReadable = ResolveReadableFont(readableFallback, manager);
-            return resolvedReadable != null ? resolvedReadable : TMP_Settings.defaultFontAsset;
+            return IsFontReady(resolvedReadable) ? resolvedReadable : null;
         }
 
         /// <summary>
@@ -117,14 +137,14 @@ namespace Hecton8.UI
                 return _cachedBiosFallbackFont;
 
             TMP_FontAsset defaultFont = TMP_Settings.defaultFontAsset;
-            if (IsFontReady(defaultFont))
+            if (IsFontReady(defaultFont) && !IsNumericOnlyFont(defaultFont))
             {
                 _cachedBiosFallbackFont = defaultFont;
                 return _cachedBiosFallbackFont;
             }
 
             if (TMP_Settings.fallbackFontAssets == null)
-                return defaultFont;
+                return null;
 
             for (int i = 0; i < TMP_Settings.fallbackFontAssets.Count; i++)
             {
@@ -136,21 +156,15 @@ namespace Hecton8.UI
                 return _cachedBiosFallbackFont;
             }
 
-            _cachedBiosFallbackFont = defaultFont;
-            return _cachedBiosFallbackFont;
+            _cachedBiosFallbackFont = null;
+            return null;
         }
 
         /// <summary>
-        /// Clears dynamic TMP atlas data for the cached localization font assets before domain teardown.
+        /// Releases cached localization font references. Glyph atlas ownership is static and editor-baked.
         /// </summary>
         public static void ReleaseCachedRuntimeFonts()
         {
-            TryClearDynamicFontData(_cachedReadableFont);
-            TryClearDynamicFontData(_cachedReadableFontCjkSc);
-            TryClearDynamicFontData(_cachedReadableFontCjkJp);
-            TryClearDynamicFontData(_cachedReadableFontArabic);
-            TryClearDynamicFontData(_cachedBiosFallbackFont);
-
             _cachedReadableFont = null;
             _cachedReadableFontCjkSc = null;
             _cachedReadableFontCjkJp = null;
@@ -159,34 +173,14 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Best-effort dynamic font cleanup used during manager shutdown.
-        /// </summary>
-        public static void TryClearDynamicFontData(TMP_FontAsset font)
-        {
-            if (font == null || font.atlasPopulationMode != AtlasPopulationMode.Dynamic)
-                return;
-
-            if (!HasResolvableAtlas(font))
-                return;
-
-            try
-            {
-                font.ClearFontAssetData(false);
-            }
-            catch (MissingReferenceException)
-            {
-            }
-            catch (UnassignedReferenceException)
-            {
-            }
-        }
-
-        /// <summary>
         /// True when the font asset exposes both a material and an atlas texture ready for staged swap.
         /// </summary>
         public static bool IsFontReady(TMP_FontAsset font)
         {
             if (font == null || font.material == null)
+                return false;
+
+            if (font.atlasPopulationMode != AtlasPopulationMode.Static || font.isMultiAtlasTexturesEnabled)
                 return false;
 
             return HasResolvableAtlas(font);
@@ -220,9 +214,6 @@ namespace Hecton8.UI
         private static void CacheLanguageFonts(TMP_FontAsset preferred)
         {
             TMP_FontAsset primary = ResolvePrimaryReadableFont(preferred);
-            if (primary == null)
-                primary = TMP_Settings.defaultFontAsset;
-
             _cachedReadableFont = primary;
             _cachedReadableFontCjkSc = ResolveLanguageFallback(primary, GameLanguage.ChineseSimplified);
             _cachedReadableFontCjkJp = ResolveLanguageFallback(primary, GameLanguage.Japanese);
@@ -251,24 +242,24 @@ namespace Hecton8.UI
 
         private static TMP_FontAsset ResolvePrimaryReadableFont(TMP_FontAsset preferred)
         {
-            if (preferred != null && !IsNumericOnlyFont(preferred))
+            if (preferred != null && IsFontReady(preferred) && !IsNumericOnlyFont(preferred))
                 return preferred;
 
             TMP_FontAsset defaultFont = TMP_Settings.defaultFontAsset;
-            if (defaultFont != null && !IsNumericOnlyFont(defaultFont))
+            if (IsFontReady(defaultFont) && !IsNumericOnlyFont(defaultFont))
                 return defaultFont;
 
             if (TMP_Settings.fallbackFontAssets == null)
-                return defaultFont;
+                return null;
 
             for (int i = 0; i < TMP_Settings.fallbackFontAssets.Count; i++)
             {
                 TMP_FontAsset candidate = TMP_Settings.fallbackFontAssets[i];
-                if (candidate != null && !IsNumericOnlyFont(candidate))
+                if (IsFontReady(candidate) && !IsNumericOnlyFont(candidate))
                     return candidate;
             }
 
-            return defaultFont;
+            return null;
         }
 
         private static TMP_FontAsset ResolveLanguageFallback(TMP_FontAsset primary, GameLanguage language)
@@ -287,10 +278,10 @@ namespace Hecton8.UI
                 return fallback;
 
             if (TMP_Settings.fallbackFontAssets == null)
-                return primary;
+                return null;
 
             fallback = FindLanguageFontInTable(TMP_Settings.fallbackFontAssets, language);
-            return fallback != null ? fallback : primary;
+            return fallback;
         }
 
         private static TMP_FontAsset FindLanguageFontInTable(System.Collections.Generic.List<TMP_FontAsset> table, GameLanguage language)
@@ -304,12 +295,8 @@ namespace Hecton8.UI
                 if (candidate == null || IsNumericOnlyFont(candidate))
                     continue;
 
-                if (FontSupportsLanguage(candidate, language))
+                if (IsFontReady(candidate) && FontSupportsLanguage(candidate, language))
                     return candidate;
-
-                TMP_FontAsset nested = FindLanguageFontInTable(candidate.fallbackFontAssetTable, language);
-                if (nested != null)
-                    return nested;
             }
 
             return null;
@@ -325,22 +312,61 @@ namespace Hecton8.UI
             {
                 case GameLanguage.ChineseSimplified:
                 case GameLanguage.ChineseTraditional:
+                    return HasCjkScName(name) &&
+                           HasGlyph(font, CjkUnifiedOneGlyph) &&
+                           HasGlyph(font, CjkUnifiedMiddleGlyph);
+
                 case GameLanguage.Korean:
-                    return name.IndexOf(CjkScFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                           name.IndexOf(TextFontToken, StringComparison.OrdinalIgnoreCase) >= 0;
+                    return HasCjkScName(name) &&
+                           HasGlyph(font, HangulHan) &&
+                           HasGlyph(font, HangulGeul);
 
                 case GameLanguage.Japanese:
-                    return name.IndexOf(CjkJpFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                           name.IndexOf(CjkScFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                           name.IndexOf(TextFontToken, StringComparison.OrdinalIgnoreCase) >= 0;
+                    return (HasCjkJpName(name) || HasCjkScName(name)) &&
+                           HasGlyph(font, HiraganaA) &&
+                           HasGlyph(font, KatakanaA) &&
+                           HasGlyph(font, CjkUnifiedOneGlyph);
 
                 case GameLanguage.Arabic:
-                    return name.IndexOf(ArabicFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                           name.IndexOf(TextFontToken, StringComparison.OrdinalIgnoreCase) >= 0;
+                    return name.IndexOf(ArabicFontToken, StringComparison.OrdinalIgnoreCase) >= 0 &&
+                           HasGlyph(font, ArabicAlef) &&
+                           HasGlyph(font, ArabicBeh) &&
+                           HasGlyph(font, ArabicMeem);
 
                 default:
                     return true;
             }
+        }
+
+        private static bool HasCjkScName(string name)
+        {
+            return name.IndexOf(CjkScFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf(GeneratedCjkScFontToken, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool HasCjkJpName(string name)
+        {
+            return name.IndexOf(CjkJpFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf(GeneratedCjkJpFontToken, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool HasGlyph(TMP_FontAsset font, uint unicode)
+        {
+            if (font == null)
+                return false;
+
+            var characterTable = font.characterTable;
+            if (characterTable == null)
+                return false;
+
+            for (int i = 0; i < characterTable.Count; i++)
+            {
+                TMP_Character character = characterTable[i];
+                if (character != null && character.unicode == unicode)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool HasResolvableAtlas(TMP_FontAsset font)
@@ -350,13 +376,19 @@ namespace Hecton8.UI
 
             try
             {
-                if (font.material != null && font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)
-                    return true;
+                Material material = font.material;
+                if (material == null)
+                    return false;
 
                 Texture[] atlasTextures = font.atlasTextures;
-                return atlasTextures != null &&
-                       atlasTextures.Length > 0 &&
-                       atlasTextures[0] != null;
+                if (atlasTextures == null ||
+                    atlasTextures.Length != 1 ||
+                    atlasTextures[0] == null)
+                {
+                    return false;
+                }
+
+                return ReferenceEquals(material.GetTexture(ShaderUtilities.ID_MainTex), atlasTextures[0]);
             }
             catch (MissingReferenceException)
             {

@@ -27,7 +27,7 @@ namespace Hecton8.EditorValidation
         private static void Validate()
         {
             StringBuilder failures = null;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
             {
                 Type[] types;

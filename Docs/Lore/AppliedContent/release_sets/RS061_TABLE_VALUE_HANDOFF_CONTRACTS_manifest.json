@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS061_TABLE_VALUE_HANDOFF_CONTRACTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P301_RESOURCE_YIELD_ROW_CONTRACT",
+    "P302_STACK_LIMIT_ROW_CONTRACT",
+    "P303_ESCAPE_RECIPE_COST_ROW_CONTRACT",
+    "P304_CONTRACT_RISK_REWARD_ROW_CONTRACT",
+    "P305_ENDING_PAYOUT_ROW_CONTRACT"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS061_TABLE_VALUE_HANDOFF_CONTRACTS.packets.json"
+  ]
+}

@@ -70,10 +70,10 @@ namespace Hecton8.UI
 
         private bool ValidateTerminalProjectionNativeBuffers()
         {
-            if (!TryOpenVaultBuffer(ref _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO> inputStates) ||
-                !TryOpenVaultBuffer(ref _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
-                !TryOpenVaultBuffer(ref _terminalInputTuningHandle, out NativeArray<TerminalInputTuningDTO> tuning) ||
-                !TryOpenVaultBuffer(ref _terminalInputRowHashesHandle, out NativeArray<uint> rowHashes))
+            if (!TryReadVaultBuffer(in _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO>.ReadOnly inputStates) ||
+                !TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry>.ReadOnly telemetryRing) ||
+                !TryReadVaultBuffer(in _terminalInputTuningHandle, out NativeArray<TerminalInputTuningDTO>.ReadOnly tuning) ||
+                !TryReadVaultBuffer(in _terminalInputRowHashesHandle, out NativeArray<uint>.ReadOnly rowHashes))
             {
                 return false;
             }
@@ -285,7 +285,7 @@ namespace Hecton8.UI
 
             GraphicsBuffer uploadBuffer = _terminalInputWriteBufferIndex == 0 ? _terminalInputStateBuffer0 : _terminalInputStateBuffer1;
             if (uploadBuffer == null ||
-                !TryOpenVaultBuffer(ref _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO> inputStates) ||
+                !TryReadVaultBuffer(in _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO>.ReadOnly inputStates) ||
                 !TryOpenVaultBuffer(ref _terminalInputRowHashesHandle, out NativeArray<uint> rowHashes))
             {
                 return false;
@@ -340,7 +340,7 @@ namespace Hecton8.UI
 
         private static bool UploadTerminalInputStateRun(
             GraphicsBuffer uploadBuffer,
-            NativeArray<TerminalInputStateDTO> inputStates,
+            NativeArray<TerminalInputStateDTO>.ReadOnly inputStates,
             int startIndex,
             int count)
         {
@@ -460,20 +460,13 @@ namespace Hecton8.UI
 
         private void RecordTerminalInputTelemetry(int frame, uint ownerFaultFlags)
         {
-            if (!TryOpenVaultBuffer(ref _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
-                telemetryRing.Length == 0)
-            {
-                return;
-            }
-
             uint projectionFaults = ownerFaultFlags;
             if (_lastTerminalProjectionNonFiniteCount > 0)
                 projectionFaults |= TerminalProjectionFaultNonFinite;
             if (_lastIntersectionMicroseconds > 200f)
                 projectionFaults |= TerminalProjectionFaultBudget;
 
-            int telemetryIndex = math.clamp(_terminalInputTelemetryCursor, 0, telemetryRing.Length - 1);
-            telemetryRing[telemetryIndex] = new TerminalInputTelemetryEntry
+            TerminalInputTelemetryEntry entry = new TerminalInputTelemetryEntry
             {
                 Frame = frame,
                 EvaluatedTerminals = math.min(_terminalCount, TerminalOsConstants.TerminalCapacity),
@@ -490,10 +483,42 @@ namespace Hecton8.UI
                 RaycastThickness = terminalRaycastThickness,
                 NonFiniteCount = _lastTerminalProjectionNonFiniteCount
             };
-            _terminalInputTelemetryCursor = (_terminalInputTelemetryCursor + 1) % telemetryRing.Length;
+            if (!TryWriteTerminalInputTelemetryEntry(in entry))
+                return;
 
             if ((projectionFaults & (TerminalProjectionFaultNonFinite | TerminalProjectionFaultBudget | TerminalProjectionFaultLayout)) != 0u)
                 TryDumpTerminalInputBlackBox(projectionFaults);
+        }
+
+        private bool TryWriteTerminalInputTelemetryEntry(in TerminalInputTelemetryEntry entry)
+        {
+            IDataVault vault = _vault;
+            NativeArray<TerminalInputTelemetryEntry> telemetryRing = default;
+            bool locked = false;
+            try
+            {
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    !IsTerminalOsVaultHandle(in _terminalInputTelemetryRingHandle) ||
+                    !vault.TryAcquireWriteLock(in _terminalInputTelemetryRingHandle, SystemID.UI, out telemetryRing))
+                {
+                    return false;
+                }
+
+                locked = true;
+                if (!telemetryRing.IsCreated || telemetryRing.Length == 0)
+                    return false;
+
+                int telemetryIndex = math.clamp(_terminalInputTelemetryCursor, 0, telemetryRing.Length - 1);
+                telemetryRing[telemetryIndex] = entry;
+                _terminalInputTelemetryCursor = (telemetryIndex + 1) % telemetryRing.Length;
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in _terminalInputTelemetryRingHandle, SystemID.UI);
+            }
         }
 
         private void TryDumpTerminalInputBlackBox(uint faultFlags)
@@ -540,7 +565,7 @@ namespace Hecton8.UI
             telemetryLength = 0;
             telemetryRingLength = 0;
             telemetryCursor = 0;
-            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
+            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry>.ReadOnly telemetryRing) ||
                 telemetryRing.Length == 0)
             {
                 return false;
@@ -560,7 +585,7 @@ namespace Hecton8.UI
         private bool TryReadTerminalInputTelemetryDumpEntry(int index, out TerminalInputTelemetryEntry entry)
         {
             entry = default;
-            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
+            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry>.ReadOnly telemetryRing) ||
                 (uint)index >= (uint)telemetryRing.Length)
             {
                 return false;
@@ -669,7 +694,7 @@ namespace Hecton8.UI
         public bool TryGetLatestTerminalInputTelemetry(out TerminalInputTelemetryEntry entry)
         {
             entry = default;
-            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
+            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry>.ReadOnly telemetryRing) ||
                 telemetryRing.Length == 0)
             {
                 return false;
@@ -685,7 +710,7 @@ namespace Hecton8.UI
         public bool TryGetTerminalInputStateSnapshot(int index, out TerminalInputStateDTO state)
         {
             state = default;
-            if (!TryReadVaultBuffer(in _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO> inputStates) ||
+            if (!TryReadVaultBuffer(in _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO>.ReadOnly inputStates) ||
                 index < 0 ||
                 index >= math.min(_terminalCount, inputStates.Length))
             {
@@ -700,7 +725,7 @@ namespace Hecton8.UI
         private static void DrawTerminalInputProjectionGizmo(
             in TerminalPlaneDTO plane,
             in TerminalInputStateDTO inputState,
-            NativeArray<GazeRayDTO> gazeRays)
+            NativeArray<GazeRayDTO>.ReadOnly gazeRays)
         {
             if (gazeRays.IsCreated && gazeRays.Length > 0)
             {

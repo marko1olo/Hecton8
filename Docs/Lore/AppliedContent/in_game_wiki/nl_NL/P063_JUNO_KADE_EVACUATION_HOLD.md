@@ -1,30 +1,37 @@
 ---
 packet_id: P063_JUNO_KADE_EVACUATION_HOLD
+release_set_id: RS013_COLONY_ATLAS_MAINTENANCE
 article_id: hecton8.juno_kade_evacuation_hold
+unlock_id: unlock.first_juno_kade_evacuation_hold
+poi_tags: poi.evacuation_console;poi.route_hold_board
+biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: nl_NL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Juno Kade Evacuation Hold
 
-Draft NL localization pending native pass. Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
+Juno Kade represents the human evacuation failure. Her record shows the people trying to leave were blocked by authorization, quarantine and priority language while the Great Tide was already becoming irreversible.
 
 ## Scanner
 
-Draft NL localization pending native pass. Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
+Juno Kade opened the queue and hit a wall made from quarantine, certification and payload rank.
 
 ## Terminal
 
-Draft NL localization pending native pass. KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
+KADE, J. Evacuation route red. Manual override rejected. Quarantine gate waits Atlas continuity check. Payload lift receives precedence until claim seal resolves.
 
 ## Audio
 
-Draft NL localization pending native pass. She kept counting people after the system started counting rooms.
+She kept counting people after the system started counting rooms.
 
 ## Field Note
 
-Draft NL localization pending native pass. An evacuation marshal can move people. She cannot move a clause that owns the door.
+An evacuation marshal can move people. She cannot move a clause that owns the door.
 
 <!-- In-Game Wiki; generated from P063_JUNO_KADE_EVACUATION_HOLD/nl_NL. -->

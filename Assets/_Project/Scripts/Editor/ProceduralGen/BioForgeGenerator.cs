@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -18,6 +19,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const float MinTriangleAreaSq = 1e-10f;
         private const string DefaultRuleFolder = "Assets/_Project/Data/ProceduralGen";
         private const string DefaultGeneratedMaterialPath = "Assets/_Project/Art/Generated/Flora/MAT_BioForge_Default.mat";
+        private const float MinimumColliderAxisMeters1716 = 0.05f;
 
         private static bool _deferAssetSave;
 
@@ -460,7 +462,13 @@ namespace Hecton8.Editor.ProceduralGen
             string prefabPath = $"{rule.PrefabOutputFolder}/{assetStem}.prefab";
             try
             {
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed before save: " + colliderFailure);
+
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+
+                if (!ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed after save: " + colliderFailure);
             }
             finally
             {
@@ -511,15 +519,43 @@ namespace Hecton8.Editor.ProceduralGen
             lodGroup.RecalculateBounds();
             if (addRockCollider)
             {
-                GameObject colliderObject = new GameObject("Collision_LOD2");
+                GameObject colliderObject = new GameObject("COL_CompoundProxy_1716");
                 colliderObject.transform.SetParent(root.transform, false);
                 colliderObject.transform.localPosition = geometryOffset;
-                MeshCollider collider = colliderObject.AddComponent<MeshCollider>();
-                collider.sharedMesh = lodMeshes != null && lodMeshes.Length > 2 ? lodMeshes[2] : null;
-                collider.convex = true;
+                BoxCollider collider = colliderObject.AddComponent<BoxCollider>();
+                Bounds bounds = ResolveColliderBounds(lodMeshes, boundsMin, boundsMax);
+                collider.center = bounds.center;
+                collider.size = new Vector3(
+                    Mathf.Max(bounds.size.x, MinimumColliderAxisMeters1716),
+                    Mathf.Max(bounds.size.y, MinimumColliderAxisMeters1716),
+                    Mathf.Max(bounds.size.z, MinimumColliderAxisMeters1716));
             }
 
             return root;
+        }
+
+        private static Bounds ResolveColliderBounds(Mesh[] lodMeshes, float3 boundsMin, float3 boundsMax)
+        {
+            if (lodMeshes != null && lodMeshes.Length > 0 && lodMeshes[0] != null && lodMeshes[0].vertexCount > 0)
+                return lodMeshes[0].bounds;
+
+            Vector3 min = new Vector3(boundsMin.x, boundsMin.y, boundsMin.z);
+            Vector3 max = new Vector3(boundsMax.x, boundsMax.y, boundsMax.z);
+            if (!IsFinite(min) || !IsFinite(max))
+                return new Bounds(Vector3.zero, Vector3.one);
+
+            Bounds bounds = new Bounds((min + max) * 0.5f, max - min);
+            return IsFinite(bounds.center) && IsFinite(bounds.extents) ? bounds : new Bounds(Vector3.zero, Vector3.one);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static Vector3 ResolveGeometryOffset(Mesh[] lodMeshes, float3 boundsMin, float3 boundsMax)

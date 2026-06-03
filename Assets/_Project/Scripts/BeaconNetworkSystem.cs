@@ -52,7 +52,7 @@ namespace Hecton8.Gameplay
         private const string DefaultBeaconPrefix = "BEACON";
 
         [Header("Prefabs")]
-        [Tooltip("Prefab for becons spawned from save data or as fallback. Should have BeaconRuntime component.")]
+        [Tooltip("Authored beacon prefab spawned from save data and deployment. Must include BeaconRuntime, Renderer, Light, and authored static materials.")]
         [SerializeField] private GameObject beaconPrefab;
 
         private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32); // COLD ALLOC: List<BeaconRuntime>[32] - active beacon runtime registry - owner: BeaconNetworkSystem
@@ -704,6 +704,10 @@ namespace Hecton8.Gameplay
             float lightRange,
             Vector3 fallbackScale)
         {
+            _ = color;
+            _ = lightRange;
+            _ = fallbackScale;
+
             IObjectPoolService pool = _cachedObjectPool;
             if (worldBeaconPrefab != null && pool != null)
             {
@@ -712,53 +716,21 @@ namespace Hecton8.Gameplay
                 {
                     instance.TryGetComponent(out BeaconRuntime pooled);
                     if (pooled == null)
-                        pooled = instance.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] - prefab missing runtime component fallback - owner: BeaconNetworkSystem
+                    {
+                        pool.Despawn(instance);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        if (verboseLogging)
+                            Hecton8.Core.H8Debug.LogWarning("[BeaconNetwork] Beacon prefab is missing BeaconRuntime; spawn rejected.");
+#endif
+                        return null;
+                    }
+
                     pooled.SetPooledOwner(pool);
                     return pooled;
                 }
             }
 
-            return SpawnFallbackBeacon(position, rotation, color, lightRange, fallbackScale);
-        }
-
-        private BeaconRuntime SpawnFallbackBeacon(
-            Vector3 position,
-            Quaternion rotation,
-            Color color,
-            float lightRange,
-            Vector3 fallbackScale)
-        {
-            GameObject beaconRoot = new GameObject("Beacon_Runtime"); // COLD ALLOC: GameObject[1] - fallback beacon root when prefab/pool is unavailable - owner: BeaconNetworkSystem
-            beaconRoot.transform.SetPositionAndRotation(position, rotation);
-
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube); // COLD ALLOC: GameObject[1] - fallback beacon body primitive when prefab/pool is unavailable - owner: BeaconNetworkSystem
-            body.name = "BeaconBody";
-            body.transform.SetParent(beaconRoot.transform, false);
-            body.transform.localScale = fallbackScale;
-            body.transform.localPosition = new Vector3(0f, fallbackScale.y * 0.5f, 0f);
-
-            body.TryGetComponent(out Collider bodyCollider);
-            if (bodyCollider != null)
-                Destroy(bodyCollider);
-
-            body.TryGetComponent(out Renderer renderer);
-            Material fallbackMaterial = null;
-            if (renderer != null)
-            {
-                fallbackMaterial = BeaconRuntime.GetFallbackBeaconMaterial(color);
-                renderer.sharedMaterial = fallbackMaterial;
-            }
-
-            Light lightComp = beaconRoot.AddComponent<Light>(); // COLD ALLOC: Light[1] - fallback beacon point light when prefab/pool is unavailable - owner: BeaconNetworkSystem
-            lightComp.type = LightType.Point;
-            lightComp.range = lightRange;
-            lightComp.intensity = 1.6f;
-            lightComp.color = color;
-
-            BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] - fallback beacon runtime when prefab/pool is unavailable - owner: BeaconNetworkSystem
-            runtime.SetOwnedFallbackMaterial(fallbackMaterial);
-            runtime.SetPooledOwner(null);
-            return runtime;
+            return null;
         }
 
         private void UnregisterRuntime(BeaconRuntime beacon)

@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2696435018780662467}
   - component: {fileID: 4802611810270365598}
+  - component: {fileID: 7369191432632686538}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__lantern__s100-180
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2725559847537587584}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.008659124, y: 4.6081758, z: 0.92648554}
-  m_Size: 9.2163515
+  m_LocalReferencePoint: {x: -0.02821207, y: 4.8368406, z: 1.1239223}
+  m_Size: 9.673681
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 128155191717073309}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &7369191432632686538
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2725559847537587584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: df5560f41d2ac9f4c88727dcb145937d, type: 2}
 --- !u!1 &8747794562361818746
 GameObject:
   m_ObjectHideFlags: 0

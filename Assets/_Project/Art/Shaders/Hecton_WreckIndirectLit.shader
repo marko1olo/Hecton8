@@ -3,7 +3,7 @@ Shader "Hecton8/World/WreckIndirectLit"
     Properties
     {
         _BaseMap("Base Map", 2D) = "white" {}
-        _MaskMap("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
+        _MaskMap("Packed MRAO (R Metallic G Roughness B AO A Emission/Carbon)", 2D) = "white" {}
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
         _Metallic("Metallic Scale", Range(0, 1)) = 0.0
@@ -23,6 +23,9 @@ Shader "Hecton8/World/WreckIndirectLit"
         _WreckVertexRustInfluence("Vertex Rust Influence", Range(0, 1)) = 1.0
         _WreckVertexAlgaeInfluence("Vertex Algae Influence", Range(0, 1)) = 0.65
         _WreckAlgaeTint("Algae Tint", Color) = (0.16, 0.34, 0.22, 1)
+        _WreckGrimeStrength("Vertex Blue Grime Strength", Range(0, 1)) = 0.58
+        _WreckSootStrength("Vertex Alpha Soot Strength", Range(0, 1)) = 0.92
+        _WreckSootTint("Burnt Soot Tint", Color) = (0.035, 0.04, 0.045, 1)
         _WreckSwayAmplitude("Boneless Debris Sway", Range(0, 0.08)) = 0.018
         _WreckSwaySpeed("Boneless Debris Sway Speed", Range(0, 4)) = 0.85
     }
@@ -82,6 +85,9 @@ Shader "Hecton8/World/WreckIndirectLit"
             float _WreckVertexRustInfluence;
             float _WreckVertexAlgaeInfluence;
             float4 _WreckAlgaeTint;
+            float _WreckGrimeStrength;
+            float _WreckSootStrength;
+            float4 _WreckSootTint;
             float _WreckSwayAmplitude;
             float _WreckSwaySpeed;
         CBUFFER_END
@@ -176,6 +182,14 @@ Shader "Hecton8/World/WreckIndirectLit"
             return SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
         }
 
+        half ResolveBakedCarbonization(half maskAlpha, half3 albedo, half roughness, half metallic)
+        {
+            half luminance = dot(albedo, half3(0.299h, 0.587h, 0.114h));
+            half burnDarkness = saturate(1.0h - luminance);
+            half oxidizedInsulator = saturate((1.0h - metallic) * roughness);
+            return saturate(maskAlpha * burnDarkness * oxidizedInsulator);
+        }
+
         half3 EvaluateWreckLighting(
             float3 positionWS,
             float4 positionCS,
@@ -216,18 +230,22 @@ Shader "Hecton8/World/WreckIndirectLit"
         #endif
 
             half4 packedMask = SamplePackedMask(input.uv);
-            HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
-            half metallic = decodedMask.metallic;
-            half ambientOcclusion = decodedMask.occlusion;
-            half smoothness = decodedMask.smoothness;
-            half emissionMask = decodedMask.emissionMask;
+            half metallic = saturate(packedMask.r * (half)_Metallic);
+            half roughness = saturate(packedMask.g);
+            half ambientOcclusion = saturate(lerp(1.0h, packedMask.b, (half)_OcclusionStrength));
+            half smoothness = saturate((1.0h - roughness) * (half)_Smoothness);
+            half maskAlpha = saturate(packedMask.a);
 
             half3 normalWS = ResolveWreckNormalCheap(input.normalWS);
             half3 albedo = surface.rgb;
+            half bakedCarbonization = ResolveBakedCarbonization(maskAlpha, albedo, roughness, metallic);
             HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
             half vertexMask = 1.0h - saturate(input.vertexColor.b);
             half vertexRust = saturate(input.vertexColor.r * (half)_WreckVertexRustInfluence * vertexMask);
             half vertexAlgae = saturate(input.vertexColor.g * (half)_WreckVertexAlgaeInfluence * vertexMask);
+            half vertexGrime = saturate(input.vertexColor.b * (half)_WreckGrimeStrength);
+            half vertexSoot = saturate(input.vertexColor.a * (half)_WreckSootStrength);
+            half sootResponse = max(vertexSoot, saturate(bakedCarbonization * (half)_WreckSootStrength));
             half edgeWearMask = saturate((1.0h - ambientOcclusion) * 0.7h + (1.0h - smoothness) * 0.35h + vertexRust);
             half rustAge = saturate(input.age01 + vertexRust * 0.35h);
             HectonCoreLitApplyProceduralRustSilt(
@@ -246,6 +264,13 @@ Shader "Hecton8/World/WreckIndirectLit"
             albedo = lerp(albedo, albedo * half3(_WreckAlgaeTint.rgb), vertexAlgae);
             ambientOcclusion = lerp(ambientOcclusion, ambientOcclusion * 0.82h, vertexAlgae);
             smoothness = lerp(smoothness, smoothness * 0.72h, vertexAlgae);
+            albedo = lerp(albedo, albedo * half3(0.52h, 0.58h, 0.61h), vertexGrime);
+            ambientOcclusion = lerp(ambientOcclusion, ambientOcclusion * 0.68h, vertexGrime);
+            smoothness = lerp(smoothness, smoothness * 0.58h, vertexGrime);
+            albedo = lerp(albedo, albedo * half3(_WreckSootTint.rgb), sootResponse);
+            ambientOcclusion = lerp(ambientOcclusion, ambientOcclusion * 0.48h, sootResponse);
+            smoothness = lerp(smoothness, smoothness * 0.36h, sootResponse);
+            metallic = lerp(metallic, metallic * 0.22h, bakedCarbonization);
             HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
             half3 litColor = EvaluateWreckLighting(
                 input.positionWS,
@@ -256,7 +281,7 @@ Shader "Hecton8/World/WreckIndirectLit"
                 smoothness,
                 ambientOcclusion);
             half emergencyPulse = saturate((half)_HectonWreckEmergencyFlicker * (0.35h + ResolveWreckTriangle01(_Time.y * 3.7 + _HectonWreckEmergencyPhase) * 0.65h));
-            half3 emission = _EmissionColor.rgb * emissionMask * emergencyPulse;
+            half3 emission = _EmissionColor.rgb * maskAlpha * emergencyPulse;
             emission += (half3)HectonCoreLitEvaluateActiveSonarGeoEmission(input.positionWS);
             half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);

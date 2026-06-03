@@ -138,9 +138,8 @@ namespace Hecton8.UI
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
-        private static IDataVault s_cueMutationGuardVault;
-        private static IDataVault s_telemetryMutationGuardVault;
-        private static IDataVault s_uiOptimizationTelemetryMutationGuardVault;
+        private static IDataVault s_activeMutationGuardVault;
+        private static ulong s_activeMutationGuardMask;
         private static VaultGenerationHandle<SubtitleCueDTO> s_cueHandle;
         private static VaultGenerationHandle<LocalizationTelemetryEntry> s_telemetryHandle;
         private static VaultGenerationHandle<UIOptimizationTelemetryEntry> s_uiOptimizationTelemetryHandle;
@@ -162,6 +161,7 @@ namespace Hecton8.UI
         private static bool s_initialized;
         private static bool s_signalBusInitialized;
         private static bool s_dispatcherRegistered;
+        private static bool s_layoutValidationAttempted;
         private static bool s_layoutValid;
 
         public static uint CurrentAudioFrame => s_audioFrameClock;
@@ -170,7 +170,7 @@ namespace Hecton8.UI
         public static int ActiveCueCount => s_activeCueCount;
         public static int EditorAudioFrameOffset => s_editorAudioFrameOffset;
         public static bool RollbackStateExcluded => true;
-        public static bool LayoutValid => s_layoutValid || ValidateSubtitleCueLayout();
+        public static bool LayoutValid => EnsureSubtitleLayoutValid();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -178,9 +178,8 @@ namespace Hecton8.UI
             ReleaseAllSubtitleMutationBuffers();
             ReleaseSubtitleBuffers(s_vault);
             s_vault = null;
-            s_cueMutationGuardVault = null;
-            s_telemetryMutationGuardVault = null;
-            s_uiOptimizationTelemetryMutationGuardVault = null;
+            s_activeMutationGuardVault = null;
+            s_activeMutationGuardMask = 0ul;
             s_cueHandle = default;
             s_telemetryHandle = default;
             s_uiOptimizationTelemetryHandle = default;
@@ -202,6 +201,7 @@ namespace Hecton8.UI
             s_initialized = false;
             s_signalBusInitialized = false;
             s_dispatcherRegistered = false;
+            s_layoutValidationAttempted = false;
             s_layoutValid = false;
         }
 
@@ -212,17 +212,15 @@ namespace Hecton8.UI
 
             ReleaseAllSubtitleMutationBuffers();
             ReleaseSubtitleBuffers(s_vault);
-            s_cueMutationGuardVault = null;
-            s_telemetryMutationGuardVault = null;
-            s_uiOptimizationTelemetryMutationGuardVault = null;
+            s_activeMutationGuardVault = null;
+            s_activeMutationGuardMask = 0ul;
             s_vault = vault;
             s_initialized = false;
         }
 
         public static bool EnsureInitialized()
         {
-            s_layoutValid = ValidateSubtitleCueLayout();
-            if (!s_layoutValid)
+            if (!EnsureSubtitleLayoutValid())
                 return false;
 
             EnsureSignalBusInitializedCold();
@@ -650,6 +648,7 @@ namespace Hecton8.UI
                 requiredLength <= 0 ||
                 !IsSubtitleVaultHandle(in handle, bufferId) ||
                 mutationGuardMask == 0ul ||
+                s_activeMutationGuardMask != 0ul ||
                 !vault.TryAcquireMutationGuard(mutationGuardMask))
             {
                 return false;
@@ -703,13 +702,7 @@ namespace Hecton8.UI
 
         private static void ReleaseAllSubtitleMutationBuffers()
         {
-            ReleaseStoredSubtitleMutationBuffer(CueStateMutationGuardMask);
-            ReleaseStoredSubtitleMutationBuffer(TelemetryMutationGuardMask);
-            ReleaseStoredSubtitleMutationBuffer(UIOptimizationTelemetryMutationGuardMask);
-        }
-
-        private static void ReleaseStoredSubtitleMutationBuffer(ulong mutationGuardMask)
-        {
+            ulong mutationGuardMask = s_activeMutationGuardMask;
             IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask);
             if (vault != null && mutationGuardMask != 0ul)
                 vault.ReleaseMutationGuard(mutationGuardMask);
@@ -717,38 +710,19 @@ namespace Hecton8.UI
 
         private static void StoreSubtitleMutationVault(ulong mutationGuardMask, IDataVault vault)
         {
-            if (mutationGuardMask == CueStateMutationGuardMask)
-                s_cueMutationGuardVault = vault;
-            else if (mutationGuardMask == TelemetryMutationGuardMask)
-                s_telemetryMutationGuardVault = vault;
-            else if (mutationGuardMask == UIOptimizationTelemetryMutationGuardMask)
-                s_uiOptimizationTelemetryMutationGuardVault = vault;
+            s_activeMutationGuardVault = vault;
+            s_activeMutationGuardMask = mutationGuardMask;
         }
 
         private static IDataVault TakeSubtitleMutationVault(ulong mutationGuardMask)
         {
-            if (mutationGuardMask == CueStateMutationGuardMask)
-            {
-                IDataVault vault = s_cueMutationGuardVault;
-                s_cueMutationGuardVault = null;
-                return vault;
-            }
+            if (mutationGuardMask == 0ul || mutationGuardMask != s_activeMutationGuardMask)
+                return null;
 
-            if (mutationGuardMask == TelemetryMutationGuardMask)
-            {
-                IDataVault vault = s_telemetryMutationGuardVault;
-                s_telemetryMutationGuardVault = null;
-                return vault;
-            }
-
-            if (mutationGuardMask == UIOptimizationTelemetryMutationGuardMask)
-            {
-                IDataVault vault = s_uiOptimizationTelemetryMutationGuardVault;
-                s_uiOptimizationTelemetryMutationGuardVault = null;
-                return vault;
-            }
-
-            return null;
+            IDataVault vault = s_activeMutationGuardVault;
+            s_activeMutationGuardVault = null;
+            s_activeMutationGuardMask = 0ul;
+            return vault;
         }
 
         private static bool IsSubtitleVaultHandle<T>(
@@ -933,6 +907,16 @@ namespace Hecton8.UI
                    OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.DroppedCueCount)) == 56 &&
                    OffsetOf<UIOptimizationTelemetryEntry>("_pad0") == 60 &&
                    OffsetOf<UIOptimizationTelemetryEntry>("_pad3") == 63;
+        }
+
+        private static bool EnsureSubtitleLayoutValid()
+        {
+            if (s_layoutValidationAttempted)
+                return s_layoutValid;
+
+            s_layoutValid = ValidateSubtitleCueLayout();
+            s_layoutValidationAttempted = true;
+            return s_layoutValid;
         }
 
         private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags)

@@ -14,6 +14,12 @@ namespace Hecton8.AI.Cognition
         public const int DearLieCandidateLimit = 4;
         public const float Epsilon = 0.0001f;
         public const float FaultMicroseconds = 1500f;
+        public const float DefaultTickDeltaSeconds = 0.033333335f;
+        public const float Inverse24 = 0.041666668f;
+        public const float Inverse120 = 0.008333334f;
+        public const float Inverse1023 = 0.0009775171f;
+        public const float Inverse2047 = 0.0004885198f;
+        public const float Inverse4095 = 0.00024420025f;
 
         public const uint ActionFleeHash = 0x464C4545u;
         public const uint ActionHuntHash = 0x48554E54u;

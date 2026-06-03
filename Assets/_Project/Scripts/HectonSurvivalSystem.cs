@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
@@ -296,6 +297,13 @@ namespace Hecton8.Gameplay
         private VehicleUpgradeModule _cachedVehicleUpgradeModule;
         private bool _saveRegistered;
         private IDataVault _survivalDataVault;
+        private VaultGenerationHandle<MetabolicStateDTO> _metabolicStateHandle;
+        private VaultGenerationHandle<SuitIntegrityDTO> _suitIntegrityStateHandle;
+        private bool _metabolicStateHandleReady;
+        private bool _suitIntegrityStateHandleReady;
+        private uint _nextMetabolicStateHandleRetryFrame;
+        private uint _nextSuitIntegrityStateHandleRetryFrame;
+        private bool _metabolicOxygenStateSyncedThisTick;
         private bool _surfaceContractUnderwater;
         private float _runtimeOxygenCapacityMultiplier = 1f;
         private SurvivalDeathCause _lastDeathCause;
@@ -370,6 +378,8 @@ namespace Hecton8.Gameplay
         private const float MajorPhysicalDamageThreshold = 16f;
         private const float SeverePhysicalDamageThreshold = 28f;
         private const float MajorTraumaSeverityThreshold = 0.42f;
+        private const BufferID MetabolicStateBufferId = (BufferID)ShinobuMetabolismVaultContract.MetabolismStatesBufferId;
+        private const BufferID SuitIntegrityStateBufferId = (BufferID)ShinobuSuitIntegrityVaultContract.StateBufferId;
         private const float BleedingBaseDurationSeconds = 48f;
         private const float BleedingMaxDurationSeconds = 135f;
         private const float BleedingBaseDamagePerSecond = 0.35f;
@@ -420,8 +430,11 @@ namespace Hecton8.Gameplay
         private const float OxygenCarryMassGraceKg = 18f;
         private const float OxygenCarryMassScaleCeilingBonus = 0.22f;
         private const float OxygenRebreatherDrainMultiplier = 0.70f;
-        private const float OxygenGraceDurationSeconds = 2f;
+        private const float OxygenGraceDurationSeconds = ShinobuMetabolismVaultContract.HypoxiaAgonyDurationSeconds;
         private const float OxygenGraceSpeedMultiplier = 1.2f;
+        private const float BarotraumaOxygenDrainMaxMultiplier = 5f;
+        private const float BarotraumaOxygenDrainHardClamp = 10f;
+        private const uint PhysiologyHandleRetryFrames = 30u;
         private const float OverpressureSeverityFullRangeMeters = 150f;
         private const float OverpressureSeveritySafeDepthScale = 0.35f;
         private const int SurvivalDatabaseRowCapacity = 256;
@@ -606,6 +619,7 @@ namespace Hecton8.Gameplay
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             ResetOxygenGraceState();
+            TryWriteMetabolicOxygenStateToVault(ResolveRealOxygen01(oxygen), 0f, 0, out _);
             ResetThermalState();
         }
 
@@ -654,6 +668,7 @@ namespace Hecton8.Gameplay
             _physicsService = GlobalRegistry.Physics;
             _saveService = GlobalRegistry.Save;
             _survivalDataVault = GlobalRegistry.DataVault;
+            BindPhysiologyVaultHandles(_survivalDataVault);
             _thermalManager = GlobalRegistry.Thermodynamics;
             _modularEquipment = GlobalRegistry.ModularEquipment;
             _hazardZoneRuntime = GlobalRegistry.HazardZones;
@@ -758,6 +773,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _survivalDataVault = currentService as IDataVault;
+                    BindPhysiologyVaultHandles(_survivalDataVault);
                     DisposeInjectedSurvivalDatabase();
                     if (_survivalDataVault != null)
                     {
@@ -889,6 +905,7 @@ namespace Hecton8.Gameplay
             if (!alive) return;
 
             float dt = _slowTickDt;
+            _metabolicOxygenStateSyncedThisTick = false;
 
             ComputeDepthAndPressure();
             RefreshBloodScentSignal();
@@ -898,8 +915,9 @@ namespace Hecton8.Gameplay
             TrackPressureExposure(dt);
             PushPressureHullStress();
             RefreshCombatStatusMaskCache();
-            UpdateOxygenGraceState(dt);
             UpdateOxygen(dt);
+            ConsumeOxygenCriticalSignals();
+            UpdateOxygenGraceState(dt);
             DrainPassiveEnergy(dt);
             ApplyPressureDamage(dt);
             UpdatePhysiologyScalars(dt);
@@ -945,14 +963,90 @@ namespace Hecton8.Gameplay
 
             if (!_surfaceContractUnderwater)
             {
-                oxygen = math.min(
+                bool surfaceLockDenied = false;
+                float surfaceNextOxygen = math.min(
                     ResolveRuntimeMaxOxygenCapacity(),
                     oxygen + surfaceOxygenRefillRate * dt);
+                if (TryWriteMetabolicOxygenStateToVault(
+                        ResolveRealOxygen01(surfaceNextOxygen),
+                        0f,
+                        0,
+                        out surfaceLockDenied))
+                {
+                    _metabolicOxygenStateSyncedThisTick = true;
+                }
+                else if (surfaceLockDenied)
+                {
+                    return;
+                }
+
+                oxygen = surfaceNextOxygen;
                 return;
             }
 
+            if (_oxygenGraceActive)
+            {
+                oxygen = 0f;
+                return;
+            }
+
+            bool wroteMetabolicState = false;
+            bool oxygenDrainLockDenied = false;
             float oxygenDrainPerSecond = ResolveCurrentOxygenDrainPerSecond();
-            oxygen = math.max(0f, oxygen - oxygenDrainPerSecond * dt);
+            float nextOxygen = math.max(0f, oxygen - oxygenDrainPerSecond * dt);
+            byte nextHypoxiaState = (byte)math.select(0, 1, nextOxygen <= 0f);
+            float nextAgonyTimeRemaining = ResolveStagedAgonyTimeRemaining(nextHypoxiaState);
+            if (TryWriteMetabolicOxygenStateToVault(
+                    ResolveRealOxygen01(nextOxygen),
+                    nextAgonyTimeRemaining,
+                    nextHypoxiaState,
+                    out oxygenDrainLockDenied))
+            {
+                wroteMetabolicState = true;
+            }
+            else if (oxygenDrainLockDenied)
+            {
+                // If FrostTickDefrag owns the vault this frame, drop the oxygen sample instead of risking a stale pointer.
+                return;
+            }
+
+            oxygen = nextOxygen;
+            _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+        }
+
+        private void ConsumeOxygenCriticalSignals()
+        {
+            ReadOnlySpan<OxygenCriticalSignal> signals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshot();
+            if (signals.Length <= 0 || stats == null)
+                return;
+
+            float maxOxygen = ResolveRuntimeMaxOxygenCapacity();
+            float targetOxygen = oxygen;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                OxygenCriticalSignal signal = signals[i];
+                float oxygen01 = math.saturate(math.select(0f, signal.Oxygen01, math.isfinite(signal.Oxygen01)));
+                targetOxygen = math.min(targetOxygen, maxOxygen * oxygen01);
+            }
+
+            if (targetOxygen >= oxygen - Epsilon)
+                return;
+
+            float nextOxygen = math.max(0f, targetOxygen);
+            byte nextHypoxiaState = (byte)math.select(0, 1, nextOxygen <= 0f);
+            float nextAgonyTimeRemaining = ResolveStagedAgonyTimeRemaining(nextHypoxiaState);
+            bool lockDenied = false;
+            bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                ResolveRealOxygen01(nextOxygen),
+                nextAgonyTimeRemaining,
+                nextHypoxiaState,
+                out lockDenied);
+            if (lockDenied)
+                return;
+
+            oxygen = nextOxygen;
+            _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+            ForceDirty(ref lastPubOxygen);
         }
 
         private bool ResolveSurfaceContractUnderwater()
@@ -1487,9 +1581,25 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            oxygen = math.max(
+            float nextOxygen = math.max(
                 oxygen,
                 ResolveRuntimeMaxOxygenCapacity() * math.max(0.01f, oxygenRefillFraction));
+            if (nextOxygen > oxygen + Epsilon)
+            {
+                bool lockDenied = false;
+                bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                    ResolveRealOxygen01(nextOxygen),
+                    0f,
+                    0,
+                    out lockDenied);
+                if (lockDenied)
+                    return;
+
+                oxygen = nextOxygen;
+                _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+                ResetOxygenGraceState();
+            }
+
             RefreshNitrogenNarcosisRuntimeState();
             ApplyNitrogenMovementPenalty();
             ForceDirty(ref lastPubOxygen);
@@ -1790,13 +1900,14 @@ namespace Hecton8.Gameplay
             float leakFactor = ResolveOxygenLeakScale();
             float carryMassFactor = ResolveOxygenCarryMassScale();
             float equipmentFactor = ResolveOxygenRebreatherScale();
+            float barotraumaFactor = ResolveBarotraumaOxygenDrainMultiplier();
             return ResolveMultiplicativeOxygenDrain(
                 baseRate,
                 pressureFactor,
                 movementFactor,
                 stressFactor,
                 leakFactor,
-                carryMassFactor) * equipmentFactor;
+                carryMassFactor) * equipmentFactor * barotraumaFactor;
         }
 
         private float ResolveOxygenRebreatherScale()
@@ -1869,6 +1980,22 @@ namespace Hecton8.Gameplay
                 ? _traumaDispatcher.AdditionalVehicleOxygenDrainScale
                 : 1f;
             return suitLeakScale * vehicleLeakScale;
+        }
+
+        private float ResolveBarotraumaOxygenDrainMultiplier()
+        {
+            return TryReadSuitCrushDepthIntegrity01(out float crushDepthIntegrity01)
+                ? ResolveBarotraumaOxygenDrainMultiplier(crushDepthIntegrity01)
+                : 1f;
+        }
+
+        internal static float ResolveBarotraumaOxygenDrainMultiplier(float crushDepthIntegrity01)
+        {
+            float safeIntegrity01 = math.saturate(math.select(1f, crushDepthIntegrity01, math.isfinite(crushDepthIntegrity01)));
+            float damage01 = math.saturate(math.unlerp(1f, 0f, safeIntegrity01));
+            float curvedDamage = damage01 * damage01;
+            float multiplier = 1f + curvedDamage * (BarotraumaOxygenDrainMaxMultiplier - 1f);
+            return math.clamp(multiplier, 1f, BarotraumaOxygenDrainHardClamp);
         }
 
         private float ResolveOxygenCarryMassScale()
@@ -2266,7 +2393,13 @@ namespace Hecton8.Gameplay
             if (!TryResolveSurvivalAbsoluteAup(out double3 deathAup))
                 deathAup = MissingRespawnDeathAup();
 
-            PlayerDeathReconciliationBridge.RequestRespawn(deathAup, unchecked((uint)_lastDeathCause), playerHash);
+            bool respawnQueued = PlayerDeathReconciliationBridge.RequestRespawn(
+                deathAup,
+                unchecked((uint)_lastDeathCause),
+                playerHash);
+            if (!respawnQueued)
+                return;
+
             ApplyRespawnReconciliationSurvival();
             return;
         }
@@ -2284,41 +2417,76 @@ namespace Hecton8.Gameplay
         {
             if (integrity <= 0f)
             {
+                bool lockDenied = false;
+                bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                    ResolveRealOxygen01(oxygen),
+                    0f,
+                    0,
+                    out lockDenied);
+                if (lockDenied)
+                    return;
+
                 ResetOxygenGraceState();
+                _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
                 return;
             }
 
             if (oxygen > 0f)
             {
+                if (!_metabolicOxygenStateSyncedThisTick)
+                {
+                    bool lockDenied = false;
+                    bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                        ResolveRealOxygen01(oxygen),
+                        0f,
+                        0,
+                        out lockDenied);
+                    if (lockDenied)
+                        return;
+
+                    _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+                }
+
                 ResetOxygenGraceState();
                 return;
             }
 
-            if (!_oxygenGraceActive)
-            {
-                _oxygenGraceActive = true;
-                _oxygenGraceTimer = OxygenGraceDurationSeconds;
-            }
-            else
-            {
-                _oxygenGraceTimer = Mathf.Max(0f, _oxygenGraceTimer - Mathf.Max(0f, deltaTime));
-            }
+            bool nextGraceActive = true;
+            float nextGraceTimer = _oxygenGraceActive
+                ? math.max(0f, _oxygenGraceTimer - math.max(0f, deltaTime))
+                : OxygenGraceDurationSeconds;
 
-            float elapsedGraceSeconds = OxygenGraceDurationSeconds - _oxygenGraceTimer;
+            float elapsedGraceSeconds = OxygenGraceDurationSeconds - nextGraceTimer;
             float invGraceDuration = math.rcp(math.max(0.01f, OxygenGraceDurationSeconds));
             float gracePhase = math.saturate(elapsedGraceSeconds * invGraceDuration);
-            _oxygenGraceVisionBlur01 = CinematicMath.FastSin(gracePhase * math.PI);
+            float nextGraceVisionBlur01 = math.smoothstep(0f, 1f, gracePhase);
+
+            if (nextGraceTimer <= 0f)
+            {
+                nextGraceActive = false;
+                nextGraceVisionBlur01 = 1f;
+            }
+
+            if (!_metabolicOxygenStateSyncedThisTick)
+            {
+                bool lockDenied = false;
+                bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                    0f,
+                    nextGraceTimer,
+                    1,
+                    out lockDenied);
+                if (lockDenied)
+                    return;
+
+                _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+            }
+
+            _oxygenGraceActive = nextGraceActive;
+            _oxygenGraceTimer = nextGraceTimer;
+            _oxygenGraceVisionBlur01 = nextGraceVisionBlur01;
 
             if (_playerMovement != null)
-                _playerMovement.SetRuntimeEmergencyMovementMultiplier(OxygenGraceSpeedMultiplier);
-
-            if (_oxygenGraceTimer <= 0f)
-            {
-                _oxygenGraceActive = false;
-                _oxygenGraceVisionBlur01 = 1f;
-                if (_playerMovement != null)
-                    _playerMovement.SetRuntimeEmergencyMovementMultiplier(1f);
-            }
+                _playerMovement.SetRuntimeEmergencyMovementMultiplier(math.select(1f, OxygenGraceSpeedMultiplier, nextGraceActive));
         }
 
         private void ResetOxygenGraceState()
@@ -2328,6 +2496,18 @@ namespace Hecton8.Gameplay
             _oxygenGraceVisionBlur01 = 0f;
             if (_playerMovement != null)
                 _playerMovement.SetRuntimeEmergencyMovementMultiplier(1f);
+        }
+
+        private float ResolveRealOxygen01(float oxygenValue)
+        {
+            return math.saturate(oxygenValue * math.rcp(math.max(0.01f, ResolveRuntimeMaxOxygenCapacity())));
+        }
+
+        private float ResolveStagedAgonyTimeRemaining(byte nextHypoxiaState)
+        {
+            float activeTimer = math.max(0f, _oxygenGraceTimer);
+            float hypoxiaTimer = math.select(OxygenGraceDurationSeconds, activeTimer, _oxygenGraceActive);
+            return math.select(0f, hypoxiaTimer, nextHypoxiaState != 0);
         }
 
         private float ResolveFloodedThermalInsulationFactor()
@@ -2574,13 +2754,267 @@ namespace Hecton8.Gameplay
                    handle.Generation != 0u;
         }
 
+        private void BindPhysiologyVaultHandles(IDataVault vault)
+        {
+            _metabolicStateHandle = default;
+            _suitIntegrityStateHandle = default;
+            _metabolicStateHandleReady = false;
+            _suitIntegrityStateHandleReady = false;
+            _nextMetabolicStateHandleRetryFrame = 0u;
+            _nextSuitIntegrityStateHandleRetryFrame = 0u;
+
+            if (vault == null || vault.IsCompactionFenceActive)
+                return;
+
+            if (vault.TryGetGenerationHandle(
+                    MetabolicStateBufferId,
+                    out VaultGenerationHandle<MetabolicStateDTO> metabolicHandle) &&
+                IsSurvivalVaultHandle(in metabolicHandle, MetabolicStateBufferId))
+            {
+                _metabolicStateHandle = metabolicHandle;
+                _metabolicStateHandleReady = true;
+            }
+
+            if (vault.TryGetGenerationHandle(
+                    SuitIntegrityStateBufferId,
+                    out VaultGenerationHandle<SuitIntegrityDTO> suitIntegrityHandle) &&
+                IsSurvivalVaultHandle(in suitIntegrityHandle, SuitIntegrityStateBufferId))
+            {
+                _suitIntegrityStateHandle = suitIntegrityHandle;
+                _suitIntegrityStateHandleReady = true;
+            }
+        }
+
+        private static bool IsBeforeFrame(uint currentFrame, uint targetFrame)
+        {
+            return currentFrame != 0u &&
+                   targetFrame != 0u &&
+                   unchecked((int)(currentFrame - targetFrame)) < 0;
+        }
+
+        private bool CanRetryMetabolicStateHandle()
+        {
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
+            if (currentFrame == 0u)
+                currentFrame = unchecked((uint)Time.frameCount);
+
+            if (IsBeforeFrame(currentFrame, _nextMetabolicStateHandleRetryFrame))
+                return false;
+
+            _nextMetabolicStateHandleRetryFrame = currentFrame != 0u
+                ? currentFrame + PhysiologyHandleRetryFrames
+                : 0u;
+            return true;
+        }
+
+        private bool CanRetrySuitIntegrityStateHandle()
+        {
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
+            if (currentFrame == 0u)
+                currentFrame = unchecked((uint)Time.frameCount);
+
+            if (IsBeforeFrame(currentFrame, _nextSuitIntegrityStateHandleRetryFrame))
+                return false;
+
+            _nextSuitIntegrityStateHandleRetryFrame = currentFrame != 0u
+                ? currentFrame + PhysiologyHandleRetryFrames
+                : 0u;
+            return true;
+        }
+
+        private bool TryRefreshMetabolicStateHandle(IDataVault vault)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (_metabolicStateHandleReady &&
+                IsSurvivalVaultHandle(in _metabolicStateHandle, MetabolicStateBufferId))
+            {
+                return true;
+            }
+
+            if (!CanRetryMetabolicStateHandle())
+                return false;
+
+            if (!vault.TryGetGenerationHandle(
+                    MetabolicStateBufferId,
+                    out _metabolicStateHandle) ||
+                !IsSurvivalVaultHandle(in _metabolicStateHandle, MetabolicStateBufferId))
+            {
+                _metabolicStateHandleReady = false;
+                return false;
+            }
+
+            _metabolicStateHandleReady = true;
+            return true;
+        }
+
+        private bool TryRefreshSuitIntegrityStateHandle(IDataVault vault)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (_suitIntegrityStateHandleReady &&
+                IsSurvivalVaultHandle(in _suitIntegrityStateHandle, SuitIntegrityStateBufferId))
+            {
+                return true;
+            }
+
+            if (!CanRetrySuitIntegrityStateHandle())
+                return false;
+
+            if (!vault.TryGetGenerationHandle(
+                    SuitIntegrityStateBufferId,
+                    out _suitIntegrityStateHandle) ||
+                !IsSurvivalVaultHandle(in _suitIntegrityStateHandle, SuitIntegrityStateBufferId))
+            {
+                _suitIntegrityStateHandleReady = false;
+                return false;
+            }
+
+            _suitIntegrityStateHandleReady = true;
+            return true;
+        }
+
+        private bool TryReadSuitCrushDepthIntegrity01(out float crushDepthIntegrity01)
+        {
+            crushDepthIntegrity01 = 1f;
+            IDataVault vault = _survivalDataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryRefreshSuitIntegrityStateHandle(vault))
+            {
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in _suitIntegrityStateHandle, out NativeArray<SuitIntegrityDTO>.ReadOnly states) ||
+                vault.IsCompactionFenceActive ||
+                states.Length <= 0)
+            {
+                _suitIntegrityStateHandleReady = false;
+                _nextSuitIntegrityStateHandleRetryFrame = 0u;
+                return false;
+            }
+
+            float value = states[0].CurrentIntegrity01;
+            crushDepthIntegrity01 = math.saturate(math.select(1f, value, math.isfinite(value)));
+            return true;
+        }
+
+        private bool TryWriteMetabolicOxygenStateToVault(
+            float realO201,
+            float agonyTimeRemaining,
+            byte isInHypoxia,
+            out bool lockDenied)
+        {
+            lockDenied = false;
+            IDataVault vault = _survivalDataVault;
+            if (vault == null)
+                return false;
+
+            if (vault.IsCompactionFenceActive)
+            {
+                lockDenied = true;
+                return false;
+            }
+
+            if (!TryRefreshMetabolicStateHandle(vault))
+            {
+                lockDenied = vault.IsCompactionFenceActive;
+                return false;
+            }
+
+            float safeRealO201 = math.saturate(math.select(0f, realO201, math.isfinite(realO201)));
+            float safeAgonyTimeRemaining = math.max(0f, math.select(0f, agonyTimeRemaining, math.isfinite(agonyTimeRemaining)));
+            byte safeHypoxiaState = (byte)math.select(0, 1, isInHypoxia != 0);
+            uint signalSourceId = ResolveSurvivalVitalsSignalSourceId();
+
+            VaultGenerationHandle<MetabolicStateDTO> writeHandle = _metabolicStateHandle;
+            bool fenceActiveBeforeLock = vault.IsCompactionFenceActive;
+            if (fenceActiveBeforeLock ||
+                !vault.TryAcquireWriteLock(in writeHandle, SystemID.GameplayPlayer, out NativeArray<MetabolicStateDTO> states))
+            {
+                lockDenied = true;
+                if (!fenceActiveBeforeLock && !vault.IsCompactionFenceActive)
+                {
+                    _metabolicStateHandle = default;
+                    _metabolicStateHandleReady = false;
+                    _nextMetabolicStateHandleRetryFrame = 0u;
+                }
+
+                return false;
+            }
+
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !states.IsCreated ||
+                    states.Length <= 0)
+                {
+                    lockDenied = true;
+                    _metabolicStateHandle = default;
+                    _metabolicStateHandleReady = false;
+                    _nextMetabolicStateHandleRetryFrame = 0u;
+                    return false;
+                }
+
+                MetabolicStateDTO state = states[0];
+                state.RealO2 = safeRealO201;
+                state.AgonyTimeRemaining = safeAgonyTimeRemaining;
+                state.IsInHypoxia = safeHypoxiaState;
+                if (state.EntityHashID == 0u)
+                    state.EntityHashID = signalSourceId;
+                state.Flags = safeHypoxiaState != 0
+                    ? state.Flags | ShinobuMetabolismVaultContract.FlagHypoxia
+                    : state.Flags & ~ShinobuMetabolismVaultContract.FlagHypoxia;
+                states[0] = state;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in writeHandle, SystemID.GameplayPlayer);
+            }
+        }
+
+        private uint ResolveSurvivalVitalsSignalSourceId()
+        {
+            if (_survivalVitalsSignalSourceId == 0u)
+                _survivalVitalsSignalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+
+            return _survivalVitalsSignalSourceId;
+        }
+
         // ---------------------------------------------------------
         //  PUBLIC API
         // ---------------------------------------------------------
 
         public void RefillOxygen(float amount)
         {
-            oxygen = math.min(ResolveRuntimeMaxOxygenCapacity(), oxygen + math.max(0f, amount));
+            ApplyOxygenRefill(amount);
+        }
+
+        public void ApplyOxygenRefill(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            float nextOxygen = math.min(ResolveRuntimeMaxOxygenCapacity(), oxygen + math.max(0f, amount));
+            bool lockDenied = false;
+            bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                ResolveRealOxygen01(nextOxygen),
+                0f,
+                0,
+                out lockDenied);
+            if (lockDenied)
+                return;
+
+            oxygen = nextOxygen;
+            if (oxygen > 0f)
+            {
+                ResetOxygenGraceState();
+                _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+            }
+
             ForceDirty(ref lastPubOxygen);
         }
 
@@ -2600,8 +3034,31 @@ namespace Hecton8.Gameplay
         /// <param name="multiplier">Runtime oxygen-capacity multiplier.</param>
         public void SetRuntimeOxygenCapacityMultiplier(float multiplier)
         {
-            _runtimeOxygenCapacityMultiplier = Mathf.Clamp(multiplier, 0.5f, 4f);
-            oxygen = Mathf.Clamp(oxygen, 0f, ResolveRuntimeMaxOxygenCapacity());
+            float previousMultiplier = _runtimeOxygenCapacityMultiplier;
+            float nextMultiplier = math.clamp(multiplier, 0.5f, 4f);
+            _runtimeOxygenCapacityMultiplier = nextMultiplier;
+
+            float nextOxygen = math.clamp(oxygen, 0f, ResolveRuntimeMaxOxygenCapacity());
+            byte nextHypoxiaState = (byte)math.select(0, 1, nextOxygen <= 0f);
+            float nextAgonyTimeRemaining = ResolveStagedAgonyTimeRemaining(nextHypoxiaState);
+            bool lockDenied = false;
+            bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                ResolveRealOxygen01(nextOxygen),
+                nextAgonyTimeRemaining,
+                nextHypoxiaState,
+                out lockDenied);
+            if (lockDenied)
+            {
+                _runtimeOxygenCapacityMultiplier = previousMultiplier;
+                return;
+            }
+
+            oxygen = nextOxygen;
+            _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+            if (oxygen > 0f)
+                ResetOxygenGraceState();
+            else
+                UpdateOxygenGraceState(0f);
             ForceDirty(ref lastPubOxygen);
         }
 
@@ -2640,7 +3097,22 @@ namespace Hecton8.Gameplay
             if (amount <= 0f)
                 return;
 
-            oxygen = math.max(0f, oxygen - amount);
+            float nextOxygen = math.max(0f, oxygen - amount);
+            byte nextHypoxiaState = (byte)math.select(0, 1, nextOxygen <= 0f);
+            float nextAgonyTimeRemaining = ResolveStagedAgonyTimeRemaining(nextHypoxiaState);
+            bool lockDenied = false;
+            bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                ResolveRealOxygen01(nextOxygen),
+                nextAgonyTimeRemaining,
+                nextHypoxiaState,
+                out lockDenied);
+            if (lockDenied)
+                return;
+
+            oxygen = nextOxygen;
+            _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+            if (oxygen <= 0f)
+                UpdateOxygenGraceState(0f);
             ForceDirty(ref lastPubOxygen);
             CheckLethalConditions();
         }
@@ -3016,7 +3488,27 @@ namespace Hecton8.Gameplay
             _nitrogenBuildUp = Mathf.Clamp(dto.nitrogenBuildUp, 0f, NitrogenBuildUpHardCap);
             _nitrogenLoad = NitrogenBaselinePressureAtm;
             RefreshNitrogenNarcosisRuntimeState();
-            ResetOxygenGraceState();
+            if (oxygen > 0f)
+            {
+                ResetOxygenGraceState();
+                _metabolicOxygenStateSyncedThisTick = TryWriteMetabolicOxygenStateToVault(
+                    ResolveRealOxygen01(oxygen),
+                    0f,
+                    0,
+                    out _);
+            }
+            else
+            {
+                _oxygenGraceActive = true;
+                _oxygenGraceTimer = OxygenGraceDurationSeconds;
+                _oxygenGraceVisionBlur01 = 0f;
+                _metabolicOxygenStateSyncedThisTick = TryWriteMetabolicOxygenStateToVault(
+                    0f,
+                    OxygenGraceDurationSeconds,
+                    1,
+                    out _);
+            }
+
             alive     = integrity > 0f;
             _lastDeathCause = alive ? SurvivalDeathCause.None : ResolveDeathCause();
             _pendingIntegrityDeathCause = SurvivalDeathCause.None;
@@ -3087,6 +3579,7 @@ namespace Hecton8.Gameplay
             ResetInjuryState();
             ResetThermalState();
             ResetOxygenGraceState();
+            _metabolicOxygenStateSyncedThisTick = TryWriteMetabolicOxygenStateToVault(1f, 0f, 0, out _);
 
             _tempGraceTimer = 0f;
             _radGraceTimer  = 0f;

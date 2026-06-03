@@ -1,10 +1,17 @@
 ---
 packet_id: P006_DEAD_CLAIM_CACHE
+release_set_id: RS002_DEEPENING_DESCENT
 article_id: marauder.dead_claim_cache
+unlock_id: unlock.first_marauder_cache
+poi_tags: poi.dead_claim_buoy;poi.marauder_cache
+biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: es_ES
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Caché de claim muerto

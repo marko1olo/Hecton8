@@ -83,6 +83,7 @@ Assets\_Project\Scripts\Core\ExosuitKinematicAuthority.cs
 Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs
 Assets\_Project\Scripts\Core\FrameTimeWatchdog.cs
 Assets\_Project\Scripts\Core\GCMonitor.cs
+Assets\_Project\Scripts\Core\Generated\H8AppliedLoreHashes.cs
 Assets\_Project\Scripts\Core\Generated\H8Hashes.cs
 Assets\_Project\Scripts\Core\GlobalRegistry.BatteryChargerLogistics.cs
 Assets\_Project\Scripts\Core\GlobalRegistry.cs

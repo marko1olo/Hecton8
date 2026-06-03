@@ -916,7 +916,10 @@ namespace Hecton8.Physics.KCC
                     CoreTemperature = 37f,
                     Toxicity = toxicity,
                     EntityHashID = HydrodynamicKccMath.SourceHash,
-                    Flags = ShinobuMetabolismVaultContract.FlagMockEntity
+                    Flags = ShinobuMetabolismVaultContract.FlagMockEntity,
+                    RealO2 = 1f,
+                    AgonyTimeRemaining = 0f,
+                    IsInHypoxia = 0
                 };
             }
         }
@@ -1203,7 +1206,7 @@ namespace Hecton8.Physics.KCC
             float toxicity01 = math.saturate((math.isfinite(metabolism.Toxicity) ? metabolism.Toxicity : 0f) * 0.125f);
             float starvation = 1f - calories01;
             float dehydration = 1f - hydration01;
-            float fatigueScalar = math.asfloat(metabolism._pad0);
+            float fatigueScalar = metabolism.Fatigue01;
             fatigueScalar = math.saturate(math.isfinite(fatigueScalar) ? fatigueScalar : 0f);
             float fatigue = math.max(fatigueScalar, math.select(0f, 0.35f, (metabolism.Flags & ShinobuMetabolismVaultContract.FlagFatigue) != 0u));
             starvation = math.max(starvation, math.select(0f, 0.75f, (metabolism.Flags & ShinobuMetabolismVaultContract.FlagStarving) != 0u));

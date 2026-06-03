@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1606799836578873116}
   - component: {fileID: 5296668498596074754}
+  - component: {fileID: 8629506159845022667}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__cathedral
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 53098819813001967}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.01983881, y: 1.1833434, z: -0.38068217}
-  m_Size: 2.3666868
+  m_LocalReferencePoint: {x: 0.019833982, y: 1.1833438, z: -0.3807227}
+  m_Size: 2.3666875
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 1159502902301678376}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8629506159845022667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 53098819813001967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 42ac70dc084d68245aa0b3e194d5cc1d, type: 2}
 --- !u!1 &5374007081977466918
 GameObject:
   m_ObjectHideFlags: 0

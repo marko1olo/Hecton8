@@ -8,9 +8,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Gameplay
 {
@@ -18,10 +15,6 @@ namespace Hecton8.Gameplay
     public sealed class HarpoonLauncherTool : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string HarpoonCategory = "HARPOON";
-        private const string TracerShaderName = "Hecton8/Physics/TetherLineStrip";
-#if UNITY_EDITOR
-        private const string TracerShaderPath = "Assets/_Project/Art/Shaders/Hecton_TetherLineStrip.shader";
-#endif
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
         private static readonly int _TetherSegmentTensionsId = Shader.PropertyToID("_TetherSegmentTensions");
         private static readonly int _TetherDrawParamsId = Shader.PropertyToID("_TetherDrawParams");
@@ -135,14 +128,6 @@ namespace Hecton8.Gameplay
             public bool TryWriteRecommendation(ref FixedCharBuffer buffer) => RecommendationText.TryWrite(ref buffer);
         }
 
-        private static Material s_tracerMaterial;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_tracerMaterial = null;
-        }
-
         [Header("Harpoon")]
         [SerializeField] private float range = 36f;
         [SerializeField] private float damage = 42f;
@@ -157,7 +142,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float tetherPullBonus = 1.35f;
 
         [Header("Tracer")]
-        [SerializeField] private Shader tracerShader;
+        [SerializeField] private Material tracerMaterial;
         [SerializeField] private float tracerLifetime = 0.08f;
         [SerializeField] private Color tracerColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
         [SerializeField, Range(0.002f, 0.05f)] private float tracerRadius = 0.012f;
@@ -200,7 +185,6 @@ namespace Hecton8.Gameplay
         {
             ResolveHeavyTowWinch();
             EnsureTracer();
-            GetTracerMaterial();
             SetTracer(false, Vector3.zero);
         }
 
@@ -212,7 +196,6 @@ namespace Hecton8.Gameplay
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
             EnsureTracer();
-            GetTracerMaterial();
             _feedbackCooldownRemaining = 0f;
             _tracerShaderTime = 0f;
             TryRegisterLateFrameTick();
@@ -226,7 +209,6 @@ namespace Hecton8.Gameplay
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
             EnsureTracer();
-            GetTracerMaterial();
             InvalidateAssessmentCache();
         }
 
@@ -636,36 +618,11 @@ namespace Hecton8.Gameplay
 
         private bool HasTracerReady()
         {
-            return s_tracerMaterial != null &&
+            return tracerMaterial != null &&
                    _tracerPositionBuffer != null &&
                    _tracerTensionBuffer != null &&
                    _tracerDrawParamsBuffer != null &&
                    _tracerPropertyBlock != null;
-        }
-
-        private Material GetTracerMaterial()
-        {
-            if (s_tracerMaterial != null)
-                return s_tracerMaterial;
-
-            Shader shader = tracerShader;
-#if UNITY_EDITOR
-            if (shader == null)
-                shader = AssetDatabase.LoadAssetAtPath<Shader>(TracerShaderPath);
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find(TracerShaderName);
-#endif
-            if (shader == null)
-                return null;
-
-            s_tracerMaterial = new Material(shader)
-            {
-                name = "MAT_Runtime_HarpoonGpuTracer",
-                hideFlags = HideFlags.DontSave
-            };
-            return s_tracerMaterial;
         }
 
         public void LateFrameTick()
@@ -681,7 +638,7 @@ namespace Hecton8.Gameplay
             if (!HasTracerReady())
                 return;
 
-            Material material = s_tracerMaterial;
+            Material material = tracerMaterial;
             if (material == null)
                 return;
 

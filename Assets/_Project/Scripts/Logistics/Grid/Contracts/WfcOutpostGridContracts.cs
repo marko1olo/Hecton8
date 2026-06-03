@@ -40,7 +40,7 @@ namespace Hecton8.Logistics.Grid.Contracts
         public const byte West = 1 << 7;
 
         public const ushort DescriptorFlagLowTier = 1 << 0;
-        public const ushort DescriptorFlagHeightmapFallback = 1 << 1;
+        public const ushort DescriptorFlagMissingHeightmap = 1 << 1;
 
         public static int Flatten(int x, int y, int z, int3 dimensions)
         {

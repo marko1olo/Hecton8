@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7231304221214078256}
   - component: {fileID: 5739028849058637462}
+  - component: {fileID: 922147863105069189}
   m_Layer: 0
   m_Name: GEN_family_kelp_patch_dense__patch
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3499354349611709861}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.011200488, y: 1.4981623, z: 0.0644815}
-  m_Size: 2.9963245
+  m_LocalReferencePoint: {x: -0.011057913, y: 1.5585217, z: 0.045890033}
+  m_Size: 3.1170435
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 4502275584660546807}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &922147863105069189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3499354349611709861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: b376d77507bc1f14ca7dd1ed289303f3, type: 2}
 --- !u!1 &6394192865274948737
 GameObject:
   m_ObjectHideFlags: 0

@@ -577,8 +577,6 @@ namespace Hecton8.Physics
         private const int MaxTrackedSleepColliderRefs = MaxTrackedBodies * MaxSleepCollidersPerBody;
         private const int SceneRootScanCapacity = 128;
         private const int SceneRigidbodyScanCapacity = MaxTrackedBodies;
-        private const int MeshColliderScratchCapacity = 64;
-        private const int SleepColliderScratchCapacity = 64;
         private const float MinMass = 0.0001f;
         private const float MassRatioThreshold = 100f;
         private const float MinImpactForce = 0.01f;
@@ -633,8 +631,6 @@ namespace Hecton8.Physics
         private const float KinematicHitStopDurationSeconds = 0.1f;
         private const float SpeculativeHoverTideMinScale = 0.75f;
         private const float SpeculativeHoverTideMaxScale = 1.25f;
-        private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
-        private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
         private const SystemID OwnerSystemId = SystemID.GlobalPhysicsStateManager;
         private static readonly ulong PhysicsCullingSchedulingMutationGuardMask1337 =
             PhysicsVaultMutationGuardBit(BufferID.RigidbodyAUPs) |
@@ -681,14 +677,10 @@ namespace Hecton8.Physics
         private readonly MeshCollider[] _trackedMeshColliders = new MeshCollider[MaxTrackedMeshColliderRefs];
         // COLD ALLOC: byte[2048] - pre-strip enabled flags for mesh collider restoration - owner: GlobalPhysicsStateManager
         private readonly byte[] _trackedMeshColliderEnabledBeforeStrip = new byte[MaxTrackedMeshColliderRefs];
-        // COLD ALLOC: List<MeshCollider>[64] - cold registration scratch; never used by frame loops - owner: GlobalPhysicsStateManager
-        private readonly List<MeshCollider> _meshColliderScratch = new List<MeshCollider>(MeshColliderScratchCapacity);
         // COLD ALLOC: Collider[8192] - cached collider refs for distance sleep disable/restore - owner: GlobalPhysicsStateManager
         private readonly Collider[] _trackedSleepColliders = new Collider[MaxTrackedSleepColliderRefs];
         // COLD ALLOC: byte[8192] - pre-sleep collider enabled flags for restoration - owner: GlobalPhysicsStateManager
         private readonly byte[] _trackedSleepColliderEnabledBeforeSleep = new byte[MaxTrackedSleepColliderRefs];
-        // COLD ALLOC: List<Collider>[64] - cold registration scratch; never used by frame loops - owner: GlobalPhysicsStateManager
-        private readonly List<Collider> _sleepColliderScratch = new List<Collider>(SleepColliderScratchCapacity);
         // COLD ALLOC: Dictionary<int,int>[2048] - Unity instance-id to tracked index for O(1) wake signals - owner: GlobalPhysicsStateManager
         private readonly Dictionary<int, int> _trackedBodyIndexByInstanceId = new Dictionary<int, int>(MaxTrackedBodies);
         // COLD ALLOC: int[2048] - bounded dirty body queue for added-mass tensor updates - owner: GlobalPhysicsStateManager
@@ -3819,8 +3811,13 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                _trackedMeshColliderEnabledBeforeStrip[colliderIndex] = meshCollider.enabled ? (byte)1 : (byte)0;
-                meshCollider.enabled = false;
+                bool wasEnabled = meshCollider.enabled;
+                _trackedMeshColliderEnabledBeforeStrip[colliderIndex] = wasEnabled ? (byte)1 : (byte)0;
+                if (wasEnabled)
+                {
+                    meshCollider.enabled = false;
+                    RecordPhysicsColliderToggleTransition();
+                }
             }
 
             bodyState.MeshColliderStripActive = 1;
@@ -3834,7 +3831,10 @@ namespace Hecton8.Physics
             {
                 MeshCollider meshCollider = _trackedMeshColliders[baseIndex + i];
                 if (meshCollider != null && meshCollider.enabled)
+                {
                     meshCollider.enabled = false;
+                    RecordPhysicsColliderToggleTransition();
+                }
             }
         }
 
@@ -3850,7 +3850,14 @@ namespace Hecton8.Physics
                 int colliderIndex = baseIndex + i;
                 MeshCollider meshCollider = _trackedMeshColliders[colliderIndex];
                 if (meshCollider != null)
-                    meshCollider.enabled = _trackedMeshColliderEnabledBeforeStrip[colliderIndex] != 0;
+                {
+                    bool shouldEnable = _trackedMeshColliderEnabledBeforeStrip[colliderIndex] != 0;
+                    if (meshCollider.enabled != shouldEnable)
+                    {
+                        meshCollider.enabled = shouldEnable;
+                        RecordPhysicsColliderToggleTransition();
+                    }
+                }
 
                 _trackedMeshColliderEnabledBeforeStrip[colliderIndex] = 0;
             }
@@ -3864,14 +3871,21 @@ namespace Hecton8.Physics
             if (body == null)
                 return 0;
 
-            _meshColliderScratch.Clear();
-            body.GetComponentsInChildren(false, _meshColliderScratch);
-            int count = math.min(_meshColliderScratch.Count, MaxMeshCollidersPerBody);
-            int baseIndex = bodyIndex * MaxMeshCollidersPerBody;
-            for (int i = 0; i < count; i++)
-                _trackedMeshColliders[baseIndex + i] = _meshColliderScratch[i];
+            if (!TryResolvePhysicsCullingColliderCache(body, out IPhysicsCullingColliderCache colliderCache) ||
+                !colliderCache.TryGetPhysicsCullingColliders(out Collider[] colliders, out int colliderCount))
+            {
+                return 0;
+            }
 
-            _meshColliderScratch.Clear();
+            int readCount = colliders != null ? math.min(colliderCount, colliders.Length) : 0;
+            int count = 0;
+            int baseIndex = bodyIndex * MaxMeshCollidersPerBody;
+            for (int i = 0; i < readCount && count < MaxMeshCollidersPerBody; i++)
+            {
+                if (colliders[i] is MeshCollider meshCollider)
+                    _trackedMeshColliders[baseIndex + count++] = meshCollider;
+            }
+
             return (byte)count;
         }
 
@@ -4080,6 +4094,9 @@ namespace Hecton8.Physics
                 return;
 
             float safeDeltaTime = math.max(0f, fixedDeltaTime);
+            float qualityWeight = ResolvePhysicsCullingQualityWeight01();
+            double compoundToSimpleDistanceSq = ResolveColliderLodCompoundToSimpleDistanceSq(qualityWeight);
+            double simpleToCompoundDistanceSq = ResolveColliderLodSimpleToCompoundDistanceSq(qualityWeight);
             for (int i = _trackedBodyCount - 1; i >= 0; i--)
             {
                 Rigidbody body = _trackedBodies[i];
@@ -4107,20 +4124,20 @@ namespace Hecton8.Physics
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in bodyAup, in playerAup);
                 if (bodyState.ColliderLodDistanceGateOpen != 0)
                 {
-                    if (distanceSq <= ColliderLodSimpleToCompoundDistanceSq)
+                    if (distanceSq <= simpleToCompoundDistanceSq)
                     {
                         bodyState.ColliderLodDistanceGateOpen = 0;
                         bodyState.ColliderLodOutOfRangeSeconds = 0f;
-                        bodyState.ColliderLodSink.SetColliderLodDistanceGate(false);
+                        RecordPhysicsColliderToggleTransitions(SetColliderLodDistanceGateAndCountTransitions(bodyState.ColliderLodSink, false));
                     }
                 }
-                else if (distanceSq > ColliderLodCompoundToSimpleDistanceSq)
+                else if (distanceSq > compoundToSimpleDistanceSq)
                 {
                     bodyState.ColliderLodOutOfRangeSeconds += safeDeltaTime;
                     if (bodyState.ColliderLodOutOfRangeSeconds >= ColliderLodSimplifyHysteresisSeconds)
                     {
                         bodyState.ColliderLodDistanceGateOpen = 1;
-                        bodyState.ColliderLodSink.SetColliderLodDistanceGate(true);
+                        RecordPhysicsColliderToggleTransitions(SetColliderLodDistanceGateAndCountTransitions(bodyState.ColliderLodSink, true));
                     }
                 }
                 else
@@ -4515,13 +4532,29 @@ namespace Hecton8.Physics
             return !(sink is UnityEngine.Object unityObject) || unityObject != null;
         }
 
-        private static void RestoreColliderLodGate(ref RigidbodyState bodyState)
+        private static int SetColliderLodDistanceGateAndCountTransitions(
+            IPhysicsColliderLodHysteresisSink sink,
+            bool allowSimplifiedColliderLod)
+        {
+            if (!IsColliderLodSinkAlive(sink))
+                return 0;
+
+            if (sink is IPhysicsColliderLodTransitionSink transitionSink)
+                return transitionSink.SetColliderLodDistanceGateAndCountTransitions(allowSimplifiedColliderLod);
+
+            sink.SetColliderLodDistanceGate(allowSimplifiedColliderLod);
+            return 1;
+        }
+
+        private void RestoreColliderLodGate(ref RigidbodyState bodyState)
         {
             if (bodyState.ColliderLodDistanceGateOpen == 0)
                 return;
 
             if (IsColliderLodSinkAlive(bodyState.ColliderLodSink))
-                bodyState.ColliderLodSink.SetColliderLodDistanceGate(false);
+            {
+                RecordPhysicsColliderToggleTransitions(SetColliderLodDistanceGateAndCountTransitions(bodyState.ColliderLodSink, false));
+            }
 
             bodyState.ColliderLodDistanceGateOpen = 0;
             bodyState.ColliderLodOutOfRangeSeconds = 0f;

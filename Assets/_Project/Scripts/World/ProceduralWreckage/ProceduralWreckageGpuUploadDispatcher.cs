@@ -23,13 +23,14 @@ namespace Hecton8.World.ProceduralWreckage
         private int _writeIndex;
         private int _activeIndex = -1;
         private int _activeInstanceCount;
-        private readonly MaterialPropertyBlock _propertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock _propertyBlock;
         private WreckageGpuScalarDTO _activeScalar;
         private bool _hasActiveScalar;
 
         public bool EnsureGraphicsResources(int requiredCapacity)
         {
             int capacity = math.max(1, requiredCapacity);
+            EnsurePropertyBlockCold();
             if (_capacity >= capacity &&
                 IsValid(_matrixBufferA, _capacity, UnsafeUtility.SizeOf<float4x4>()) &&
                 IsValid(_matrixBufferB, _capacity, UnsafeUtility.SizeOf<float4x4>()) &&
@@ -141,6 +142,9 @@ namespace Hecton8.World.ProceduralWreckage
                 return false;
             }
 
+            if (_propertyBlock == null)
+                return false;
+
             _propertyBlock.Clear();
             _propertyBlock.SetBuffer(_WreckageMatricesId, matrixBuffer);
             ApplyScalars(_propertyBlock);
@@ -211,7 +215,16 @@ namespace Hecton8.World.ProceduralWreckage
             _activeInstanceCount = 0;
             _activeScalar = default;
             _hasActiveScalar = false;
-            _propertyBlock.Clear();
+            if (_propertyBlock != null)
+                _propertyBlock.Clear();
+        }
+
+        private void EnsurePropertyBlockCold()
+        {
+            if (_propertyBlock != null)
+                return;
+
+            _propertyBlock = new MaterialPropertyBlock();
         }
 
         private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct

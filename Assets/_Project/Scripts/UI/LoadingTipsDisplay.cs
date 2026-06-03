@@ -69,7 +69,7 @@ namespace Hecton8.UI
             "Keep your loadout aligned with cargo before committing to depth.",
             "Repair critical infrastructure before exploring new zones.",
             "Use quick slots (1-4) to arm tools without opening inventory.",
-            "PDA (TAB) provides mission logs, blueprints, and scan data.",
+            "PDA (P) provides mission logs, blueprints, and scan data.",
             "Fabricators require power and raw materials to craft items.",
             "Oxygen levels drop faster at greater depths, plan your route.",
             "Flashlight battery depletes over time, conserve power in lit areas.",

@@ -736,7 +736,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half solarCloudFade = smoothstep(-0.08h, 0.24h, sunElevation);
                 half cloudDayReturn = solarCloudFade * solarCloudFade;
                 cloudDayReturn *= cloudDayReturn;
-                half nightCloudVisibility = lerp(0.002h, 1.0h, cloudDayReturn);
+                // Surface sky cannot collapse to a flat cyan wash when the sun is low.
+                // Aegir and moonlight still reveal cloud mass; only contrast/detail recedes.
+                half nightCloudVisibility = lerp(0.46h, 1.0h, cloudDayReturn);
 
                 half skyNightDimFactor = lerp(1.0h, 0.18h, nightFactor);
                 half skyDimFactor = skyNightDimFactor * lerp(1.0h, 0.12h,
@@ -890,7 +892,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 //   0.0 = at horizon (thick atmosphere, full wash)
                 //   1.0 = above about 17 degrees (clear, full detail)
                 // =======================================
-                half atmosClarity = smoothstep(0.05h, 0.30h, horizonFactor);
+                half atmosClarity = smoothstep(-0.012h, 0.22h, horizonFactor);
 
                 // =======================================
                 // LAYER 1: CIRRUS CLOUDS
@@ -998,14 +1000,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // lerp(skyColor, cloudColor, 0) = skyColor -> no contrast
                 // -> no visible aliasing -> no barcode -> no gap.
                 // Above about 17 degrees: clouds render normally.
-                cloudColor = lerp(skyColor, cloudColor, atmosClarity);
+                half cloudPerspective = lerp(0.62h, 1.0h, atmosClarity);
+                cloudColor = lerp(skyColor, cloudColor, cloudPerspective);
 
-                // v5.3: gentle height fade. Since cloudColor = skyColor at horizon,
-                // this is cosmetic -- lerp(sky, sky, mask) = sky regardless.
-                // Prevents any residual edge at the very bottom of the dome.
-                half finalCloudMask = cloudMask
-                                    * saturate(horizonFactor * 4.0h)
-                                    * lerp(0.01h, 1.0h, cloudDayReturn);
+                // Keep a believable lower cloud floor at the waterline. Haze softens it,
+                // but it must not erase all cloud structure from surface screenshots.
+                half horizonCloudFloor = lerp(0.66h, 1.0h, saturate(horizonFactor * 2.5h));
+                half cloudBodyMask = saturate(max(cloudMask, cirrusDensity * _CirrusOpacity * 0.35h));
+                half finalCloudMask = cloudBodyMask
+                                    * horizonCloudFloor
+                                    * lerp(0.42h, 1.0h, cloudDayReturn);
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
 
                 // Low ocean mist shelf: a soft air-mass veil hugging the horizon.
@@ -1039,6 +1043,58 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     sharedAtmosphereSample,
                     _AtmosphereTransmittanceWeight,
                     _AtmosphereInscatterWeight);
+
+                // Surface readability pass. The atmosphere LUT is allowed to tint
+                // and soften clouds, but not erase the authored cloud deck into a
+                // flat cyan/black wash in surface screenshots or Scene View.
+                half surfaceReadability = saturate(
+                    (1.0h - nightFactor)
+                    * (1.0h - (half)_EclipseOcclusion)
+                    * (1.0h - nadirMask));
+                half3 surfaceSkyFloor = lerp(
+                    _SkyColorHorizon.rgb,
+                    _SkyColorZenith.rgb,
+                    saturate(zenithMask * 0.82h + horizonMask * 0.18h));
+                skyColor = max(
+                    skyColor,
+                    surfaceSkyFloor * surfaceReadability * 0.24h);
+
+                float2 authoredCloudReadUV;
+                authoredCloudReadUV.x = HectonFastLongitude01(sampledVf.z, sampledVf.x)
+                                      * max(_CloudTiling.x, 0.001)
+                                      + _WindDirection.x * HectonSkyAnimationTime() * _CloudSpeedMult * 0.08;
+                authoredCloudReadUV.y = saturate(sampledVf.y * 0.62 + 0.42)
+                                      * max(_CloudTiling.y, 0.001)
+                                      + _WindDirection.y * HectonSkyAnimationTime() * _CloudSpeedMult * 0.035;
+                half authoredCloudDensity = SAMPLE_TEXTURE2D(
+                    _MainCloudTex,
+                    sampler_MainCloudTex,
+                    authoredCloudReadUV).r;
+                half authoredCloudMask = smoothstep(0.30h, 0.70h, authoredCloudDensity);
+
+                half postAtmosphereCloudMask = smoothstep(0.42h, 0.86h, cloudRG.x);
+                postAtmosphereCloudMask = max(postAtmosphereCloudMask, authoredCloudMask * 0.82h);
+                postAtmosphereCloudMask = max(postAtmosphereCloudMask, finalCloudMask * 0.72h);
+                postAtmosphereCloudMask *= (1.0h - nadirMask)
+                                        * lerp(0.34h, 0.68h, cloudDayReturn)
+                                        * lerp(0.72h, 1.0h, atmosClarity);
+                half3 postAtmosphereCloudColor = lerp(
+                    _CloudColorShadow.rgb,
+                    _CloudColorLit.rgb,
+                    saturate(cloudNdotL * 0.48h + 0.36h));
+                postAtmosphereCloudColor = lerp(
+                    postAtmosphereCloudColor,
+                    _NightCloudColor.rgb,
+                    eclipseNight * 0.55h);
+                postAtmosphereCloudColor *= max(_SkyLuminanceMultiplier, 0.78h);
+                postAtmosphereCloudColor = lerp(
+                    skyColor,
+                    postAtmosphereCloudColor,
+                    0.78h);
+                skyColor = lerp(
+                    skyColor,
+                    postAtmosphereCloudColor,
+                    saturate(postAtmosphereCloudMask));
 
                 // =======================================
                 // SUN DISC

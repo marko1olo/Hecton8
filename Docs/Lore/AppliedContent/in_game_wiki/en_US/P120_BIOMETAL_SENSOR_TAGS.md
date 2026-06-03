@@ -1,10 +1,17 @@
 ---
 packet_id: P120_BIOMETAL_SENSOR_TAGS
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.biometal_sensor_tags
+unlock_id: unlock.first_biometal_sensor_tags
+poi_tags: poi.sensor_tag_fauna;poi.biometal_scale_cluster
+biome_tags: biome.repair_ecology;biome.abyssal_machine_field
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Biometal Sensor Tags

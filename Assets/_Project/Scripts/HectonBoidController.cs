@@ -234,6 +234,9 @@ namespace Hecton8.AI.GPU
                  "Ð•ÑÐ»Ð¸ null â€” obstacle avoidance Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ flat plane.")]
         [SerializeField] private Texture2D heightMap;
 
+        [Tooltip("Authored flat R8 height texture used when no terrain heightmap is available. Runtime texture synthesis is forbidden.")]
+        [SerializeField] private Texture2D neutralHeightMap;
+
         [Tooltip("ÐœÐ¸Ñ€Ð¾Ð²Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð½Ð°Ñ‡Ð°Ð»Ð° Ñ‚ÐµÑ€Ñ€ÐµÐ¹Ð½Ð° (XZ).")]
         [SerializeField] private Vector2 worldOffset = Vector2.zero;
 
@@ -250,8 +253,12 @@ namespace Hecton8.AI.GPU
         [SerializeField] private bool enableVoxelSdfAvoidance = true;
         [SerializeField] private HectonCaveVoxelLightingVolume caveSdfOverride;
         [SerializeField] private float voxelSdfWeight = 1.35f;
+        [Tooltip("Authored white SDF Texture3D used when cave SDF is unavailable. Runtime Texture3D fallback generation is forbidden.")]
+        [SerializeField] private Texture3D neutralCaveSdfTexture;
         [SerializeField] private bool enableAbyssalFlowAdvection = true;
         [SerializeField] private float abyssalFlowWeight = 0.35f;
+        [Tooltip("Authored zero-flow Texture3D used when abyssal flow is unavailable. Runtime Texture3D fallback generation is forbidden.")]
+        [SerializeField] private Texture3D neutralAbyssalFlowTexture;
         [SerializeField] private float predatorPanicRadius = 18f;
         [SerializeField] private float predatorEvasionWeight = 1f;
         [SerializeField] private float acousticPingShockwaveWeight = 1f;
@@ -464,9 +471,8 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private Bounds _simulationBounds;
 
-        /// <summary>Owner-local material copy for instanced rendering. Reused and released with GPU resources.</summary>
-        private Material _runtimeFishMaterial;
-        private Material _runtimeFishSourceMaterial;
+        /// <summary>Owner-local indirect draw properties. Bound through RenderParams.matProps; authored fishMaterial is never cloned or mutated.</summary>
+        private MaterialPropertyBlock _renderMaterialProperties; // COLD ALLOC: MaterialPropertyBlock[1] - boid indirect draw payload - owner: HectonBoidController
 
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð°Ñ ÐºÐ°Ð¼ÐµÑ€Ð°.</summary>
         private Camera _mainCamera;
@@ -541,8 +547,9 @@ namespace Hecton8.AI.GPU
                 return;
             }
 
-            if (!EnsureRuntimeFishMaterialReady())
+            if (!HasAuthoredNeutralTextures())
             {
+                Hecton8.Core.H8Debug.LogError("[HectonBoidController] Missing authored neutral height/SDF/flow textures. Runtime texture fallback generation is forbidden.", this);
                 enabled = false;
                 return;
             }
@@ -558,35 +565,6 @@ namespace Hecton8.AI.GPU
 
             _simulationBounds = new Bounds(boundsCenter, boundsSize * 2f);
             _initialized      = true;
-        }
-
-        private bool EnsureRuntimeFishMaterialReady()
-        {
-            if (fishMaterial == null)
-                return false;
-
-            if (_runtimeFishMaterial != null && ReferenceEquals(_runtimeFishSourceMaterial, fishMaterial))
-                return true;
-
-            ReleaseRuntimeFishMaterial();
-
-            _runtimeFishMaterial = new Material(fishMaterial)
-            {
-                name = "[HectonBoid] RuntimeFishMaterial",
-                hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Material[1] - owner-local boid indirect draw state - owner: HectonBoidController
-            _runtimeFishSourceMaterial = fishMaterial;
-            return true;
-        }
-
-        private void ReleaseRuntimeFishMaterial()
-        {
-            if (_runtimeFishMaterial == null)
-                return;
-
-            Destroy(_runtimeFishMaterial);
-            _runtimeFishMaterial = null;
-            _runtimeFishSourceMaterial = null;
         }
 
         private void OnEnable()
@@ -638,6 +616,13 @@ namespace Hecton8.AI.GPU
             TryUnregisterHotSwapListener();
             ReleaseBoidBlackBoxHandle(_dataVault);
             ReleaseBuffers();
+        }
+
+        private bool HasAuthoredNeutralTextures()
+        {
+            return (heightMap != null || neutralHeightMap != null) &&
+                   neutralCaveSdfTexture != null &&
+                   neutralAbyssalFlowTexture != null;
         }
 
         /// <inheritdoc />
@@ -829,7 +814,7 @@ namespace Hecton8.AI.GPU
 
         private bool HasRuntimeBuffersReady()
         {
-            return _runtimeFishMaterial != null &&
+            return fishMaterial != null &&
                    _boidsBufferA != null &&
                    _boidsBufferB != null &&
                    _spatialGridCountBuffer != null &&
@@ -943,13 +928,11 @@ namespace Hecton8.AI.GPU
 
             if (_fallbackVoxelSdfTexture != null)
             {
-                Destroy(_fallbackVoxelSdfTexture);
                 _fallbackVoxelSdfTexture = null;
             }
 
             if (_fallbackAbyssalFlowTexture != null)
             {
-                Destroy(_fallbackAbyssalFlowTexture);
                 _fallbackAbyssalFlowTexture = null;
             }
 
@@ -1009,12 +992,16 @@ namespace Hecton8.AI.GPU
             //  (Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¸Ð· OnDestroy).
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+            _fallbackHeightMap = heightMap == null ? neutralHeightMap : null;
+
             if (heightMap == null && _fallbackHeightMap == null)
             {
                 // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð¼Ð¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½ÑƒÑŽ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ñƒ 4Ã—4 (R8 = 16 Ð±Ð°Ð¹Ñ‚ Ð½Ð° GPU).
                 // Ð§Ñ‘Ñ€Ð½Ð°Ñ = Ð²Ñ‹ÑÐ¾Ñ‚Ð° 0 = Ð¿Ð»Ð¾ÑÐºÐ¾Ðµ Ð´Ð½Ð¾.
                 // hideFlags Ð¿Ñ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ð¿Ð¾ÑÐ²Ð»ÐµÐ½Ð¸Ðµ Ð² Project/Hierarchy.
-                _fallbackHeightMap = new Texture2D(4, 4, TextureFormat.R8, false)
+                _fallbackHeightMap = neutralHeightMap;
+                /*
+                Runtime texture synthesis removed; neutralHeightMap is assigned above.
                 {
                     name       = "[HectonBoid] FallbackHeightMap",
                     hideFlags  = HideFlags.HideAndDontSave,
@@ -1024,13 +1011,14 @@ namespace Hecton8.AI.GPU
 
                 // NativeArray path: zero managed Color[] allocation.
                 // GetRawTextureData returns existing native buffer â€” zero GC.
-                var rawData = _fallbackHeightMap.GetRawTextureData<byte>();
+                Runtime raw texture mutation removed.
                 for (int i = 0; i < rawData.Length; i++)
                 {
                     rawData[i] = 0; // Black = height 0
                 }
 
-                _fallbackHeightMap.Apply(false, false);
+                Runtime texture upload removed.
+                */
                 // makeNoLongerReadable=false: ÑÐ¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ CPU-ÐºÐ¾Ð¿Ð¸ÑŽ
                 // Ð´Ð»Ñ Ð²Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾Ð³Ð¾ Ð¿ÐµÑ€ÐµÑ‡Ð¸Ñ‚Ñ‹Ð²Ð°Ð½Ð¸Ñ Ð¿Ñ€Ð¸ hot reload.
             }
@@ -1055,24 +1043,7 @@ namespace Hecton8.AI.GPU
             if (_fallbackVoxelSdfTexture != null)
                 return;
 
-            _fallbackVoxelSdfTexture = new Texture3D(2, 2, 2, TextureFormat.R8, false)
-            {
-                name = "[HectonBoid] FallbackCaveSdf",
-                hideFlags = HideFlags.HideAndDontSave,
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            };
-
-            for (int z = 0; z < 2; z++)
-            {
-                for (int y = 0; y < 2; y++)
-                {
-                    for (int x = 0; x < 2; x++)
-                        _fallbackVoxelSdfTexture.SetPixel(x, y, z, Color.white);
-                }
-            }
-
-            _fallbackVoxelSdfTexture.Apply(false, false);
+            _fallbackVoxelSdfTexture = neutralCaveSdfTexture;
         }
 
         private void EnsureFallbackAbyssalFlowTexture()
@@ -1080,15 +1051,7 @@ namespace Hecton8.AI.GPU
             if (_fallbackAbyssalFlowTexture != null)
                 return;
 
-            _fallbackAbyssalFlowTexture = new Texture3D(1, 1, 1, TextureFormat.RGBAHalf, false)
-            {
-                name = "[HectonBoid] FallbackAbyssalFlow",
-                hideFlags = HideFlags.HideAndDontSave,
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for boid compute binding - owner: HectonBoidController
-            _fallbackAbyssalFlowTexture.SetPixel(0, 0, 0, Color.clear);
-            _fallbackAbyssalFlowTexture.Apply(false, true);
+            _fallbackAbyssalFlowTexture = neutralAbyssalFlowTexture;
         }
 
         private void UploadFallbackFlowField()
@@ -1178,23 +1141,34 @@ namespace Hecton8.AI.GPU
         }
 
         /// <summary>
-        /// Sets up owner-local material bindings and RenderParams.
-        /// One-time cold material copy. Reused every frame.
+        /// Sets up owner-local draw-property bindings and RenderParams.
+        /// Uses authored fishMaterial directly; mutable buffers/scalars live in matProps.
         /// Draw buffers bind through a draw-local property block before each indirect draw.
         /// </summary>
         private void InitializeRendering()
         {
-            if (_runtimeFishMaterial == null && !EnsureRuntimeFishMaterialReady())
+            if (fishMaterial == null)
                 return;
 
+            EnsureRenderMaterialPropertiesCold();
+
             // Frame 0: Read=A, Write=B â†’ after dispatch, fresh data is in B
-            _renderParams = new RenderParams(_runtimeFishMaterial)
+            _renderParams = new RenderParams(fishMaterial)
             {
                 worldBounds          = _simulationBounds,
                 shadowCastingMode    = shadowMode,
                 receiveShadows       = false,
-                renderingLayerMask   = HectonLayerMasks.ToRenderingLayerMask(renderingLayerMask)
+                renderingLayerMask   = HectonLayerMasks.ToRenderingLayerMask(renderingLayerMask),
+                matProps             = _renderMaterialProperties
             };
+        }
+
+        private void EnsureRenderMaterialPropertiesCold()
+        {
+            if (_renderMaterialProperties != null)
+                return;
+
+            _renderMaterialProperties = new MaterialPropertyBlock();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1275,23 +1249,21 @@ namespace Hecton8.AI.GPU
 
             if (_fallbackHeightMap != null)
             {
-                Destroy(_fallbackHeightMap);
                 _fallbackHeightMap = null;
             }
 
             if (_fallbackVoxelSdfTexture != null)
             {
-                Destroy(_fallbackVoxelSdfTexture);
                 _fallbackVoxelSdfTexture = null;
             }
 
             if (_fallbackAbyssalFlowTexture != null)
             {
-                Destroy(_fallbackAbyssalFlowTexture);
                 _fallbackAbyssalFlowTexture = null;
             }
 
-            ReleaseRuntimeFishMaterial();
+            if (_renderMaterialProperties != null)
+                _renderMaterialProperties.Clear();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1379,7 +1351,7 @@ namespace Hecton8.AI.GPU
                 new Vector4(safeBoundsSize.x, safeBoundsSize.y, safeBoundsSize.z, 0f));
 
             // â”€â”€ Heightmap â”€â”€
-            Texture2D hmap = heightMap != null ? heightMap : _fallbackHeightMap;
+            Texture2D hmap = heightMap != null ? heightMap : _fallbackHeightMap != null ? _fallbackHeightMap : neutralHeightMap;
             cs.SetTexture(kernel, ShaderProps.HeightMap, hmap);
             cs.SetVector(ShaderProps.WorldOffset,
                 new Vector4(safeWorldOffset.x, safeWorldOffset.y, 0f, 0f));
@@ -1751,7 +1723,7 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void RenderBoids()
         {
-            if (fishMesh == null || _runtimeFishMaterial == null || _visibleIndirectArgsBuffer == null || _visibleBoidIndexBuffer == null)
+            if (fishMesh == null || fishMaterial == null || _visibleIndirectArgsBuffer == null || _visibleBoidIndexBuffer == null)
                 return;
 
             GraphicsBuffer currentDataBuffer = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
@@ -1766,11 +1738,11 @@ namespace Hecton8.AI.GPU
 
         private void BindRenderMaterialState(GraphicsBuffer currentDataBuffer)
         {
-            _runtimeFishMaterial.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
-            _runtimeFishMaterial.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
-            _runtimeFishMaterial.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
-            _runtimeFishMaterial.SetFloat(ShaderProps.FishScale, ClampFinite(fishScale, 0.001f, MaxBoidRadiusMeters, 0.4f));
-            _runtimeFishMaterial.SetFloat(ShaderProps.FoveatedVatTimeScale, ResolveFoveatedVatTimeScale());
+            _renderMaterialProperties.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
+            _renderMaterialProperties.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
+            _renderMaterialProperties.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
+            _renderMaterialProperties.SetFloat(ShaderProps.FishScale, ClampFinite(fishScale, 0.001f, MaxBoidRadiusMeters, 0.4f));
+            _renderMaterialProperties.SetFloat(ShaderProps.FoveatedVatTimeScale, ResolveFoveatedVatTimeScale());
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2456,6 +2428,7 @@ namespace Hecton8.AI.GPU
         public void SetHeightMap(Texture2D texture, Vector2 offset, Vector2 size, float maxHeight)
         {
             heightMap   = texture;
+            _fallbackHeightMap = texture == null ? neutralHeightMap : null;
             worldOffset = ClampFiniteVector2(offset, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector2.zero);
             worldSize   = ClampFiniteVector2(size, 0.001f, RuntimeVectorComponentLimitMeters, new Vector2(1024f, 1024f));
             heightScale = ClampFinite(maxHeight, 0f, MaxHeightScaleMeters, 100f);

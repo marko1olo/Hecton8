@@ -67,3 +67,48 @@ Date: 2026-06-02
 - Non-editor scan found `WaitForCompletion` in `GpuScatterLodManager.cs:1725`, `SargassumMicroFaunaBoids.cs:8544`, and `GPUScatterDirector.cs:2303`. These are release blockers until proven teardown/fault-only or converted to deferred async readback.
 - `FoveatedRenderCommander.cs:1208` / `:1261` uses a transient `Allocator.TempJob` payload for black-box dump output. Static context suggests a fault-dump path, not normal render cadence, but proof is still required.
 - Rendering proof now explicitly needs a "no blocking readback in healthy gameplay" capture, not only RenderGraph pass visibility.
+
+## Pass 8 Addendum - VFX Runtime Asset Lifecycle
+
+- `HectonVolumetricParticulateFogFeature` uses `RecordRenderGraph`, but also has a synchronous mock light job route and creates fallback 3D density/flow textures. Static review cannot call this wrong, but it requires RenderGraph Viewer, Frame Debugger, GPU profiler, and one-time lifecycle proof.
+- `HectonVisorARStencilRendererFeature` creates a fallback stencil mesh. Production visor masking needs authored/default mesh proof or proof that this fallback is a one-time cold safety route and not normal art content.
+- `HectonMarineSnowRenderer`, `NativeTrailRenderer`, `ShinobuPlasmaBeamRuntime`, and `CarveDebrisComputeRenderer` contain runtime mesh/material/render texture creation routes. Dynamic trails and RTs can be valid, but release proof needs fixed counts, no repeated creation under enable/disable/reload, compact/high GPU captures, and no fallback low-poly debris geometry as the production visual route.
+
+## Pass 9 Addendum - RenderFeature Material Lifecycle
+
+- Biolum SSGI, scooter shafts, sonar point cloud, volumetric light, and particulate fog all use `RecordRenderGraph`; static review does not see a legacy `Execute()` render pass violation in this cluster.
+- The same features create/recreate render materials through `CoreUtils.CreateEngineMaterial` in `Create()` or proxy setup. This is legal only if creation is one-time per renderer/quality load and not repeated through hot-swap or gameplay quality changes.
+- Several shader fallbacks use `Shader.Find` under editor/development guards. Release closure still needs assigned shader assets and shader variant collection proof; guarded fallback does not prove production assignment.
+- Hot-swap listener registration is the right dependency shape, but it now needs event-count proof so service replacement cannot become a hidden material/resource recreation loop.
+
+## Pass 11 Addendum - Scatter And Ocean Readback Detail
+
+- `GPUScatterDirector` owns persistent GPU resources, but `EnsureInstanceBufferCapacity()`, `EnsureVisibleIndexBufferCapacity()`, and `EnsureVisibilityCacheBufferCapacity()` release/recreate buffers when required capacity grows. Closure requires proof that capacity stabilizes before gameplay stress or grows only during explicit quality/residency changes.
+- `GPUScatterDirector.TryRefreshBiomeHeatmapTextureHot()` writes a 256x256 R8 texture using `SetPixelData()` and `Apply(false, false)` when Data Monolith byte length/checksum changes. That can be valid, but release proof must show it is not a recurring gameplay-cadence upload.
+- `GPUScatterDirector` uses async visible-count readback into persistent native data, but `CompletePendingVisibleCountReadbackForRelease()` calls `WaitForCompletion()`. Required proof: teardown/fault-only callsite, no healthy-frame blocking wait.
+- `ShinobuOceanSurfaceAtmosphereRuntime` uses triple-buffered query/result graphics buffers and async wave-height readback into persistent native arrays. Static shape is good; compact/high proof still needs GPU cost, readback latency, and waterline readability captures.
+
+## Pass 12 Addendum - TBDR, Construction Preview, Ambient Biota, And Diagnostics
+
+- `TBDRPipelineSurgeonRuntime` and `TBDRPipelineSurgeonTypes` route through DataVault when available, but fall back to persistent mock/native buffers and emergency mock limits. Rendering acceptance now needs DataVault readiness proof or release-player exclusion of the mock fallback route.
+- `FoundationPylonGpuBatch`, `HectonBlueprintPreviewBatch`, and `VRPipeBlueprintPreview` use double-buffered GPU upload paths, which is a better shape than per-object rendering. They still create preview/pylon materials at runtime when no material is assigned.
+- `AmbientBiotaDirector` has an indirect-draw route with dirty uploads, but clones an owner-local material and can create a fallback quad mesh. This needs SRP/material instance count, fixed buffer count, and authored mesh/material assignment proof.
+- `ArchitectEyeVisualizer` creates a runtime quad mesh, material, glyph atlas resources, and graphics buffers for diagnostic visualization. This must be debug/diagnostic policy, not normal release presentation.
+
+## Pass 13 Addendum - Voxel Fade Pool And DataVault Readiness
+
+- `HectonVoxelStreamingBridge` fade presentation clones a fixed pool of up to 32 materials and drives `_ChunkDissolveFade` through runtime material instances during late-frame fade. This can be valid visual-fake presentation, but it still needs fixed clone count, SRP/material instance proof, and no normal-gameplay hot-swap recreation.
+- Rendering/TBDR readiness remains tied to DataVault boot proof. `GlobalDataVault` can grow/relocate arena state and macro payload caches, so render systems that depend on DataVault handles are not release-green until boot and soak counters show no fallback/mock route in production play.
+
+## Pass 16 Addendum - Buoyancy And Thermodynamics Visual Uploads
+
+- `AsyncBuoyancyReadbackRuntime` has the right deferred shape: dispatch in visual sync, consume completed requests with `SystemDispatcher.IsAsyncReadbackReadyNoWait(...)`, and reserve `AsyncGPUReadback.WaitAllRequests()` for release/teardown. GPU proof is still required because request/wave buffers are created during enable, readback arrays are persistent on first dispatch, and whole-buffer uploads/readbacks can stall compact hardware if cadence or capacity is wrong.
+- `AbyssalThermodynamicsSolver.ReactorBridge` uploads reactor visual data through double-buffered `GraphicsBuffer.LockBufferForWrite(...)` and sets global shader vectors/buffers. That can be a good visual-fake path, but it needs fixed buffer count proof, upload-byte proof, SRP/shader consumption proof, and compact/high captures.
+- `ThermodynamicsHazardGridRuntime.UploadVisualTextureIfDirty()` creates/rebuilds a runtime `Texture3D`, calls `SetPixelData()`, and applies it to a global heat texture. The quality-scaled upload stride is a valid mitigation, not closure. Required proof: no repeated texture rebuilds after bootstrap/resolution stabilization, measured `Texture3D.Apply` cost, and visual readability at low resolution.
+
+## Line-Level Classification Addendum
+
+- All 109 static runtime suspect lines for this group are now classified in `LINE_LEVEL_CLASSIFICATION.md`.
+- Classification totals: 68 editor/development guarded, 39 cold/setup/fault/owner-lifetime, 1 false positive, and 1 registered runtime violation.
+- The registered violation is `CarveDebrisComputeRenderer.BuildOctahedronMesh()` using `mesh.RecalculateNormals()` for fallback octahedron debris geometry. This remains covered by `RB-123`; it is acceptable only if the release route uses authored/default debris meshes or the fallback is excluded from production presentation.
+- This addendum does not provide RenderGraph, Frame Debugger, GPU profiler, Memory Profiler, player-build, or device proof.

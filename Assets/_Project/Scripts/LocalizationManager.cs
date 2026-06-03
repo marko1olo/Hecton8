@@ -123,6 +123,7 @@ namespace Hecton.Localization
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private IAcousticZoneMadnessCueSink _cachedAcousticMadnessCueSink;
         private INativeInputManagerRuntime _cachedNativeInputRuntime;
+        private UserOptionsPersistence _cachedUserOptions;
         private uint _cachedAnalyzerFrame;
         private bool _cachedAnalyzerInstalled;
         private uint _cachedHullStressFrame;
@@ -199,7 +200,12 @@ namespace Hecton.Localization
             GameBootstrapper.PersistRuntimeService(this);
 
             if (!TryGetComponent<FontStreamingManager>(out _))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
+
+#endif
+            }
 
             LocRegistry.BindBabelVaultCold(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
@@ -797,6 +803,9 @@ namespace Hecton.Localization
                     break;
                 case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
                     _cachedNativeInputRuntime = currentService as INativeInputManagerRuntime;
+                    break;
+                case GlobalRegistryServiceSlot.UserOptionsRuntime:
+                    _cachedUserOptions = currentService as UserOptionsPersistence;
                     break;
             }
         }
@@ -2151,6 +2160,7 @@ namespace Hecton.Localization
             _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _cachedAcousticMadnessCueSink = GlobalRegistry.AcousticZoneMadnessCueSink;
             _cachedNativeInputRuntime = GlobalRegistry.NativeInputRuntime;
+            _cachedUserOptions = GlobalRegistry.UserOptions;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
@@ -2851,7 +2861,7 @@ namespace Hecton.Localization
 
         private void RestoreSavedLanguage()
         {
-            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            UserOptionsPersistence options = _cachedUserOptions;
             if (options != null && options.HasKey(PrefsLanguageKey))
             {
                 int saved = options.GetInt(PrefsLanguageKey, (int)defaultLanguage);
@@ -2943,9 +2953,9 @@ namespace Hecton.Localization
 #endif
         }
 
-        private static void SavePersistentLanguagePreference(GameLanguage language)
+        private void SavePersistentLanguagePreference(GameLanguage language)
         {
-            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            UserOptionsPersistence options = _cachedUserOptions;
             if (options == null)
                 return;
 

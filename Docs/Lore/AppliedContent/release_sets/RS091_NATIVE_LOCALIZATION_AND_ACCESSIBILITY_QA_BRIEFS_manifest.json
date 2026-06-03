@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P451_RU_NATIVE_ENCODING_QA_BRIEF",
+    "P452_CJK_FONT_WRAP_QA_BRIEF",
+    "P453_RTL_BIDI_NUMERIC_QA_BRIEF",
+    "P454_EUROPEAN_EXPANSION_FIT_QA_BRIEF",
+    "P455_SUBTITLE_AUDIO_TIMING_QA_BRIEF"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS.packets.json"
+  ]
+}

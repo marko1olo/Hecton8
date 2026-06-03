@@ -17,6 +17,9 @@ namespace Hecton8.AI.Pathfinding
         private const int MaxVoxelPathWaypointCapacity = 4096;
         private const int MaxVoxelPathGridDimension = 96;
         private const int MaxVoxelPathProfileCapacity = 256;
+        private static readonly double StopwatchTicksToMicros = System.Diagnostics.Stopwatch.Frequency > 0L
+            ? 1000000.0d / System.Diagnostics.Stopwatch.Frequency
+            : 0.0d;
         private static readonly ulong VoxelPathProfileMutationGuardMask =
             PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfiles) |
             PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfileCount);
@@ -777,7 +780,7 @@ namespace Hecton8.AI.Pathfinding
             }
 
             long elapsedTicks = Math.Max(0L, System.Diagnostics.Stopwatch.GetTimestamp() - scheduleTicks);
-            double microsDouble = (elapsedTicks * 1000000.0d) / System.Diagnostics.Stopwatch.Frequency;
+            double microsDouble = elapsedTicks * StopwatchTicksToMicros;
             uint micros = microsDouble >= uint.MaxValue ? uint.MaxValue : (uint)Math.Max(0.0d, microsDouble);
             int cursor = (int)(_voxelAStarFrame % (uint)math.max(1, math.min(telemetry.Length, VoxelAStarConstants.TelemetryFrames)));
             PathfindingTelemetryEntry entry = telemetry[cursor];

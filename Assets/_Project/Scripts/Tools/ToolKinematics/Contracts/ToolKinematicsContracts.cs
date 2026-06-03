@@ -26,7 +26,10 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         SdfPenetrating = 1u << 11,
         BeamActive = 1u << 12,
         RaymarchBudgetExceeded = 1u << 13,
-        CsvIoFault = 1u << 14
+        CsvIoFault = 1u << 14,
+        LastChargeClutch = 1u << 15,
+        PowerDepletedSignalQueued = 1u << 16,
+        PowerDepletedSignalSent = 1u << 17
     }
 
     public enum ToolKinematicsMathLod : byte
@@ -43,11 +46,11 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         public const uint Scanner = 0x5343414Eu;
         public const uint Welder = 0x57454C44u;
         public const uint RivetGun = 0x52565654u;
-        public const uint MockRock = 0x524F434Bu;
-        public const uint MockMetal = 0x4D45544Cu;
+        public const uint ProceduralRock = 0x524F434Bu;
+        public const uint ProceduralMetal = 0x4D45544Cu;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ToolStateDTO
     {
         [FieldOffset(0)] public double3 AUP;
@@ -55,8 +58,10 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(36)] public float HeatLevel;
         [FieldOffset(40)] public uint ToolTypeHash;
         [FieldOffset(44)] public float EnergyRemaining;
-        [FieldOffset(48)] public uint _pad0;
-        [FieldOffset(52)] public uint _pad1;
+        [FieldOffset(48)] public float MaxEnergyCapacity;
+        [FieldOffset(52)] public uint StateFlags;
+        [FieldOffset(56)] public float LastOutputPower01;
+        [FieldOffset(60)] public uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -178,7 +183,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public partial struct MockTriggerPullSignal : ISignal
+    public partial struct ToolTriggerPullSignal : ISignal
     {
         public const int ExpectedCapacity = 8;
         public const int MaxFrameSignals = 8;
@@ -192,7 +197,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct MockCarveRequestSignal : ISignal
+    public partial struct ToolCarveRequestSignal : ISignal
     {
         public const int ExpectedCapacity = 8;
         public const int MaxFrameSignals = 8;
@@ -228,6 +233,22 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(24)] public ulong _pad1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public partial struct ToolPowerDepletedSignal : ISignal
+    {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x54323250u; // T22P
+
+        [FieldOffset(0)] public uint ToolHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public float Energy01;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public ulong _pad0;
+        [FieldOffset(24)] public ulong _pad1;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct VfxSparkRequestSignal : ISignal
     {
@@ -248,7 +269,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 8)]
-    public struct MockSdfSample
+    public struct ToolProceduralSdfSample
     {
         [FieldOffset(0)] public float Distance;
         [FieldOffset(4)] public uint MaterialHash;
@@ -318,6 +339,17 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         public static float ClampPositiveFinite(float value, float fallback)
         {
             return math.isfinite(value) && value > 0.0001f ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveLastChargePower01(float energyRemaining, float maxEnergyCapacity, out uint clutchFlag)
+        {
+            float capacity = ClampPositiveFinite(maxEnergyCapacity, 1f);
+            float energy01 = Clamp01Finite(energyRemaining * math.rcp(capacity));
+            bool clutch = (energy01 > 0.0001f) & (energy01 < 0.01f);
+            float multiplier = math.select(1f, 2.5f, clutch);
+            clutchFlag = math.select(0u, (uint)ToolKinematicsFlags.LastChargeClutch, clutch);
+            return Clamp01Finite(energy01 * multiplier);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -399,7 +431,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MockSdfSample SampleMockSdf(float3 localPosition)
+        public static ToolProceduralSdfSample SampleToolProceduralSdf(float3 localPosition)
         {
             float3 sphereCenter = new float3(0f, 1.15f, 5.5f);
             float sphereDistance = math.length(localPosition - sphereCenter) - 1.2f;
@@ -407,8 +439,8 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             float3 boxQ = math.abs(localPosition - new float3(1.45f, 0.25f, 4.25f)) - new float3(0.55f, 0.9f, 0.55f);
             float boxDistance = math.length(math.max(boxQ, 0f)) + math.min(math.max(boxQ.x, math.max(boxQ.y, boxQ.z)), 0f);
             float selected = math.min(sphereDistance, math.min(floorDistance, boxDistance));
-            uint material = selected == boxDistance ? ToolKinematicsHashes.MockMetal : ToolKinematicsHashes.MockRock;
-            return new MockSdfSample
+            uint material = selected == boxDistance ? ToolKinematicsHashes.ProceduralMetal : ToolKinematicsHashes.ProceduralRock;
+            return new ToolProceduralSdfSample
             {
                 Distance = math.isfinite(selected) ? selected : 1000f,
                 MaterialHash = material
@@ -416,15 +448,15 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EstimateMockSdfNormal(float3 localPosition)
+        public static float3 EstimateToolProceduralSdfNormal(float3 localPosition)
         {
             const float h = 0.015625f;
-            float dx = SampleMockSdf(localPosition + new float3(h, 0f, 0f)).Distance -
-                       SampleMockSdf(localPosition - new float3(h, 0f, 0f)).Distance;
-            float dy = SampleMockSdf(localPosition + new float3(0f, h, 0f)).Distance -
-                       SampleMockSdf(localPosition - new float3(0f, h, 0f)).Distance;
-            float dz = SampleMockSdf(localPosition + new float3(0f, 0f, h)).Distance -
-                       SampleMockSdf(localPosition - new float3(0f, 0f, h)).Distance;
+            float dx = SampleToolProceduralSdf(localPosition + new float3(h, 0f, 0f)).Distance -
+                       SampleToolProceduralSdf(localPosition - new float3(h, 0f, 0f)).Distance;
+            float dy = SampleToolProceduralSdf(localPosition + new float3(0f, h, 0f)).Distance -
+                       SampleToolProceduralSdf(localPosition - new float3(0f, h, 0f)).Distance;
+            float dz = SampleToolProceduralSdf(localPosition + new float3(0f, 0f, h)).Distance -
+                       SampleToolProceduralSdf(localPosition - new float3(0f, 0f, h)).Distance;
             return SafeNormalize(new float3(dx, dy, dz), new float3(0f, 1f, 0f));
         }
 
@@ -517,20 +549,31 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             ToolRecoilStateDTO recoil = (uint)index < (uint)RecoilStates.Length ? RecoilStates[index] : default;
             quaternion controllerRotation = ToolKinematicsMath.SafeNormalizeQuaternion(input.ControllerRotation, quaternion.identity);
             float dt = math.clamp(ToolKinematicsMath.ClampPositiveFinite(input.DeltaTime, 0.0166667f), 0f, 0.05f);
+            float maxEnergyCapacity = ToolKinematicsMath.ClampPositiveFinite(state.MaxEnergyCapacity, 1f);
+            state.MaxEnergyCapacity = maxEnergyCapacity;
+            state.EnergyRemaining = math.clamp(math.select(0f, state.EnergyRemaining, math.isfinite(state.EnergyRemaining)), 0f, maxEnergyCapacity);
+            uint persistentFlags = state.StateFlags & (uint)ToolKinematicsFlags.PowerDepletedSignalSent;
             uint flags = (uint)index < (uint)ScreenExports.Length
                 ? ScreenExports[index].StateFlags
                 : (uint)ToolKinematicsFlags.Idle;
+            flags |= persistentFlags;
             if ((tuning.Flags & (uint)ToolKinematicsFlags.CsvIoFault) != 0u)
                 flags |= (uint)ToolKinematicsFlags.CsvIoFault;
             else
                 flags &= ~(uint)ToolKinematicsFlags.CsvIoFault;
 
             bool trigger = (input.TriggerFlags & ToolKinematicsMath.TriggerPressed) != 0;
-            flags &= ~(uint)ToolKinematicsFlags.LowTierSnap;
+            flags &= ~(
+                (uint)ToolKinematicsFlags.LowTierSnap |
+                (uint)ToolKinematicsFlags.LastChargeClutch |
+                (uint)ToolKinematicsFlags.PowerDepletedSignalQueued);
 
             float maxHeat = ToolKinematicsMath.ClampPositiveFinite(tuning.MaxHeat, 1f);
             bool overheated = (flags & (uint)ToolKinematicsFlags.Overheated) != 0;
-            bool hasEnergy = state.EnergyRemaining > 0.0001f;
+            float energy01 = ToolKinematicsMath.Clamp01Finite(state.EnergyRemaining * math.rcp(maxEnergyCapacity));
+            float preDrainEnergyRemaining = state.EnergyRemaining;
+            float preDrainEnergy01 = energy01;
+            bool hasEnergy = energy01 > 0.0001f;
             bool active = trigger && !overheated && hasEnergy;
             if (active)
             {
@@ -550,6 +593,12 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                     flags &= ~(uint)ToolKinematicsFlags.Cooling;
             }
 
+            energy01 = ToolKinematicsMath.Clamp01Finite(state.EnergyRemaining * math.rcp(maxEnergyCapacity));
+            bool lastChargeFrame = active & (preDrainEnergy01 > 0.0001f) & (preDrainEnergy01 < 0.01f);
+            float powerEnergyRemaining = math.select(state.EnergyRemaining, preDrainEnergyRemaining, lastChargeFrame);
+            float cuttingPower01 = ToolKinematicsMath.ResolveLastChargePower01(powerEnergyRemaining, maxEnergyCapacity, out uint clutchFlag);
+            flags |= math.select(0u, clutchFlag, active);
+
             if (state.HeatLevel >= maxHeat - 0.0001f)
             {
                 flags |= (uint)ToolKinematicsFlags.Overheated;
@@ -561,28 +610,34 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                 flags &= ~(uint)ToolKinematicsFlags.Overheated;
             }
 
-            if (state.EnergyRemaining <= 0.0001f)
+            if (energy01 <= 0.0001f)
             {
                 flags |= (uint)ToolKinematicsFlags.LowPower;
-                flags &= ~(uint)(ToolKinematicsFlags.Active | ToolKinematicsFlags.BeamActive);
-                active = false;
+                if (!lastChargeFrame)
+                {
+                    flags &= ~(uint)(ToolKinematicsFlags.Active | ToolKinematicsFlags.BeamActive);
+                    active = false;
+                }
             }
             else
                 flags &= ~(uint)ToolKinematicsFlags.LowPower;
+
+            if (!active)
+                flags &= ~(uint)ToolKinematicsFlags.LastChargeClutch;
 
             float3 forward = math.rotate(controllerRotation, new float3(0f, 0f, 1f));
             forward = ToolKinematicsMath.SafeNormalize(forward, new float3(0f, 0f, 1f));
             state.Forward = forward;
             float3 toolLocal = ToolKinematicsMath.ToLocalFloat3(state.AUP, input.CameraAup, input.ControllerLocalPosition);
             float3 tipLocal = toolLocal + forward * 0.28f;
-            MockSdfSample tipSample = ToolKinematicsMath.SampleMockSdf(tipLocal);
+            ToolProceduralSdfSample tipSample = ToolKinematicsMath.SampleToolProceduralSdf(tipLocal);
 
             if (tipSample.Distance < 0f)
             {
                 flags |= (uint)ToolKinematicsFlags.SdfPenetrating;
                 float depth = math.min(0.35f, -tipSample.Distance);
                 recoil.SpringVelocity += depth * math.max(0f, tuning.CollisionSpring);
-                recoil.AngularOffsetAxis = math.cross(forward, ToolKinematicsMath.EstimateMockSdfNormal(tipLocal));
+                recoil.AngularOffsetAxis = math.cross(forward, ToolKinematicsMath.EstimateToolProceduralSdfNormal(tipLocal));
             }
             else
             {
@@ -613,13 +668,13 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                 float3 marchPos = tipLocal;
                 for (int step = 0; step < maxSteps && traveled <= maxRange; step++)
                 {
-                    MockSdfSample sample = ToolKinematicsMath.SampleMockSdf(marchPos);
+                    ToolProceduralSdfSample sample = ToolKinematicsMath.SampleToolProceduralSdf(marchPos);
                     float distance = math.max(0.015625f, math.abs(sample.Distance));
                     stepCount = step + 1;
                     if (sample.Distance <= 0.01f)
                     {
                         hit.HitPoint = marchPos;
-                        hit.Normal = ToolKinematicsMath.EstimateMockSdfNormal(marchPos);
+                        hit.Normal = ToolKinematicsMath.EstimateToolProceduralSdfNormal(marchPos);
                         hit.MaterialHash = sample.MaterialHash;
                         hit.Distance = traveled;
                         hasHit = true;
@@ -689,6 +744,21 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                 };
             }
 
+            bool depletedNow = energy01 <= 0.0001f;
+            bool depletionAlreadySent = (persistentFlags & (uint)ToolKinematicsFlags.PowerDepletedSignalSent) != 0u;
+            bool queueDepletionSignal = depletedNow && !depletionAlreadySent;
+            persistentFlags = math.select(0u, persistentFlags, depletedNow);
+            persistentFlags = math.select(
+                persistentFlags,
+                persistentFlags | (uint)ToolKinematicsFlags.PowerDepletedSignalSent,
+                queueDepletionSignal);
+            flags |= persistentFlags;
+            flags |= math.select(0u, (uint)ToolKinematicsFlags.PowerDepletedSignalQueued, queueDepletionSignal);
+            state.StateFlags = persistentFlags;
+            state.LastOutputPower01 = math.select(0f, cuttingPower01, active);
+            state._pad0 = 0u;
+            ToolStates[index] = state;
+
             if ((uint)index < (uint)ScreenExports.Length)
             {
                 ScreenExports[index] = new ToolScreenExportDTO
@@ -700,10 +770,6 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                 };
             }
 
-            state._pad0 = 0u;
-            state._pad1 = 0u;
-            ToolStates[index] = state;
-
             if ((uint)index < (uint)HeatSignals.Length)
             {
                 HeatSignals[index] = new ToolHeatSignal
@@ -711,7 +777,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                     ToolHash = state.ToolTypeHash,
                     Frame = input.FrameIndex,
                     Heat01 = ToolKinematicsMath.Clamp01Finite(state.HeatLevel * math.rcp(maxHeat)),
-                    Energy01 = ToolKinematicsMath.Clamp01Finite(state.EnergyRemaining),
+                    Energy01 = energy01,
                     Flags = flags,
                     _pad0 = 0u
                 };
@@ -726,7 +792,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                         Normal = hit.Normal,
                         MaterialHash = hit.MaterialHash,
                         ToolHash = state.ToolTypeHash,
-                        Intensity01 = active ? ToolKinematicsMath.Clamp01Finite(state.HeatLevel * math.rcp(maxHeat)) : 0f,
+                        Intensity01 = active ? math.max(ToolKinematicsMath.Clamp01Finite(state.HeatLevel * math.rcp(maxHeat)), cuttingPower01) : 0f,
                         Frame = input.FrameIndex
                     }
                     : default;
@@ -740,7 +806,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                     FrameIndex = input.FrameIndex,
                     ToolHash = state.ToolTypeHash,
                     ToolHeatLevel = ToolKinematicsMath.Clamp01Finite(state.HeatLevel * math.rcp(maxHeat)),
-                    EnergyRemaining = ToolKinematicsMath.Clamp01Finite(state.EnergyRemaining),
+                    EnergyRemaining = energy01,
                     HitDistance = hit.Distance,
                     RaymarchStepCount = stepCount,
                     IkComputeTimeMicroseconds = 8f,
@@ -755,13 +821,13 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct MockCarveRequestJob : IJobParallelFor
+    public struct ToolCarveRequestJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ToolHitResultDTO> HitResults;
         [ReadOnly, NoAlias] public NativeArray<ToolStateDTO> ToolStates;
         [ReadOnly, NoAlias] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
         [ReadOnly, NoAlias] public NativeArray<ToolScreenExportDTO> ScreenExports;
-        [WriteOnly, NoAlias] public NativeArray<MockCarveRequestSignal> CarveRequests;
+        [WriteOnly, NoAlias] public NativeArray<ToolCarveRequestSignal> CarveRequests;
 
         public void Execute(int index)
         {
@@ -789,14 +855,14 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             uint roll = ToolKinematicsMath.Mix(input.FrameIndex, (uint)index + state.ToolTypeHash);
             bool fire = (roll & 3u) != 0u;
             CarveRequests[index] = fire
-                ? new MockCarveRequestSignal
+                ? new ToolCarveRequestSignal
                 {
                     HitPoint = hit.HitPoint,
                     Normal = hit.Normal,
                     ToolHash = state.ToolTypeHash,
                     MaterialHash = hit.MaterialHash,
                     Frame = input.FrameIndex,
-                    Power01 = ToolKinematicsMath.Clamp01Finite(state.EnergyRemaining),
+                    Power01 = ToolKinematicsMath.Clamp01Finite(state.LastOutputPower01),
                     Flags = flags,
                     _pad0 = 0u
                 }

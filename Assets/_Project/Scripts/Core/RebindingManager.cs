@@ -18,6 +18,17 @@ namespace Hecton8.Input
         private const string DefaultOverridesFileName = "controls.json";
         private const string DefaultOverridesTempFileName = "controls.json.tmp";
         private const string DefaultKeyboardCancelPath = "<Keyboard>/escape";
+        private const string DefaultKeyboardTabPath = "<Keyboard>/tab";
+        private const string DefaultGamepadCancelPath = "<Gamepad>/start";
+        private const string XInputStartPath = "<XInputController>/start";
+        private const string DualShockStartPath = "<DualShockGamepad>/start";
+        private const string DualSenseStartPath = "<DualSenseGamepadHID>/start";
+        private const string SteamDeckStartPath = "<SteamDeckGamepad>/start";
+        private const string PlayerActionMapName = "Player";
+        private const string UiActionMapName = "UI";
+        private const string PauseActionName = "Pause";
+        private const string CancelActionName = "Cancel";
+        private const string TabNextActionName = "TabNext";
         private const string AgentTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1332.bin";
         [Header("Persistence")]
         [SerializeField] private bool loadOverridesOnAwake = true;
@@ -279,6 +290,18 @@ namespace Hecton8.Input
                     }
                 }
 
+                if (ShouldReserveGamepadStart(actionName, actionMap))
+                    _activeRebind.WithControlsExcluding(DefaultGamepadCancelPath);
+
+                if (ShouldReserveKeyboardEscape(actionName, actionMap) &&
+                    !string.Equals(cancelPath, DefaultKeyboardCancelPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _activeRebind.WithControlsExcluding(DefaultKeyboardCancelPath);
+                }
+
+                if (ShouldReserveKeyboardTab(actionName, actionMap))
+                    _activeRebind.WithControlsExcluding(DefaultKeyboardTabPath);
+
                 _activeRebind.OnCancel(_cachedRebindCancelAction);
                 _activeRebind.OnComplete(_cachedRebindCompleteAction);
 
@@ -409,14 +432,55 @@ namespace Hecton8.Input
                 display = "--";
             }
 
+            if (IsProtectedGamepadStartOverride(actionName, actionMap, action, bindingIndex))
+            {
+                TryRestoreBindingOverride(action, bindingIndex, previousOverridePath);
+                DisposeActiveRebind();
+                ClearActiveRebindContext();
+                OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
+                LogWarning("Rebind rejected because Gamepad Start is reserved for Pause.");
+                return;
+            }
+
+            if (IsProtectedKeyboardEscapeOverride(actionName, actionMap, action, bindingIndex))
+            {
+                TryRestoreBindingOverride(action, bindingIndex, previousOverridePath);
+                DisposeActiveRebind();
+                ClearActiveRebindContext();
+                OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
+                LogWarning("Rebind rejected because Keyboard Escape is reserved for Pause and Cancel.");
+                return;
+            }
+
+            if (IsProtectedKeyboardTabOverride(actionName, actionMap, action, bindingIndex))
+            {
+                TryRestoreBindingOverride(action, bindingIndex, previousOverridePath);
+                DisposeActiveRebind();
+                ClearActiveRebindContext();
+                OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
+                LogWarning("Rebind rejected because Keyboard Tab is reserved for UI tab navigation.");
+                return;
+            }
+
             if (TryDetectConflict(
                     action,
                     bindingIndex,
                     actionMap,
                     out string conflictingAction,
                     out InputAction conflictingInputAction,
-                    out int conflictingBindingIndex))
+                    out int conflictingBindingIndex,
+                    out bool multipleConflicts))
             {
+                if (multipleConflicts)
+                {
+                    TryRestoreBindingOverride(action, bindingIndex, previousOverridePath);
+                    DisposeActiveRebind();
+                    ClearActiveRebindContext();
+                    OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
+                    LogWarning("Rebind rejected because binding path conflicts with multiple actions.");
+                    return;
+                }
+
                 _pendingConflictAction = action;
                 _pendingConflictVictimAction = conflictingInputAction;
                 _pendingConflictActionName = actionName;
@@ -1009,8 +1073,8 @@ namespace Hecton8.Input
         }
 
         /// <summary>
-        /// TASK 16: Detects if the new binding conflicts with another action.
-        /// Returns the name of the conflicting action, or null if no conflict.
+        /// TASK 16: Detects whether the new binding conflicts with one or more other actions.
+        /// Returns the first conflicting action and flags unresolved multi-conflict paths.
         /// SAFETY: Validates action map and actions collection before iteration.
         /// </summary>
         private bool TryDetectConflict(
@@ -1019,11 +1083,13 @@ namespace Hecton8.Input
             string currentActionMap,
             out string conflictingActionName,
             out InputAction conflictingAction,
-            out int conflictingBindingIndex)
+            out int conflictingBindingIndex,
+            out bool multipleConflicts)
         {
             conflictingActionName = null;
             conflictingAction = null;
             conflictingBindingIndex = -1;
+            multipleConflicts = false;
 
             INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (currentAction == null || inputManager == null)
@@ -1047,6 +1113,7 @@ namespace Hecton8.Input
             if (actionMap.actions.Count == 0)
                 return false;
 
+            bool conflictFound = false;
             int actionCount = actionMap.actions.Count;
             for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
             {
@@ -1070,15 +1137,21 @@ namespace Hecton8.Input
                     // Check if paths match
                     if (string.Equals(existingPath, newPath, StringComparison.OrdinalIgnoreCase))
                     {
+                        if (conflictFound)
+                        {
+                            multipleConflicts = true;
+                            return true;
+                        }
+
                         conflictingActionName = action.name;
                         conflictingAction = action;
                         conflictingBindingIndex = i;
-                        return true;
+                        conflictFound = true;
                     }
                 }
             }
 
-            return false;
+            return conflictFound;
         }
 
         private static bool TryDisableConflictingBinding(InputAction action, int bindingIndex)
@@ -1187,6 +1260,75 @@ namespace Hecton8.Input
                 return null;
 
             return action.bindings[bindingIndex].overridePath;
+        }
+
+        private static bool IsProtectedGamepadStartOverride(string actionName, string actionMap, InputAction action, int bindingIndex)
+        {
+            if (!ShouldReserveGamepadStart(actionName, actionMap) ||
+                action == null ||
+                bindingIndex < 0 ||
+                bindingIndex >= action.bindings.Count)
+            {
+                return false;
+            }
+
+            return IsGamepadStartPath(action.bindings[bindingIndex].effectivePath);
+        }
+
+        private static bool ShouldReserveGamepadStart(string actionName, string actionMap)
+        {
+            return string.Equals(actionMap, PlayerActionMapName, StringComparison.OrdinalIgnoreCase) &&
+                   !string.Equals(actionName, PauseActionName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsProtectedKeyboardEscapeOverride(string actionName, string actionMap, InputAction action, int bindingIndex)
+        {
+            if (!ShouldReserveKeyboardEscape(actionName, actionMap) ||
+                action == null ||
+                bindingIndex < 0 ||
+                bindingIndex >= action.bindings.Count)
+            {
+                return false;
+            }
+
+            return string.Equals(action.bindings[bindingIndex].effectivePath, DefaultKeyboardCancelPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool ShouldReserveKeyboardEscape(string actionName, string actionMap)
+        {
+            bool isPlayerPause = string.Equals(actionMap, PlayerActionMapName, StringComparison.OrdinalIgnoreCase) &&
+                                 string.Equals(actionName, PauseActionName, StringComparison.OrdinalIgnoreCase);
+            bool isUiCancel = string.Equals(actionMap, UiActionMapName, StringComparison.OrdinalIgnoreCase) &&
+                              string.Equals(actionName, CancelActionName, StringComparison.OrdinalIgnoreCase);
+            return !isPlayerPause && !isUiCancel;
+        }
+
+        private static bool IsProtectedKeyboardTabOverride(string actionName, string actionMap, InputAction action, int bindingIndex)
+        {
+            if (!ShouldReserveKeyboardTab(actionName, actionMap) ||
+                action == null ||
+                bindingIndex < 0 ||
+                bindingIndex >= action.bindings.Count)
+            {
+                return false;
+            }
+
+            return string.Equals(action.bindings[bindingIndex].effectivePath, DefaultKeyboardTabPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool ShouldReserveKeyboardTab(string actionName, string actionMap)
+        {
+            return !(string.Equals(actionMap, UiActionMapName, StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(actionName, TabNextActionName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsGamepadStartPath(string path)
+        {
+            return string.Equals(path, DefaultGamepadCancelPath, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(path, XInputStartPath, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(path, DualShockStartPath, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(path, DualSenseStartPath, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(path, SteamDeckStartPath, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool TryRestoreBindingOverride(InputAction action, int bindingIndex, string previousOverridePath)

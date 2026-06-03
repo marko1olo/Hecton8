@@ -20,6 +20,8 @@ namespace Hecton8.World
         public const int TuningCapacity = 1;
         public const int CsvScratchBytes = 32768;
         public const int SelfAuditCapacity = 1;
+        public const int PlayerEcosystemTelemetryCapacity = 1;
+        public const uint PityTimerEmptyScanThreshold = 5u;
         public const int HzbTileCapacity = 4096;
         public const int HzbMetaCapacity = 1;
         public const int MaxVisualClusterNodesPerCore = 5;
@@ -56,6 +58,7 @@ namespace Hecton8.World
         public const BufferID IndirectArgs = (BufferID)71548;
         public const BufferID HzbTiles = (BufferID)71549;
         public const BufferID HzbMeta = (BufferID)71550;
+        public const BufferID PlayerEcosystemTelemetry = (BufferID)141905;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -127,6 +130,19 @@ namespace Hecton8.World
         }
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PlayerEcosystemTelemetryDTO
+    {
+        [FieldOffset(0)] public uint EmptyScansStreak;
+        [FieldOffset(4)] public uint TotalOresMined;
+        [FieldOffset(8)] public float DistanceSinceLastFind;
+        [FieldOffset(12)] public uint PityTriggerActive;
+        [FieldOffset(16)] public uint LastScanFrame;
+        [FieldOffset(20)] public uint LastResolvedOreHash;
+        [FieldOffset(24)] public uint LastPitySpawnFrame;
+        [FieldOffset(28)] public uint LastPityResourceType;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct GeologyGenerationTelemetryEntry
     {
@@ -160,7 +176,7 @@ namespace Hecton8.World
         [FieldOffset(32)] public ulong BufferMaskLow;
         [FieldOffset(40)] public ulong BufferMaskHigh;
         [FieldOffset(48)] public float GlobalQualityWeight;
-        [FieldOffset(52)] private uint _pad0;
+        [FieldOffset(52)] public uint PlayerEcosystemTelemetrySize;
         [FieldOffset(56)] private ulong _pad1;
     }
 
@@ -202,20 +218,28 @@ namespace Hecton8.World
 
     public static class ProceduralGeologyLayoutAudit
     {
-        public const uint LayoutHash = 0x53483135u; // SH15
+        public const uint LayoutHash = 0x53483136u; // SH16
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Validate()
         {
-            return UnsafeUtility.SizeOf<ResourceNodeDTO>() == 128 &&
-                   UnsafeUtility.SizeOf<GeologyTerrainSampleDTO>() == 32 &&
-                   UnsafeUtility.SizeOf<GeologyDistributionRuleDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<GeologyTuningDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<GeologyGenerationTelemetryEntry>() == 64 &&
-                   UnsafeUtility.SizeOf<GeologySelfAuditResultDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<GeologyIndirectArgsDTO>() == 16 &&
-                   UnsafeUtility.SizeOf<GeologyHzbTileDTO>() == 16 &&
-                   UnsafeUtility.SizeOf<GeologyHzbMetaDTO>() == 128;
+            return ValidateStride<ResourceNodeDTO>(128) &&
+                   ValidateStride<GeologyTerrainSampleDTO>(32) &&
+                   ValidateStride<GeologyDistributionRuleDTO>(64) &&
+                   ValidateStride<GeologyTuningDTO>(64) &&
+                   ValidateStride<PlayerEcosystemTelemetryDTO>(32) &&
+                   ValidateStride<GeologyGenerationTelemetryEntry>(64) &&
+                   ValidateStride<GeologySelfAuditResultDTO>(64) &&
+                   ValidateStride<GeologyIndirectArgsDTO>(16) &&
+                   ValidateStride<GeologyHzbTileDTO>(16) &&
+                   ValidateStride<GeologyHzbMetaDTO>(128);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ValidateStride<T>(int expectedBytes) where T : struct
+        {
+            int observedBytes = UnsafeUtility.SizeOf<T>();
+            return observedBytes == expectedBytes && (observedBytes & 7) == 0;
         }
     }
 

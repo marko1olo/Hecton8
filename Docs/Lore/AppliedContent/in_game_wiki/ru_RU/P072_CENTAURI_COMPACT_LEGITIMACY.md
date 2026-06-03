@@ -1,10 +1,17 @@
 ---
 packet_id: P072_CENTAURI_COMPACT_LEGITIMACY
+release_set_id: RS015_HUMAN_DOMAINS_ROUTE_ECONOMY
 article_id: human.centauri_compact_legitimacy
+unlock_id: unlock.first_centauri_compact_legitimacy
+poi_tags: poi.centauri_hardware_stamp;poi.compact_audit_tag
+biome_tags: biome.wreck_claim;biome.route_depot
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Легитимность Centauri Compact

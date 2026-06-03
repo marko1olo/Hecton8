@@ -387,9 +387,12 @@ namespace Hecton8.Rendering.Scatter
         private float _pendingQualityWeight01 = 1f;
         private float _cachedQualityWeight01 = 1f;
         private AsyncGPUReadbackRequest _visibleCountReadbackRequest;
+        private Action<AsyncGPUReadbackRequest> _visibleCountReadbackCompletedCallback;
         private VisibleCountReadbackOwner _visibleCountReadback;
         private bool _visibleCountReadbackPending;
         private bool _visibleCountReadbackRepairRequested;
+        private bool _visibleCountReadbackReleaseRequested;
+        private bool _visibleCountReadbackArgsReleaseDeferred;
         private Mesh _boundMesh;
         private int _cachedMaterialVariantInstanceId;
 
@@ -489,6 +492,7 @@ namespace Hecton8.Rendering.Scatter
             _cameraPlanes = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - camera frustum cache - owner: GpuScatterLodManager
             _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - compute frustum upload cache - owner: GpuScatterLodManager
             _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-draw indirect flora shader state - owner: GpuScatterLodManager
+            _visibleCountReadbackCompletedCallback = OnVisibleCountReadbackCompleted;
             CacheGraphicsCapabilitiesCold();
             instanceCapacity = math.max(1, instanceCapacity);
             _abiLayoutValid = ValidateAbiLayoutCold();
@@ -1116,7 +1120,7 @@ namespace Hecton8.Rendering.Scatter
 
         private void ReleaseGpuBuffers()
         {
-            CompletePendingVisibleCountReadbackForRelease();
+            bool deferArgsBufferRelease = CompletePendingVisibleCountReadbackForRelease();
             DisposeVisibleCountReadbackData();
 
             if (_matrixBuffers != null)
@@ -1155,7 +1159,11 @@ namespace Hecton8.Rendering.Scatter
             _activeFloraAgeBuffer = null;
             _activeFloraPhaseSeedBuffer = null;
             _activeFloraVisualPayloadBuffer = null;
-            ReleaseBuffer(ref _argsBuffer);
+            if (deferArgsBufferRelease)
+                _visibleCountReadbackArgsReleaseDeferred = true;
+            else
+                ReleaseBuffer(ref _argsBuffer);
+
             ReleaseBuffer(ref _argsUploadBuffer);
             ReleaseBuffer(ref _frameConstantsBufferA);
             ReleaseBuffer(ref _frameConstantsBufferB);
@@ -1508,11 +1516,7 @@ namespace Hecton8.Rendering.Scatter
                 return false;
 
             if (!IsRenderMaterialVariantValid(material))
-            {
-                ClearVisibleState();
-                RecordBlackBox(BlackBoxFlagInvalidMaterialVariant, activeCount);
                 return false;
-            }
 
             MaterialPropertyBlock properties = _materialProperties;
             if (properties == null)
@@ -1588,9 +1592,13 @@ namespace Hecton8.Rendering.Scatter
                 return false;
 
             int materialId = material.GetEntityId().GetHashCode();
-            bool hasIndirectVariant = material.IsKeywordEnabled(GpuIndirectKeyword);
-            bool valid = hasIndirectVariant;
+            if (_materialVariantCacheInitialized &&
+                _cachedMaterialVariantInstanceId == materialId)
+            {
+                return _cachedMaterialVariantValid;
+            }
 
+            bool valid = material.IsKeywordEnabled(GpuIndirectKeyword);
             _materialVariantCacheInitialized = true;
             _cachedMaterialVariantInstanceId = materialId;
             _cachedMaterialVariantValid = valid;
@@ -1636,14 +1644,7 @@ namespace Hecton8.Rendering.Scatter
                 if (!_visibleCountReadbackRequest.done)
                     return;
 
-                _visibleCountReadbackPending = false;
-                if (!_visibleCountReadbackRequest.hasError && _visibleCountReadback.Data.IsCreated)
-                {
-                    _lastVisibleFloraCount = _visibleCountReadback.Data.Length > IndirectArgsInstanceCountIndex
-                        ? (int)math.min(_visibleCountReadback.Data[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
-                        : 0;
-                }
-
+                OnVisibleCountReadbackCompleted(_visibleCountReadbackRequest);
                 return;
             }
 
@@ -1664,10 +1665,31 @@ namespace Hecton8.Rendering.Scatter
                 _argsBuffer,
                 IndirectArgsReadbackByteCount,
                 0,
-                null);
+                _visibleCountReadbackCompletedCallback);
             _visibleCountReadbackPending = !_visibleCountReadbackRequest.hasError;
             if (!_visibleCountReadbackPending)
                 _visibleCountReadbackRequest = default;
+        }
+
+        private void OnVisibleCountReadbackCompleted(AsyncGPUReadbackRequest request)
+        {
+            if (!_visibleCountReadbackPending && !_visibleCountReadbackReleaseRequested)
+                return;
+
+            _visibleCountReadbackPending = false;
+            _visibleCountReadbackRequest = default;
+            if (!request.hasError && _visibleCountReadback.Data.IsCreated)
+            {
+                _lastVisibleFloraCount = _visibleCountReadback.Data.Length > IndirectArgsInstanceCountIndex
+                    ? (int)math.min(_visibleCountReadback.Data[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
+                    : 0;
+            }
+
+            if (_visibleCountReadbackReleaseRequested)
+            {
+                DisposeVisibleCountReadbackData();
+                ReleaseDeferredVisibleCountReadbackArgsBuffer();
+            }
         }
 
         private bool EnsureVisibleCountReadbackDataCold()
@@ -1709,6 +1731,9 @@ namespace Hecton8.Rendering.Scatter
 
             if (!HasVisibleCountReadbackData())
             {
+                if (!EnsureVisibleCountReadbackDataCold())
+                    return;
+
                 _visibleCountReadbackRepairRequested = false;
                 return;
             }
@@ -1716,20 +1741,29 @@ namespace Hecton8.Rendering.Scatter
             _visibleCountReadbackRepairRequested = false;
         }
 
-        private void CompletePendingVisibleCountReadbackForRelease()
+        private bool CompletePendingVisibleCountReadbackForRelease()
         {
             if (!_visibleCountReadbackPending)
-                return;
+                return false;
 
             if (!_visibleCountReadbackRequest.done)
-                _visibleCountReadbackRequest.WaitForCompletion();
+            {
+                _visibleCountReadbackReleaseRequested = true;
+                return true;
+            }
 
-            _visibleCountReadbackPending = false;
-            _visibleCountReadbackRequest = default;
+            OnVisibleCountReadbackCompleted(_visibleCountReadbackRequest);
+            return false;
         }
 
         private void DisposeVisibleCountReadbackData()
         {
+            if (_visibleCountReadbackPending)
+            {
+                _visibleCountReadbackReleaseRequested = true;
+                return;
+            }
+
             if (_visibleCountReadback.Data.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_visibleCountReadback.Data);
@@ -1737,7 +1771,18 @@ namespace Hecton8.Rendering.Scatter
                 _visibleCountReadback.Data = default;
             }
 
+            _visibleCountReadbackReleaseRequested = false;
             _visibleCountReadbackRepairRequested = false;
+        }
+
+        private void ReleaseDeferredVisibleCountReadbackArgsBuffer()
+        {
+            if (!_visibleCountReadbackArgsReleaseDeferred)
+                return;
+
+            ReleaseBuffer(ref _argsBuffer);
+            _visibleCountReadbackArgsReleaseDeferred = false;
+            InvalidateIndirectArgsCache();
         }
 
         private bool TryBuildFrustumPlanes()

@@ -63,7 +63,7 @@ namespace Hecton8.EditorTools
             if (ModularBaseConstructionValidator.TryGetLastValidation(
                     out ConstructionRequestDTO request,
                     out StructuralBoundsDTO _,
-                    out MockWorldSampler _,
+                    out ConstructionTerrainSampler _,
                     out ConstructionValidationResultDTO result))
             {
                 EditorGUILayout.Space();
@@ -115,7 +115,7 @@ namespace Hecton8.EditorTools
             if (!ModularBaseConstructionValidator.TryGetLastValidation(
                     out ConstructionRequestDTO request,
                     out StructuralBoundsDTO bounds,
-                    out MockWorldSampler _,
+                    out ConstructionTerrainSampler _,
                     out ConstructionValidationResultDTO result))
                 return;
 

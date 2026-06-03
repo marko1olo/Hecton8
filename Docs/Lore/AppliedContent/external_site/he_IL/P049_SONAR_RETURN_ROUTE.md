@@ -1,10 +1,17 @@
 ---
 packet_id: P049_SONAR_RETURN_ROUTE
+release_set_id: RS010_PRESSURE_MACHINERY_RETURN_ROUTE
 article_id: hecton8.sonar_return_route
+unlock_id: unlock.first_sonar_return_route
+poi_tags: poi.sonar_pylon;poi.return_beacon
+biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: he_IL
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Sonar Return Route

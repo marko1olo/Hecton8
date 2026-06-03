@@ -51,7 +51,7 @@ namespace Hecton8.Editor
         public static void ValidateAllSignalLayouts()
         {
             StringBuilder report = null;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
             {
                 Type[] types;

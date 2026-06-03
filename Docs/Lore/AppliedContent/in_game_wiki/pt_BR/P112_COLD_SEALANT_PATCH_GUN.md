@@ -1,30 +1,37 @@
 ---
 packet_id: P112_COLD_SEALANT_PATCH_GUN
+release_set_id: RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE
 article_id: first_hour.cold_sealant_patch_gun
+unlock_id: unlock.first_cold_sealant_patch_gun
+poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
+biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Cold Sealant Patch Gun
 
-Draft PT localization pending native pass. The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
+The cold sealant patch gun is the second opening tool. It fixes small leaks, stabilizes the capsule and teaches limits. The player learns that every repair has a rating, and HECTON-8 punishes repairs used outside that rating.
 
 ## Scanner
 
-Draft PT localization pending native pass. Patch gun. Rated for pinholes, not miracles.
+Patch gun. Rated for pinholes, not miracles.
 
 ## Terminal
 
-Draft PT localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
 
 ## Audio
 
-Draft PT localization pending native pass. A patch is not safety. It is a countdown that looks solid.
+A patch is not safety. It is a countdown that looks solid.
 
 ## Field Note
 
-Draft PT localization pending native pass. Sealant repairs should buy time, not erase pressure.
+Sealant repairs should buy time, not erase pressure.
 
 <!-- In-Game Wiki; generated from P112_COLD_SEALANT_PATCH_GUN/pt_BR. -->

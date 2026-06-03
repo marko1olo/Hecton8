@@ -14,10 +14,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
@@ -25,7 +21,6 @@ namespace Hecton8.UI
     public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PDADecryptionSpectrogramPanelSignalPushDropCount;
-        internal const string WaveShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader";
         private const int HighPointCount = 128;
         private const int LowPointCount = 32;
         private const int StageCount = 3;
@@ -46,26 +41,6 @@ namespace Hecton8.UI
         private static readonly int WaveScalarsId = Shader.PropertyToID("_HectonFrequencyTuningWaveScalars");
         private static readonly int WaveLayoutId = Shader.PropertyToID("_HectonFrequencyTuningWaveLayout");
         private static readonly int ErrorGlobalId = Shader.PropertyToID("_HectonFrequencyTuningError01");
-        private static readonly Vector3[] FrequencyQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f)
-        }; // COLD ALLOC: Vector3[4] - immutable frequency tuning quad vertices - owner: PDADecryptionSpectrogramPanel
-        private static readonly Vector2[] FrequencyQuadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(0f, 1f),
-            new Vector2(1f, 1f),
-            new Vector2(1f, 0f)
-        }; // COLD ALLOC: Vector2[4] - immutable frequency tuning quad UVs - owner: PDADecryptionSpectrogramPanel
-        private static readonly int[] FrequencyQuadIndices =
-        {
-            0, 1, 2,
-            2, 3, 0
-        }; // COLD ALLOC: int[6] - immutable frequency tuning quad indices - owner: PDADecryptionSpectrogramPanel
-
         [Header("PDA Surface")]
         [SerializeField] private Transform surfaceAnchor;
         [SerializeField] private Vector3 localSurfaceOffset = new Vector3(0f, 0f, -0.002f);
@@ -75,7 +50,6 @@ namespace Hecton8.UI
 
         [Header("Renderer")]
         [SerializeField] private Material waveMaterial;
-        [SerializeField] private Shader waveShader;
         [SerializeField] private Mesh waveMesh;
         [FormerlySerializedAs("lowTierVideoMemoryMb")]
         [SerializeField, Min(256)] private int minimumQualityVideoMemoryMb = 2048;
@@ -97,12 +71,11 @@ namespace Hecton8.UI
         private GraphicsBuffer _argsBuffer;
         private GraphicsBuffer _argsBufferA;
         private GraphicsBuffer _argsBufferB;
-        private Material _runtimeMaterial;
-        private Material _runtimeSourceMaterial;
+        private MaterialPropertyBlock _waveMaterialProperties;
         private IDataVault _cachedDataVault;
         private IInputService _cachedInputService;
+        private Material _resolvedMaterial;
         private Mesh _resolvedMesh;
-        private Mesh _runtimeQuadMesh;
         private int _pointCount = HighPointCount;
         private int _waveSegmentCount = HighPointCount - 1;
         private int _gpuSegmentCapacity = (HighPointCount - 1) * 2;
@@ -148,11 +121,6 @@ namespace Hecton8.UI
             CacheGraphicsCapabilitiesCold();
             if (surfaceAnchor == null)
                 surfaceAnchor = transform;
-
-#if UNITY_EDITOR
-            if (waveShader == null)
-                waveShader = AssetDatabase.LoadAssetAtPath<Shader>(WaveShaderPath);
-#endif
         }
 
         private void OnEnable()
@@ -489,15 +457,32 @@ namespace Hecton8.UI
 
         private void EnsureGraphicsResources()
         {
+            EnsureWaveMaterialPropertiesCold();
             if (_graphicsReady &&
                 _argsBufferA != null &&
                 _argsBufferB != null &&
+                _resolvedMaterial != null &&
                 _resolvedMesh != null)
             {
                 return;
             }
 
-            _resolvedMesh = waveMesh != null ? waveMesh : ResolveRuntimeQuadMesh();
+            UnityEngine.Assertions.Assert.IsNotNull(waveMaterial, "Fatal: Missing Authored PDA Frequency Tuning Wave Material.");
+            UnityEngine.Assertions.Assert.IsNotNull(waveMesh, "Fatal: Missing Authored PDA Frequency Tuning Wave Mesh.");
+            bool authoredMaterialValid = waveMaterial != null && waveMaterial.enableInstancing;
+            bool authoredMeshValid = waveMesh != null && waveMesh.subMeshCount > 0 && waveMesh.GetIndexCount(0) > 0u;
+            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: PDA Frequency Tuning Wave Material must have Enable GPU Instancing authored.");
+            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: PDA Frequency Tuning Wave Mesh must provide indexed submesh 0.");
+            if (!authoredMaterialValid || !authoredMeshValid)
+            {
+                _resolvedMaterial = null;
+                _resolvedMesh = null;
+                _graphicsReady = false;
+                return;
+            }
+
+            _resolvedMaterial = waveMaterial;
+            _resolvedMesh = waveMesh;
 
             if (_argsBufferA == null)
                 _argsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - PDA wave indirect args A - owner: PDADecryptionSpectrogramPanel
@@ -505,47 +490,19 @@ namespace Hecton8.UI
             if (_argsBufferB == null)
                 _argsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - PDA wave indirect args B - owner: PDADecryptionSpectrogramPanel
 
-            ResolveRuntimeMaterial();
             if (_argsBuffer == null)
                 _argsBuffer = _argsBufferA;
             UpdateDrawArgs(_gpuSegmentCapacity);
-            _graphicsReady = _resolvedMesh != null && _argsBufferA != null && _argsBufferB != null;
+            _graphicsReady = _resolvedMaterial != null && _resolvedMesh != null && _argsBufferA != null && _argsBufferB != null;
         }
 
-        private void ResolveRuntimeMaterial()
+        private void EnsureWaveMaterialPropertiesCold()
         {
-            if (waveMaterial != null)
-            {
-                if (_runtimeMaterial != null && ReferenceEquals(_runtimeSourceMaterial, waveMaterial))
-                    return;
-
-                DestroyRuntimeMaterial();
-                _runtimeSourceMaterial = waveMaterial;
-                _runtimeMaterial = new Material(waveMaterial)
-                {
-                    hideFlags = HideFlags.DontSave,
-                    enableInstancing = true
-                }; // COLD ALLOC: Material[1] - PDA frequency tuning buffer-bound draw material - owner: PDADecryptionSpectrogramPanel
-                return;
-            }
-
-            if (_runtimeMaterial != null)
+            if (_waveMaterialProperties != null)
                 return;
 
-            Shader resolvedShader = waveShader;
-#if UNITY_EDITOR
-            if (resolvedShader == null)
-                resolvedShader = AssetDatabase.LoadAssetAtPath<Shader>(WaveShaderPath);
-#endif
-            if (resolvedShader == null)
-                return;
-
-            _runtimeMaterial = new Material(resolvedShader)
-            {
-                hideFlags = HideFlags.DontSave,
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] - editor fallback PDA frequency tuning material - owner: PDADecryptionSpectrogramPanel
-            _runtimeSourceMaterial = null;
+            // COLD ALLOC: MaterialPropertyBlock[1] - PDA frequency tuning wave shader payload - owner: PDADecryptionSpectrogramPanel.
+            _waveMaterialProperties = new MaterialPropertyBlock();
         }
 
         private void ResetRuntimeState(uint artifactHash, uint blueprintHash)
@@ -692,38 +649,39 @@ namespace Hecton8.UI
 
         private void RenderWaveMesh()
         {
-            if (_runtimeMaterial == null || _resolvedMesh == null || _argsBuffer == null)
+            if (_resolvedMaterial == null || _resolvedMesh == null || _argsBuffer == null)
                 return;
 
             Transform anchor = surfaceAnchor != null ? surfaceAnchor : transform;
             Matrix4x4 localToWorld = anchor.localToWorldMatrix * Matrix4x4.Translate(localSurfaceOffset);
             Vector4 origin = localToWorld.GetColumn(3);
             Vector3 worldCenter = new Vector3(origin.x, origin.y, origin.z);
-            _runtimeMaterial.SetMatrix(LocalToWorldId, localToWorld);
-            _runtimeMaterial.SetFloat(TubeRadiusId, math.max(0.0005f, tubeRadius));
+            _waveMaterialProperties.SetMatrix(LocalToWorldId, localToWorld);
+            _waveMaterialProperties.SetFloat(TubeRadiusId, math.max(0.0005f, tubeRadius));
             Vector4 waveScalars = default;
             waveScalars.x = _targetFrequency;
             waveScalars.y = _targetAmplitude;
             waveScalars.z = _playerFrequency;
             waveScalars.w = _playerAmplitude;
-            _runtimeMaterial.SetVector(WaveScalarsId, waveScalars);
+            _waveMaterialProperties.SetVector(WaveScalarsId, waveScalars);
             Vector4 waveLayout = default;
             waveLayout.x = math.max(1, _waveSegmentCount);
             waveLayout.y = math.max(0.01f, localSurfaceSize.x);
             waveLayout.z = math.max(0.01f, localSurfaceSize.y);
             waveLayout.w = _pointCount;
-            _runtimeMaterial.SetVector(WaveLayoutId, waveLayout);
+            _waveMaterialProperties.SetVector(WaveLayoutId, waveLayout);
             Vector4 timeErrorStage = default;
             timeErrorStage.x = _lastTickUnscaledTime;
             timeErrorStage.y = _currentError01;
             timeErrorStage.z = _stageIndex;
             timeErrorStage.w = _holdTimerSeconds * math.rcp(UnlockHoldSeconds);
-            _runtimeMaterial.SetVector(TimeErrorStageId, timeErrorStage);
+            _waveMaterialProperties.SetVector(TimeErrorStageId, timeErrorStage);
             UpdateDrawArgs(_gpuSegmentCapacity);
 
             Bounds bounds = new Bounds(worldCenter, Vector3.one * math.max(localSurfaceSize.x, localSurfaceSize.y) * 2f);
-            RenderParams renderParams = new RenderParams(_runtimeMaterial)
+            RenderParams renderParams = new RenderParams(_resolvedMaterial)
             {
+                matProps = _waveMaterialProperties,
                 worldBounds = bounds,
                 layer = renderLayer,
                 shadowCastingMode = ShadowCastingMode.Off,
@@ -1147,50 +1105,11 @@ namespace Hecton8.UI
             _argsBufferB?.Dispose();
             _argsBufferB = null;
             _argsBuffer = null;
-            DestroyRuntimeMaterial();
-            DestroyRuntimeQuadMesh();
+            _resolvedMaterial = null;
             _resolvedMesh = null;
             _graphicsReady = false;
             _lastArgsInstanceCount = -1;
             _argsBufferWriteIndex = 0;
-        }
-
-        private Mesh ResolveRuntimeQuadMesh()
-        {
-            if (_runtimeQuadMesh != null)
-                return _runtimeQuadMesh;
-
-            Mesh mesh = new Mesh
-            {
-                name = "H8_FrequencyTuningQuad",
-                hideFlags = HideFlags.DontSave
-            }; // COLD ALLOC: Mesh[1] - PDA frequency tuning procedural quad - owner: PDADecryptionSpectrogramPanel
-            mesh.SetVertices(FrequencyQuadVertices);
-            mesh.SetUVs(0, FrequencyQuadUvs);
-            mesh.SetTriangles(FrequencyQuadIndices, 0, false);
-            mesh.RecalculateBounds();
-            _runtimeQuadMesh = mesh;
-            return _runtimeQuadMesh;
-        }
-
-        private void DestroyRuntimeQuadMesh()
-        {
-            if (_runtimeQuadMesh == null)
-                return;
-
-            Destroy(_runtimeQuadMesh);
-            _runtimeQuadMesh = null;
-        }
-
-        private void DestroyRuntimeMaterial()
-        {
-            if (_runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
-            _runtimeSourceMaterial = null;
         }
 
         private static float ResolveDampedLerpAlpha(float speed, float deltaTime)

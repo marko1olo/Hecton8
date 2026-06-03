@@ -1,10 +1,17 @@
 ---
 packet_id: P059_ESCAPE_CHAIN_ASSEMBLY
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.escape_chain_assembly
+unlock_id: unlock.first_escape_chain_assembly
+poi_tags: poi.ascent_cradle;poi.pressure_clamp
+biome_tags: biome.service_corridor;biome.machine_trench
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Сборка цепочки побега

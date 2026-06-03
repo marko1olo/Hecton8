@@ -12,26 +12,35 @@ namespace Hecton8.UI
         private const float MinUniformScale = 0.8f;
         private const float MaxUniformScale = 1f;
 
-        public static void ApplyScale(TMP_Text text, Vector3 baselineScale, float uniformScale)
+        public static float ApplyScale(TMP_Text text, float previousUniformScale, float uniformScale)
         {
             if (text == null)
-                return;
+                return MaxUniformScale;
 
             float clampedScale = Mathf.Clamp(uniformScale, MinUniformScale, MaxUniformScale);
-            text.ForceMeshUpdate(ignoreActiveState: true, forceTextReparsing: false);
-            if (Mathf.Approximately(clampedScale, MaxUniformScale))
-            {
-                text.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
-                return;
-            }
+            float previousScale = Mathf.Clamp(previousUniformScale, MinUniformScale, MaxUniformScale);
+            bool wasScaled = !Mathf.Approximately(previousScale, MaxUniformScale);
+            bool shouldScale = !Mathf.Approximately(clampedScale, MaxUniformScale);
+            if (!wasScaled && !shouldScale)
+                return MaxUniformScale;
 
-            TMP_TextInfo textInfo = text.textInfo;
-            if (textInfo == null)
-                return;
+            if (!TryRefreshMeshInfo(text, out TMP_TextInfo textInfo))
+                return wasScaled ? previousScale : MaxUniformScale;
+
+            float targetScale = shouldScale ? clampedScale : MaxUniformScale;
+            float scaleRatio = targetScale / (wasScaled ? previousScale : MaxUniformScale);
+            if (Mathf.Approximately(scaleRatio, MaxUniformScale))
+                return targetScale;
+
+            if (!HasWritableVertexPayload(textInfo))
+            {
+                text.SetVerticesDirty();
+                return wasScaled ? previousScale : MaxUniformScale;
+            }
 
             Bounds bounds = text.bounds;
             Vector3 pivot = bounds.center;
-            Vector3 scale = new Vector3(clampedScale, clampedScale, 1f);
+            Vector3 scale = new Vector3(scaleRatio, scaleRatio, 1f);
             Matrix4x4 scaleMatrix = Matrix4x4.Scale(scale);
             for (int meshIndex = 0; meshIndex < textInfo.meshInfo.Length; meshIndex++)
             {
@@ -49,6 +58,48 @@ namespace Hecton8.UI
             }
 
             text.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
+            return targetScale;
+        }
+
+        private static bool TryRefreshMeshInfo(TMP_Text text, out TMP_TextInfo textInfo)
+        {
+            if (text == null)
+            {
+                textInfo = null;
+                return false;
+            }
+
+            textInfo = text.textInfo;
+            if (textInfo == null || textInfo.meshInfo == null || textInfo.meshInfo.Length == 0)
+            {
+                text.SetVerticesDirty();
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasWritableVertexPayload(TMP_TextInfo textInfo)
+        {
+            if (textInfo == null || textInfo.meshInfo == null || textInfo.meshInfo.Length == 0)
+                return false;
+
+            for (int meshIndex = 0; meshIndex < textInfo.meshInfo.Length; meshIndex++)
+            {
+                TMP_MeshInfo meshInfo = textInfo.meshInfo[meshIndex];
+                Vector3[] vertices = meshInfo.vertices;
+                if (vertices == null)
+                    continue;
+
+                int requiredVertexCount = meshInfo.vertexCount;
+                if (meshInfo.mesh != null)
+                    requiredVertexCount = Mathf.Max(requiredVertexCount, meshInfo.mesh.vertexCount);
+
+                if (requiredVertexCount > vertices.Length)
+                    return false;
+            }
+
+            return true;
         }
 
         public static float ResolveUniformScale(TMP_Text text)

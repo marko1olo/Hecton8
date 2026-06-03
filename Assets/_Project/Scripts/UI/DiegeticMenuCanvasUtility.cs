@@ -28,7 +28,7 @@ namespace Hecton8.UI
         {
             root = null;
             panelCollider = null;
-            if (canvas == null)
+            if (canvas == null || camera == null || !camera.isActiveAndEnabled)
                 return false;
 
             root = canvas.transform as RectTransform;
@@ -63,7 +63,7 @@ namespace Hecton8.UI
             NormalizeReadableText(root);
 
             panelCollider = ResolveOrCreatePanelCollider(root);
-            return true;
+            return panelCollider != null;
         }
 
         internal static Camera ResolveCamera(Camera preferred)
@@ -71,7 +71,7 @@ namespace Hecton8.UI
             if (preferred != null && preferred.isActiveAndEnabled)
                 return preferred;
 
-            return Camera.main;
+            return null;
         }
 
         internal static void SyncCameraRelativePose(RectTransform root, Camera camera)
@@ -117,7 +117,13 @@ namespace Hecton8.UI
         private static BoxCollider ResolveOrCreatePanelCollider(RectTransform root)
         {
             if (!root.TryGetComponent(out BoxCollider panelCollider))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 panelCollider = root.gameObject.AddComponent<BoxCollider>(); // COLD ALLOC: main-menu diegetic panel collider.
+#else
+                return null;
+#endif
+            }
 
             panelCollider.isTrigger = true;
             panelCollider.center = Vector3.zero;

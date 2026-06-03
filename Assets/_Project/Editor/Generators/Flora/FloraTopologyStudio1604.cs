@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -134,6 +135,7 @@ namespace Hecton8.EditorTools.Generators.Flora
         private const string KelpGpuInstancerShaderName = "GPUInstancer/Hecton8/Flora/KelpMaster";
         private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
         private const string CoralGpuInstancerShaderName = "GPUInstancer/Hecton8/Flora/CoralMaster";
+        private const string GeneratedCompoundRootName = "COL_CompoundProxy_1716";
         private const float Lod0Threshold = 0.62f;
         private const float Lod1Threshold = 0.22f;
         private const float Lod2Threshold = 0.06f;
@@ -747,9 +749,23 @@ namespace Hecton8.EditorTools.Generators.Flora
                 if (preset != FloraTopologyPreset.KelpForestFrond)
                     AddCollisionProxy(root, lod0, preset);
 
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                {
+                    Debug.LogError("[FloraTopology1604] 1716 collider validation failed before save. Path=" + prefabPath + " Failure=" + colliderFailure);
+                    return false;
+                }
+
                 GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 if (savedPrefab != null)
+                {
+                    if (!ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    {
+                        Debug.LogError("[FloraTopology1604] 1716 collider validation failed after save. Path=" + prefabPath + " Failure=" + colliderFailure);
+                        return false;
+                    }
+
                     return true;
+                }
 
                 Debug.LogError("[FloraTopology1604] Prefab save failed. Path=" + prefabPath);
                 return false;
@@ -789,14 +805,49 @@ namespace Hecton8.EditorTools.Generators.Flora
         private static void AddCollisionProxy(GameObject root, Mesh lod0, FloraTopologyPreset preset)
         {
             Bounds bounds = lod0 != null ? lod0.bounds : new Bounds(Vector3.zero, Vector3.one);
-            SphereCollider collider = root.AddComponent<SphereCollider>();
+            GameObject proxyRoot = new GameObject(GeneratedCompoundRootName);
+            proxyRoot.transform.SetParent(root.transform, false);
+            proxyRoot.transform.localPosition = Vector3.zero;
+            proxyRoot.transform.localRotation = Quaternion.identity;
+            proxyRoot.transform.localScale = Vector3.one;
+
+            GameObject colliderObject = new GameObject("COL_Sphere_" + preset);
+            colliderObject.transform.SetParent(proxyRoot.transform, false);
+            colliderObject.transform.localPosition = Vector3.zero;
+            colliderObject.transform.localRotation = Quaternion.identity;
+            colliderObject.transform.localScale = Vector3.one;
+
+            SphereCollider collider = colliderObject.AddComponent<SphereCollider>();
             collider.center = bounds.center;
             collider.radius = Mathf.Max(bounds.extents.x, Mathf.Max(bounds.extents.y, bounds.extents.z));
             collider.isTrigger = preset == FloraTopologyPreset.ThermalTubeWorm;
 
+            int physicsLayer = ResolveFloraCollisionLayer(collider.isTrigger);
+            if (physicsLayer >= 0)
+            {
+                proxyRoot.layer = physicsLayer;
+                colliderObject.layer = physicsLayer;
+            }
+        }
+
+        private static int ResolveFloraCollisionLayer(bool trigger)
+        {
+            if (trigger)
+            {
+                int floraNonColliding = LayerMask.NameToLayer("Flora_NonColliding");
+                if (floraNonColliding >= 0)
+                    return floraNonColliding;
+            }
+
+            int worldStatic = LayerMask.NameToLayer("World_Static");
+            if (worldStatic >= 0)
+                return worldStatic;
+
             int physicsLayer = LayerMask.NameToLayer("Physics");
             if (physicsLayer >= 0)
-                root.layer = physicsLayer;
+                return physicsLayer;
+
+            return 0;
         }
 
         private static void ApplyLodBounds(LODGroup lodGroup, Mesh lod0, Mesh lod1, Mesh lod2)

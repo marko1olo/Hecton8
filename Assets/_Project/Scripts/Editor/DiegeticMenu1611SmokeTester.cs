@@ -60,7 +60,7 @@ namespace Hecton8.Editor
             ValidateRaycasterCanvasGroupBlockerStopsLowerControl();
             ValidateMainMenuCanvasYaml();
             ValidateMainMenuValidatorPolicy();
-            ValidateNewGameRoutesToOrbitPrologue();
+            ValidateNewGameRoutesToWorld();
             ValidateHotPathSourceText();
             ValidateApexIntegratorProtocol();
         }
@@ -1021,14 +1021,14 @@ namespace Hecton8.Editor
                 throw new InvalidOperationException("1611 main menu YAML diegetic canvas audit failed.");
         }
 
-        private static void ValidateNewGameRoutesToOrbitPrologue()
+        private static void ValidateNewGameRoutesToWorld()
         {
             string mainMenu = File.ReadAllText(Path.GetFullPath(MainMenuPath));
             string sceneText = File.ReadAllText(Path.GetFullPath(ScenePath));
-            if (mainMenu.IndexOf("newGameTargetSceneName = \"01_ORBIT\"", StringComparison.Ordinal) < 0 ||
-                sceneText.IndexOf("newGameTargetSceneName: 01_ORBIT", StringComparison.Ordinal) < 0)
+            if (mainMenu.IndexOf("newGameTargetSceneName = \"02_HECTON_WORLD\"", StringComparison.Ordinal) < 0 ||
+                sceneText.IndexOf("newGameTargetSceneName: 02_HECTON_WORLD", StringComparison.Ordinal) < 0)
             {
-                throw new InvalidOperationException("1611 orbital handoff violation: new game route is not serialized to 01_ORBIT.");
+                throw new InvalidOperationException("1611 main handoff violation: new game route is not serialized to 02_HECTON_WORLD.");
             }
         }
 

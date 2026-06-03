@@ -297,7 +297,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
 
             float safeVolume = math.max(1f, FiniteOr(chamberVolumeLiters, 1f));
             float curve = math.max(0.25f, FiniteOr(exponent, AirlockPressurizationConstants.DefaultEqualizationCurveExponent));
-            float normalizedDelta = math.saturate(absDelta / math.max(1f, target));
+            float normalizedDelta = math.saturate(absDelta * math.rcp(math.max(1f, target)));
             float speed = (0.65f + normalizedDelta * curve) * math.rsqrt(safeVolume * 0.001f + 1f);
             float step = math.min(absDelta, absDelta * math.saturate(speed * math.max(0f, dt)));
             return current + math.sign(delta) * step;
@@ -313,7 +313,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
             float flow = math.max(0.01f, FiniteOr(equalizationFlowM3PerSqrtKPaSecond, 1.35f));
             float deltaKPa = math.abs(FiniteOr(pressureDeltaAtm, 1f)) * HectonSurvivalContract.KPaPerAtmosphere;
             float rootDelta = ApproximateSqrtPositive(math.max(1f, deltaKPa));
-            float seconds = volume / math.max(AirlockPressurizationConstants.MinimumDenominator, flow * rootDelta);
+            float seconds = volume * math.rcp(math.max(AirlockPressurizationConstants.MinimumDenominator, flow * rootDelta));
             return math.clamp(seconds, 0.25f, math.max(0.25f, FiniteOr(maximumEqualizationSeconds, 18f)));
         }
 

@@ -22,7 +22,7 @@ namespace Hecton8.Construction
         private const int MaxPreviewInstances = 64;
         private const uint StateMatricesDirty = 1u << 0;
         private const float PointDirtyDistanceSq = 0.000025f;
-        private const string HologramShaderPath = "Assets/_Project/Shaders/Hecton_ConstructionDearLieHologram.shader";
+        private const string HologramMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_BuildGhost_Valid.mat";
         private const uint PipePreviewHash = 0x56525050u;
         private const BufferID PipeStateBufferId = (BufferID)70946;
         private const BufferID PipeVisualBufferId = (BufferID)70947;
@@ -34,7 +34,6 @@ namespace Hecton8.Construction
 
         [Header("Preview")]
         [SerializeField] private Material previewMaterial;
-        [SerializeField] private Shader previewShader;
         [SerializeField] private bool previewActive;
         [SerializeField, Min(0.01f)] private float segmentLengthMeters = 0.35f;
         [SerializeField, Min(0.001f)] private float segmentRadiusMeters = 0.035f;
@@ -90,6 +89,7 @@ namespace Hecton8.Construction
         private GraphicsBuffer _boundStateBuffer;
         private GraphicsBuffer _boundVisualBuffer;
         private HectonXRRuntimeState.XRActiveChangedHandler _xrActiveChangedHandler;
+        private bool _previewMaterialFaultLogged;
 
         private static readonly int BuilderGhostStatesId = Shader.PropertyToID("_H8BuilderGhostStates");
         private static readonly int BuilderGhostVisualsId = Shader.PropertyToID("_H8BuilderGhostVisuals");
@@ -209,9 +209,6 @@ namespace Hecton8.Construction
             ClearVaultDescriptorState();
             _boundStateBuffer = null;
             _boundVisualBuffer = null;
-
-            if (previewMaterial != null && previewMaterial.hideFlags == HideFlags.DontSave)
-                Destroy(previewMaterial);
         }
 
         private void EnsureXrActiveChangedHandlerCold()
@@ -792,21 +789,24 @@ namespace Hecton8.Construction
         private void EnsureMaterial()
         {
             if (previewMaterial != null)
+            {
+                _previewMaterialFaultLogged = false;
                 return;
+            }
 
 #if UNITY_EDITOR
-            if (previewShader == null)
-                previewShader = AssetDatabase.LoadAssetAtPath<Shader>(HologramShaderPath);
-
-            if (previewShader == null)
+            previewMaterial = AssetDatabase.LoadAssetAtPath<Material>(HologramMaterialPath);
+            if (previewMaterial != null)
+            {
+                _previewMaterialFaultLogged = false;
+                return;
+            }
+#endif
+            if (_previewMaterialFaultLogged)
                 return;
 
-            previewMaterial = new Material(previewShader)
-            {
-                enableInstancing = false,
-                hideFlags = HideFlags.DontSave
-            };
-#endif
+            _previewMaterialFaultLogged = true;
+            H8Debug.LogError("[VRPipeBlueprintPreview] Missing authored preview material. Runtime material synthesis is forbidden.", this);
         }
 
         private void UpdateDrawBoundsFromStates(NativeArray<BuilderGhostStateDTO> states, int count)

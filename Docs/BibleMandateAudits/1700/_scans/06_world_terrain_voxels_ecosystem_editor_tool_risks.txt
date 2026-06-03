@@ -1,4 +1,86 @@
-﻿Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:163:                UnityEngine.Debug.LogError("[SHINOBU_308] Biota density bake failed: " + exception.GetType().Name + " " + exception.Message);
+﻿Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\Terrain_Shader_Scanner.cs:38:            UnityEngine.Debug.Log("[SHINOBU_243] Terrain shader scanner wrote " + ReportPath + " offenders=" + offenders);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:176:                heights = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:177:                erosion = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:178:                macros = new NativeArray<uint>(macroCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:179:                normals = new NativeArray<float3>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:180:                pixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:181:                nonFiniteFlags = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:183:                edgeWest = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:184:                edgeEast = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:185:                edgeSouth = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:186:                edgeNorth = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:187:                telemetry = new NativeArray<BiomeSplatmapBakeTelemetryEntry>(BiomeWeightMapBakeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:238:                    blurredPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:252:                finalHandle.Complete();
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:286:                UnityEngine.Debug.LogError("[SHINOBU_243] Biome weight-map bake failed: " + ex.GetType().Name + " " + ex.Message);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:292:                    cleanupHandle.Complete();
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:361:                heights = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:362:                erosion = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:363:                macros = new NativeArray<uint>(math.max(1, config.MacroWidth * config.MacroHeight), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:364:                normals = new NativeArray<float3>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:365:                pixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:366:                nonFiniteFlags = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:368:                edge = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:411:                    blurredPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:424:                handle.Complete();
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:436:                    cleanupHandle.Complete();
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:507:            NativeArray<BiomeBlendRuleDTO> nativeRules = new NativeArray<BiomeBlendRuleDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:526:                UnityEngine.Debug.LogWarning("[SHINOBU_243] BC7 texture compression failed: " + exception.Message);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:626:                UnityEngine.Debug.LogWarning("[SHINOBU_243] Black-box dump failed closed: " + exception.GetType().Name);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:118:                _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:119:                _statusLabel.text = "CSV rejected: " + CsvPath;
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:126:            _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture) + " | rows " + ruleCount + " | rule sets " + ruleSetCount;
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:127:            _statusLabel.text = "Loaded CSV rules: " + ruleCount + " | rule sets " + ruleSetCount + " | schema 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture);
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:141:                _statusLabel.text = "Preview refreshed. R=Rock, G=Sand, B=Silt, A=Erosion.";
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:148:                _statusLabel.text = "Bake already running.";
+Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:158:                _statusLabel.text = baked
+Assets\_Project\Scripts\World\Editor\VegetationMemorySovereigntyValidator1316.cs:25:            H8Debug.Log("[1316] Vegetation memory sovereignty layout validator passed.");
+Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:135:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
+Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:152:            _statusLabel.text = "Active. Effective radius " + tuning.EffectiveRingRadius.ToString("0.00", CultureInfo.InvariantCulture) +
+Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:188:            _graphLabel.text = "Latency " + counters.LatencyEwmaMs.ToString("0.0", CultureInfo.InvariantCulture) +
+Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:197:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
+Assets\_Project\Scripts\World\Editor\Synchronous_IO_Scanner.cs:20:            Debug.Log("Synchronous_IO_Scanner findings: " + findingCount + ". Report: " + ReportRelativePath);
+Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:167:                _stats.text = "Vault not active.";
+Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:209:            _stats.text = _builder.ToString();
+Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:329:            Debug.Log(RunScan());
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\Runtime_Spawner_Scanner.cs:27:            UnityEngine.Debug.Log("[SHINOBU_308] Runtime spawner scanner wrote " + ReportPath + " blockers=" + result.BlockerCount + " excluded=" + result.ExcludedCount);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:72:                Debug.Log("[SHINOBU_215] Hadal arch DTO layouts validated.");
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:83:            Debug.LogError("[SHINOBU_215] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:94:            Debug.LogError("[SHINOBU_215] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:113:                _schemaLabel.text = "CSV Schema v" + BiotaSpawnRuleCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:114:                _statusLabel.text = "CSV rejected: " + BiotaDensityBakePipeline.DefaultCsvPath;
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:121:            _schemaLabel.text = "CSV Schema v" + BiotaSpawnRuleCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8") + " | rows " + ruleCount;
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:122:            _statusLabel.text = "Loaded biota rules: " + ruleCount + " | schema 0x" + schemaHash.ToString("X8");
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:135:                _statusLabel.text = "Preview refreshed " + _previewTexture.width + "x" + _previewTexture.height + ". Green=flora, Blue=fauna, Red=predator/vent pressure.";
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:147:                _statusLabel.text = "Bake already running.";
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:161:                    _statusLabel.text = "Baked " + result.OutputPath + " | " + result.Width + "x" + result.Height + "x" + result.LayerCount + " | RLE " + result.RleRunCount + " | warnings 0x" + result.WarningFlags.ToString("X8");
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:168:                    _statusLabel.text = "Bake failed: " + exception.GetType().Name + ". See Console and Docs/AgentLogs/Dump_SHINOBU_308.bin if emitted.";
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:169:                Debug.LogError("[SHINOBU_308] Biota density bake failed: " + exception);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\Intersecting_Geometry_Scanner.cs:65:            MeshRenderer[] loadedRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\Intersecting_Geometry_Scanner.cs:77:                MeshRenderer[] renderers = prefab.GetComponentsInChildren<MeshRenderer>(true);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:96:                densities = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:97:                cavity = new NativeArray<byte>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:98:                telemetry = new NativeArray<HadalArchBakeTelemetryEntry>(HadalArchBakeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:99:                shapes = new NativeArray<SdfShapeDTO>(math.max(config.ShapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:117:                sealHandle.Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:123:                cavityHandle.Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:134:                }.Schedule().Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:149:                }.Schedule().Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:168:                }.Schedule().Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:178:                }.Schedule().Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:333:                MeshCollider collider = root.AddComponent<MeshCollider>();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:178:                _statusLabel.text = "CSV load failed or recipe missing: " + CsvPath;
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:182:            _statusLabel.text = "Loaded CSV recipe. Schema hash 0x" + schemaHash.ToString("X8") + ". Shapes " + _shapes.Count + ".";
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:200:                _statusLabel.text = "Bake already running.";
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:217:            _statusLabel.text = _bakeInFlight ? "Bake scheduled." : "Bake rejected; another bake is active.";
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:226:            _statusLabel.text =
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:239:            _statusLabel.text = "Bake failed: " + exception.GetType().Name;
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:331:            NativeArray<SdfShapeDTO> nativeShapes = new NativeArray<SdfShapeDTO>(math.max(shapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:332:            NativeArray<float3> hitPositions = new NativeArray<float3>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:333:            NativeArray<byte> hitFlags = new NativeArray<byte>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:348:                }.Schedule(rayCount, 64).Complete();
+Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchSelfAudit.cs:139:            builder.Append("  <HPhiVaultStatus vaultHandles=\"NONE_RUNTIME\">Offline Editor bake owns no runtime persistent NativeArray or rollback-critical Vault data. Sync bake buffers and the weld hash map are TempJob and disposed in finally. Async bake buffers and weld hash map are Editor-only Allocator.Persistent for the active session and disposed on completion, failure, cancel, assembly reload, or editor quit. Preview scratch is Editor-only and disposed by the Forge window, assembly reload hook, and editor quit hook.</HPhiVaultStatus>\n");
+Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:163:                UnityEngine.Debug.LogError("[SHINOBU_308] Biota density bake failed: " + exception.GetType().Name + " " + exception.Message);
 Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:202:                telemetry = new NativeArray<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:217:                depth = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:218:                silt = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -50,91 +132,76 @@ Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeli
 Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:892:            NativeArray<BiotaRuleWeightDTO> output = new NativeArray<BiotaRuleWeightDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:912:            NativeArray<BiotaThermalVentDTO> vents = new NativeArray<BiotaThermalVentDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\BiotaDensityBakePipeline.cs:1441:                UnityEngine.Debug.LogWarning("[SHINOBU_308] Blackbox dump failed closed: " + exception.GetType().Name);
-Assets\_Project\Scripts\World\Editor\VegetationMemorySovereigntyValidator1316.cs:25:            H8Debug.Log("[1316] Vegetation memory sovereignty layout validator passed.");
-Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:135:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
-Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:152:            _statusLabel.text = "Active. Effective radius " + tuning.EffectiveRingRadius.ToString("0.00", CultureInfo.InvariantCulture) +
-Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:188:            _graphLabel.text = "Latency " + counters.LatencyEwmaMs.ToString("0.0", CultureInfo.InvariantCulture) +
-Assets\_Project\Scripts\World\Editor\TerrainChunkPagerTunerWindow.cs:197:                _statusLabel.text = "No active TerrainChunkPagerRuntime.";
-Assets\_Project\Scripts\World\Editor\Synchronous_IO_Scanner.cs:20:            Debug.Log("Synchronous_IO_Scanner findings: " + findingCount + ". Report: " + ReportRelativePath);
-Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:167:                _stats.text = "Vault not active.";
-Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:209:            _stats.text = _builder.ToString();
-Assets\_Project\Scripts\World\Editor\SpawnZoneSdfValidationEditor.cs:329:            Debug.Log(RunScan());
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\Terrain_Shader_Scanner.cs:38:            UnityEngine.Debug.Log("[SHINOBU_243] Terrain shader scanner wrote " + ReportPath + " offenders=" + offenders);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:118:                _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:119:                _statusLabel.text = "CSV rejected: " + CsvPath;
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:126:            _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture) + " | rows " + ruleCount + " | rule sets " + ruleSetCount;
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:127:            _statusLabel.text = "Loaded CSV rules: " + ruleCount + " | rule sets " + ruleSetCount + " | schema 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:141:                _statusLabel.text = "Preview refreshed. R=Rock, G=Sand, B=Silt, A=Erosion.";
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:148:                _statusLabel.text = "Bake already running.";
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeSplatmapForgeWindow.cs:158:                _statusLabel.text = baked
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:176:                heights = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:177:                erosion = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:178:                macros = new NativeArray<uint>(macroCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:179:                normals = new NativeArray<float3>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:180:                pixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:181:                nonFiniteFlags = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:183:                edgeWest = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:184:                edgeEast = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:185:                edgeSouth = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:186:                edgeNorth = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:187:                telemetry = new NativeArray<BiomeSplatmapBakeTelemetryEntry>(BiomeWeightMapBakeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:238:                    blurredPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:252:                finalHandle.Complete();
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:286:                UnityEngine.Debug.LogError("[SHINOBU_243] Biome weight-map bake failed: " + ex.GetType().Name + " " + ex.Message);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:292:                    cleanupHandle.Complete();
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:361:                heights = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:362:                erosion = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:363:                macros = new NativeArray<uint>(math.max(1, config.MacroWidth * config.MacroHeight), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:364:                normals = new NativeArray<float3>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:365:                pixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:366:                nonFiniteFlags = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:368:                edge = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:411:                    blurredPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:424:                handle.Complete();
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:436:                    cleanupHandle.Complete();
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:507:            NativeArray<BiomeBlendRuleDTO> nativeRules = new NativeArray<BiomeBlendRuleDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:526:                UnityEngine.Debug.LogWarning("[SHINOBU_243] BC7 texture compression failed: " + exception.Message);
-Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\BiomeWeightMapBakePipeline.cs:626:                UnityEngine.Debug.LogWarning("[SHINOBU_243] Black-box dump failed closed: " + exception.GetType().Name);
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:161:                _readout.text = "Biome transition vault buffers are not ready.";
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:165:            _readout.text =
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:184:                Debug.LogError("[BiomeTransitionTunerWindow] Native layout validation failed.");
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:186:                Debug.LogWarning("[BiomeTransitionTunerWindow] Self audit pending/faulted. Flags=0x" + faultFlags.ToString("X8") + " weightError=" + weightError.ToString("0.000000", CultureInfo.InvariantCulture));
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:188:                Debug.Log("[BiomeTransitionTunerWindow] Native layout and blend self-audit passed.");
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:194:                Debug.LogWarning("[BiomeTransitionTunerWindow] Runtime host is not active; CSV reload skipped.");
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:200:                Debug.LogWarning("[BiomeTransitionTunerWindow] Black-box dump skipped; telemetry is not ready.");
-Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:210:                Debug.LogError("[BiomeTransitionLayoutEditorGuard] Biome transition native layout mismatch.");
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:113:                _schemaLabel.text = "CSV Schema v" + BiotaSpawnRuleCsvParser.CsvSchemaVersion + ": validation failed code " + validationCode.ToString();
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:114:                _statusLabel.text = "CSV rejected: " + BiotaDensityBakePipeline.DefaultCsvPath;
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:121:            _schemaLabel.text = "CSV Schema v" + BiotaSpawnRuleCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8") + " | rows " + ruleCount;
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:122:            _statusLabel.text = "Loaded biota rules: " + ruleCount + " | schema 0x" + schemaHash.ToString("X8");
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:135:                _statusLabel.text = "Preview refreshed " + _previewTexture.width + "x" + _previewTexture.height + ". Green=flora, Blue=fauna, Red=predator/vent pressure.";
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:147:                _statusLabel.text = "Bake already running.";
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:161:                    _statusLabel.text = "Baked " + result.OutputPath + " | " + result.Width + "x" + result.Height + "x" + result.LayerCount + " | RLE " + result.RleRunCount + " | warnings 0x" + result.WarningFlags.ToString("X8");
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:168:                    _statusLabel.text = "Bake failed: " + exception.GetType().Name + ". See Console and Docs/AgentLogs/Dump_SHINOBU_308.bin if emitted.";
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\EcosystemDensityForgeWindow.cs:169:                Debug.LogError("[SHINOBU_308] Biota density bake failed: " + exception);
-Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\Runtime_Spawner_Scanner.cs:27:            UnityEngine.Debug.Log("[SHINOBU_308] Runtime spawner scanner wrote " + ReportPath + " blockers=" + result.BlockerCount + " excluded=" + result.ExcludedCount);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\Intersecting_Geometry_Scanner.cs:65:            MeshRenderer[] loadedRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\Intersecting_Geometry_Scanner.cs:77:                MeshRenderer[] renderers = prefab.GetComponentsInChildren<MeshRenderer>(true);
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\TectonicRiftProfileCsvParser.cs:54:                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:167:                _statusLabel.text = "Select a project folder containing pristine prefabs or meshes.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:177:                _statusLabel.text = "No mesh or prefab assets found in selected folder.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:204:                _statusLabel.text = "Baked " + _bakeStats.ProcessedMeshes + " mesh inputs. Source proof is generated mesh/prefab assets.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:226:            _statusLabel.text = path;
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:234:                _statusLabel.text = "Assign a Preview Mesh first.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:248:                _statusLabel.text = "Preview mesh has no triangle data.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:263:                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:264:                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:265:                stateIndices = new NativeArray<int>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:266:                tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:267:                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:270:                previewHandle.Complete();
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:275:                _statusLabel.text = "Preview mesh updated. Add OfflineWreckagePreviewGizmo to an editor-only scene object to view wireframe.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:299:            _statusLabel.text = "Runtime destruction scan findings: " + findings + ". No report file written.";
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:319:                tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:320:                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:321:                hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:322:                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:323:                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:324:                stateIndices = new NativeArray<int>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:386:            handle.Complete();
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:741:                vertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:742:                indices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:745:                handle.Complete();
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:871:            ranges = new NativeArray<OfflineWreckageSubMeshIndexRangeDTO>(tileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:945:                    fallbackVertices = new NativeArray<float3>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:946:                    indices = new NativeArray<ushort>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:977:                indices = new NativeArray<ushort>(36, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageTunerWindow.cs:106:                    _telemetryLabel.text = "GlobalDataVault is not registered.";
+Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageTunerWindow.cs:190:                _telemetryLabel.text = "Procedural Wreckage vault buffers are not ready.";
+Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageTunerWindow.cs:199:            _telemetryLabel.text =
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\Runtime_Destruction_Scanner.cs:22:            "RecalculateNormals(",
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\Runtime_Destruction_Scanner.cs:39:            Debug.Log("Runtime destruction scan findings: " + findings);
+Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageLayoutValidator.cs:55:                Debug.Log("[SHINOBU_121] Procedural wreckage DTO layout validated.");
+Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageLayoutValidator.cs:66:            Debug.LogError("[SHINOBU_121] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageLayoutValidator.cs:77:            Debug.LogError("[SHINOBU_121] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:45:                baseVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:46:                baseIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:47:                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:48:                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:49:                stateIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:50:                tearWeights = new NativeArray<float>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:51:                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:52:                hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:143:                handle.Complete();
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageLayoutValidator.cs:68:                Debug.Log("[SHINOBU_209] Offline wreckage DTO layout validated.");
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageLayoutValidator.cs:79:            Debug.LogError("[SHINOBU_209] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageLayoutValidator.cs:90:            Debug.LogError("[SHINOBU_209] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\Resources\Editor\ProceduralResourceTunerWindow.cs:99:                    _stats.text = "Vault not active.";
+Assets\_Project\Scripts\World\Resources\Editor\ProceduralResourceTunerWindow.cs:149:            _stats.text = _statsBuilder.ToString();
+Assets\_Project\Scripts\World\Resources\Editor\ProceduralGeologyLayoutValidator.cs:77:                Debug.Log("[SHINOBU_153] Procedural geology DTO layouts validated.");
+Assets\_Project\Scripts\World\Resources\Editor\ProceduralGeologyLayoutValidator.cs:88:            Debug.LogError("[SHINOBU_153] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\Resources\Editor\ProceduralGeologyLayoutValidator.cs:99:            Debug.LogError("[SHINOBU_153] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
 Assets\_Project\Scripts\World\ProceduralCoral\Editor\ProceduralCoralTunerWindow.cs:121:                    _telemetryLabel.text = "GlobalDataVault is not registered.";
 Assets\_Project\Scripts\World\ProceduralCoral\Editor\ProceduralCoralTunerWindow.cs:211:                _telemetryLabel.text = "Procedural Coral vault buffers are not ready.";
 Assets\_Project\Scripts\World\ProceduralCoral\Editor\ProceduralCoralTunerWindow.cs:259:            _telemetryLabel.text = _telemetryBuilder.ToString();
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\Manual_Trench_Scanner.cs:61:                Debug.Log("[SHINOBU_241] " + status + ". Forbidden assets: " + forbiddenCount + ". Deleted: " + deletedCount + ".");
 Assets\_Project\Scripts\World\ProceduralCoral\Editor\ProceduralCoralLayoutValidator.cs:97:                Debug.Log("[SHINOBU_139] Procedural coral DTO layout validated.");
 Assets\_Project\Scripts\World\ProceduralCoral\Editor\ProceduralCoralLayoutValidator.cs:108:            Debug.LogError("[SHINOBU_139] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
 Assets\_Project\Scripts\World\ProceduralCoral\Editor\ProceduralCoralLayoutValidator.cs:119:            Debug.LogError("[SHINOBU_139] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:178:                _statusLabel.text = "CSV load failed or recipe missing: " + CsvPath;
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:182:            _statusLabel.text = "Loaded CSV recipe. Schema hash 0x" + schemaHash.ToString("X8") + ". Shapes " + _shapes.Count + ".";
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:200:                _statusLabel.text = "Bake already running.";
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:217:            _statusLabel.text = _bakeInFlight ? "Bake scheduled." : "Bake rejected; another bake is active.";
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:226:            _statusLabel.text =
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:239:            _statusLabel.text = "Bake failed: " + exception.GetType().Name;
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:331:            NativeArray<SdfShapeDTO> nativeShapes = new NativeArray<SdfShapeDTO>(math.max(shapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:332:            NativeArray<float3> hitPositions = new NativeArray<float3>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:333:            NativeArray<byte> hitFlags = new NativeArray<byte>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalStructureForgeWindow.cs:348:                }.Schedule(rayCount, 64).Complete();
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\TectonicRiftProfileCsvParser.cs:54:                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\Manual_Trench_Scanner.cs:61:                Debug.Log("[SHINOBU_241] " + status + ". Forbidden assets: " + forbiddenCount + ". Deleted: " + deletedCount + ".");
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchSelfAudit.cs:72:            AppendTask(builder, 14, "ZERO_INIT_OVERHEAD_BYPASS", "PASS_DOD_OVERRIDE", "Large multi-frame bake buffers use Allocator.Persistent plus UninitializedMemory because TempJob across EditorApplication.update violates Unity allocator lifetime; bounded mock benchmark uses TempJob.");
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchSelfAudit.cs:179:            builder.Append("  <NativeLifetime>Bake scratch buffers use Allocator.Persistent plus UninitializedMemory because the bake is an owner-controlled multi-frame editor session; they are disposed on completion, failure, cancel, assembly reload, and editor quit. The bounded 256^3 mock benchmark uses TempJob. CSV bytes/profile lists and the LZ4 hash table use Allocator.Temp and dispose in finally. Preview cache is editor-only visualization state, hidden behind an internal pure read accessor, and disposed on window close, reload, quit, or preview rebuild.</NativeLifetime>\n");
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchPayloadValidator.cs:47:                Debug.Log("[SHINOBU_241] Hadal trench payload validated. bytes=" + result.FileBytes + " hash=0x" + result.PayloadHash.ToString("X16", CultureInfo.InvariantCulture));
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchPayloadValidator.cs:49:                Debug.LogError("[SHINOBU_241] Hadal trench payload validation failed. flags=0x" + result.Flags.ToString("X8", CultureInfo.InvariantCulture));
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchMockBenchmark.cs:29:            NativeArray<float> densities = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchMockBenchmark.cs:38:                handle.Complete();
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchLayoutValidator.cs:149:                Debug.Log("[SHINOBU_241] Hadal trench DTO layouts validated.");
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchLayoutValidator.cs:159:            Debug.LogError("[SHINOBU_241] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchLayoutValidator.cs:170:            Debug.LogError("[SHINOBU_241] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWindow.cs:96:                _statusLabel.text = "Loaded tectonic profile: " + profile.Name.ToString();
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWindow.cs:112:                _statusLabel.text = scheduled
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWindow.cs:121:                _statusLabel.text = "Bake already running.";
@@ -144,14 +211,6 @@ Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWin
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWindow.cs:278:            NativeArray<FaultLineParamsDTO> faults = new NativeArray<FaultLineParamsDTO>(s_faultCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWindow.cs:279:            NativeArray<ThermalVentSpawnDTO> vents = new NativeArray<ThermalVentSpawnDTO>(s_ventCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchForgeWindow.cs:287:                ventsJob.Schedule(s_faultCount, 32, faultsJob.Schedule(math.max(1, s_faultCount >> 1), 32)).Complete();
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchPayloadValidator.cs:47:                Debug.Log("[SHINOBU_241] Hadal trench payload validated. bytes=" + result.FileBytes + " hash=0x" + result.PayloadHash.ToString("X16", CultureInfo.InvariantCulture));
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchPayloadValidator.cs:49:                Debug.LogError("[SHINOBU_241] Hadal trench payload validation failed. flags=0x" + result.Flags.ToString("X8", CultureInfo.InvariantCulture));
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchSelfAudit.cs:139:            builder.Append("  <HPhiVaultStatus vaultHandles=\"NONE_RUNTIME\">Offline Editor bake owns no runtime persistent NativeArray or rollback-critical Vault data. Sync bake buffers and the weld hash map are TempJob and disposed in finally. Async bake buffers and weld hash map are Editor-only Allocator.Persistent for the active session and disposed on completion, failure, cancel, assembly reload, or editor quit. Preview scratch is Editor-only and disposed by the Forge window, assembly reload hook, and editor quit hook.</HPhiVaultStatus>\n");
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchMockBenchmark.cs:29:            NativeArray<float> densities = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchMockBenchmark.cs:38:                handle.Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:72:                Debug.Log("[SHINOBU_215] Hadal arch DTO layouts validated.");
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:83:            Debug.LogError("[SHINOBU_215] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchLayoutValidator.cs:94:            Debug.LogError("[SHINOBU_215] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipeline.cs:292:                            _activeHandle.Complete();
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipeline.cs:318:                    _densities = H8Memory.Allocate<float>(_voxelCount, BakeSessionMemoryOwner, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipeline.cs:319:                    _excavatedMeters3 = H8Memory.Allocate<float>(_voxelCount, BakeSessionMemoryOwner, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
@@ -168,76 +227,25 @@ Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipe
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipeline.cs:578:                    UnityEngine.Debug.LogException(ex);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipeline.cs:590:                    UnityEngine.Debug.LogException(ex);
 Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchBakePipeline.cs:1048:                table = new NativeArray<int>(HashSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchLayoutValidator.cs:149:                Debug.Log("[SHINOBU_241] Hadal trench DTO layouts validated.");
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchLayoutValidator.cs:159:            Debug.LogError("[SHINOBU_241] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\HadalTrenchLayoutValidator.cs:170:            Debug.LogError("[SHINOBU_241] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:96:                densities = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:97:                cavity = new NativeArray<byte>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:98:                telemetry = new NativeArray<HadalArchBakeTelemetryEntry>(HadalArchBakeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:99:                shapes = new NativeArray<SdfShapeDTO>(math.max(config.ShapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:117:                sealHandle.Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:123:                cavityHandle.Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:134:                }.Schedule().Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:149:                }.Schedule().Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:168:                }.Schedule().Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:178:                }.Schedule().Complete();
-Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\HadalArchBakePipeline.cs:333:                MeshCollider collider = root.AddComponent<MeshCollider>();
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:45:                baseVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:46:                baseIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:47:                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:48:                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:49:                stateIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:50:                tearWeights = new NativeArray<float>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:51:                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:52:                hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageMockBenchmark.cs:143:                handle.Complete();
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageLayoutValidator.cs:68:                Debug.Log("[SHINOBU_209] Offline wreckage DTO layout validated.");
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageLayoutValidator.cs:79:            Debug.LogError("[SHINOBU_209] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\OfflineWreckageLayoutValidator.cs:90:            Debug.LogError("[SHINOBU_209] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\Runtime_Destruction_Scanner.cs:24:            "RecalculateNormals(",
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:165:                _statusLabel.text = "Select a project folder containing pristine prefabs or meshes.";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:175:                _statusLabel.text = "No mesh or prefab assets found in selected folder.";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:203:                _statusLabel.text = "Baked " + _report.ProcessedMeshes + " mesh inputs. Report: Docs/Reports/WRECKAGE_BAKE_REPORT.json";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:225:            _statusLabel.text = path;
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:233:                _statusLabel.text = "Assign a Preview Mesh first.";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:247:                _statusLabel.text = "Preview mesh has no triangle data.";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:259:                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:260:                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:261:                stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:262:                tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:263:                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:266:                previewHandle.Complete();
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:270:                _statusLabel.text = "Preview mesh updated. Add OfflineWreckagePreviewGizmo to an editor-only scene object to view wireframe.";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:294:            _statusLabel.text = "Runtime destruction scan findings: " + findings + ". Report: Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:311:                tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:312:                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:313:                hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:314:                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:315:                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:316:                stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:377:            handle.Complete();
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:537:                vertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:538:                indices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:541:                handle.Complete();
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:667:            ranges = new NativeArray<OfflineWreckageSubMeshIndexRangeDTO>(tileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:740:                    fallbackVertices = new NativeArray<float3>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:741:                    indices = new NativeArray<ushort>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\WreckageForgeWindow.cs:772:                indices = new NativeArray<ushort>(36, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\Resources\Editor\ProceduralResourceTunerWindow.cs:99:                    _stats.text = "Vault not active.";
-Assets\_Project\Scripts\World\Resources\Editor\ProceduralResourceTunerWindow.cs:149:            _stats.text = _statsBuilder.ToString();
-Assets\_Project\Scripts\World\Resources\Editor\ProceduralGeologyLayoutValidator.cs:69:                Debug.Log("[SHINOBU_153] Procedural geology DTO layouts validated.");
-Assets\_Project\Scripts\World\Resources\Editor\ProceduralGeologyLayoutValidator.cs:80:            Debug.LogError("[SHINOBU_153] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\Resources\Editor\ProceduralGeologyLayoutValidator.cs:91:            Debug.LogError("[SHINOBU_153] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageTunerWindow.cs:106:                    _telemetryLabel.text = "GlobalDataVault is not registered.";
-Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageTunerWindow.cs:190:                _telemetryLabel.text = "Procedural Wreckage vault buffers are not ready.";
-Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageTunerWindow.cs:199:            _telemetryLabel.text =
-Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageLayoutValidator.cs:55:                Debug.Log("[SHINOBU_121] Procedural wreckage DTO layout validated.");
-Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageLayoutValidator.cs:66:            Debug.LogError("[SHINOBU_121] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
-Assets\_Project\Scripts\World\ProceduralWreckage\Editor\ProceduralWreckageLayoutValidator.cs:77:            Debug.LogError("[SHINOBU_121] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
 Assets\_Project\Scripts\World\ShinobuBiomimetic\Editor\ShinobuPoiTopologyTunerWindow.cs:141:                _rulesLabel.text = "Rules: " + _lastImportedRules.ToString();
 Assets\_Project\Scripts\World\ShinobuBiomimetic\Editor\ShinobuPoiTopologyTunerWindow.cs:143:                _bakeFenceLabel.text = _hasQueuedBakeFence ? "Bake Fence: Queued" : "Bake Fence: Idle";
 Assets\_Project\Scripts\World\ShinobuBiomimetic\Editor\ShinobuPoiTopologyTunerWindow.cs:145:                _placementLabel.text = "POIs: " + _lastGeneratedPoiCount.ToString() + " Anchors: " + _lastAnchorCount.ToString();
 Assets\_Project\Scripts\World\ShinobuBiomimetic\Editor\ShinobuPoiTopologyTunerWindow.cs:506:            _queuedBakeFenceHandle.Complete();
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:161:                _readout.text = "Biome transition vault buffers are not ready.";
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:165:            _readout.text =
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:184:                Debug.LogError("[BiomeTransitionTunerWindow] Native layout validation failed.");
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:186:                Debug.LogWarning("[BiomeTransitionTunerWindow] Self audit pending/faulted. Flags=0x" + faultFlags.ToString("X8") + " weightError=" + weightError.ToString("0.000000", CultureInfo.InvariantCulture));
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:188:                Debug.Log("[BiomeTransitionTunerWindow] Native layout and blend self-audit passed.");
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:194:                Debug.LogWarning("[BiomeTransitionTunerWindow] Runtime host is not active; CSV reload skipped.");
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:200:                Debug.LogWarning("[BiomeTransitionTunerWindow] Black-box dump skipped; telemetry is not ready.");
+Assets\_Project\Scripts\World\Biomes\Editor\BiomeTransitionTunerWindow.cs:210:                Debug.LogError("[BiomeTransitionLayoutEditorGuard] Biome transition native layout mismatch.");
+Assets\_Project\Scripts\World\VoxelSurfaceNets\Editor\VoxelMemorySovereigntyValidator1304.cs:40:            H8Debug.Log("[1304] Voxel memory sovereignty validator passed.");
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamPreviewGizmo.cs:53:                vertices = new NativeArray<Vector3>(vertexCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamPreviewGizmo.cs:54:                indices = new NativeArray<int>(indexCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:75:                Debug.Log("[SHINOBU_246] Voxel terrain seam DTO and 32-byte mesh vertex layout validated.");
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:147:            Debug.LogError(builder.ToString());
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:159:            Debug.LogError(builder.ToString());
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:173:            Debug.LogError(builder.ToString());
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:118:            _statusLabel.text = "Profiles loaded: " + _profileCount + ".";
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:126:                _statusLabel.text = "Assign a Source Mesh before baking.";
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:142:                _statusLabel.text = "Binary: " + result.BinaryAssetPath + " | VoxelCount=" + result.VoxelCount + " | Warnings=" + result.WarningFlags;
@@ -247,6 +255,18 @@ Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:181:            _statusLabel.text = "Physics proximity scan findings: " + findings + ". Report: Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_244.json";
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:491:            Debug.LogWarning("[StaticSdfForge] CSV schema mismatch path=" + path + " row=1 column=" + column.ToString(CultureInfo.InvariantCulture) + " expected=" + expected);
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticSdfForgeWindow.cs:726:            Debug.LogWarning("[StaticSdfForge] CSV row mismatch path=" + path + " row=" + row.ToString(CultureInfo.InvariantCulture) + " column=" + column.ToString(CultureInfo.InvariantCulture) + " expected=" + expected);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:186:                Debug.LogException(ex);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:208:                Debug.LogException(ex);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:273:            _profileHashLabel.text = ProfileHashLabel(hash, _profileCount);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:393:            _statusLabel.text = builder.ToString();
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:400:                _statusLabel.text = "Preview requires Terrain LOD0 and Voxel LOD0.";
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:409:            _statusLabel.text = builder.ToString();
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:420:            _statusLabel.text = builder.ToString();
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:429:            _statusLabel.text = builder.ToString();
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:438:            _statusLabel.text = builder.ToString();
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:554:                bytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\Dynamic_Vertex_Scanner.cs:264:                default: return "RecalculateNormals(";
+Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\Dynamic_Vertex_Scanner.cs:394:                       string.Equals(name, "RecalculateNormals", StringComparison.Ordinal);
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipeline.cs:107:                triangles = new NativeArray<TriangleDTO>(triangleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipeline.cs:118:                }.Schedule(triangleCount, 64).Complete();
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipeline.cs:175:                triangleIndices = new NativeArray<int>(triangles.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -264,24 +284,6 @@ Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipelin
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipeline.cs:483:                }.Schedule(triangleCount, 64).Complete();
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipeline.cs:500:            }.Schedule(triangleCount, 64).Complete();
 Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\StaticCaveSdfBakePipeline.cs:1005:            Ring = new NativeArray<StaticCaveSdfTelemetryEntry>(
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\Dynamic_Vertex_Scanner.cs:264:                default: return "RecalculateNormals(";
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\Dynamic_Vertex_Scanner.cs:394:                       string.Equals(name, "RecalculateNormals", StringComparison.Ordinal);
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamPreviewGizmo.cs:53:                vertices = new NativeArray<Vector3>(vertexCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamPreviewGizmo.cs:54:                indices = new NativeArray<int>(indexCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:75:                Debug.Log("[SHINOBU_246] Voxel terrain seam DTO and 32-byte mesh vertex layout validated.");
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:147:            Debug.LogError(builder.ToString());
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:159:            Debug.LogError(builder.ToString());
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamLayoutValidator.cs:173:            Debug.LogError(builder.ToString());
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:186:                Debug.LogException(ex);
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:208:                Debug.LogException(ex);
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:273:            _profileHashLabel.text = ProfileHashLabel(hash, _profileCount);
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:393:            _statusLabel.text = builder.ToString();
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:400:                _statusLabel.text = "Preview requires Terrain LOD0 and Voxel LOD0.";
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:409:            _statusLabel.text = builder.ToString();
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:420:            _statusLabel.text = builder.ToString();
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:429:            _statusLabel.text = builder.ToString();
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:438:            _statusLabel.text = builder.ToString();
-Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderWindow.cs:554:                bytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderPipeline.cs:86:                telemetry = new NativeArray<SeamBindTelemetryEntry>(VoxelTerrainSeamConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderPipeline.cs:127:                terrainVertices = new NativeArray<SeamBindVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderPipeline.cs:128:                voxelVertices = new NativeArray<SeamBindVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -296,20 +298,95 @@ Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBind
 Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderPipeline.cs:474:                indices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderPipeline.cs:477:                handle.Complete();
 Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\VoxelTerrainSeamBinderPipeline.cs:595:            ranges = new NativeArray<SeamSubMeshIndexRangeDTO>(tileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\VoxelSurfaceNets\Editor\VoxelMemorySovereigntyValidator1304.cs:40:            H8Debug.Log("[1304] Voxel memory sovereignty validator passed.");
+Assets\_Project\Scripts\Ecosystem\Editor\OOP_Variant_Scanner.cs:58:                CountToken(lines[i], ".material", geneticLine, ref counts.MaterialPropertyCount, ref counts.GeneticMaterialPropertyCount);
+Assets\_Project\Scripts\Ecosystem\Editor\FaunaGeneticsTunerWindow.cs:119:                    _status.text = "Fauna genetics Vault buffers are not registered.";
+Assets\_Project\Scripts\Ecosystem\Editor\FaunaGeneticsTunerWindow.cs:134:                _status.text =
+Assets\_Project\Scripts\Ecosystem\Editor\MacroEcosystemTunerWindow.cs:96:            _status.text = "Vault-backed macro ecosystem tuning active.";
+Assets\_Project\Scripts\Ecosystem\Editor\MacroEcosystemTunerWindow.cs:131:            _status.text = "Tuning written to DataVault.";
 Assets\_Project\Scripts\Ecosystem\Editor\BiomassDecayTunerWindow.cs:104:                    _status.text = "Carrion decay runtime has not published a ready tuning snapshot.";
 Assets\_Project\Scripts\Ecosystem\Editor\BiomassDecayTunerWindow.cs:117:                _status.text =
 Assets\_Project\Scripts\Ecosystem\Editor\OOP_Boid_Scanner.cs:35:            Debug.Log("[SHINOBU_307] OOP boid scanner wrote " + report);
-Assets\_Project\Scripts\Ecosystem\Editor\FaunaGeneticsTunerWindow.cs:119:                    _status.text = "Fauna genetics Vault buffers are not registered.";
-Assets\_Project\Scripts\Ecosystem\Editor\FaunaGeneticsTunerWindow.cs:134:                _status.text =
-Assets\_Project\Scripts\Ecosystem\Editor\OOP_Variant_Scanner.cs:58:                CountToken(lines[i], ".material", geneticLine, ref counts.MaterialPropertyCount, ref counts.GeneticMaterialPropertyCount);
-Assets\_Project\Scripts\Ecosystem\Editor\MacroEcosystemTunerWindow.cs:96:            _status.text = "Vault-backed macro ecosystem tuning active.";
-Assets\_Project\Scripts\Ecosystem\Editor\MacroEcosystemTunerWindow.cs:131:            _status.text = "Tuning written to DataVault.";
-Assets\_Project\Scripts\Ecosystem\Editor\OOP_Destroy_Scanner.cs:37:            Debug.Log("[SHINOBU_314] OOP destroy scanner wrote " + report);
 Assets\_Project\Scripts\Ecosystem\Editor\OOP_Spawner_Scanner.cs:25:            @"\b(?:IEnumerator\s+\w+\s*\(|StartCoroutine\s*\()",
 Assets\_Project\Scripts\Ecosystem\Editor\OOP_Spawner_Scanner.cs:48:            Debug.Log("[SHINOBU_300] OOP spawner scanner wrote " + report);
+Assets\_Project\Scripts\Ecosystem\Editor\OOP_Destroy_Scanner.cs:37:            Debug.Log("[SHINOBU_314] OOP destroy scanner wrote " + report);
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherSelfTests.cs:18:                Debug.Log(report);
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherSelfTests.cs:22:            Debug.LogError(report);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:173:            _lastBakeLabel.text = hasResult ? (_lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason) : "No bake executed in this window.";
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:174:            _vertexCountLabel.text = "Vertices: " + _lastResult.FinalVertexCount;
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:175:            _triangleCountLabel.text = "Triangles: " + _lastResult.FinalTriangleCount;
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:176:            _faultMaskLabel.text = "Fault Mask: 0x" + _lastResult.Counters.FaultFlags.ToString("X8");
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:203:                Debug.LogError(_lastResult.FailureReason);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:76:                    Debug.Log($"[ModuleArchitect1712] baked prefabs={result.PrefabCount} verts={result.VertexCount} tris={result.TriangleCount}");
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:78:                    Debug.LogError("[ModuleArchitect1712] bake failed: " + result.FailureReason);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:85:                Debug.Log($"[ModuleArchitect1712] baked prefabs={result.PrefabCount} verts={result.VertexCount} tris={result.TriangleCount}");
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:87:                Debug.LogError("[ModuleArchitect1712] bake failed: " + result.FailureReason);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:222:            using NativeArray<float3> positions = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:223:            using NativeArray<float3> normals = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:224:            using NativeArray<uint> packed = new NativeArray<uint>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:89:                Debug.LogError("[FloraTopology1711] Seed pack generation failed. Missing authored output must be fixed before player build.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:93:            Debug.Log("[FloraTopology1711] Static seed pack generated under Topology1711.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:110:                Debug.Log("[FloraTopology1711] Dry verification passed. Runtime geometry factories remain editor-only.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:193:                Debug.LogError("[FloraTopology1711] " + label + " emitted empty LOD mesh.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:199:                Debug.LogError("[FloraTopology1711] " + label + " exceeded LOD0 budget. tris=" + metrics.Lod0Triangles + " budget=" + profile.Lod0TriangleBudget);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:205:                Debug.LogError("[FloraTopology1711] " + label + " LOD chain is not monotonic.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:236:                        Debug.LogError("[FloraTopology1711] MeshData stream length mismatch on " + mesh.name);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:240:                    remappedColors = new NativeArray<Color32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:308:                Debug.LogError("[FloraTopology1711] Missing or incompatible " + attribute + " stream on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:317:                Debug.LogError("[FloraTopology1711] Non-dedicated " + attribute + " stream on " + label + ". offset=" + offset + " stride=" + stride);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:345:                    Debug.LogError("[FloraTopology1711] Invalid vertex position/normal on " + label + " vertex=" + i);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:368:            Debug.LogError("[FloraTopology1711] Vertex color contract failed on " + label + ". Expected R=sway, G=bioluminescence, B=AO, A=wear.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:433:                        Debug.LogError("[FloraTopology1711] Index out of range on " + label + " submesh=" + subMeshIndex);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:453:                Debug.LogError("[FloraTopology1711] Invalid submesh topology/index range on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:472:                Debug.LogError("[FloraTopology1711] Index out of range on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:483:            Debug.LogError("[FloraTopology1711] Degenerate triangle detected on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:495:            Debug.LogError("[FloraTopology1711] Invalid recalculated bounds on " + mesh.name);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:581:                lSystemTokens = new NativeArray<uint>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:582:                probes = new NativeArray<FloraProbeVertex1711>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:583:                ao = new NativeArray<float>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:584:                quadricKeep = new NativeArray<int>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:622:                handle.Complete();
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:659:            Debug.LogError("[FloraTopology1711] " + label + " layout size must be 8-byte aligned. size=" + size);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:88:                telemetry = new NativeArray<SculptTelemetryEntry>(BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:90:                sdf = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:91:                erodedSdf = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:116:                erosionHandle.Complete();
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:131:                Debug.Log("RockSculptorEngine1713 bake complete: " + prefabPath);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:136:                Debug.LogError("RockSculptorEngine1713 bake failed: " + ex.Message);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:204:            vertices = new NativeArray<RockVertex>(maxFaces * 4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:205:            indices = new NativeArray<int>(maxFaces * 6, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:206:            NativeArray<byte> faceMasks = new NativeArray<byte>(res * res * res, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:218:                classifyJob.Schedule(faceMasks.Length, 64).Complete();
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:454:            NativeArray<RockVertex> mutableVertices = new NativeArray<RockVertex>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:455:            NativeArray<QuadricError> quadrics = new NativeArray<QuadricError>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:456:            NativeArray<int> vertexParents = new NativeArray<int>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:457:            NativeArray<byte> activeVertices = new NativeArray<byte>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:458:            NativeArray<EdgeCollapseCandidate> candidates = new NativeArray<EdgeCollapseCandidate>(indexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:459:            NativeArray<RockVertex> compactedVertices = new NativeArray<RockVertex>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:460:            NativeArray<int> compactMap = new NativeArray<int>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:461:            NativeArray<int> decimated = new NativeArray<int>(targetTriangles * 3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:515:            NativeArray<int> decimated = new NativeArray<int>(outputIndexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:881:            NativeArray<RockVertex> vertices = new NativeArray<RockVertex>(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:882:            NativeArray<int> indices = new NativeArray<int>(36, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:993:                MeshCollider collider = proxy.AddComponent<MeshCollider>();
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:314:            prefab.GetComponentsInChildren(true, filters);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:423:            prefab.GetComponentsInChildren(true, renderers);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:465:            ModuleSocket[] sockets = prefab.GetComponentsInChildren<ModuleSocket>(true);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:541:            prefab.GetComponentsInChildren(true, renderers);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:643:            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:736:            var result = new NativeArray<T>(source.Count, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:42:                Debug.LogError(report.validationReason);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:46:            Debug.Log("1628 biome transition polish report: " + ReportPath);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:53:                Debug.LogError(reason);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:55:                Debug.Log(reason);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:447:            Renderer[] renderers = Resources.FindObjectsOfTypeAll<Renderer>();
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:64:                UnityEngine.Debug.LogError(result.FailureReason);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:66:                UnityEngine.Debug.Log(result.PrefabPath);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:100:                    UnityEngine.Debug.LogError(result.FailureReason);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:102:                    UnityEngine.Debug.Log(result.PrefabPath);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:147:                validation = new NativeArray<TopologyValidationResult1715>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:297:            var cableVertices = new NativeArray<EquipmentPropVertex1715>(cableVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:298:            var cableIndices = new NativeArray<int>(cableIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:299:            var cableMetrics = new NativeArray<float2>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:90:            ".GetComponent<",
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:92:            "GetComponent<",
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:102:            ".TryGetComponent<",
@@ -326,6 +403,71 @@ Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:556:                pipeline.IndexOf("root.GetComponentsInChildren<Collider>(true)", StringComparison.Ordinal) < 0 ||
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:557:                pipeline.IndexOf("root.GetComponentsInChildren<Renderer>(true)", StringComparison.Ordinal) < 0 ||
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:609:            if (bootstrap.IndexOf("StartCoroutine", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:74:            ".material"
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:83:                Debug.LogError("[FaunaApex1610] APEX AST verification failed. violations=" +
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:89:            Debug.Log("[FaunaApex1610] APEX AST verification passed. runtimeFiles=" +
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:775:                   expression.StartsWith("GetComponent<", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:781:                   expression.StartsWith("TryGetComponent<", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:784:                   expression.Equals("GetComponentsInChildren", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:785:                   expression.StartsWith("GetComponentsInChildren<", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:789:                   expression.IndexOf(".GetComponent<", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:795:                   expression.IndexOf(".TryGetComponent<", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:798:                   expression.EndsWith(".GetComponentsInChildren", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:799:                   expression.IndexOf(".GetComponentsInChildren<", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1164:                       IsStaticTypeMember(expression, "Object", "FindObjectOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1165:                       IsStaticTypeMember(expression, "Object", "FindObjectsOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1169:                       EndsWithMemberName(expression, "FindObjectOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1170:                       EndsWithMemberName(expression, "FindObjectsOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1180:                       IsStaticTypeMember(expression, "Resources", "FindObjectsOfTypeAll") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1194:                return EndsWithMemberName(expression, "StartCoroutine") ||
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:160:                Debug.LogError("[FloraTopology1604] Seed pack generation failed. See previous fail-closed errors; successful entries remain valid generated assets.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:166:            Debug.Log("[FloraTopology1604] Seed pack generated successfully.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:178:                Debug.Log("[FloraTopology1604] Determinism self test passed. STATUS=PENDING UNITY IMPORT/PROFILER VERIFICATION.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:194:                Debug.LogError("[FloraTopology1604] 100K fuzzer failed to generate native mesh buffers.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:202:                Debug.LogError("[FloraTopology1604] 100K fuzzer under-produced vertices. VertexCount=" + metrics.Lod0Vertices);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:207:                Debug.LogWarning("[FloraTopology1604] 100K fuzzer exceeded 100ms static target. ms=" + metrics.Lod0Milliseconds.ToString("F3"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:209:            Debug.Log("[FloraTopology1604] 100K fuzzer completed. Vertices=" + metrics.Lod0Vertices + ", Tris=" + metrics.Lod0Triangles + ", ms=" + metrics.Lod0Milliseconds.ToString("F3"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:221:                Debug.Log("[FloraTopology1604] LOD silhouette audit passed for all presets.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:364:                    Debug.LogError("[FloraTopology1604] Mesh asset persistence failed for " + assetName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:378:                Debug.Log(
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:412:                nodes = new NativeArray<FloraNode>(genome.MaxNodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:413:                edges = new NativeArray<FloraEdge>(genome.MaxEdgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:414:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:425:                growthHandle.Complete();
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:431:                    Debug.LogError("[FloraTopology1604] Genome Complexity Exceeded Capacity. Nodes=" + growthCounters.NodeCount + ", Edges=" + growthCounters.EdgeCount + ", Overflow=" + growthCounters.Overflow);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:512:                vertices = new NativeArray<FloraVertexData>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:513:                indices = new NativeArray<uint>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:514:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:515:                bounds = new NativeArray<FloraBoundsDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:538:                skinHandle.Complete();
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:544:                    Debug.LogError("[FloraTopology1604] LOD build exceeded native capacity. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount + ", Overflow=" + skinCounters.Overflow);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:550:                    Debug.LogError("[FloraTopology1604] LOD build emitted out-of-range indices. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:558:                    Debug.LogError("[FloraTopology1604] LOD triangle budget exceeded. LOD=" + lod + ", Triangles=" + triangleCount + ", Budget=" + allowedTriangles);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:690:                Debug.LogError("[FloraTopology1604] Mesh asset save failed. Path=" + meshPath);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:722:                Debug.LogError("[FloraTopology1604] Failed to delete incomplete mesh asset. Path=" + meshPath);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:754:                Debug.LogError("[FloraTopology1604] Prefab save failed. Path=" + prefabPath);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:827:                Debug.LogError("[FloraTopology1604] Required flora material has wrong shader. Path=" + path + ", Shader=" + (material.shader != null ? material.shader.name : "<null>"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:829:                Debug.LogError("[FloraTopology1604] Required flora material missing. Path=" + path);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:868:                Debug.LogError("[FloraTopology1604] Determinism failure for " + preset + ". First=" + first.Lod0Hash.ToString("X16") + ", Second=" + second.Lod0Hash.ToString("X16"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:880:            Debug.Log("[FloraTopology1604] Silhouette audit " + preset
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:892:                Debug.LogError("[FloraTopology1604] LOD silhouette audit failed for " + label
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:995:            Debug.LogError("[FloraTopology1604] Layout size drift " + label + ". Expected=" + expectedBytes + ", Actual=" + actualBytes);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1005:            Debug.LogError("[FloraTopology1604] Layout offset drift " + typeof(T).Name + "." + fieldName + ". Expected=" + expectedOffset + ", Actual=" + actualOffset);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1657:            ".GetComponent<",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1659:            "GetComponent<",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1683:            ".ToList(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1685:            ".Where(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1686:            ".Select(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1695:            ".Complete(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1716:                Debug.Log("[FloraTopology1604] APEX_VERIFICATION PASS. Files=" + fileCount
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1721:            Debug.LogError("[FloraTopology1604] APEX_VERIFICATION FAIL. Files=" + fileCount
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1938:                    Debug.LogError("[FloraTopology1604] Hot lookup violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1954:                    Debug.LogError("[FloraTopology1604] Presentation phase violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1968:                    Debug.LogError("[FloraTopology1604] Hot zero-GC violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1982:                    Debug.LogError("[FloraTopology1604] Hot blocking call violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2004:                    Debug.LogError("[FloraTopology1604] Nested DataVault write lock risk " + path + ":" + lineNumber);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2012:                    Debug.LogError("[FloraTopology1604] DataVault write lock lacks strict try/finally release " + path + ":" + lineNumber);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2183:                _metricsBox.text = _lastMetrics;
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:130:            Debug.Log("[1614] BRG scatter bake complete. path=" + result.OutputPath + " instances=" + result.InstanceCount + " culled=" + result.CulledCount + " bytes=" + result.FileBytes);
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:138:            Debug.Log("[1614] Scatter source scan complete. rules=" + result.SourceRuleCount + " prefabs=" + result.SourcePrefabCount + " mapMagicAssets=" + result.MapMagicAssetCount + " mapMagicFolder=" + result.MapMagicSourceFolder + " cullingFolder=" + result.CullingDatasetFolder);
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:169:                Debug.LogError("[1614] Scatter bake failed: " + exception.GetType().Name + " " + exception.Message);
@@ -357,11 +499,6 @@ Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:516:  
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:559:                seen = new NativeArray<byte>(count, Allocator.Temp, NativeArrayOptions.ClearMemory);
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:1148:                Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:1153:                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:173:            _lastBakeLabel.text = hasResult ? (_lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason) : "No bake executed in this window.";
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:174:            _vertexCountLabel.text = "Vertices: " + _lastResult.FinalVertexCount;
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:175:            _triangleCountLabel.text = "Triangles: " + _lastResult.FinalTriangleCount;
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:176:            _faultMaskLabel.text = "Fault Mask: 0x" + _lastResult.Counters.FaultFlags.ToString("X8");
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:203:                Debug.LogError(_lastResult.FailureReason);
 Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:380:            Debug.Log(BuildRawMeshLedgerSummary());
 Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:438:                Debug.LogError("[FaunaRigger1610] No source mesh selected.");
 Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:444:                Debug.LogError("[FaunaRigger1610] Source mesh is not readable. Enable Read/Write in import settings.");
@@ -431,54 +568,34 @@ Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:446: 
 Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:447:                subMeshStarts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:448:                subMeshCounts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:449:                subMeshWriteOffsets = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:160:                Debug.LogError("[FloraTopology1604] Seed pack generation failed. See previous fail-closed errors; successful entries remain valid generated assets.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:166:            Debug.Log("[FloraTopology1604] Seed pack generated successfully.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:178:                Debug.Log("[FloraTopology1604] Determinism self test passed. STATUS=PENDING UNITY IMPORT/PROFILER VERIFICATION.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:194:                Debug.LogError("[FloraTopology1604] 100K fuzzer failed to generate native mesh buffers.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:202:                Debug.LogError("[FloraTopology1604] 100K fuzzer under-produced vertices. VertexCount=" + metrics.Lod0Vertices);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:207:                Debug.LogWarning("[FloraTopology1604] 100K fuzzer exceeded 100ms static target. ms=" + metrics.Lod0Milliseconds.ToString("F3"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:209:            Debug.Log("[FloraTopology1604] 100K fuzzer completed. Vertices=" + metrics.Lod0Vertices + ", Tris=" + metrics.Lod0Triangles + ", ms=" + metrics.Lod0Milliseconds.ToString("F3"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:221:                Debug.Log("[FloraTopology1604] LOD silhouette audit passed for all presets.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:364:                    Debug.LogError("[FloraTopology1604] Mesh asset persistence failed for " + assetName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:378:                Debug.Log(
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:412:                nodes = new NativeArray<FloraNode>(genome.MaxNodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:413:                edges = new NativeArray<FloraEdge>(genome.MaxEdgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:414:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:425:                growthHandle.Complete();
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:431:                    Debug.LogError("[FloraTopology1604] Genome Complexity Exceeded Capacity. Nodes=" + growthCounters.NodeCount + ", Edges=" + growthCounters.EdgeCount + ", Overflow=" + growthCounters.Overflow);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:512:                vertices = new NativeArray<FloraVertexData>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:513:                indices = new NativeArray<uint>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:514:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:515:                bounds = new NativeArray<FloraBoundsDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:538:                skinHandle.Complete();
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:544:                    Debug.LogError("[FloraTopology1604] LOD build exceeded native capacity. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount + ", Overflow=" + skinCounters.Overflow);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:550:                    Debug.LogError("[FloraTopology1604] LOD build emitted out-of-range indices. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:558:                    Debug.LogError("[FloraTopology1604] LOD triangle budget exceeded. LOD=" + lod + ", Triangles=" + triangleCount + ", Budget=" + allowedTriangles);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:690:                Debug.LogError("[FloraTopology1604] Mesh asset save failed. Path=" + meshPath);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:722:                Debug.LogError("[FloraTopology1604] Failed to delete incomplete mesh asset. Path=" + meshPath);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:754:                Debug.LogError("[FloraTopology1604] Prefab save failed. Path=" + prefabPath);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:827:                Debug.LogError("[FloraTopology1604] Required flora material has wrong shader. Path=" + path + ", Shader=" + (material.shader != null ? material.shader.name : "<null>"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:829:                Debug.LogError("[FloraTopology1604] Required flora material missing. Path=" + path);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:868:                Debug.LogError("[FloraTopology1604] Determinism failure for " + preset + ". First=" + first.Lod0Hash.ToString("X16") + ", Second=" + second.Lod0Hash.ToString("X16"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:880:            Debug.Log("[FloraTopology1604] Silhouette audit " + preset
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:892:                Debug.LogError("[FloraTopology1604] LOD silhouette audit failed for " + label
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:995:            Debug.LogError("[FloraTopology1604] Layout size drift " + label + ". Expected=" + expectedBytes + ", Actual=" + actualBytes);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1005:            Debug.LogError("[FloraTopology1604] Layout offset drift " + typeof(T).Name + "." + fieldName + ". Expected=" + expectedOffset + ", Actual=" + actualOffset);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1657:            ".GetComponent<",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1659:            "GetComponent<",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1683:            ".ToList(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1685:            ".Where(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1686:            ".Select(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1695:            ".Complete(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1716:                Debug.Log("[FloraTopology1604] APEX_VERIFICATION PASS. Files=" + fileCount
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1721:            Debug.LogError("[FloraTopology1604] APEX_VERIFICATION FAIL. Files=" + fileCount
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1938:                    Debug.LogError("[FloraTopology1604] Hot lookup violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1954:                    Debug.LogError("[FloraTopology1604] Presentation phase violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1968:                    Debug.LogError("[FloraTopology1604] Hot zero-GC violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1982:                    Debug.LogError("[FloraTopology1604] Hot blocking call violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2004:                    Debug.LogError("[FloraTopology1604] Nested DataVault write lock risk " + path + ":" + lineNumber);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2012:                    Debug.LogError("[FloraTopology1604] DataVault write lock lacks strict try/finally release " + path + ":" + lineNumber);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2183:                _metricsBox.text = _lastMetrics;
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:95:                Debug.LogWarning("[FaunaRigBuilder1714] Requested bone count pruned to 96 for URP mobile/VR compatibility.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:113:                bonesPerVertex = new NativeArray<byte>(vertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:114:                boneWeights = new NativeArray<BoneWeight1>(vertices.Length * MaxInfluencesPerVertex, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:115:                weightSums = new NativeArray<float>(vertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:116:                failureFlags = new NativeArray<int>(vertices.Length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:140:                armorHandle.Complete();
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:145:                    Debug.LogError("Invalid bone weights detected in procedural rig!");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:182:                Debug.Log("[FaunaRigBuilder1714] Rigged fauna prefab saved: " + prefabPath);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:225:                positionPixels = new NativeArray<float4>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:226:                normalPixels = new NativeArray<float4>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:243:                vatJob.Schedule(pixelCount, 128).Complete();
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:283:                Debug.Log("[FaunaRigBuilder1714] VAT swarm prefab saved: " + prefabPath);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:301:                Debug.LogError("[FaunaRigBuilder1714] Source mesh missing.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:307:                Debug.LogError("[FaunaRigBuilder1714] Source mesh has no vertices.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:319:            Debug.LogError("[FaunaRigBuilder1714] Shared fauna material missing. Rigged fauna must serialize one authored shared material.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:328:            Debug.LogError("[FaunaRigBuilder1714] VAT material template missing. Refusing editor fallback new Material path.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:340:                sourceVertices = new NativeArray<Vector3>(meshData.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:342:                vertices = new NativeArray<float3>(sourceVertices.Length, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:355:            normals = new NativeArray<float3>(vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:375:                sourceNormals = new NativeArray<Vector3>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:389:            colors = new NativeArray<Color32>(vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:407:                sourceColors = new NativeArray<Color32>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:430:            NativeArray<float3> points = new NativeArray<float3>(boneCount, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:460:            NativeArray<Matrix4x4> bindPoseNative = new NativeArray<Matrix4x4>(bones.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:509:                Debug.LogError("[FaunaRigBuilder1714] Invalid mesh bounds. Procedural output rejected.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:525:                Debug.LogError("[FaunaRigBuilder1714] VAT dimensions exceed current GPU texture limit.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:532:                Debug.LogError("[FaunaRigBuilder1714] VAT pixel count exceeds signed 32-bit texture payload limit.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:651:            Debug.LogError("[FaunaRigBuilder1714] Unmanaged editor DTO alignment rejected. Struct sizes must be multiples of 8 bytes.");
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:220:            prefab.GetComponentsInChildren(true, s_meshFilterScratch);
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:351:            prefab.GetComponentsInChildren(true, s_meshFilterScratch);
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:547:            prefab.GetComponentsInChildren(true, s_rendererScratch);
@@ -500,34 +617,6 @@ Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2098: 
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2140:                var clear = new NativeArray<Color32>(size * size, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2557:            _lastResultLabel.text = _lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason;
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2558:            _metricsLabel.text = "Placement: " + _lastResult.Counters.PlacementMilliseconds.ToString("F2") +
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:314:            prefab.GetComponentsInChildren(true, filters);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:423:            prefab.GetComponentsInChildren(true, renderers);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:465:            ModuleSocket[] sockets = prefab.GetComponentsInChildren<ModuleSocket>(true);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:541:            prefab.GetComponentsInChildren(true, renderers);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:643:            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:736:            var result = new NativeArray<T>(source.Count, allocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:74:            ".material"
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:83:                Debug.LogError("[FaunaApex1610] APEX AST verification failed. violations=" +
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:89:            Debug.Log("[FaunaApex1610] APEX AST verification passed. runtimeFiles=" +
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:775:                   expression.StartsWith("GetComponent<", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:781:                   expression.StartsWith("TryGetComponent<", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:784:                   expression.Equals("GetComponentsInChildren", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:785:                   expression.StartsWith("GetComponentsInChildren<", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:789:                   expression.IndexOf(".GetComponent<", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:795:                   expression.IndexOf(".TryGetComponent<", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:798:                   expression.EndsWith(".GetComponentsInChildren", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:799:                   expression.IndexOf(".GetComponentsInChildren<", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1164:                       IsStaticTypeMember(expression, "Object", "FindObjectOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1165:                       IsStaticTypeMember(expression, "Object", "FindObjectsOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1169:                       EndsWithMemberName(expression, "FindObjectOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1170:                       EndsWithMemberName(expression, "FindObjectsOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1180:                       IsStaticTypeMember(expression, "Resources", "FindObjectsOfTypeAll") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1194:                return EndsWithMemberName(expression, "StartCoroutine") ||
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:42:                Debug.LogError(report.validationReason);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:46:            Debug.Log("1628 biome transition polish report: " + ReportPath);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:53:                Debug.LogError(reason);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:55:                Debug.Log(reason);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:447:            Renderer[] renderers = Resources.FindObjectsOfTypeAll<Renderer>();
 Assets\_Project\Scripts\Cartography\Editor\SonarMapTunerWindow.cs:123:                    _statusLabel.text = Application.isPlaying
 Assets\_Project\Scripts\Cartography\Editor\SonarMapTunerWindow.cs:148:                _statusLabel.text = "Vault buffers active. Upload cadence " +
 Assets\_Project\Scripts\Cartography\Editor\SonarMapTunerWindow.cs:195:                _statusLabel.text = "Mock sonar shell data written into Vault bitmasks.";

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Collections;
@@ -32,9 +34,13 @@ namespace Hecton8.Quest
         private const float DepthTierTwoMeters = 100f;
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
+        private const float ZeigarnikHapticLow01 = 0.2f;
+        private const float ZeigarnikHapticHigh01 = 0.9f;
+        private const float ZeigarnikHapticSeconds = 0.09f;
 
         private static uint[] s_stagedLoadedPackedState;
         private static QuestSaveHeader s_stagedLoadedQuestHeader;
+        private static int s_x001QuestManagerZeigarnikHapticDropCount;
 
         internal static QuestManager ActiveRuntimeInstance { get; private set; }
 
@@ -48,6 +54,9 @@ namespace Hecton8.Quest
         private bool _serviceRegistered;
         private ISaveService _registeredSaveService;
         private ILocalizationTextReadModel _localizationManager;
+        private IDataVault _questDagVault;
+        private QuestDagBufferHandles _questDagHandles;
+        private int _questDagAuthoredDependencyLinkCount;
         private bool _hotSwapRegistered;
         private uint[] _questCompletedNotificationHashes = Array.Empty<uint>();
         private uint[] _questRestoredNotificationHashes = Array.Empty<uint>();
@@ -96,6 +105,7 @@ namespace Hecton8.Quest
             TryRegisterHotSwapListener();
             BindSaveService(GlobalRegistry.Save);
             BindLocalization(GlobalRegistry.LocalizationText);
+            BindQuestDagVault(GlobalRegistry.DataVault);
             _graphEvaluator?.Bind();
         }
 
@@ -108,6 +118,7 @@ namespace Hecton8.Quest
 
             TryUnregisterHotSwapListener();
             BindSaveService(null);
+            BindQuestDagVault(null);
             _localizationManager = null;
 
             if (_serviceRegistered)
@@ -124,6 +135,7 @@ namespace Hecton8.Quest
 
             TryUnregisterHotSwapListener();
             BindSaveService(null);
+            BindQuestDagVault(null);
             _localizationManager = null;
 
             _graphEvaluator?.Dispose();
@@ -164,6 +176,9 @@ namespace Hecton8.Quest
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     BindLocalization(currentService as ILocalizationTextReadModel);
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    BindQuestDagVault(currentService as IDataVault);
+                    break;
             }
         }
 
@@ -186,16 +201,38 @@ namespace Hecton8.Quest
             RefreshQuestPresentationCaches();
         }
 
-        private void RefreshQuestPresentationCaches()
+        private void BindQuestDagVault(IDataVault vault)
         {
-            _stateManager?.RebindLocalization(_localizationManager, allQuests);
-
-            if (allQuests == null)
+            if (ReferenceEquals(_questDagVault, vault))
                 return;
 
-            EnsureQuestNotificationCacheCapacity(allQuests.Length);
-            for (int i = 0; i < allQuests.Length; i++)
-                CacheQuestNotificationHashes(i, allQuests[i]);
+            ReleaseQuestDagSnapshotHandles();
+            _questDagVault = vault;
+            _questDagHandles = default;
+            if (vault == null)
+                return;
+
+            SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
+            if (TryEnsureQuestDagSnapshotHandles(vault))
+            {
+                TryPublishAuthoredQuestDependencyLinks();
+                TryPublishQuestDagStateSnapshot(0u, 0u);
+            }
+        }
+
+        private void ReleaseQuestDagSnapshotHandles()
+        {
+            _questDagHandles = default;
+        }
+
+        private void RefreshQuestPresentationCaches()
+        {
+            QuestData[] quests = allQuests ?? Array.Empty<QuestData>();
+            _stateManager?.RebindLocalization(_localizationManager, quests);
+
+            EnsureQuestNotificationCacheCapacity(quests.Length);
+            for (int i = 0; i < quests.Length; i++)
+                CacheQuestNotificationHashes(i, quests[i]);
         }
 
         private void TryRegisterHotSwapListener()
@@ -238,6 +275,7 @@ namespace Hecton8.Quest
 
             _stateManager.RecordManualTransition(questIndex, completed: false);
             EmitQuestTransition(questIndex, completed: false, QuestTransitionType.Activate);
+            TryPublishQuestDagStateSnapshot(0u, 0u);
         }
 
         public void CompleteQuest(string questId)
@@ -254,7 +292,17 @@ namespace Hecton8.Quest
                 return;
 
             _stateManager.RecordManualTransition(questIndex, completed: true);
+            bool zeigarnikInjected = TryActivateZeigarnikChildQuest(questHash, out uint injectedQuestHash, out int injectedQuestIndex);
             EmitQuestTransition(questIndex, completed: true, QuestTransitionType.Complete);
+            if (zeigarnikInjected)
+            {
+                TryPublishQuestDagStateSnapshot(questHash, injectedQuestHash);
+                PublishZeigarnikHaptic();
+                EmitQuestTransition(injectedQuestIndex, completed: false, QuestTransitionType.Activate);
+                return;
+            }
+
+            TryPublishQuestDagStateSnapshot(0u, 0u);
         }
 
         public bool IsActive(string questId)
@@ -302,7 +350,7 @@ namespace Hecton8.Quest
             _graphEvaluator?.UpdateDepthContext(depthMeters, zoneHash, isThermalZone);
         }
 
-        internal int CopyActiveQuestHashes(uint[] destination)
+        public int CopyActiveQuestHashes(uint[] destination)
         {
             return _stateManager != null
                 ? _stateManager.CopyActiveQuestHashes(destination)
@@ -505,12 +553,14 @@ namespace Hecton8.Quest
             if (stagedWords != null && stagedWords.Length > 0)
             {
                 _stateManager.RestorePackedState(stagedHeader, stagedWords);
+                TryPublishQuestDagStateSnapshot(0u, 0u);
                 return;
             }
 
             List<string> activeQuestIds = data != null ? data.questActiveIds : null;
             List<string> completedQuestIds = data != null ? data.questCompletedIds : null;
             _stateManager.RestoreLegacyState(activeQuestIds, completedQuestIds);
+            TryPublishQuestDagStateSnapshot(0u, 0u);
         }
 
         private void InitializeStateGraph()
@@ -539,6 +589,8 @@ namespace Hecton8.Quest
 
             _graphEvaluator?.Dispose();
             _graphEvaluator = new QuestGraphEvaluator(_stateManager, FlushRuntimeResults);
+            TryPublishAuthoredQuestDependencyLinks();
+            TryPublishQuestDagStateSnapshot(0u, 0u);
         }
 
         private void FlushRuntimeResults()
@@ -546,11 +598,29 @@ namespace Hecton8.Quest
             if (_stateManager == null)
                 return;
 
+            bool wroteZeigarnikSnapshot = false;
             for (int i = 0; i < _stateManager.ResultCount; i++)
             {
                 QuestRuntimeResult result = _stateManager.GetResult(i);
+                uint completedQuestHash = 0u;
+                uint injectedQuestHash = 0u;
+                int injectedQuestIndex = -1;
+                bool zeigarnikInjected = result.TransitionType == QuestTransitionType.Complete &&
+                                          _stateManager.TryGetQuestHash(result.QuestIndex, out completedQuestHash) &&
+                                          TryActivateZeigarnikChildQuest(completedQuestHash, out injectedQuestHash, out injectedQuestIndex);
+
                 EmitQuestTransition(result.QuestIndex, result.Completed != 0, result.TransitionType);
+                if (zeigarnikInjected)
+                {
+                    TryPublishQuestDagStateSnapshot(completedQuestHash, injectedQuestHash);
+                    wroteZeigarnikSnapshot = true;
+                    PublishZeigarnikHaptic();
+                    EmitQuestTransition(injectedQuestIndex, completed: false, QuestTransitionType.Activate);
+                }
             }
+
+            if (!wroteZeigarnikSnapshot)
+                TryPublishQuestDagStateSnapshot(0u, 0u);
         }
 
         private void EmitQuestTransition(int questIndex, bool completed, QuestTransitionType transitionType)
@@ -584,9 +654,320 @@ namespace Hecton8.Quest
 
         private QuestData GetQuestDataByIndex(int questIndex)
         {
-            return questIndex >= 0 && questIndex < allQuests.Length
-                ? allQuests[questIndex]
+            QuestData[] quests = allQuests;
+            return quests != null && questIndex >= 0 && questIndex < quests.Length
+                ? quests[questIndex]
                 : null;
+        }
+
+        private bool TryActivateZeigarnikChildQuest(uint completedQuestHash, out uint injectedQuestHash, out int injectedQuestIndex)
+        {
+            injectedQuestHash = 0u;
+            injectedQuestIndex = -1;
+            if (completedQuestHash == 0u || _stateManager == null || allQuests == null)
+                return false;
+
+            for (int i = 0; i < allQuests.Length; i++)
+            {
+                QuestData questData = allQuests[i];
+                if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                    continue;
+
+                uint candidateQuestHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                if (candidateQuestHash == 0u ||
+                    _stateManager.IsQuestActive(candidateQuestHash) ||
+                    _stateManager.IsQuestCompleted(candidateQuestHash) ||
+                    !AreZeigarnikPrerequisitesSatisfied(questData, completedQuestHash))
+                {
+                    continue;
+                }
+
+                if (!_stateManager.TryActivateQuest(candidateQuestHash, out injectedQuestIndex))
+                    continue;
+
+                _stateManager.RecordManualTransition(injectedQuestIndex, completed: false);
+                injectedQuestHash = candidateQuestHash;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool AreZeigarnikPrerequisitesSatisfied(QuestData questData, uint completedQuestHash)
+        {
+            string[] prerequisiteQuestIds = questData != null ? questData.prerequisiteQuestIds : null;
+            if (prerequisiteQuestIds == null || prerequisiteQuestIds.Length == 0)
+                return false;
+
+            bool containsCompletedQuest = false;
+            for (int i = 0; i < prerequisiteQuestIds.Length; i++)
+            {
+                string prerequisiteQuestId = prerequisiteQuestIds[i];
+                if (string.IsNullOrWhiteSpace(prerequisiteQuestId))
+                    return false;
+
+                uint prerequisiteQuestHash = QuestFlagHashKernel.ComputeStableHash(prerequisiteQuestId);
+                if (prerequisiteQuestHash == 0u || !_stateManager.IsQuestCompleted(prerequisiteQuestHash))
+                    return false;
+
+                containsCompletedQuest |= prerequisiteQuestHash == completedQuestHash;
+            }
+
+            return containsCompletedQuest;
+        }
+
+        private bool TryEnsureQuestDagSnapshotHandles(IDataVault vault)
+        {
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            int questCount = allQuests != null ? allQuests.Length : 0;
+            int questStateCapacity = math.max(QuestDagRuntimeConstants.DefaultQuestStateCapacity, math.max(1, questCount));
+            int dependencyLinkCapacity = math.max(1, _questDagAuthoredDependencyLinkCount);
+
+            if (_questDagHandles.QuestStates.Generation != 0u &&
+                _questDagHandles.DependencyLinks.Generation != 0u &&
+                _questDagHandles.Counters.Generation != 0u &&
+                _questDagHandles.QuestStateCapacity >= questStateCapacity &&
+                _questDagHandles.DependencyLinkCapacity >= dependencyLinkCapacity)
+            {
+                if (vault.TryGetGenerationHandle<QuestStateDTO>(
+                        BufferID.QuestDagQuestStates,
+                        out VaultGenerationHandle<QuestStateDTO> questStates) &&
+                    vault.TryGetGenerationHandle<QuestDependencyLinkDTO>(
+                        BufferID.QuestDagDependencyLinks,
+                        out VaultGenerationHandle<QuestDependencyLinkDTO> dependencyLinks) &&
+                    vault.TryGetGenerationHandle<int>(
+                        BufferID.QuestDagCounters,
+                        out VaultGenerationHandle<int> counters))
+                {
+                    _questDagHandles.QuestStates = questStates;
+                    _questDagHandles.DependencyLinks = dependencyLinks;
+                    _questDagHandles.Counters = counters;
+                    return true;
+                }
+            }
+
+            _questDagHandles.QuestStateCapacity = questStateCapacity;
+            _questDagHandles.DependencyLinkCapacity = dependencyLinkCapacity;
+            _questDagHandles.Counters = vault.EnsureGenerationHandle<int>(
+                BufferID.QuestDagCounters,
+                QuestDagRuntimeConstants.CounterCount,
+                SystemID.QuestDag,
+                NativeArrayOptions.ClearMemory);
+            _questDagHandles.QuestStates = vault.EnsureGenerationHandle<QuestStateDTO>(
+                BufferID.QuestDagQuestStates,
+                questStateCapacity,
+                SystemID.QuestDag,
+                NativeArrayOptions.ClearMemory);
+            _questDagHandles.DependencyLinks = vault.EnsureGenerationHandle<QuestDependencyLinkDTO>(
+                BufferID.QuestDagDependencyLinks,
+                dependencyLinkCapacity,
+                SystemID.QuestDag,
+                NativeArrayOptions.ClearMemory);
+
+            return _questDagHandles.Counters.Generation != 0u &&
+                   _questDagHandles.QuestStates.Generation != 0u &&
+                   _questDagHandles.DependencyLinks.Generation != 0u;
+        }
+
+        private int CountAuthoredQuestDependencyLinks()
+        {
+            if (allQuests == null)
+                return 0;
+
+            int count = 0;
+            for (int questIndex = 0; questIndex < allQuests.Length; questIndex++)
+            {
+                QuestData questData = allQuests[questIndex];
+                if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                    continue;
+
+                string[] prerequisiteQuestIds = questData.prerequisiteQuestIds;
+                if (prerequisiteQuestIds == null)
+                    continue;
+
+                for (int i = 0; i < prerequisiteQuestIds.Length; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(prerequisiteQuestIds[i]) &&
+                        QuestFlagHashKernel.ComputeStableHash(prerequisiteQuestIds[i]) != 0u)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private bool TryPublishAuthoredQuestDependencyLinks()
+        {
+            IDataVault vault = _questDagVault;
+            if (!TryEnsureQuestDagSnapshotHandles(vault) ||
+                !QuestDagVault.TryAcquireQuestDagWriteBuffer(
+                    vault,
+                    in _questDagHandles.DependencyLinks,
+                    BufferID.QuestDagDependencyLinks,
+                    _questDagHandles.DependencyLinkCapacity,
+                    out NativeArray<QuestDependencyLinkDTO> links))
+            {
+                return false;
+            }
+
+            int count = 0;
+            try
+            {
+                if (allQuests != null)
+                {
+                    for (int questIndex = 0; questIndex < allQuests.Length; questIndex++)
+                    {
+                        QuestData questData = allQuests[questIndex];
+                        if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                            continue;
+
+                        uint childQuestHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                        if (childQuestHash == 0u)
+                            continue;
+
+                        string[] prerequisiteQuestIds = questData.prerequisiteQuestIds;
+                        if (prerequisiteQuestIds == null)
+                            continue;
+
+                        for (int i = 0; i < prerequisiteQuestIds.Length; i++)
+                        {
+                            if ((uint)count >= (uint)links.Length)
+                                break;
+
+                            string prerequisiteQuestId = prerequisiteQuestIds[i];
+                            if (string.IsNullOrWhiteSpace(prerequisiteQuestId))
+                                continue;
+
+                            uint parentQuestHash = QuestFlagHashKernel.ComputeStableHash(prerequisiteQuestId);
+                            if (parentQuestHash == 0u)
+                                continue;
+
+                            links[count++] = new QuestDependencyLinkDTO
+                            {
+                                ParentQuestHashID = parentQuestHash,
+                                ChildQuestHashID = childQuestHash,
+                                Flags = 0u
+                            };
+                        }
+                    }
+                }
+
+                MockQuestDatabase.SortDependencyLinks(links, count);
+                for (int i = count; i < links.Length; i++)
+                    links[i] = default;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _questDagHandles.DependencyLinks, SystemID.QuestDag);
+            }
+
+            return TryWriteQuestDagCounters(-1, count, false, false);
+        }
+
+        private bool TryPublishQuestDagStateSnapshot(uint completedQuestHash, uint injectedQuestHash)
+        {
+            IDataVault vault = _questDagVault;
+            if (_stateManager == null ||
+                !TryEnsureQuestDagSnapshotHandles(vault) ||
+                !QuestDagVault.TryAcquireQuestDagWriteBuffer(
+                    vault,
+                    in _questDagHandles.QuestStates,
+                    BufferID.QuestDagQuestStates,
+                    _questDagHandles.QuestStateCapacity,
+                    out NativeArray<QuestStateDTO> questStates))
+            {
+                return false;
+            }
+
+            int count = 0;
+            bool zeigarnikInjected = completedQuestHash != 0u && injectedQuestHash != 0u;
+            bool failClosed = false;
+            try
+            {
+                count = _stateManager.CopyActiveQuestStates(questStates, _questDagHandles.QuestStateCapacity);
+                if (zeigarnikInjected && (uint)count < (uint)questStates.Length)
+                {
+                    questStates[count++] = new QuestStateDTO
+                    {
+                        ActiveQuestHashID = completedQuestHash,
+                        CompletionProgress = 1f,
+                        InjectedSubQuestHashID = injectedQuestHash,
+                        StateFlags = (uint)(QuestStateFlags.ZeigarnikProgressArmed | QuestStateFlags.ZeigarnikInjected)
+                    };
+                }
+                else if (zeigarnikInjected)
+                {
+                    failClosed = true;
+                }
+
+                for (int i = count; i < questStates.Length; i++)
+                    questStates[i] = default;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _questDagHandles.QuestStates, SystemID.QuestDag);
+            }
+
+            return TryWriteQuestDagCounters(count, -1, zeigarnikInjected && !failClosed, failClosed);
+        }
+
+        private bool TryWriteQuestDagCounters(
+            int questStateCount,
+            int dependencyLinkCount,
+            bool zeigarnikInjected,
+            bool zeigarnikFailClosed)
+        {
+            IDataVault vault = _questDagVault;
+            if (!TryEnsureQuestDagSnapshotHandles(vault) ||
+                !QuestDagVault.TryAcquireQuestDagWriteBuffer(
+                    vault,
+                    in _questDagHandles.Counters,
+                    BufferID.QuestDagCounters,
+                    QuestDagRuntimeConstants.CounterCount,
+                    out NativeArray<int> counters))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (questStateCount >= 0)
+                    counters[(int)QuestDagRuntimeConstants.CounterSlot.QuestStateCount] = questStateCount;
+                if (dependencyLinkCount >= 0)
+                    counters[(int)QuestDagRuntimeConstants.CounterSlot.DependencyLinkCount] = dependencyLinkCount;
+                if (zeigarnikInjected)
+                    counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikInjectedCount] =
+                        counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikInjectedCount] + 1;
+                if (zeigarnikFailClosed)
+                    counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikFailClosedCount] =
+                        counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikFailClosedCount] + 1;
+
+                counters[(int)QuestDagRuntimeConstants.CounterSlot.LastLoadSourceHash] =
+                    unchecked((int)QuestDagRuntimeConstants.SignalSourceHash);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _questDagHandles.Counters, SystemID.QuestDag);
+            }
+        }
+
+        private static void PublishZeigarnikHaptic()
+        {
+            HapticPulseSignal pulse = new HapticPulseSignal
+            {
+                LowFrequencyMotor01 = ZeigarnikHapticLow01,
+                HighFrequencyMotor01 = ZeigarnikHapticHigh01,
+                DurationSeconds = ZeigarnikHapticSeconds,
+                PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                    HapticPulseSignal.PriorityTool,
+                    QuestDagRuntimeConstants.SignalSourceHash)
+            };
+            SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001QuestManagerZeigarnikHapticDropCount);
         }
 
         private bool TryResolveQuestHash(string questId, bool logUnknownQuest, out uint questHash, out QuestData questData)
@@ -613,13 +994,15 @@ namespace Hecton8.Quest
 
         private void BuildLookup()
         {
+            QuestData[] quests = allQuests ?? Array.Empty<QuestData>();
             _questHashLookup.Clear();
             _hasLookupAmbiguity = false;
-            EnsureQuestNotificationCacheCapacity(allQuests.Length);
+            _questDagAuthoredDependencyLinkCount = CountAuthoredQuestDependencyLinks();
+            EnsureQuestNotificationCacheCapacity(quests.Length);
 
-            for (int i = 0; i < allQuests.Length; i++)
+            for (int i = 0; i < quests.Length; i++)
             {
-                QuestData questData = allQuests[i];
+                QuestData questData = quests[i];
                 if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
                     continue;
 

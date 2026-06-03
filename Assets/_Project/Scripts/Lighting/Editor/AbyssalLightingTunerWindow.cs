@@ -15,6 +15,9 @@ namespace Hecton8.Lighting.Editor
         private Label _status;
         private Label _layout;
         private ProbeTelemetryGraphElement _graph;
+        private double _nextRefreshTime;
+
+        private const double RefreshIntervalSeconds = 0.25;
 
         [MenuItem("HECTON-8/Lighting/Abyssal Lighting Tuner")]
         private static void Open()
@@ -49,7 +52,7 @@ namespace Hecton8.Lighting.Editor
             targetField.RegisterValueChangedCallback(evt =>
             {
                 _target = evt.newValue as InteriorGIProbeVolumeRuntime;
-                RefreshStatus();
+                RefreshStatus(force: true);
             });
             root.Add(targetField);
 
@@ -96,7 +99,7 @@ namespace Hecton8.Lighting.Editor
             Button scan = new Button(ScanLoadedScenesForUnityProbeGroups) { text = "Scan Unity Probe Groups" };
             root.Add(scan);
 
-            RefreshStatus();
+            RefreshStatus(force: true);
         }
 
         private InteriorGIProbeVolumeRuntime ResolveTarget()
@@ -109,8 +112,19 @@ namespace Hecton8.Lighting.Editor
 
         private void RefreshStatus()
         {
+            RefreshStatus(force: false);
+        }
+
+        private void RefreshStatus(bool force)
+        {
             if (_status == null || _layout == null)
                 return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (!force && now < _nextRefreshTime)
+                return;
+
+            _nextRefreshTime = now + RefreshIntervalSeconds;
 
             if (_target == null)
                 ResolveTarget();

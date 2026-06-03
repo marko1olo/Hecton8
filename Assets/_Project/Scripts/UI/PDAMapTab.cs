@@ -26,12 +26,7 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
     public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, ISlowTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
-        private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
-        private const string SonarMapComputePath = "Assets/_Project/Art/Shaders/Hecton_MapMesh.compute";
-        private const string HologramMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader";
         private const string SonarMapConstantsBufferName = "HectonSonarMapConstants";
-        private const string SonarPointCloudShaderName = "Hecton8/UI/PDA Sonar Point Cloud";
-        private const string HologramMapShaderName = "Hecton8/UI/Hecton Hologram Map";
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
         private const float AcousticOverlayRadiusMeters = 160f;
@@ -42,7 +37,7 @@ namespace Hecton8.UI
         private const int PointCloudCapacity = CartographyGridConstants.MaxVisibleMapPoints + MaxPredatorAupPoints + MaxHlodImpostorAupPoints;
         private const int SonarPointStrideBytes = 16;
         private const int SonarIndirectArgsStrideBytes = sizeof(uint) * 5;
-        private const uint SonarQuadIndexCount = 6u;
+        private const uint SonarProceduralVertexCount = 6u;
         private const float PointCloudPingBandWidth = 0.16f;
         private const int MaxMarkerVisuals = 64;
         private const int MarkerUpdateQueueCapacity = 128;
@@ -77,19 +72,6 @@ namespace Hecton8.UI
         private static readonly int HologramQualityId = Shader.PropertyToID("_Quality");
         private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
         private static readonly uint _GhostSignalContextHash = unchecked((uint)LocHash.Compute("GhostSignal"));
-        private static readonly Vector3[] SonarQuadVertices =
-        {
-            new Vector3(-1f, -1f, 0f),
-            new Vector3(-1f, 1f, 0f),
-            new Vector3(1f, 1f, 0f),
-            new Vector3(1f, -1f, 0f)
-        }; // COLD ALLOC: Vector3[4] — immutable PDA sonar indirect quad vertices — owner: PDAMapTab
-        private static readonly int[] SonarQuadIndices =
-        {
-            0, 1, 2,
-            0, 2, 3
-        }; // COLD ALLOC: int[6] — immutable PDA sonar indirect quad indices — owner: PDAMapTab
-
         [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct SonarMapConstants
         {
@@ -109,12 +91,12 @@ namespace Hecton8.UI
         private static readonly int SonarMapConstantsStrideBytes = UnsafeUtility.SizeOf<SonarMapConstants>();
 
         [Header("References")]
-        [SerializeField, Tooltip("Optional explicit GPU point-cloud shader. Editor fallback resolves the first-party asset path when left null.")]
-        private Shader sonarPointCloudShader;
+        [SerializeField, Tooltip("Authored GPU point-cloud material. Missing reference disables the PDA sonar cloud instead of creating runtime material state.")]
+        private Material sonarPointCloudMaterial;
         [SerializeField, Tooltip("Compute shader that expands packed discovered sectors into the PDA point-cloud append buffer.")]
         private ComputeShader sonarMapCompute;
-        [SerializeField, Tooltip("Optional holographic virtual-volume shader that raymarches the packed R8 cartography buffer.")]
-        private Shader hologramMapShader;
+        [SerializeField, Tooltip("Authored holographic virtual-volume material. Missing reference disables the hologram pass instead of cloning a material.")]
+        private Material hologramMapMaterial;
         [SerializeField, Tooltip("Optional explicit RawImage target. When null, the component builds its own viewport.")]
         private RawImage mapImage;
         [SerializeField, Tooltip("Optional explicit status label. When null, the component builds its own label.")]
@@ -171,9 +153,10 @@ namespace Hecton8.UI
         private GraphicsBuffer _cartographyPackedR8BufferA;
         private GraphicsBuffer _cartographyPackedR8BufferB;
         private bool _cartographyPackedR8WriteFlip;
-        private Material _pointCloudMaterial;
-        private Material _hologramMapMaterial;
-        private Mesh _pointCloudQuadMesh;
+        private Material _resolvedPointCloudMaterial;
+        private Material _resolvedHologramMapMaterial;
+        private MaterialPropertyBlock _pointCloudProperties;
+        private MaterialPropertyBlock _hologramMapProperties;
         private int _sonarClearArgsKernel = -1;
         private int _sonarBuildMapPointsKernel = -1;
         private int _sonarClearArgsThreadGroupSizeX;
@@ -314,28 +297,20 @@ namespace Hecton8.UI
             }
         }
 
-        internal void ConfigurePointCloudAssets(Shader pointCloudShader, ComputeShader mapCompute, Shader hologramShader = null)
+        internal void ConfigurePointCloudAssets(Material pointCloudMaterial, ComputeShader mapCompute, Material hologramMaterial = null)
         {
-            if (pointCloudShader != null && !ReferenceEquals(sonarPointCloudShader, pointCloudShader))
+            if (pointCloudMaterial != null && !ReferenceEquals(sonarPointCloudMaterial, pointCloudMaterial))
             {
-                sonarPointCloudShader = pointCloudShader;
+                sonarPointCloudMaterial = pointCloudMaterial;
                 _pointCloudAssetLookupAttempted = false;
-                if (_pointCloudMaterial != null)
-                {
-                    Destroy(_pointCloudMaterial);
-                    _pointCloudMaterial = null;
-                }
+                _resolvedPointCloudMaterial = null;
             }
 
-            if (hologramShader != null && !ReferenceEquals(hologramMapShader, hologramShader))
+            if (hologramMaterial != null && !ReferenceEquals(hologramMapMaterial, hologramMaterial))
             {
-                hologramMapShader = hologramShader;
+                hologramMapMaterial = hologramMaterial;
                 _pointCloudAssetLookupAttempted = false;
-                if (_hologramMapMaterial != null)
-                {
-                    Destroy(_hologramMapMaterial);
-                    _hologramMapMaterial = null;
-                }
+                _resolvedHologramMapMaterial = null;
             }
 
             if (mapCompute != null && !ReferenceEquals(sonarMapCompute, mapCompute))
@@ -423,6 +398,7 @@ namespace Hecton8.UI
 
         private void EnsureBuilt()
         {
+            EnsureDrawPropertyBlocksCold();
             RectTransform root = transform as RectTransform;
             if (root == null)
                 return;
@@ -757,31 +733,10 @@ namespace Hecton8.UI
             if (_cartographyPackedR8Buffer == null || !_cartographyPackedR8Buffer.IsValid())
                 _cartographyPackedR8Buffer = _cartographyPackedR8BufferA;
 
-            EnsurePointCloudQuadMesh();
-
             TryResolvePointCloudAssets();
-            if (_hologramMapMaterial == null && hologramMapShader != null)
-            {
-                _hologramMapMaterial = new Material(hologramMapShader)
-                {
-                    name = "Runtime_PDAHologramMap"
-                }; // COLD ALLOC: Material[1] - virtual 3D cartography volume shader bridge - owner: PDAMapTab
-                _hologramMapMaterial.SetBuffer(CartographyVoxelR8Id, _cartographyPackedR8Buffer);
-            }
-
-            if (_pointCloudMaterial != null)
-            {
-                return;
-            }
-
-            if (sonarPointCloudShader == null)
+            if (_resolvedPointCloudMaterial == null)
                 return;
 
-            _pointCloudMaterial = new Material(sonarPointCloudShader)
-            {
-                name = "Runtime_PDASonarPointCloud"
-            }; // COLD ALLOC: Material[1] — GPU-resident PDA sonar point-cloud draw material — owner: PDAMapTab
-            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
             QueueSonarComputeKernelRepair();
             FlushSonarComputeKernelRepairSlow();
         }
@@ -821,41 +776,20 @@ namespace Hecton8.UI
         private bool TryResolvePointCloudAssets()
         {
             if (_pointCloudAssetLookupAttempted)
-                return sonarPointCloudShader != null;
+                return _resolvedPointCloudMaterial != null && sonarMapCompute != null;
 
             _pointCloudAssetLookupAttempted = true;
 
-#if UNITY_EDITOR
-            if (sonarPointCloudShader == null)
-                sonarPointCloudShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(SonarPointCloudShaderPath);
-            if (sonarMapCompute == null)
-                sonarMapCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(SonarMapComputePath);
-            if (hologramMapShader == null)
-                hologramMapShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(HologramMapShaderPath);
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (sonarPointCloudShader == null)
-                sonarPointCloudShader = Shader.Find(SonarPointCloudShaderName);
-            if (hologramMapShader == null)
-                hologramMapShader = Shader.Find(HologramMapShaderName);
-#endif
+            UnityEngine.Assertions.Assert.IsNotNull(sonarPointCloudMaterial, "Fatal: Missing Authored PDA Sonar Point Cloud Material.");
+            UnityEngine.Assertions.Assert.IsNotNull(sonarMapCompute, "Fatal: Missing Authored PDA Sonar Map Compute Shader.");
 
-            return sonarPointCloudShader != null;
-        }
+            bool authoredMaterialValid = sonarPointCloudMaterial != null && sonarPointCloudMaterial.enableInstancing;
+            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: PDA Sonar Point Cloud Material must have Enable GPU Instancing authored.");
 
-        private void EnsurePointCloudQuadMesh()
-        {
-            if (_pointCloudQuadMesh != null)
-                return;
+            _resolvedPointCloudMaterial = authoredMaterialValid ? sonarPointCloudMaterial : null;
+            _resolvedHologramMapMaterial = hologramMapMaterial;
 
-            _pointCloudQuadMesh = new Mesh
-            {
-                name = "__PDASonarPointCloudIndirectQuad",
-                bounds = new Bounds(Vector3.zero, Vector3.one * 2f)
-            }; // COLD ALLOC: Mesh[1] — single quad used by RenderMeshIndirect PDA cartography point cloud — owner: PDAMapTab
-            _pointCloudQuadMesh.SetVertices(SonarQuadVertices);
-            _pointCloudQuadMesh.SetIndices(SonarQuadIndices, MeshTopology.Triangles, 0, false);
-            _pointCloudQuadMesh.UploadMeshData(true);
+            return _resolvedPointCloudMaterial != null && sonarMapCompute != null;
         }
 
         private bool TryResolveSonarComputeKernels()
@@ -941,6 +875,14 @@ namespace Hecton8.UI
             }
         }
 
+        private void EnsureDrawPropertyBlocksCold()
+        {
+            if (_pointCloudProperties == null)
+                _pointCloudProperties = new MaterialPropertyBlock(); // COLD ALLOC: PDA point-cloud draw payload - owner: PDAMapTab.
+            if (_hologramMapProperties == null)
+                _hologramMapProperties = new MaterialPropertyBlock(); // COLD ALLOC: PDA hologram-map draw payload - owner: PDAMapTab.
+        }
+
         private static bool TryValidateSonarKernelThreadGroup(
             ComputeShader compute,
             int kernelIndex,
@@ -995,10 +937,9 @@ namespace Hecton8.UI
             if (mapImage == null || !isActiveAndEnabled || !_pointCloudMapReady)
                 return;
 
-            if (_hologramMapMaterial == null ||
+            if (_resolvedHologramMapMaterial == null ||
                 _cartographyPackedR8Buffer == null ||
-                !_cartographyPackedR8Buffer.IsValid() ||
-                _pointCloudQuadMesh == null)
+                !_cartographyPackedR8Buffer.IsValid())
             {
                 return;
             }
@@ -1021,7 +962,7 @@ namespace Hecton8.UI
             float quality = ResolveCartographyQuality(in tuning);
             int framesBetweenUploads = CartographyGridMath.ResolveUploadIntervalFrames(quality);
 
-            if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out _, out Camera renderCamera))
+            if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera))
                 return;
 
             bool uploadDue = _packedUploadCountdown <= 0 || _uploadedPackedCartographyRevision != revision;
@@ -1048,31 +989,30 @@ namespace Hecton8.UI
                 _packedUploadCountdown = math.max(0, _packedUploadCountdown - 1);
             }
 
-            _hologramMapMaterial.SetBuffer(CartographyVoxelR8Id, _cartographyPackedR8Buffer);
-            _hologramMapMaterial.SetColor(HologramTintId, edgeTint);
-            _hologramMapMaterial.SetFloat(OpacityId, pointCloudOpacity * 0.72f);
-            _hologramMapMaterial.SetFloat(HologramGlowId, tuning.VisualGlowIntensity);
-            _hologramMapMaterial.SetFloat(HologramQualityId, quality);
-            _hologramMapMaterial.SetVector(
+            _hologramMapProperties.Clear();
+            _hologramMapProperties.SetBuffer(CartographyVoxelR8Id, _cartographyPackedR8Buffer);
+            _hologramMapProperties.SetMatrix(PointCloudLocalToWorldId, localToWorld);
+            _hologramMapProperties.SetColor(HologramTintId, edgeTint);
+            _hologramMapProperties.SetFloat(OpacityId, pointCloudOpacity * 0.72f);
+            _hologramMapProperties.SetFloat(HologramGlowId, tuning.VisualGlowIntensity);
+            _hologramMapProperties.SetFloat(HologramQualityId, quality);
+            _hologramMapProperties.SetVector(
                 CartographyGridParamsId,
                 new Vector4(axisLength, originOffset, math.max(0.0001f, quality), cellSizeMeters));
-            _hologramMapMaterial.SetVector(
+            _hologramMapProperties.SetVector(
                 CartographyVisualParamsId,
                 new Vector4(_animationTime, _uploadedPackedCartographyRevision, framesBetweenUploads, 0f));
 
-            UnityEngine.Graphics.DrawMesh(
-                _pointCloudQuadMesh,
-                localToWorld,
-                _hologramMapMaterial,
-                gameObject.layer,
-                renderCamera,
-                0,
-                null,
-                ShadowCastingMode.Off,
-                false,
-                null,
-                LightProbeUsage.Off,
-                null);
+            RenderParams renderParams = new RenderParams(_resolvedHologramMapMaterial)
+            {
+                matProps = _hologramMapProperties,
+                worldBounds = bounds,
+                camera = renderCamera,
+                layer = gameObject.layer,
+                shadowCastingMode = ShadowCastingMode.Off,
+                receiveShadows = false
+            };
+            UnityEngine.Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, (int)SonarProceduralVertexCount, 1);
         }
 
         private void RenderPointCloud()
@@ -1080,12 +1020,11 @@ namespace Hecton8.UI
             if (mapImage == null || !isActiveAndEnabled || !_pointCloudMapReady)
                 return;
 
-            if (_pointCloudMaterial == null ||
+            if (_resolvedPointCloudMaterial == null ||
                 _pointCloudAppendBuffer == null ||
                 !_pointCloudAppendBuffer.IsValid() ||
                 _pointCloudIndirectArgsBuffer == null ||
-                !_pointCloudIndirectArgsBuffer.IsValid() ||
-                _pointCloudQuadMesh == null)
+                !_pointCloudIndirectArgsBuffer.IsValid())
             {
                 return;
             }
@@ -1121,25 +1060,28 @@ namespace Hecton8.UI
                 ? math.saturate(activeSonarRadiusMeters * math.rcp(activeSonarMaxRangeMeters))
                 : math.frac(_animationTime * 0.33f) * 0.62f;
             float pingActive = activeSonarGeoParams.x > 0.5f ? 1f : 0f;
-            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
-            _pointCloudMaterial.SetMatrix(PointCloudLocalToWorldId, localToWorld);
-            _pointCloudMaterial.SetVector(AcousticPingSignalId, new Vector4(pingRadius, PointCloudPingBandWidth, _animationTime, pingActive));
-            _pointCloudMaterial.SetFloat(ActiveSonarRadiusId, activeSonarRadiusMeters);
-            _pointCloudMaterial.SetFloat(ActiveSonarMaxRangeId, activeSonarMaxRangeMeters);
-            _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
-            _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
-            _pointCloudMaterial.SetFloat(DepthFadeMetersId, pointCloudDepthMeters);
-            _pointCloudMaterial.SetFloat(HeightColorizationId, Smooth01(quality));
+            _pointCloudProperties.Clear();
+            _pointCloudProperties.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
+            _pointCloudProperties.SetMatrix(PointCloudLocalToWorldId, localToWorld);
+            _pointCloudProperties.SetVector(AcousticPingSignalId, new Vector4(pingRadius, PointCloudPingBandWidth, _animationTime, pingActive));
+            _pointCloudProperties.SetFloat(ActiveSonarRadiusId, activeSonarRadiusMeters);
+            _pointCloudProperties.SetFloat(ActiveSonarMaxRangeId, activeSonarMaxRangeMeters);
+            _pointCloudProperties.SetFloat(PointSizeId, pointCloudPointSize);
+            _pointCloudProperties.SetFloat(OpacityId, pointCloudOpacity);
+            _pointCloudProperties.SetFloat(DepthFadeMetersId, pointCloudDepthMeters);
+            _pointCloudProperties.SetFloat(HeightColorizationId, Smooth01(quality));
 
-            RenderParams renderParams = new RenderParams(_pointCloudMaterial)
-            {
-                worldBounds = bounds,
-                camera = renderCamera,
-                layer = gameObject.layer,
-                shadowCastingMode = ShadowCastingMode.Off,
-                receiveShadows = false
-            };
-            UnityEngine.Graphics.RenderMeshIndirect(renderParams, _pointCloudQuadMesh, _pointCloudIndirectArgsBuffer, 1, 0);
+            UnityEngine.Graphics.DrawProceduralIndirect(
+                _resolvedPointCloudMaterial,
+                bounds,
+                MeshTopology.Triangles,
+                _pointCloudIndirectArgsBuffer,
+                0,
+                renderCamera,
+                _pointCloudProperties,
+                ShadowCastingMode.Off,
+                false,
+                gameObject.layer);
         }
 
         private bool TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera)
@@ -1348,7 +1290,7 @@ namespace Hecton8.UI
                     wordCount,
                     maxBitsPerWord,
                     predatorAupCount,
-                    SonarQuadIndexCount),
+                    SonarProceduralVertexCount),
                 OverlayParams = new Vector4(
                     hlodAupCount,
                     qualityCurve,
@@ -2260,23 +2202,10 @@ namespace Hecton8.UI
             _cartographyPackedR8Buffer = null;
             _cartographyPackedR8WriteFlip = false;
 
-            if (_pointCloudQuadMesh != null)
-            {
-                Destroy(_pointCloudQuadMesh);
-                _pointCloudQuadMesh = null;
-            }
-
-            if (_hologramMapMaterial != null)
-            {
-                Destroy(_hologramMapMaterial);
-                _hologramMapMaterial = null;
-            }
-
-            if (_pointCloudMaterial != null)
-            {
-                Destroy(_pointCloudMaterial);
-                _pointCloudMaterial = null;
-            }
+            _resolvedHologramMapMaterial = null;
+            _resolvedPointCloudMaterial = null;
+            _pointCloudProperties?.Clear();
+            _hologramMapProperties?.Clear();
 
             ResetSonarComputeKernelState();
             QueueSonarComputeKernelRepair();

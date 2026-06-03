@@ -13,6 +13,7 @@ namespace Hecton8.World.Editor
         private const int TerrainSampleStrideBytes = 32;
         private const int DistributionRuleStrideBytes = 64;
         private const int TuningStrideBytes = 64;
+        private const int PlayerEcosystemTelemetryStrideBytes = 32;
         private const int TelemetryStrideBytes = 64;
         private const int SelfAuditStrideBytes = 64;
         private const int IndirectArgsStrideBytes = 16;
@@ -45,12 +46,19 @@ namespace Hecton8.World.Editor
             ok &= ValidateSize<GeologyTerrainSampleDTO>(TerrainSampleStrideBytes);
             ok &= ValidateSize<GeologyDistributionRuleDTO>(DistributionRuleStrideBytes);
             ok &= ValidateSize<GeologyTuningDTO>(TuningStrideBytes);
+            ok &= ValidateSize<PlayerEcosystemTelemetryDTO>(PlayerEcosystemTelemetryStrideBytes);
+            ok &= ValidateOffset<PlayerEcosystemTelemetryDTO>(nameof(PlayerEcosystemTelemetryDTO.EmptyScansStreak), 0);
+            ok &= ValidateOffset<PlayerEcosystemTelemetryDTO>(nameof(PlayerEcosystemTelemetryDTO.TotalOresMined), 4);
+            ok &= ValidateOffset<PlayerEcosystemTelemetryDTO>(nameof(PlayerEcosystemTelemetryDTO.DistanceSinceLastFind), 8);
+            ok &= ValidateOffset<PlayerEcosystemTelemetryDTO>(nameof(PlayerEcosystemTelemetryDTO.PityTriggerActive), 12);
+            ok &= ValidateOffset<PlayerEcosystemTelemetryDTO>(nameof(PlayerEcosystemTelemetryDTO.LastPityResourceType), 28);
             ok &= ValidateSize<GeologyGenerationTelemetryEntry>(TelemetryStrideBytes);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.SectorHash), 0);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.Frame), 8);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.GenerationBudgetUs), 32);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.StateHash), 56);
             ok &= ValidateSize<GeologySelfAuditResultDTO>(SelfAuditStrideBytes);
+            ok &= ValidateOffset<GeologySelfAuditResultDTO>(nameof(GeologySelfAuditResultDTO.PlayerEcosystemTelemetrySize), 52);
             ok &= ValidateSize<GeologyIndirectArgsDTO>(IndirectArgsStrideBytes);
             ok &= ValidateOffset<GeologyIndirectArgsDTO>(nameof(GeologyIndirectArgsDTO.VertexCountPerInstance), 0);
             ok &= ValidateOffset<GeologyIndirectArgsDTO>(nameof(GeologyIndirectArgsDTO.InstanceCount), 4);

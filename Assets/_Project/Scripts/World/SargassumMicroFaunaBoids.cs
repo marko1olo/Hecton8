@@ -1059,6 +1059,10 @@ namespace Hecton8.World
         [Tooltip("Optional direct player override used only to resolve the gameplay camera hierarchy.")]
         private Transform playerTransform;
 
+        [SerializeField]
+        [Tooltip("Authored zero-flow Texture3D bound when no abyssal flow field is published. Runtime Texture3D fallback generation is forbidden.")]
+        private Texture3D neutralAbyssalFlowTexture;
+
         [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField, Range(128, 2048)]
         [Tooltip("Total boid count rendered and simulated on the GPU.")]
@@ -1368,12 +1372,8 @@ namespace Hecton8.World
         [Tooltip("Maximum obstacle proxies uploaded to the compute shader so the ring can bend around nearby rock silhouettes.")]
         private int formationObstacleCapacity = 8;
 
-        [SerializeField]
-        [Tooltip("Collider layers treated as formation obstacles. Use rock / ruin / terrain layers only.")]
-        private LayerMask formationObstacleLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
         [SerializeField, Range(4f, 80f)]
-        [Tooltip("Non-alloc overlap radius used when harvesting nearby rock obstacles for formation avoidance.")]
+        [Tooltip("AUP distance radius used when harvesting static MapMagic rock proxies for formation avoidance.")]
         private float formationObstacleSearchRadius = 24f;
 
         [SerializeField, Range(0f, 8f)]
@@ -1642,13 +1642,14 @@ namespace Hecton8.World
         [Tooltip("CPU-side consumed GPU boid count emitted by predator bite jobs this session.")]
         private int _debugConsumedBoidCount;
 
-        private Material _boidRuntimeMaterial;
-        private Material _boidRuntimeMaterialSource;
+        private Material _boidRenderMaterialSource;
 
         private HectonBiolumZone[] _deepBiolumZones;
         private float[] _deepBiolumZoneScores;
         private BeaconNetworkSnapshot[] _formationBeaconSnapshots;
-        private Collider[] _formationObstacleColliders;
+        private FormationBeaconData[] _formationBeaconStaging;
+        private StaticObstacleData[] _staticObstacleCacheStaging;
+        private FormationObstacleData[] _formationObstacleStaging;
         private VaultGenerationHandle<GrazingAnchorData> _grazingAnchorsHandle;
         private VaultGenerationHandle<MassiveThreatData> _massiveThreatsHandle;
         private VaultGenerationHandle<FormationBeaconData> _formationBeaconsHandle;
@@ -1679,6 +1680,7 @@ namespace Hecton8.World
         private GraphicsBuffer _formationObstacleBuffer;
         private GraphicsBuffer _leviathanNodeBuffer;
         private GraphicsBuffer _latchStatsBuffer;
+        private GraphicsBuffer _parasiteLatchHeldStatsBuffer;
         private GraphicsBuffer _pbdCorrectionBuffer;
         private GraphicsBuffer _threatGridBuffer;
         private GraphicsBuffer _threatVoxelBuffer;
@@ -1820,7 +1822,10 @@ namespace Hecton8.World
         private float _parasiteLatchReadbackTimer;
         private bool _parasiteLatchReadbackPending;
         private bool _parasiteLatchReadbackRepairRequested;
+        private bool _parasiteLatchReadbackDisposeAfterCompletion;
+        private bool _parasiteLatchReleaseStatsBufferAfterCompletion;
         private AsyncGPUReadbackRequest _parasiteLatchReadbackRequest;
+        private Action<AsyncGPUReadbackRequest> _parasiteLatchReadbackCompletion;
         private ParasiteLatchReadbackOwner _parasiteLatchReadback;
         private float _leviathanThreatLevel;
         private Vector3 _leviathanHotspotWS;
@@ -1921,7 +1926,7 @@ namespace Hecton8.World
         {
             CacheGraphicsCapabilitiesCold();
             _computeDispatchDisabled = false;
-            EnsureBoidRuntimeMaterialReady();
+            EnsureBoidMaterialBindingReady();
             SanitizeSettings();
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
@@ -1941,7 +1946,7 @@ namespace Hecton8.World
             _computeDispatchDisabled = false;
             InvalidateViewPoseCache();
             ResetDependencyProbeCache();
-            EnsureBoidRuntimeMaterialReady();
+            EnsureBoidMaterialBindingReady();
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             _simulationBucketerProbeAttempted = false;
@@ -1997,6 +2002,9 @@ namespace Hecton8.World
             _parasiteLatchReadbackTimer = 0f;
             _parasiteLatchReadbackPending = false;
             _parasiteLatchReadbackRepairRequested = false;
+            _parasiteLatchReadbackDisposeAfterCompletion = false;
+            _parasiteLatchReleaseStatsBufferAfterCompletion = false;
+            _parasiteLatchHeldStatsBuffer = null;
             _reportedParasiteCenterOfMassLS = Vector3.zero;
             _reportedParasiteHarvesterPullWS = Vector3.zero;
             _reportedWakeFleeCount = 0;
@@ -2051,7 +2059,7 @@ namespace Hecton8.World
             TryUnregister();
             ClearStatisticalPopulationPoint();
             CompletePendingReadbackAndReleaseBuffers();
-            ReleaseBoidRuntimeMaterial();
+            ReleaseBoidMaterialBinding();
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -2078,36 +2086,28 @@ namespace Hecton8.World
             TryUnregister();
             ClearStatisticalPopulationPoint();
             CompletePendingReadbackAndReleaseBuffers();
-            ReleaseBoidRuntimeMaterial();
+            ReleaseBoidMaterialBinding();
         }
 
-        private bool EnsureBoidRuntimeMaterialReady()
+        private bool EnsureBoidMaterialBindingReady()
         {
             Material source = boidMaterial;
             if (source == null)
             {
-                ReleaseBoidRuntimeMaterial();
+                ReleaseBoidMaterialBinding();
                 return false;
             }
 
-            if (_boidRuntimeMaterial != null && ReferenceEquals(_boidRuntimeMaterialSource, source))
+            if (ReferenceEquals(_boidRenderMaterialSource, source))
                 return true;
 
-            ReleaseBoidRuntimeMaterial();
-            _boidRuntimeMaterial = new Material(source); // COLD ALLOC: Material[1] - owner-local indirect boid draw state copy - owner: SargassumMicroFaunaBoids
-            _boidRuntimeMaterialSource = source;
+            _boidRenderMaterialSource = source;
             return true;
         }
 
-        private void ReleaseBoidRuntimeMaterial()
+        private void ReleaseBoidMaterialBinding()
         {
-            if (_boidRuntimeMaterial != null)
-            {
-                Destroy(_boidRuntimeMaterial);
-                _boidRuntimeMaterial = null;
-            }
-
-            _boidRuntimeMaterialSource = null;
+            _boidRenderMaterialSource = null;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -2693,6 +2693,13 @@ namespace Hecton8.World
         {
             _boidMeshVertexCount = boidMesh != null ? boidMesh.vertexCount : 0;
 
+            if (neutralAbyssalFlowTexture == null)
+            {
+                Hecton8.Core.H8Debug.LogError("[SargassumMicroFaunaBoids] Missing authored neutral abyssal-flow Texture3D. Runtime texture fallback generation is forbidden.", this);
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return;
+            }
+
             if (_deepBiolumZones == null || _deepBiolumZones.Length != deepBiolumAnchorCapacity)
             {
                 // COLD ALLOC: HectonBiolumZone[deepBiolumAnchorCapacity] - deep-sea biolum anchor cache for bait-ball rebuilds - owner: SargassumMicroFaunaBoids
@@ -2711,10 +2718,23 @@ namespace Hecton8.World
                 _formationBeaconSnapshots = new BeaconNetworkSnapshot[24];
             }
 
-            if (_formationObstacleColliders == null || _formationObstacleColliders.Length != formationObstacleCapacity * 2)
+            if (_formationBeaconStaging == null || _formationBeaconStaging.Length != formationBeaconCapacity)
             {
-                // COLD ALLOC: Collider[32] - non-alloc overlap buffer for nearby formation obstacle harvesting - owner: SargassumMicroFaunaBoids
-                _formationObstacleColliders = new Collider[math.max(2, formationObstacleCapacity * 2)];
+                // COLD ALLOC: FormationBeaconData[formationBeaconCapacity] - pre-lock formation beacon staging - owner: SargassumMicroFaunaBoids
+                _formationBeaconStaging = new FormationBeaconData[formationBeaconCapacity];
+            }
+
+            int staticObstacleCapacity = math.max(formationObstacleCapacity * 8, formationObstacleCapacity);
+            if (_staticObstacleCacheStaging == null || _staticObstacleCacheStaging.Length != staticObstacleCapacity)
+            {
+                // COLD ALLOC: StaticObstacleData[formationObstacleCapacity*8] - pre-lock static formation obstacle staging - owner: SargassumMicroFaunaBoids
+                _staticObstacleCacheStaging = new StaticObstacleData[staticObstacleCapacity];
+            }
+
+            if (_formationObstacleStaging == null || _formationObstacleStaging.Length != formationObstacleCapacity)
+            {
+                // COLD ALLOC: FormationObstacleData[formationObstacleCapacity] - pre-lock formation obstacle staging - owner: SargassumMicroFaunaBoids
+                _formationObstacleStaging = new FormationObstacleData[formationObstacleCapacity];
             }
 
             bool buffersChanged = false;
@@ -2749,7 +2769,7 @@ namespace Hecton8.World
             EnsureSargassumVaultGenerationHandle(vault, ref _massiveThreatsHandle, BufferID.SargassumMassiveThreats, maxMassiveThreatCount);
             EnsureSargassumVaultGenerationHandle(vault, ref _formationBeaconsHandle, BufferID.SargassumFormationBeacons, formationBeaconCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _formationObstaclesHandle, BufferID.SargassumFormationObstacles, formationObstacleCapacity);
-            EnsureSargassumVaultGenerationHandle(vault, ref _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity));
+            EnsureSargassumVaultGenerationHandle(vault, ref _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, staticObstacleCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _boidStateHandle, BufferID.SargassumBoidState, boidCount);
             EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
@@ -3949,152 +3969,148 @@ namespace Hecton8.World
         {
             _debugFormationBeaconCount = 0;
             _debugFormationObstacleCount = 0;
-            bool harvestObstacles = false;
-            Vector3 obstacleHarvestOrigin = Vector3.zero;
-
-            if (!TryAcquireSargassumWriteLock(
-                    in _formationBeaconsHandle,
-                    BufferID.SargassumFormationBeacons,
-                    formationBeaconCapacity,
-                    out NativeArray<FormationBeaconData> formationBeacons))
+            FormationBeaconData[] stagedBeacons = _formationBeaconStaging;
+            if (stagedBeacons == null)
                 return;
 
-            try
+            int formationBeaconLimit = math.min(formationBeaconCapacity, stagedBeacons.Length);
+            if (formationBeaconLimit <= 0 || !HasSargassumReadOnlyStorage(in _formationObstaclesHandle, BufferID.SargassumFormationObstacles, formationObstacleCapacity))
+                return;
+
+            if (!_deepModeActive)
+                return;
+
+            IBeaconNetworkService beaconNetwork = _beaconNetworkRuntime;
+            if (beaconNetwork == null || _formationBeaconSnapshots == null)
+                return;
+
+            int snapshotCount = beaconNetwork.CopySnapshots(_formationBeaconSnapshots);
+            snapshotCount = math.clamp(snapshotCount, 0, _formationBeaconSnapshots.Length);
+            if (snapshotCount <= 0)
+                return;
+
+            if (!RefreshPlayerRuntimePosition(out Vector3 origin))
+                return;
+
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return;
+
+            IAbyssalFlowGpuReadModel fluidRuntime = _fluidEngine;
+            double searchRadiusSq = (double)formationBeaconSearchRadius * formationBeaconSearchRadius;
+            int formationCount = 0;
+            for (int i = 0; i < snapshotCount && formationCount < formationBeaconLimit; i++)
             {
-                if (!TryReadOnlySargassumVaultArray(
-                        in _formationObstaclesHandle,
-                        BufferID.SargassumFormationObstacles,
-                        formationObstacleCapacity,
-                        out NativeArray<FormationObstacleData>.ReadOnly formationObstacles))
+                BeaconNetworkSnapshot snapshot = _formationBeaconSnapshots[i];
+                Vector3 beaconPosition = snapshot.Position;
+                if (!TryResolveAupFromRuntimeOrigin(beaconPosition, out AbsoluteUniversePosition beaconAup))
+                    continue;
+
+                if (AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup) > searchRadiusSq)
+                    continue;
+
+                float beaconRadius = math.clamp(snapshot.LightRange * 2.2f, 4f, formationBeaconSearchRadius * 0.35f);
+                Vector2 leaderFlowXZ = Vector2.zero;
+                if (fluidRuntime != null &&
+                    fluidRuntime.TrySampleModAbyssalFlow(beaconPosition, out float3 resolvedLeaderFlow))
                 {
-                    return;
+                    leaderFlowXZ = new Vector2(resolvedLeaderFlow.x, resolvedLeaderFlow.z);
                 }
 
-                int formationBeaconLimit = math.min(formationBeaconCapacity, formationBeacons.Length);
-                int formationObstacleLimit = math.min(formationObstacleCapacity, formationObstacles.Length);
-                if (formationBeaconLimit <= 0 || formationObstacleLimit <= 0)
-                    return;
-
-                if (!_deepModeActive)
-                    return;
-
-                IBeaconNetworkService beaconNetwork = _beaconNetworkRuntime;
-                if (beaconNetwork == null || _formationBeaconSnapshots == null)
-                    return;
-
-                int snapshotCount = beaconNetwork.CopySnapshots(_formationBeaconSnapshots);
-                snapshotCount = math.clamp(snapshotCount, 0, _formationBeaconSnapshots.Length);
-                if (snapshotCount <= 0)
-                    return;
-
-                if (!RefreshPlayerRuntimePosition(out Vector3 origin))
-                    return;
-
-                if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
-                    return;
-
-                IAbyssalFlowGpuReadModel fluidRuntime = _fluidEngine;
-                int formationCount = 0;
-                for (int i = 0; i < snapshotCount && formationCount < formationBeaconLimit; i++)
+                stagedBeacons[formationCount] = new FormationBeaconData
                 {
-                    BeaconNetworkSnapshot snapshot = _formationBeaconSnapshots[i];
-                    Vector3 beaconPosition = snapshot.Position;
-                    if (!TryResolveAupFromRuntimeOrigin(beaconPosition, out AbsoluteUniversePosition beaconAup))
-                        continue;
-
-                    if (AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup) > (double)formationBeaconSearchRadius * formationBeaconSearchRadius)
-                        continue;
-
-                    float beaconRadius = math.clamp(snapshot.LightRange * 2.2f, 4f, formationBeaconSearchRadius * 0.35f);
-                    Vector2 leaderFlowXZ = Vector2.zero;
-                    if (fluidRuntime != null &&
-                        fluidRuntime.TrySampleModAbyssalFlow(beaconPosition, out float3 resolvedLeaderFlow))
-                    {
-                        leaderFlowXZ = new Vector2(resolvedLeaderFlow.x, resolvedLeaderFlow.z);
-                    }
-
-                    formationBeacons[formationCount] = new FormationBeaconData
-                    {
-                        Position = beaconPosition,
-                        Radius = beaconRadius,
-                        Strength = 1f,
-                        Phase = HashToFloat01((uint)i, 0u, 0x55A1F13Du),
-                        Padding = leaderFlowXZ
-                    };
-                    formationCount++;
-                }
-
-                _debugFormationBeaconCount = formationCount;
-                UploadFormationBeacons();
-                if (formationCount <= 0)
-                    return;
-
-                obstacleHarvestOrigin = origin;
-                harvestObstacles = true;
-            }
-            finally
-            {
-                ReleaseSargassumWriteLock(in _formationBeaconsHandle);
+                    Position = beaconPosition,
+                    Radius = beaconRadius,
+                    Strength = 1f,
+                    Phase = HashToFloat01((uint)i, 0u, 0x55A1F13Du),
+                    Padding = leaderFlowXZ
+                };
+                formationCount++;
             }
 
-            if (harvestObstacles)
-            {
-                RefreshStaticObstacleCache();
-                HarvestFormationObstacles(obstacleHarvestOrigin);
-            }
+            if (!PublishFormationBeacons(stagedBeacons, formationCount))
+                return;
+
+            UploadFormationBeacons();
+            if (formationCount <= 0)
+                return;
+
+            RefreshStaticObstacleCache();
+            HarvestFormationObstacles(origin);
         }
 
         private void RefreshStaticObstacleCache()
         {
             _staticObstacleCacheCount = 0;
+            StaticObstacleData[] stagedObstacles = _staticObstacleCacheStaging;
+            if (stagedObstacles == null)
+                return;
+
+            int staticObstacleCapacity = math.max(formationObstacleCapacity * 8, formationObstacleCapacity);
+            int staticObstacleLimit = math.min(staticObstacleCapacity, stagedObstacles.Length);
+            if (staticObstacleLimit <= 0 || _mapMagicVegetationBridge == null)
+                return;
+
+            if (!_mapMagicVegetationBridge.TryGetActiveUnderwaterNativePayload(
+                    out NativeArray<Matrix4x4> matrices,
+                    out NativeArray<HectonVegetationInstanceData> metadata,
+                    out _,
+                    out int count) ||
+                !_mapMagicVegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int>.ReadOnly semanticTypes, out _, out _))
+            {
+                return;
+            }
+
+            int safeCount = math.min(count, math.min(matrices.Length, math.min(metadata.Length, semanticTypes.Length)));
+            int stagedCount = 0;
+            for (int i = 0; i < safeCount && stagedCount < staticObstacleLimit; i++)
+            {
+                HectonMapMagicVegetationBridge.VegetationSemanticType semanticType =
+                    (HectonMapMagicVegetationBridge.VegetationSemanticType)semanticTypes[i];
+                if (!IsStaticFormationObstacleSemantic(semanticType))
+                    continue;
+
+                Matrix4x4 matrix = matrices[i];
+                Vector3 axisX = matrix.GetColumn(0);
+                Vector3 axisY = matrix.GetColumn(1);
+                Vector3 axisZ = matrix.GetColumn(2);
+                Vector3 extents = new Vector3(
+                    math.abs(axisX.x) + math.abs(axisX.y) + math.abs(axisX.z),
+                    math.abs(axisY.x) + math.abs(axisY.y) + math.abs(axisY.z),
+                    math.abs(axisZ.x) + math.abs(axisZ.y) + math.abs(axisZ.z));
+                float radius = math.max(extents.x, math.max(extents.y, extents.z));
+                if (radius <= 0.1f)
+                    continue;
+
+                stagedObstacles[stagedCount] = new StaticObstacleData(
+                    new float3(matrix.m03, matrix.m13, matrix.m23),
+                    new float3(extents.x, extents.y, extents.z),
+                    radius);
+                stagedCount++;
+            }
+
+            PublishStaticObstacleCache(stagedObstacles, stagedCount);
+        }
+
+        private bool PublishStaticObstacleCache(StaticObstacleData[] stagedObstacles, int stagedCount)
+        {
+            int staticObstacleCapacity = math.max(formationObstacleCapacity * 8, formationObstacleCapacity);
             if (!TryAcquireSargassumWriteLock(
                     in _staticObstacleCacheHandle,
                     BufferID.SargassumStaticObstacleCache,
-                    math.max(formationObstacleCapacity * 8, formationObstacleCapacity),
+                    staticObstacleCapacity,
                     out NativeArray<StaticObstacleData> staticObstacleCache))
-                return;
+                return false;
 
             try
             {
-                if (_mapMagicVegetationBridge == null)
-                    return;
-
-                if (!_mapMagicVegetationBridge.TryGetActiveUnderwaterNativePayload(
-                        out NativeArray<Matrix4x4> matrices,
-                        out NativeArray<HectonVegetationInstanceData> metadata,
-                        out _,
-                        out int count) ||
-                    !_mapMagicVegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int>.ReadOnly semanticTypes, out _, out _))
+                int safeCount = math.clamp(stagedCount, 0, math.min(staticObstacleCache.Length, stagedObstacles.Length));
+                for (int i = 0; i < safeCount; i++)
                 {
-                    return;
+                    staticObstacleCache[i] = stagedObstacles[i];
                 }
 
-                int safeCount = math.min(count, math.min(matrices.Length, math.min(metadata.Length, semanticTypes.Length)));
-                for (int i = 0; i < safeCount && _staticObstacleCacheCount < staticObstacleCache.Length; i++)
-                {
-                    HectonMapMagicVegetationBridge.VegetationSemanticType semanticType =
-                        (HectonMapMagicVegetationBridge.VegetationSemanticType)semanticTypes[i];
-                    if (!IsStaticFormationObstacleSemantic(semanticType))
-                        continue;
-
-                    Matrix4x4 matrix = matrices[i];
-                    Vector3 axisX = matrix.GetColumn(0);
-                    Vector3 axisY = matrix.GetColumn(1);
-                    Vector3 axisZ = matrix.GetColumn(2);
-                    Vector3 extents = new Vector3(
-                        math.abs(axisX.x) + math.abs(axisX.y) + math.abs(axisX.z),
-                        math.abs(axisY.x) + math.abs(axisY.y) + math.abs(axisY.z),
-                        math.abs(axisZ.x) + math.abs(axisZ.y) + math.abs(axisZ.z));
-                    float radius = math.max(extents.x, math.max(extents.y, extents.z));
-                    if (radius <= 0.1f)
-                        continue;
-
-                    staticObstacleCache[_staticObstacleCacheCount] = new StaticObstacleData(
-                        new float3(matrix.m03, matrix.m13, matrix.m23),
-                        new float3(extents.x, extents.y, extents.z),
-                        radius);
-                    _staticObstacleCacheCount++;
-                }
+                _staticObstacleCacheCount = safeCount;
+                return true;
             }
             finally
             {
@@ -4111,48 +4127,92 @@ namespace Hecton8.World
                     out NativeArray<StaticObstacleData>.ReadOnly staticObstacleCache))
                 return;
 
+            FormationObstacleData[] stagedObstacles = _formationObstacleStaging;
+            if (stagedObstacles == null)
+                return;
+
+            int formationObstacleLimit = math.min(formationObstacleCapacity, stagedObstacles.Length);
+            if (formationObstacleLimit <= 0)
+                return;
+
+            int obstacleCount = 0;
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return;
+
+            int staticObstacleCount = math.min(_staticObstacleCacheCount, staticObstacleCache.Length);
+            for (int i = 0; i < staticObstacleCount && obstacleCount < formationObstacleLimit; i++)
+            {
+                StaticObstacleData obstacle = staticObstacleCache[i];
+                float radius = math.max(0.1f, obstacle.Radius);
+                float maxDistance = formationObstacleSearchRadius + radius;
+                Vector3 obstaclePosition = new Vector3(obstacle.Center.x, obstacle.Center.y, obstacle.Center.z);
+                if (!TryResolveAupFromRuntimeOrigin(obstaclePosition, out AbsoluteUniversePosition obstacleAup))
+                    continue;
+
+                if (AbsoluteUniversePosition.DistanceSq(in obstacleAup, in originAup) > (double)maxDistance * maxDistance)
+                    continue;
+
+                stagedObstacles[obstacleCount] = new FormationObstacleData
+                {
+                    Position = obstaclePosition,
+                    Radius = radius,
+                    Weight = 1f,
+                    Padding = Vector3.zero
+                };
+                obstacleCount++;
+            }
+
+            if (PublishFormationObstacles(stagedObstacles, obstacleCount))
+            {
+                UploadFormationObstacles();
+            }
+        }
+
+        private bool PublishFormationBeacons(FormationBeaconData[] stagedBeacons, int stagedCount)
+        {
+            if (!TryAcquireSargassumWriteLock(
+                    in _formationBeaconsHandle,
+                    BufferID.SargassumFormationBeacons,
+                    formationBeaconCapacity,
+                    out NativeArray<FormationBeaconData> formationBeacons))
+                return false;
+
+            try
+            {
+                int safeCount = math.clamp(stagedCount, 0, math.min(formationBeaconCapacity, math.min(formationBeacons.Length, stagedBeacons.Length)));
+                for (int i = 0; i < safeCount; i++)
+                {
+                    formationBeacons[i] = stagedBeacons[i];
+                }
+
+                _debugFormationBeaconCount = safeCount;
+                return true;
+            }
+            finally
+            {
+                ReleaseSargassumWriteLock(in _formationBeaconsHandle);
+            }
+        }
+
+        private bool PublishFormationObstacles(FormationObstacleData[] stagedObstacles, int stagedCount)
+        {
             if (!TryAcquireSargassumWriteLock(
                     in _formationObstaclesHandle,
                     BufferID.SargassumFormationObstacles,
                     formationObstacleCapacity,
                     out NativeArray<FormationObstacleData> formationObstacles))
-                return;
+                return false;
 
             try
             {
-                int formationObstacleLimit = math.min(formationObstacleCapacity, formationObstacles.Length);
-                if (formationObstacleLimit <= 0)
-                    return;
-
-                int obstacleCount = 0;
-                if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
-                    return;
-
-                int staticObstacleCount = math.min(_staticObstacleCacheCount, staticObstacleCache.Length);
-                for (int i = 0; i < staticObstacleCount && obstacleCount < formationObstacleLimit; i++)
+                int safeCount = math.clamp(stagedCount, 0, math.min(formationObstacleCapacity, math.min(formationObstacles.Length, stagedObstacles.Length)));
+                for (int i = 0; i < safeCount; i++)
                 {
-                    StaticObstacleData obstacle = staticObstacleCache[i];
-                    float radius = math.max(0.1f, obstacle.Radius);
-                    float maxDistance = formationObstacleSearchRadius + radius;
-                    Vector3 obstaclePosition = new Vector3(obstacle.Center.x, obstacle.Center.y, obstacle.Center.z);
-                    if (!TryResolveAupFromRuntimeOrigin(obstaclePosition, out AbsoluteUniversePosition obstacleAup))
-                        continue;
-
-                    if (AbsoluteUniversePosition.DistanceSq(in obstacleAup, in originAup) > (double)maxDistance * maxDistance)
-                        continue;
-
-                    formationObstacles[obstacleCount] = new FormationObstacleData
-                    {
-                        Position = obstaclePosition,
-                        Radius = radius,
-                        Weight = 1f,
-                        Padding = Vector3.zero
-                    };
-                    obstacleCount++;
+                    formationObstacles[i] = stagedObstacles[i];
                 }
 
-                _debugFormationObstacleCount = obstacleCount;
-                UploadFormationObstacles();
+                _debugFormationObstacleCount = safeCount;
+                return true;
             }
             finally
             {
@@ -5030,14 +5090,7 @@ namespace Hecton8.World
             if (_fallbackAbyssalFlowTexture != null)
                 return;
 
-            _fallbackAbyssalFlowTexture = new Texture3D(1, 1, 1, TextureFormat.RGBAHalf, false)
-            {
-                name = "__HectonSargassumEmptyAbyssalFlow",
-                hideFlags = HideFlags.HideAndDontSave,
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Point,
-                anisoLevel = 0
-            }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for swarm compute binding - owner: SargassumMicroFaunaBoids
+            _fallbackAbyssalFlowTexture = neutralAbyssalFlowTexture;
         }
 
         private static int ResolvePredatorAupThreatLoopCap(int predatorAupCount, float hibernation01)
@@ -5517,7 +5570,8 @@ namespace Hecton8.World
                     out Texture publishedAbyssalFlowTexture,
                     out _,
                     out Vector4 publishedAbyssalFlowCenter,
-                    out Vector4 publishedAbyssalFlowSpacing))
+                    out Vector4 publishedAbyssalFlowSpacing) &&
+                publishedAbyssalFlowTexture != null)
             {
                 abyssalFlowTexture = publishedAbyssalFlowTexture;
                 abyssalFlowCenter = publishedAbyssalFlowCenter;
@@ -7567,6 +7621,7 @@ namespace Hecton8.World
         {
             if (!enableParasiteLatchGpuReadback ||
                 _parasiteLatchReadbackPending ||
+                _parasiteLatchReadbackDisposeAfterCompletion ||
                 _latchStatsBuffer == null ||
                 _parasiteLatchReadbackTimer > 0f)
             {
@@ -7584,15 +7639,48 @@ namespace Hecton8.World
                 _latchStatsBuffer,
                 LatchStatsReadbackByteCount,
                 0,
-                null);
+                ResolveParasiteLatchReadbackCompletion());
             _parasiteLatchReadbackPending = !_parasiteLatchReadbackRequest.hasError;
             _parasiteLatchReadbackTimer = ResolveLatchStatsReadbackInterval(hibernation01);
             if (!_parasiteLatchReadbackPending)
                 _parasiteLatchReadbackRequest = default;
         }
 
+        private Action<AsyncGPUReadbackRequest> ResolveParasiteLatchReadbackCompletion()
+        {
+            if (_parasiteLatchReadbackCompletion == null)
+                _parasiteLatchReadbackCompletion = OnParasiteLatchReadbackComplete;
+
+            return _parasiteLatchReadbackCompletion;
+        }
+
+        private void OnParasiteLatchReadbackComplete(AsyncGPUReadbackRequest request)
+        {
+            if (!_parasiteLatchReadbackDisposeAfterCompletion)
+                return;
+
+            _parasiteLatchReadbackPending = false;
+            _parasiteLatchReadbackRequest = default;
+            _parasiteLatchReadbackDisposeAfterCompletion = false;
+            bool releaseStatsBuffer = _parasiteLatchReleaseStatsBufferAfterCompletion;
+            _parasiteLatchReleaseStatsBufferAfterCompletion = false;
+            ReleaseParasiteLatchReadbackNativeData();
+            if (releaseStatsBuffer)
+            {
+                ReleaseBuffer(ref _parasiteLatchHeldStatsBuffer);
+                _latchStatsBufferRawTarget = false;
+            }
+            else
+            {
+                _parasiteLatchHeldStatsBuffer = null;
+            }
+        }
+
         private bool EnsureParasiteLatchReadbackData()
         {
+            if (_parasiteLatchReadbackDisposeAfterCompletion)
+                return false;
+
             if (HasParasiteLatchReadbackData())
                 return true;
 
@@ -7622,6 +7710,9 @@ namespace Hecton8.World
 
         private void FlushParasiteLatchReadbackRepairSlow()
         {
+            if (_parasiteLatchReadbackDisposeAfterCompletion)
+                return;
+
             if (!enableParasiteLatchGpuReadback)
             {
                 _parasiteLatchReadbackRepairRequested = false;
@@ -7640,6 +7731,14 @@ namespace Hecton8.World
         private void DisposeParasiteLatchReadbackData()
         {
             _parasiteLatchReadbackRepairRequested = false;
+            if (_parasiteLatchReadbackDisposeAfterCompletion)
+                return;
+
+            ReleaseParasiteLatchReadbackNativeData();
+        }
+
+        private void ReleaseParasiteLatchReadbackNativeData()
+        {
             if (_parasiteLatchReadback.Data.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_parasiteLatchReadback.Data);
@@ -8328,7 +8427,7 @@ namespace Hecton8.World
             return true;
         }
 
-        private void BindBoidRenderProperties(Material renderMaterial, GraphicsBuffer currentBuffer, bool vatEnabled)
+        private void BindBoidMaterialProperties(Material renderMaterial, GraphicsBuffer currentBuffer, bool vatEnabled)
         {
             float parasiteMode = _parasiteModeActive ? 1f : 0f;
             float parasiteAggression = _debugParasiteAggression01;
@@ -8372,12 +8471,12 @@ namespace Hecton8.World
         private void RenderCurrentBuffer()
         {
             GraphicsBuffer currentBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
-            Material renderMaterial = _boidRuntimeMaterial;
+            Material renderMaterial = boidMaterial;
             if (_activeBoidCount <= 0 ||
                 currentBuffer == null ||
                 boidMesh == null ||
                 renderMaterial == null ||
-                !ReferenceEquals(_boidRuntimeMaterialSource, boidMaterial))
+                !EnsureBoidMaterialBindingReady())
             {
                 return;
             }
@@ -8385,7 +8484,7 @@ namespace Hecton8.World
             bool vatEnabled = boidVatPositionTexture != null &&
                               boidVatNormalTexture != null &&
                               boidVatFrameCount > 1;
-            BindBoidRenderProperties(renderMaterial, currentBuffer, vatEnabled);
+            BindBoidMaterialProperties(renderMaterial, currentBuffer, vatEnabled);
 
             if (!UploadBoidIndirectArgs(boidMesh, _activeBoidCount))
                 return;
@@ -8498,7 +8597,7 @@ namespace Hecton8.World
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
-        private void ReleaseBuffers()
+        private void ReleaseBuffers(bool keepLatchStatsBuffer = false)
         {
             ReleaseBuffer(ref _boidsBufferA);
             ReleaseBuffer(ref _boidsBufferB);
@@ -8508,7 +8607,16 @@ namespace Hecton8.World
             ReleaseBuffer(ref _formationBeaconBuffer);
             ReleaseBuffer(ref _formationObstacleBuffer);
             ReleaseBuffer(ref _leviathanNodeBuffer);
-            ReleaseBuffer(ref _latchStatsBuffer);
+            if (!keepLatchStatsBuffer)
+            {
+                ReleaseBuffer(ref _latchStatsBuffer);
+                _parasiteLatchHeldStatsBuffer = null;
+            }
+            else
+            {
+                _latchStatsBuffer = null;
+            }
+
             ReleaseBuffer(ref _pbdCorrectionBuffer);
             ReleaseBuffer(ref _threatGridBuffer);
             _threatGridUploadSnapshot = null;
@@ -8528,7 +8636,6 @@ namespace Hecton8.World
             _boidIndirectArgsInstanceCount = -1;
             if (_fallbackAbyssalFlowTexture != null)
             {
-                Destroy(_fallbackAbyssalFlowTexture);
                 _fallbackAbyssalFlowTexture = null;
                 _boundAbyssalFlowTexture = null;
             }
@@ -8538,18 +8645,28 @@ namespace Hecton8.World
         {
             CompletePendingPredatorConsumption(forceComplete: true);
             JobHandle disposeDependency = CancelPendingLeviathanNodeBuildForDispose();
+            bool keepLatchStatsBuffer = _parasiteLatchReadbackDisposeAfterCompletion &&
+                                        _parasiteLatchReleaseStatsBufferAfterCompletion;
             if (_parasiteLatchReadbackPending)
             {
-                if (!_parasiteLatchReadbackRequest.done)
-                    _parasiteLatchReadbackRequest.WaitForCompletion();
-
-                _parasiteLatchReadbackPending = false;
-                _parasiteLatchReadbackRequest = default;
+                if (_parasiteLatchReadbackRequest.done)
+                {
+                    _parasiteLatchReadbackPending = false;
+                    _parasiteLatchReadbackRequest = default;
+                }
+                else
+                {
+                    _parasiteLatchReadbackDisposeAfterCompletion = true;
+                    _parasiteLatchReleaseStatsBufferAfterCompletion = _latchStatsBuffer != null;
+                    _parasiteLatchHeldStatsBuffer = _latchStatsBuffer;
+                    _parasiteLatchReadbackPending = false;
+                    keepLatchStatsBuffer = _parasiteLatchReleaseStatsBufferAfterCompletion;
+                }
             }
 
             _parasiteLatchReadbackTimer = 0f;
             DisposeParasiteLatchReadbackData();
-            ReleaseBuffers();
+            ReleaseBuffers(keepLatchStatsBuffer);
             ResetComputeKernelBindings();
             _boundBoidCompute = null;
             ResetThreatGridSnapshot();

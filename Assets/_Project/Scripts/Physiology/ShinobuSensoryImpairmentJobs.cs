@@ -386,8 +386,8 @@ namespace Hecton8.Physiology
                 HypoxiaVignette01 = impairment.HypoxiaVignette01,
                 NarcosisDrift01 = impairment.NarcosisDrift01,
                 InputLatencyMilliseconds = impairment.InputLatencyMilliseconds,
-                MoveDriftMagnitude = math.length(move),
-                LookDriftMagnitude = math.length(look),
+                MoveDriftMagnitude = ShinobuSensoryImpairmentJobMath.FastLengthFromSq(math.lengthsq(move)),
+                LookDriftMagnitude = ShinobuSensoryImpairmentJobMath.FastLengthFromSq(math.lengthsq(look)),
                 GlobalQualityWeight = math.saturate(GlobalQualityWeight),
                 RingCursor = (uint)telemetryIndex
             };

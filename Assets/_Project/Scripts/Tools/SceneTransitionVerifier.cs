@@ -16,7 +16,6 @@ namespace Hecton8.Tools
     public sealed class SceneTransitionVerifier : MonoBehaviour
     {
         private const string MainMenuSceneName = "01_MAIN_MENU";
-        private const string OrbitSceneName = "01_ORBIT";
         private const string WorldSceneName = "02_HECTON_WORLD";
 
         [Header("Verification Settings")]
@@ -60,9 +59,9 @@ namespace Hecton8.Tools
 
             _ = VerifyTransitionAsync(
                 "New Game",
-                () => string.Equals(SceneManager.GetActiveScene().name, OrbitSceneName, System.StringComparison.Ordinal),
+                () => string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal),
                 VerifyNewGameContext,
-                "GameStartContext.StartMode should be NewGame and prologue route should be active",
+                "GameStartContext.StartMode should be NewGame and world route should be active",
                 destroyCancellationToken);
         }
 

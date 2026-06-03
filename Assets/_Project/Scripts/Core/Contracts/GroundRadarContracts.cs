@@ -635,6 +635,11 @@ namespace Hecton8.World
         /// Marks a sparse ore scan index as depleted, emits owner-local depletion side effects, and returns primitive data for interaction/VFX consumers.
         /// </summary>
         bool TryMarkOreDepleted(int oreIndex, out uint oreHash, out uint itemHash, out float3 depletedPosition);
+
+        /// <summary>
+        /// Reports a completed scanner sweep to the unmanaged player ecosystem telemetry row.
+        /// </summary>
+        void ReportScannerSweepResult(int detectedOreCount, float sweptDistanceMeters, uint frame);
     }
 
     /// <summary>

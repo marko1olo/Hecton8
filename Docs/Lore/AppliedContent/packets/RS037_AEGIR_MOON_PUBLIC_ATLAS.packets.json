@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P181_MOON_NAME_LOCK_POLICY",
+      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+      "article_id": "aegir_moons.moon_name_lock_policy",
+      "title_key": "applied_lore.moon_name_lock_policy.title",
+      "unlock": {
+        "primary": "unlock.moon_name_lock_policy",
+        "poi_tags": [
+          "poi.moon_atlas_name_plate",
+          "poi.route_catalog_stamp",
+          "poi.insurance_ephemeris_note"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Moon labels can change; orbital roles cannot.",
+          "field_note": "Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "ru_RU": {
+          "title": "Правило фиксации имен лун",
+          "scanner": "Названия лун можно заменить, но их орбитальные роли нельзя.",
+          "field_note": "Роли Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute должны оставаться стабильными, даже если публичные имена заменят.",
+          "terminal": "ATLAS NOTE: имена лун - публикационные ярлыки. Опасности маршрута, реле, приливы, ледяное рассеяние, salvage и quarantine - канонические функции маршрута.",
+          "audio": "Имя можно перекрасить. Орбита все равно выставит счет.",
+          "in_game_wiki": "Список лун можно переименовать лучше, но лестница ролей зафиксирована для геймплея и маршрутной логики.",
+          "external_site": "Правило фиксации имен лун объясняет, почему ярлыки лун Aegir изменяемы, а их маршрутные функции фиксированы."
+        },
+        "ja_JP": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft JP localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft JP localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft JP localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft JP localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft JP localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft JP localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "zh_CN": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft CN localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft CN localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft CN localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft CN localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft CN localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft CN localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "fr_FR": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft FR localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft FR localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft FR localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft FR localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft FR localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft FR localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "es_ES": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft ES localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft ES localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft ES localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft ES localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft ES localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft ES localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "de_DE": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft DE localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft DE localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft DE localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft DE localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft DE localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft DE localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "pl_PL": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft PL localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft PL localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft PL localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft PL localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft PL localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft PL localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "uk_UA": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft UA localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft UA localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft UA localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft UA localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft UA localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft UA localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "ar_SA": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft AR localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft AR localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft AR localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft AR localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft AR localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft AR localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "id_ID": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft ID localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft ID localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft ID localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft ID localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft ID localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft ID localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "ko_KR": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft KO localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft KO localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft KO localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft KO localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft KO localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft KO localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "he_IL": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft HE localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft HE localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft HE localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft HE localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft HE localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft HE localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "pt_BR": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft PT localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft PT localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft PT localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft PT localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft PT localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft PT localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        },
+        "nl_NL": {
+          "title": "Moon Name Lock Policy",
+          "scanner": "Draft NL localization pending native pass. Moon labels can change; orbital roles cannot.",
+          "field_note": "Draft NL localization pending native pass. Keep Skarn/Vela/Claw/Lumen/Thorne/Anvil/Kestrel/HECTON/Mute roles stable even if public names are replaced.",
+          "terminal": "Draft NL localization pending native pass. ATLAS NOTE: moon names are publication labels. Route hazard, relay, tide, ice-scatter, salvage and quarantine roles are canonical route functions.",
+          "audio": "Draft NL localization pending native pass. A name can be repainted. An orbit keeps the bill.",
+          "in_game_wiki": "Draft NL localization pending native pass. The moon roster is allowed to receive better names later, but the role ladder is locked for gameplay and route logic.",
+          "external_site": "Draft NL localization pending native pass. Moon Name Lock Policy explains why Aegir moon labels are adjustable while their route functions remain fixed."
+        }
+      }
+    },
+    {
+      "packet_id": "P182_HECTON8_ORBITAL_HAZARD_TABLE",
+      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+      "article_id": "aegir_moons.hecton8_orbital_hazard_table",
+      "title_key": "applied_lore.hecton8_orbital_hazard_table.title",
+      "unlock": {
+        "primary": "unlock.hecton8_orbital_hazard_table",
+        "poi_tags": [
+          "poi.eclipse_window_chart",
+          "poi.radiation_shutter_clock",
+          "poi.ice_scatter_warning"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.upper_atmosphere"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "ru_RU": {
+          "title": "Таблица орбитальных опасностей HECTON-8",
+          "scanner": "Эвакуация с HECTON-8 ограничена окнами затмения, радиации, релейного затвора и ледяного рассеяния.",
+          "field_note": "Это не удобная задержка спасения; это физическое расписание, из-за которого инженерия побега важна.",
+          "terminal": "ORBITAL HAZARD TABLE: blackout затмения, всплеск заряженных частиц Aegir, релейный затвор луны, рассеяние ледяных зерен, штормовой plume и guidance-lag должны быть решены до ascent.",
+          "audio": "Небо не пустое. Это машина с плохим таймингом.",
+          "in_game_wiki": "Орбитальные опасности объясняют, почему починенная капсула все равно требует реле, guidance, shielding и legal-window работы.",
+          "external_site": "Таблица орбитальных опасностей HECTON-8 превращает орбитальную механику в давление extraction."
+        },
+        "ja_JP": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft JP localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft JP localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft JP localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft JP localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft JP localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft JP localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "zh_CN": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft CN localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft CN localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft CN localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft CN localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft CN localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft CN localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "fr_FR": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft FR localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft FR localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft FR localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft FR localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft FR localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "es_ES": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft ES localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft ES localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft ES localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft ES localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft ES localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "de_DE": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft DE localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft DE localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft DE localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft DE localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft DE localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "pl_PL": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft PL localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft PL localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft PL localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft PL localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft PL localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "uk_UA": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft UA localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft UA localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft UA localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft UA localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft UA localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft UA localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "ar_SA": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft AR localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft AR localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft AR localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft AR localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft AR localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "id_ID": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft ID localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft ID localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft ID localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft ID localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft ID localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "ko_KR": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft KO localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft KO localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft KO localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft KO localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft KO localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "he_IL": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft HE localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft HE localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft HE localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft HE localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft HE localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "pt_BR": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft PT localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft PT localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft PT localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft PT localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft PT localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        },
+        "nl_NL": {
+          "title": "HECTON-8 Orbital Hazard Table",
+          "scanner": "Draft NL localization pending native pass. HECTON-8 extraction is limited by eclipse, radiation, relay shutter and ice-scatter windows.",
+          "field_note": "Draft NL localization pending native pass. This is not a convenient rescue delay; it is the physical timetable that makes escape engineering matter.",
+          "terminal": "Draft NL localization pending native pass. ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be solved before ascent.",
+          "audio": "Draft NL localization pending native pass. The sky is not empty. It is a machine with bad timing.",
+          "in_game_wiki": "Draft NL localization pending native pass. Orbital hazards explain why a repaired capsule still needs relay, guidance, shielding and legal-window work.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 Orbital Hazard Table turns orbital mechanics into extraction pressure."
+        }
+      }
+    },
+    {
+      "packet_id": "P183_AEGIR_MOON_LEDGER_ROLE_TABLE",
+      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+      "article_id": "aegir_moons.aegir_moon_ledger_role_table",
+      "title_key": "applied_lore.aegir_moon_ledger_role_table.title",
+      "unlock": {
+        "primary": "unlock.aegir_moon_ledger_role_table",
+        "poi_tags": [
+          "poi.moon_role_ledger",
+          "poi.relay_lane_card",
+          "poi.salvage_moon_stamp"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Таблица ролей лун Aegir",
+          "scanner": "Луны Aegir не декор; каждый публичный ярлык несет роль маршрута или salvage.",
+          "field_note": "Другие луны нужны, чтобы HECTON-8 ощущался частью рабочей системы, а не изолированной fantasy-географией.",
+          "terminal": "LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "В системе больше тел, чем историй. Хорошо. Используй их как давление.",
+          "in_game_wiki": "Реестр лун Aegir дает другим лунам жесткие функции, оставляя HECTON-8 игровой луной.",
+          "external_site": "Таблица ролей лун Aegir кратко описывает лунную лестницу вокруг HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft JP localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft JP localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft JP localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft JP localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft JP localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft JP localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft CN localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft CN localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft CN localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft CN localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft CN localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft CN localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft FR localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft FR localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft FR localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft FR localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft FR localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "es_ES": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft ES localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft ES localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft ES localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft ES localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft ES localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "de_DE": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft DE localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft DE localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft DE localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft DE localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft DE localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft PL localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft PL localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft PL localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft PL localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft PL localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft UA localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft UA localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft UA localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft UA localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft UA localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft UA localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft AR localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft AR localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft AR localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft AR localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft AR localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "id_ID": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft ID localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft ID localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft ID localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft ID localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft ID localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft KO localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft KO localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft KO localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft KO localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft KO localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "he_IL": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft HE localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft HE localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft HE localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft HE localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft HE localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft PT localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft PT localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft PT localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft PT localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft PT localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft PT localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Aegir Moon Ledger Role Table",
+          "scanner": "Draft NL localization pending native pass. Aegir moons are not decoration; each public moon label carries a route or salvage role.",
+          "field_note": "Draft NL localization pending native pass. Use other moons to make HECTON-8 feel embedded in a working system, not isolated fantasy geography.",
+          "terminal": "Draft NL localization pending native pass. LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumors, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+          "audio": "Draft NL localization pending native pass. The system has more bodies than stories. Good. Use them as pressure.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Aegir moon ledger gives other moons hard functions while keeping HECTON-8 as the playable moon.",
+          "external_site": "Draft NL localization pending native pass. Aegir Moon Ledger Role Table summarizes the moon ladder around HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE",
+      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+      "article_id": "aegir_moons.ran_aegir_ephemeris_tuning_rule",
+      "title_key": "applied_lore.ran_aegir_ephemeris_tuning_rule.title",
+      "unlock": {
+        "primary": "unlock.ran_aegir_ephemeris_tuning_rule",
+        "poi_tags": [
+          "poi.ephemeris_tuning_sheet",
+          "poi.route_band_calculator",
+          "poi.window_solver_plate"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "ru_RU": {
+          "title": "Правило настройки ephemeris Ran/Aegir",
+          "scanner": "Точные ephemeris числа - работа таблиц; текущий лор фиксирует route bands и причины опасностей.",
+          "field_note": "Не придумывать точные периоды в прозе. Использовать bands, пока celestial table не станет владельцем чисел.",
+          "terminal": "EPHEMERIS RULE: публикационный текст может называть window band, hazard class и связь с Aegir. Точные orbital periods, inclinations и resonance values принадлежат будущей celestial data table.",
+          "audio": "Диапазон честен, пока у чисел нет владельца.",
+          "in_game_wiki": "Настройка ephemeris сохраняет hard-sci-fi вкус без фиксации непроверенных astronomy values в прозе.",
+          "external_site": "Правило настройки ephemeris Ran/Aegir отделяет стабильные lore bands от будущих numeric celestial tables."
+        },
+        "ja_JP": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft JP localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft JP localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft JP localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft JP localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft JP localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft JP localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "zh_CN": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft CN localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft CN localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft CN localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft CN localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft CN localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft CN localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "fr_FR": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft FR localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft FR localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft FR localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft FR localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft FR localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft FR localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "es_ES": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft ES localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft ES localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft ES localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft ES localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft ES localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft ES localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "de_DE": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft DE localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft DE localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft DE localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft DE localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft DE localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft DE localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "pl_PL": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft PL localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft PL localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft PL localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft PL localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft PL localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "uk_UA": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft UA localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft UA localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft UA localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft UA localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft UA localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft UA localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "ar_SA": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft AR localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft AR localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft AR localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft AR localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft AR localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft AR localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "id_ID": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft ID localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft ID localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft ID localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft ID localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft ID localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft ID localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "ko_KR": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft KO localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft KO localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft KO localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft KO localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft KO localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft KO localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "he_IL": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft HE localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft HE localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft HE localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft HE localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft HE localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft HE localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "pt_BR": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft PT localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft PT localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft PT localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft PT localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft PT localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft PT localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        },
+        "nl_NL": {
+          "title": "Ran Aegir Ephemeris Tuning Rule",
+          "scanner": "Draft NL localization pending native pass. Exact ephemeris numbers are table work; current lore locks route bands and hazard causes.",
+          "field_note": "Draft NL localization pending native pass. Do not invent exact periods in prose. Use bands until the celestial table owns the numbers.",
+          "terminal": "Draft NL localization pending native pass. EPHEMERIS RULE: publication text may say window band, hazard class and relation to Aegir. Exact orbital periods, inclinations and resonance values belong to the future celestial data table.",
+          "audio": "Draft NL localization pending native pass. A band is honest until the numbers have an owner.",
+          "in_game_wiki": "Draft NL localization pending native pass. Ephemeris tuning keeps hard-sci-fi taste without freezing unproven astronomy values in prose.",
+          "external_site": "Draft NL localization pending native pass. Ran Aegir Ephemeris Tuning Rule separates stable lore bands from future numeric celestial tables."
+        }
+      }
+    },
+    {
+      "packet_id": "P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY",
+      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+      "article_id": "aegir_moons.moon_route_article_spoiler_boundary",
+      "title_key": "applied_lore.moon_route_article_spoiler_boundary.title",
+      "unlock": {
+        "primary": "unlock.moon_route_article_spoiler_boundary",
+        "poi_tags": [
+          "poi.public_moon_article_gate",
+          "poi.spoiler_boundary_stamp",
+          "poi.atlas_basin_redaction"
+        ],
+        "biome_tags": [
+          "biome.public_archive",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "ru_RU": {
+          "title": "Граница спойлеров для статей о лунных маршрутах",
+          "scanner": "Статьи о лунах могут объяснять опасности и роли маршрутов, но не последствия финального payload Atlas.",
+          "field_note": "Статьи про Aegir должны расширять мир, не решая последний акт за игрока.",
+          "terminal": "SPOILER RULE: публичные страницы лун могут раскрывать names, hazards, route windows, salvage economy и public disaster HECTON-8. Atlas-basin payload effects требуют spoiler gates.",
+          "audio": "Публикуй небо. Редактируй дно.",
+          "in_game_wiki": "Границы спойлеров для лунных маршрутов делают public atlas полезным без убийства discovery.",
+          "external_site": "Граница спойлеров для статей о лунных маршрутах задает безопасное покрытие Aegir moons для public wiki."
+        },
+        "ja_JP": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft JP localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft JP localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft JP localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft JP localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft JP localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft JP localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "zh_CN": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft CN localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft CN localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft CN localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft CN localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft CN localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft CN localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "fr_FR": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft FR localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft FR localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft FR localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft FR localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft FR localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft FR localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "es_ES": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft ES localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft ES localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft ES localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft ES localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft ES localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft ES localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "de_DE": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft DE localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft DE localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft DE localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft DE localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft DE localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft DE localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "pl_PL": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft PL localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft PL localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft PL localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft PL localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft PL localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft PL localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "uk_UA": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft UA localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft UA localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft UA localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft UA localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft UA localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft UA localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "ar_SA": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft AR localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft AR localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft AR localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft AR localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft AR localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft AR localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "id_ID": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft ID localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft ID localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft ID localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft ID localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft ID localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft ID localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "ko_KR": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft KO localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft KO localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft KO localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft KO localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft KO localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft KO localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "he_IL": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft HE localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft HE localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft HE localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft HE localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft HE localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft HE localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "pt_BR": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft PT localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft PT localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft PT localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft PT localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft PT localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft PT localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        },
+        "nl_NL": {
+          "title": "Moon Route Article Spoiler Boundary",
+          "scanner": "Draft NL localization pending native pass. Moon articles can explain hazards and route roles, not final Atlas payload consequences.",
+          "field_note": "Draft NL localization pending native pass. Aegir articles should make the setting feel large without solving the last act for the player.",
+          "terminal": "Draft NL localization pending native pass. SPOILER RULE: public moon pages may reveal names, hazards, route windows, salvage economy and HECTON-8 public disaster. Atlas-basin payload effects require spoiler gates.",
+          "audio": "Draft NL localization pending native pass. Publish the sky. Redact the bottom.",
+          "in_game_wiki": "Draft NL localization pending native pass. Moon-route spoiler boundaries keep public atlas material useful without destroying discovery.",
+          "external_site": "Draft NL localization pending native pass. Moon Route Article Spoiler Boundary defines safe public wiki coverage for Aegir moons."
+        }
+      }
+    }
+  ]
+}

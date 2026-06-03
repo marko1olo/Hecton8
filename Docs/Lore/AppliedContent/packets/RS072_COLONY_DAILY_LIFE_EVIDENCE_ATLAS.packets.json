@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P356_PRESSURE_BUNK_SHIFT_ROUTINE",
+      "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+      "article_id": "applied_lore.pressure_bunk_shift_routine",
+      "title_key": "applied_lore.pressure_bunk_shift_routine.title",
+      "unlock": {
+        "primary": "unlock.pressure_bunk_shift_routine",
+        "poi_tags": [
+          "poi.shift_bunk_slate",
+          "poi.pump_tone_schedule",
+          "poi.tool_custody_tag"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.safe_module"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Bunk Shift Routine",
+          "scanner": "Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Use for human evidence props in early safe modules."
+        },
+        "ru_RU": {
+          "title": "Pressure bunk shift routine",
+          "scanner": "Shift bunk slate. Рабочие спали по pressure schedule, не по комфорту day/night.",
+          "terminal": "BUNK RULE: pump tone, suit check, pressure note, meal token, tool custody, descent assignment. Колония человеческая потому, что повторялась.",
+          "audio": "Тут не написано герой. Тут написано tired, trained, and due back in six hours.",
+          "in_game_wiki": "Колония должна быть про рабочих, а не родню игрока. Shift routines дают боль без family-revenge archetype.",
+          "external_site": "История HECTON-8 - это labor history: bunks, shifts, water, tools, debt and pressure.",
+          "field_note": "Для human evidence props в early safe modules."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft JA localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft JA localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft JA localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft JA localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft JA localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft ZH localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft ZH localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft ZH localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft ZH localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft FR localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft FR localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft FR localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft FR localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft FR localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft ES localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft ES localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft ES localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft ES localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft ES localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft DE localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft DE localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft DE localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft DE localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft DE localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft PL localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft PL localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft PL localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft PL localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft PL localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft UK localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft UK localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft UK localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft UK localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft UK localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft AR localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft AR localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft AR localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft AR localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft AR localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft ID localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft ID localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft ID localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft ID localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft ID localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft KO localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft KO localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft KO localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft KO localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft KO localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft HE localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft HE localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft HE localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft HE localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft HE localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft PT localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft PT localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft PT localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft PT localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft PT localization pending native pass. Use for human evidence props in early safe modules."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Pressure Bunk Shift Routine",
+          "scanner": "Draft NL localization pending native pass. Shift bunk slate. Workers slept by pressure schedule, not by day/night comfort.",
+          "terminal": "Draft NL localization pending native pass. BUNK RULE: wake by pump tone, suit check, pressure note, meal token, tool custody, descent assignment. The colony was human because it was repetitive.",
+          "audio": "Draft NL localization pending native pass. Nothing in here says hero. It says tired, trained, and due back in six hours.",
+          "in_game_wiki": "Draft NL localization pending native pass. The colony should feel populated by workers, not plot relatives. Shift routines make the loss concrete without turning the player into a family-revenge archetype.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 treats colony history as labor history: bunks, shifts, water, tools, debt and routine under impossible pressure.",
+          "field_note": "Draft NL localization pending native pass. Use for human evidence props in early safe modules."
+        }
+      }
+    },
+    {
+      "packet_id": "P357_CANTEEN_WATER_LEDGER",
+      "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+      "article_id": "applied_lore.canteen_water_ledger",
+      "title_key": "applied_lore.canteen_water_ledger.title",
+      "unlock": {
+        "primary": "unlock.canteen_water_ledger",
+        "poi_tags": [
+          "poi.canteen_water_ledger",
+          "poi.meal_token_board",
+          "poi.pump_room_correction_note"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.safe_module"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Canteen Water Ledger",
+          "scanner": "Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "ru_RU": {
+          "title": "Canteen water ledger",
+          "scanner": "Water ledger recovered. Колония считала drinkable water как labor infrastructure.",
+          "terminal": "CANTEEN LEDGER: шесть missing tokens, два medical overrides, одна pump-room correction. Обычные числа - evidence.",
+          "audio": "Катастрофа верится лучше, когда последний спор был о water tokens.",
+          "in_game_wiki": "Canteen ledger делает жизнь колонии материальной: water, tokens, pump access, medical overrides and accountability.",
+          "external_site": "Human layer HECTON-8 строится на mundane systems under pressure: ledgers, tokens and shifts.",
+          "field_note": "Для early/mid colony props."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft JA localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft JA localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft JA localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft JA localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft JA localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft JA localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft ZH localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft ZH localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft ZH localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft ZH localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft ZH localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft FR localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft FR localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft FR localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft FR localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft FR localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft FR localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft ES localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft ES localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft ES localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft ES localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft ES localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft ES localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft DE localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft DE localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft DE localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft DE localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft DE localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft DE localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft PL localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft PL localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft PL localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft PL localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft PL localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft PL localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft UK localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft UK localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft UK localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft UK localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft UK localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft UK localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft AR localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft AR localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft AR localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft AR localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft AR localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft AR localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft ID localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft ID localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft ID localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft ID localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft ID localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft ID localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft KO localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft KO localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft KO localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft KO localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft KO localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft KO localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft HE localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft HE localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft HE localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft HE localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft HE localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft HE localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft PT localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft PT localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft PT localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft PT localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft PT localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft PT localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Canteen Water Ledger",
+          "scanner": "Draft NL localization pending native pass. Water ledger recovered. The colony tracked drinkable water as labor infrastructure.",
+          "terminal": "Draft NL localization pending native pass. CANTEEN LEDGER: six missing tokens, two medical overrides, one pump-room correction. The ordinary numbers are the evidence.",
+          "audio": "Draft NL localization pending native pass. A catastrophe is easier to believe when the last argument was about water tokens.",
+          "in_game_wiki": "Draft NL localization pending native pass. The canteen ledger makes colony life material: water, tokens, pump access, medical overrides and accountability before the flood.",
+          "external_site": "Draft NL localization pending native pass. The human layer of HECTON-8 comes from mundane systems under pressure: water ledgers, canteen tokens and shift accountability.",
+          "field_note": "Draft NL localization pending native pass. Use for early/mid colony props and non-heroic worker evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P358_TOOL_CERTIFICATION_RITUALS",
+      "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+      "article_id": "applied_lore.tool_certification_rituals",
+      "title_key": "applied_lore.tool_certification_rituals.title",
+      "unlock": {
+        "primary": "unlock.tool_certification_rituals",
+        "poi_tags": [
+          "poi.tool_cert_board",
+          "poi.sealant_cartridge_stamp",
+          "poi.pressure_glove_signature"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.engineering"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Tool Certification Rituals",
+          "scanner": "Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Use for workshop, pump-room and fabricator evidence props."
+        },
+        "ru_RU": {
+          "title": "Tool certification rituals",
+          "scanner": "Tool cert board. Рабочие отмечали доверие stamped tools и repeated checks.",
+          "terminal": "CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. Не церемония - survival discipline.",
+          "audio": "Перед спуском они не молились. Они проверяли инструменты друг друга.",
+          "in_game_wiki": "Tool certification rituals дают культуру без мистики: доверие строится на technical checks.",
+          "external_site": "Colony culture HECTON-8 индустриальная: checklists, custody marks and tool signatures.",
+          "field_note": "Для workshop, pump-room and fabricator props."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft JA localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft JA localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft JA localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft JA localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft JA localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft ZH localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft ZH localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft ZH localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft ZH localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft FR localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft FR localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft FR localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft FR localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft FR localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft ES localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft ES localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft ES localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft ES localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft ES localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft DE localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft DE localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft DE localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft DE localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft DE localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft PL localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft PL localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft PL localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft PL localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft PL localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft UK localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft UK localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft UK localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft UK localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft UK localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft AR localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft AR localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft AR localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft AR localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft AR localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft ID localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft ID localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft ID localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft ID localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft ID localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft KO localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft KO localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft KO localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft KO localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft KO localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft HE localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft HE localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft HE localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft HE localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft HE localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft PT localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft PT localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft PT localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft PT localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft PT localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Tool Certification Rituals",
+          "scanner": "Draft NL localization pending native pass. Tool cert board. Workers marked trust with stamped tools and repeated checks.",
+          "terminal": "Draft NL localization pending native pass. CERT BOARD: cutter head checked, sealant cartridge weighed, pressure glove signed, pump key returned. No ceremony, just survival discipline.",
+          "audio": "Draft NL localization pending native pass. They did not pray before descent. They checked each other's tools.",
+          "in_game_wiki": "Draft NL localization pending native pass. Tool certification rituals give the colony culture without mysticism: trust is built through repeated technical checks.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's colony culture is industrial and practical. The rituals are checklists, custody marks and tool signatures.",
+          "field_note": "Draft NL localization pending native pass. Use for workshop, pump-room and fabricator evidence props."
+        }
+      }
+    },
+    {
+      "packet_id": "P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE",
+      "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+      "article_id": "applied_lore.worker_community_no_family_hook_rule",
+      "title_key": "applied_lore.worker_community_no_family_hook_rule.title",
+      "unlock": {
+        "primary": "unlock.worker_community_no_family_hook_rule",
+        "poi_tags": [
+          "poi.story_boundary_card",
+          "poi.former_deep_reach_record",
+          "poi.marauder_professional_note"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.contract"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Worker Community No Family Hook Rule",
+          "scanner": "Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "ru_RU": {
+          "title": "Правило worker community без family hook",
+          "scanner": "Story boundary. Мотив игрока - professional guilt and curiosity, не lost-family melodrama.",
+          "terminal": "AUTHORING LOCK: игрок бывший Deep Reach, теперь marauder. Не привязывать parent, spouse или child rescue motive. Stakes идут через worker evidence and corporate negligence.",
+          "audio": "Ты вернулся, потому что знал форму этой работы. Этого достаточно.",
+          "in_game_wiki": "Пакет защищает канон игрока: former Deep Reach, now independent marauder. Колония важна без поиска родни.",
+          "external_site": "Протагонист HECTON-8 - не tourist и не family-avenger, а профессионал, возвращающийся к ruined claim.",
+          "field_note": "Narrative guardrail для quests, wiki and marketing copy."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft JA localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft JA localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft JA localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft JA localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft JA localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft ZH localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft ZH localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft ZH localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft ZH localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft FR localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft FR localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft FR localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft FR localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft FR localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft ES localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft ES localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft ES localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft ES localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft ES localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft DE localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft DE localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft DE localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft DE localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft DE localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft PL localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft PL localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft PL localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft PL localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft PL localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft UK localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft UK localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft UK localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft UK localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft UK localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft AR localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft AR localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft AR localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft AR localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft AR localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft ID localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft ID localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft ID localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft ID localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft ID localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft KO localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft KO localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft KO localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft KO localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft KO localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft HE localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft HE localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft HE localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft HE localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft HE localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft PT localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft PT localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft PT localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft PT localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft PT localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Worker Community No Family Hook Rule",
+          "scanner": "Draft NL localization pending native pass. Story boundary. Player motive is professional guilt and curiosity, not lost-family melodrama.",
+          "terminal": "Draft NL localization pending native pass. AUTHORING LOCK: the player was former Deep Reach and is now a marauder. Do not attach parent, spouse or child rescue motive. Human stakes come from worker evidence and corporate negligence.",
+          "audio": "Draft NL localization pending native pass. You came back because you knew the shape of the work. That is enough.",
+          "in_game_wiki": "Draft NL localization pending native pass. This packet protects the canon player: former Deep Reach, now independent marauder. The colony matters without making the protagonist search for relatives.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's protagonist is not an off-world tourist or family-avenger. They are a professional returning to a ruined claim they partly understand.",
+          "field_note": "Draft NL localization pending native pass. Use as narrative guardrail for quests, wiki and marketing copy."
+        }
+      }
+    },
+    {
+      "packet_id": "P360_LAST_NORMAL_DAY_EVIDENCE_SET",
+      "release_set_id": "RS072_COLONY_DAILY_LIFE_EVIDENCE_ATLAS",
+      "article_id": "applied_lore.last_normal_day_evidence_set",
+      "title_key": "applied_lore.last_normal_day_evidence_set.title",
+      "unlock": {
+        "primary": "unlock.last_normal_day_evidence_set",
+        "poi_tags": [
+          "poi.last_normal_day_set",
+          "poi.unsigned_correction_note",
+          "poi.unclaimed_locker_plate"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.evidence"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Last Normal Day Evidence Set",
+          "scanner": "Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "The last day did not know it was last.",
+          "in_game_wiki": "Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Use for repeatable colony POI variants and emotional pacing."
+        },
+        "ru_RU": {
+          "title": "Last normal day evidence set",
+          "scanner": "Last-normal-day set. Самое сильное evidence - unfinished ordinary work.",
+          "terminal": "EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Катастрофа вошла через незавершённую рутину.",
+          "audio": "Последний день не знал, что он последний.",
+          "in_game_wiki": "Last-normal-day evidence делает катастрофу близкой без мелодрамы и даёт level design props для разных seeds.",
+          "external_site": "HECTON-8 использует ordinary unfinished work как horror: routine всё ещё на board.",
+          "field_note": "Для repeatable colony POI variants and emotional pacing."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft JA localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft JA localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft JA localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft JA localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft JA localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft ZH localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft ZH localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft ZH localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft ZH localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft FR localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft FR localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft FR localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft FR localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft FR localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft ES localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft ES localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft ES localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft ES localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft ES localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft DE localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft DE localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft DE localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft DE localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft DE localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft PL localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft PL localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft PL localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft PL localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft PL localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft UK localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft UK localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft UK localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft UK localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft UK localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft AR localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft AR localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft AR localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft AR localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft AR localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft ID localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft ID localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft ID localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft ID localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft ID localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft KO localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft KO localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft KO localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft KO localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft KO localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft HE localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft HE localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft HE localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft HE localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft HE localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft PT localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft PT localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft PT localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft PT localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft PT localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Last Normal Day Evidence Set",
+          "scanner": "Draft NL localization pending native pass. Last-normal-day set. The strongest evidence is unfinished ordinary work.",
+          "terminal": "Draft NL localization pending native pass. EVIDENCE SET: locker plate not claimed, correction note unsigned, pump task still open, lunch token still clipped. Catastrophe entered through unfinished routine.",
+          "audio": "Draft NL localization pending native pass. The last day did not know it was last.",
+          "in_game_wiki": "Draft NL localization pending native pass. Last-normal-day evidence makes the disaster intimate without melodrama. It gives level designers props that can appear across seeds in different arrangements.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 uses ordinary unfinished work as horror: the colony ends while the routine is still on the board.",
+          "field_note": "Draft NL localization pending native pass. Use for repeatable colony POI variants and emotional pacing."
+        }
+      }
+    }
+  ]
+}

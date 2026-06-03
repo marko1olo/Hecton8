@@ -1,0 +1,37 @@
+---
+packet_id: P245_DEEP_REACH_CLAUSE_WEIGHT_CARD
+release_set_id: RS049_CONTRACT_SEED_RISK_REWARD_SURFACES
+article_id: applied_lore.deep_reach_clause_weight_card
+unlock_id: unlock.deep_reach_clause_weight_card
+poi_tags: poi.deep_reach_clause_stamp;poi.recovery_compliance_packet
+biome_tags: biome.deep_reach_pressure;biome.claim_admin
+locale: pt_BR
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
+---
+
+# Deep Reach Clause Weight Card
+
+Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio.
+
+## Scanner
+
+The clause is not a message. It is a hand on the airlock.
+
+## Terminal
+
+CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.
+
+## Audio
+
+They do not need to answer you if the clause already did.
+
+## Field Note
+
+Recovery Compliance can be quiet for hours and still shape every route through contract language.
+
+<!-- External Site; generated from P245_DEEP_REACH_CLAUSE_WEIGHT_CARD/pt_BR. -->

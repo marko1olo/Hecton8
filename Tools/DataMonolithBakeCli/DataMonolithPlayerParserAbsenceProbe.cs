@@ -182,6 +182,9 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             if (IsPassiveCsvSymbol(trimmed))
                 return false;
 
+            if (IsCsvWriterSink(trimmed))
+                return false;
+
             if (ContainsAnyOrdinalIgnoreCase(
                     trimmed,
                     "LoadProfilesFromCsv(",
@@ -217,6 +220,25 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             }
 
             return false;
+        }
+
+        private static bool IsCsvWriterSink(string trimmed)
+        {
+            if (trimmed.IndexOf("Csv", StringComparison.OrdinalIgnoreCase) < 0)
+                return false;
+
+            if (trimmed.IndexOf("FileAccess.Write", StringComparison.Ordinal) >= 0 ||
+                trimmed.IndexOf("FileMode.Create", StringComparison.Ordinal) >= 0 ||
+                trimmed.IndexOf("FileMode.Append", StringComparison.Ordinal) >= 0)
+            {
+                return true;
+            }
+
+            if (!IsMethodDeclaration(trimmed))
+                return false;
+
+            return ContainsAnyOrdinalIgnoreCase(trimmed, "WriteCsv", "AppendCsv", "WriteRecord", "FlushCsv") &&
+                   !ContainsAnyOrdinalIgnoreCase(trimmed, "ReadCsv", "LoadCsv", "ParseCsv", "TryParseCsv");
         }
 
         private static bool IsPassiveCsvSymbol(string trimmed)

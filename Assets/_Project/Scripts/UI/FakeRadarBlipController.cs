@@ -9,9 +9,6 @@ using UnityEngine.Rendering;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Stopwatch = System.Diagnostics.Stopwatch;
 #endif
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.UI
 {
@@ -40,7 +37,6 @@ namespace Hecton8.UI
         private const float BlipFlickerFrequency = 18f;
         private const float BlipFlickerIntensity = 0.18f;
         private const float BlipFillAlpha = 0.36f;
-        private const int SurvivalSystemResolveIntervalFrames = 30;
         private const int PlayerTransformResolveIntervalFrames = 30;
         private const int MinimumQualityBlipCapacity = 16;
         private const uint ThermalNoiseHashSalt = 0x54484E31u;
@@ -48,9 +44,6 @@ namespace Hecton8.UI
         private const double RadarSolveBudgetWarningMilliseconds = 0.1d;
         private const int RadarPerformanceWarningCooldownFrames = 30;
 #endif
-        private const string RadarBlipShaderPath = "Assets/_Project/Art/Shaders/Hecton_RadarBlipInstanced.shader";
-        private const string RadarBlipShaderName = "HECTON/HUD/RadarBlipInstanced";
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const uint RadarSolveBudgetWarningHash = 648937224u;
         private const uint RadarSolveBudgetContextHash = 2418241056u;
@@ -64,7 +57,8 @@ namespace Hecton8.UI
         [SerializeField, Min(1f)] private float radarRadiusPixels = DefaultRadarRadiusPixels;
         [SerializeField, Min(1f)] private float blipSizePixels = BlipSizePixels;
         [SerializeField] private Vector2 radarCenterInsetPixels = DefaultRadarCenterInsetPixels();
-        [SerializeField] private Shader radarBlipShader;
+        [SerializeField] private Mesh radarBlipMesh;
+        [SerializeField] private Material radarBlipMaterial;
         [SerializeField] private Color blipColor = new Color(1f, 0.24f, 0.28f, 0.92f);
 
         // COLD ALLOC: SpatialQueryHit[64] - fixed hostile radar query buffer - owner: FakeRadarBlipController
@@ -86,14 +80,12 @@ namespace Hecton8.UI
         private int _qualityBlipCapacity = MaxBlips;
         private int _qualityThermalGhostCapacity = ThermalNoiseMaxGhostBlips;
         private Transform _playerTransform;
-        private HectonSurvivalSystem _survivalSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private int _nextPlayerTransformResolveFrame;
-        private int _nextSurvivalSystemResolveFrame;
         private Camera _projectionCamera;
         private bool _projectionCameraRequiresHudLayer;
         private Mesh _radarBlipMesh;
-        private Material _radarBlipMaterial;
+        private MaterialPropertyBlock _radarBlipProperties;
         private Color _appliedRadarBlipColor;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private int _nextRadarPerformanceWarningFrame;
@@ -210,7 +202,7 @@ namespace Hecton8.UI
 
                 if (_projectionCamera == null ||
                     _radarBlipMesh == null ||
-                    _radarBlipMaterial == null)
+                    radarBlipMaterial == null)
                 {
                     ClearVisibleBlipHandoff();
                     return;
@@ -293,7 +285,7 @@ namespace Hecton8.UI
             if (_visibleBlipMatrixCount <= 0 ||
                 _projectionCamera == null ||
                 _radarBlipMesh == null ||
-                _radarBlipMaterial == null)
+                radarBlipMaterial == null)
             {
                 return;
             }
@@ -590,10 +582,10 @@ namespace Hecton8.UI
             UnityEngine.Graphics.DrawMeshInstanced(
                 _radarBlipMesh,
                 0,
-                _radarBlipMaterial,
+                radarBlipMaterial,
                 _blipMatrices,
                 visibleCount,
-                null,
+                _radarBlipProperties,
                 ShadowCastingMode.Off,
                 false,
                 HudInternalLayerIndex,
@@ -604,13 +596,16 @@ namespace Hecton8.UI
 
         private void ApplyRadarBlipMaterialProperties()
         {
+            EnsureRadarBlipPropertiesCold();
+
             if (!_radarBlipMaterialPropertiesDirty && ColorsMatch(_appliedRadarBlipColor, blipColor))
                 return;
 
-            _radarBlipMaterial.SetColor(_BaseColorId, blipColor);
-            _radarBlipMaterial.SetFloat(_FlickerFrequencyId, BlipFlickerFrequency);
-            _radarBlipMaterial.SetFloat(_FlickerIntensityId, BlipFlickerIntensity);
-            _radarBlipMaterial.SetFloat(_FillAlphaId, BlipFillAlpha);
+            _radarBlipProperties.Clear();
+            _radarBlipProperties.SetColor(_BaseColorId, blipColor);
+            _radarBlipProperties.SetFloat(_FlickerFrequencyId, BlipFlickerFrequency);
+            _radarBlipProperties.SetFloat(_FlickerIntensityId, BlipFlickerIntensity);
+            _radarBlipProperties.SetFloat(_FillAlphaId, BlipFillAlpha);
             _appliedRadarBlipColor = blipColor;
             _radarBlipMaterialPropertiesDirty = false;
         }
@@ -652,10 +647,9 @@ namespace Hecton8.UI
         {
             int blipCapacity = math.clamp(_scheduledBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
             int ghostCapacity = math.clamp(_qualityThermalGhostCapacity, 0, ThermalNoiseMaxGhostBlips);
-            if (_survivalSystem == null || visibleCount >= blipCapacity || ghostCapacity <= 0)
+            if (visibleCount >= blipCapacity || ghostCapacity <= 0 || !TryResolvePlayerDepthMeters(out float depthMeters))
                 return;
 
-            float depthMeters = math.max(0f, _survivalSystem.Depth);
             float thermalNoise01 = math.saturate(
                 (depthMeters - ThermalNoiseStartDepthMeters) /
                 math.max(1f, ThermalNoiseFullDepthMeters - ThermalNoiseStartDepthMeters));
@@ -681,6 +675,22 @@ namespace Hecton8.UI
                 Vector3 worldPosition = planeCenter + cameraRight * planeOffset.x + cameraUp * planeOffset.y;
                 AppendVisibleBlipMatrix(Matrix4x4.TRS(worldPosition, planeRotation, planeScale), ref visibleCount);
             }
+        }
+
+        private bool TryResolvePlayerDepthMeters(out float depthMeters)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                depthMeters = math.max(0f, movementState.DepthMeters);
+                return true;
+            }
+
+            depthMeters = 0f;
+            return false;
         }
 
         private static uint HashThermalNoiseGhost(uint cycleIndex, uint depthBucket, uint ordinal)
@@ -774,16 +784,12 @@ namespace Hecton8.UI
         private void ResolvePlayerTransform()
         {
             if (_playerTransform != null)
-            {
-                ResolveSurvivalSystemForCachedPlayer();
                 return;
-            }
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerTransform != null)
             {
                 AssignPlayerTransform(playerContext.PlayerTransform);
-                ResolveSurvivalSystemForCachedPlayer();
                 return;
             }
 
@@ -794,10 +800,7 @@ namespace Hecton8.UI
             _nextPlayerTransformResolveFrame = frame + PlayerTransformResolveIntervalFrames;
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform scenePlayerTransform))
-            {
                 AssignPlayerTransform(scenePlayerTransform);
-                ResolveSurvivalSystemForCachedPlayer();
-            }
         }
 
         private void AssignPlayerTransform(Transform playerTransform)
@@ -806,26 +809,7 @@ namespace Hecton8.UI
                 return;
 
             _playerTransform = playerTransform;
-            _survivalSystem = null;
             _nextPlayerTransformResolveFrame = 0;
-            _nextSurvivalSystemResolveFrame = 0;
-        }
-
-        private void ResolveSurvivalSystemForCachedPlayer()
-        {
-            if (_survivalSystem != null || _playerTransform == null)
-            {
-                return;
-            }
-
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame < _nextSurvivalSystemResolveFrame)
-                return;
-
-            _nextSurvivalSystemResolveFrame = frame + SurvivalSystemResolveIntervalFrames;
-            _playerTransform.TryGetComponent(out _survivalSystem);
-            if (_survivalSystem != null)
-                _nextSurvivalSystemResolveFrame = 0;
         }
 
         private void ResolveProjectionCamera()
@@ -876,94 +860,34 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-#if UNITY_EDITOR
-            if (radarBlipShader == null)
-                radarBlipShader = AssetDatabase.LoadAssetAtPath<Shader>(RadarBlipShaderPath);
-#endif
-            if (radarBlipShader == null)
-                RuntimeShaderReferenceCatalog.TryGetRadarBlipInstancedShader(out radarBlipShader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (radarBlipShader == null)
-                radarBlipShader = Shader.Find(RadarBlipShaderName);
-#endif
+            EnsureRadarBlipPropertiesCold();
+            bool authoredMeshValid = radarBlipMesh != null && radarBlipMesh.subMeshCount > 0 && radarBlipMesh.GetIndexCount(0) > 0u;
+            UnityEngine.Assertions.Assert.IsNotNull(radarBlipMaterial, "Fatal: Missing Authored Fake Radar Blip Material.");
+            bool authoredMaterialValid = radarBlipMaterial != null && radarBlipMaterial.enableInstancing;
+            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: Fake Radar Blip Mesh must be authored and indexed.");
+            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: Fake Radar Blip Material must have Enable GPU Instancing authored.");
+            _radarBlipMesh = authoredMeshValid && authoredMaterialValid ? radarBlipMesh : null;
+            _radarBlipMaterialPropertiesDirty = true;
+        }
 
-            if (_radarBlipMesh == null)
-                _radarBlipMesh = BuildQuadMesh();
+        private void EnsureRadarBlipPropertiesCold()
+        {
+            if (_radarBlipProperties != null)
+                return;
 
-            if (_radarBlipMaterial == null && radarBlipShader != null)
-            {
-                _radarBlipMaterial = new Material(radarBlipShader)
-                {
-                    enableInstancing = true
-                }; // COLD ALLOC: Material[1] — instanced hostile radar blip material — owner: FakeRadarBlipController
-                _radarBlipMaterialPropertiesDirty = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                _radarBlipMaterial.name = "HUD_FakeRadarBlips_Instanced_Runtime";
-#endif
-            }
-
+            // COLD ALLOC: MaterialPropertyBlock[1] - fake radar blip instanced draw payload - owner: FakeRadarBlipController.
+            _radarBlipProperties = new MaterialPropertyBlock();
+            _radarBlipMaterialPropertiesDirty = true;
         }
 
         private void DisposeRuntimeResources()
         {
             ClearScheduledCullState();
 
-            if (_radarBlipMaterial != null)
-            {
-                DestroyUnityObject(_radarBlipMaterial);
-                _radarBlipMaterial = null;
-                _radarBlipMaterialPropertiesDirty = true;
-            }
+            _radarBlipMesh = null;
 
-            if (_radarBlipMesh != null)
-            {
-                DestroyUnityObject(_radarBlipMesh);
-                _radarBlipMesh = null;
-            }
-
-        }
-
-        private static void DestroyUnityObject(UnityEngine.Object instance)
-        {
-            if (instance == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(instance);
-            else
-                DestroyImmediate(instance);
-        }
-
-        private static Mesh BuildQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "HUD_FakeRadarBlip_Quad"
-            }; // COLD ALLOC: Mesh[1] — reusable instanced hostile radar blip quad — owner: FakeRadarBlipController
-
-            // COLD ALLOC: Vector3[4] - one-time quad geometry upload - owner: FakeRadarBlipController
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f),
-                new Vector3(0.5f, 0.5f, 0f),
-                new Vector3(0.5f, -0.5f, 0f)
-            };
-            // COLD ALLOC: Vector2[4] - one-time quad uv upload - owner: FakeRadarBlipController
-            Vector2[] uvs =
-            {
-                new Vector2(0f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, 0f)
-            };
-            // COLD ALLOC: int[6] - one-time quad index upload - owner: FakeRadarBlipController
-            int[] triangles = { 0, 1, 2, 0, 2, 3 };
-            mesh.SetVertices(vertices);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(triangles, 0);
-            mesh.UploadMeshData(true);
-            return mesh;
+            _radarBlipProperties?.Clear();
+            _radarBlipMaterialPropertiesDirty = true;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

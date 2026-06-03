@@ -538,6 +538,9 @@ namespace Hecton8.SaveSystem
 
         public static Texture2D GetFallbackNoiseTexture()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return Texture2D.grayTexture;
+#else
             if (_fallbackNoiseTexture != null)
                 return _fallbackNoiseTexture;
 
@@ -547,6 +550,7 @@ namespace Hecton8.SaveSystem
             _fallbackNoiseTexture.LoadRawTextureData(_fallbackNoisePixels);
             _fallbackNoiseTexture.Apply(false, true);
             return _fallbackNoiseTexture;
+#endif
         }
 
         public static void DeleteThumbnail(string slotName)

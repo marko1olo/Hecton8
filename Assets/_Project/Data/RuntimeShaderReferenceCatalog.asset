@@ -16,6 +16,7 @@ MonoBehaviour:
   sceneTransitionDitherShader: {fileID: 4800000, guid: 8ad471c2ef04fde46b6bbce98f6ee896, type: 3}
   groundRadarPingIndirectShader: {fileID: 4800000, guid: f54764630062e13429c297d65936447a, type: 3}
   plasmaBeamIndirectShader: {fileID: 4800000, guid: fdda5599783548f189fceb69e7249c25, type: 3}
+  plasmaBeamIndirectMaterial: {fileID: 2100000, guid: d69143885b194532a0405808af0f1e10, type: 2}
   geologyImpostorBillboardShader: {fileID: 4800000, guid: 710d28494edd37647af61ae257e2ea76, type: 3}
   abyssalSsdoShader: {fileID: 4800000, guid: 1273a37900a6855419fdc57dc70275cd, type: 3}
   stochasticSsrShader: {fileID: 4800000, guid: e2a42a9b0b334c26a0c9df79aa521240, type: 3}

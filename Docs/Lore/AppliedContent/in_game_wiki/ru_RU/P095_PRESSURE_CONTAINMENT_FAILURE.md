@@ -1,10 +1,17 @@
 ---
 packet_id: P095_PRESSURE_CONTAINMENT_FAILURE
+release_set_id: RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS
 article_id: hecton8.pressure_containment_failure
+unlock_id: unlock.first_pressure_containment_failure
+poi_tags: poi.pressure_casket_stage_chart;poi.blue_debt_seal_failure
+biome_tags: biome.resource_pressure;biome.vent_forge
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Pressure Containment Failure

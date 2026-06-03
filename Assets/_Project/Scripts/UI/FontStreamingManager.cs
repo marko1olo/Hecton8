@@ -53,9 +53,11 @@ namespace Hecton8.UI
         private TMP_FontAsset _targetFont;
         private Material _targetFontMaterial;
         private Canvas _targetCanvas;
-        private RectTransform _root;
-        private CanvasGroup _group;
-        private TextMeshProUGUI _statusLabel;
+        [Header("Authored UI")]
+        [SerializeField] private RectTransform _root;
+        [SerializeField] private CanvasGroup _group;
+        [SerializeField] private Image _statusBackground;
+        [SerializeField] private TextMeshProUGUI _statusLabel;
         private float _visibleAlpha;
 
         private void OnEnable()
@@ -64,7 +66,7 @@ namespace Hecton8.UI
             LocalizationEvents.RegisterLanguageListener(this);
             SceneManager.sceneLoaded += HandleSceneLoaded;
             EnsureRegistryNodes(SceneManager.GetActiveScene());
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             RefreshFontMaterialCachesCold();
             RegisterToTickManager();
         }
@@ -72,7 +74,7 @@ namespace Hecton8.UI
         private void Start()
         {
             TryRegisterHotSwapListener();
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             RefreshFontMaterialCachesCold();
             RegisterToTickManager();
         }
@@ -99,10 +101,8 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!_uiBuilt || _group == null || _statusLabel == null)
-                return;
-
             float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            bool canShowStatus = _uiBuilt && _group != null && _statusLabel != null;
 
             if (_awaitingPrimaryFontReadiness)
                 EvaluatePendingFontReadiness();
@@ -110,17 +110,19 @@ namespace Hecton8.UI
             if (_streaming)
             {
                 ProcessSwapBatch();
-                ApplyVisibleAlpha(1f);
+                if (canShowStatus)
+                    ApplyVisibleAlpha(1f);
                 return;
             }
 
             if (_awaitingPrimaryFontReadiness)
             {
-                ApplyVisibleAlpha(1f);
+                if (canShowStatus)
+                    ApplyVisibleAlpha(1f);
                 return;
             }
 
-            if (_visibleAlpha > 0.001f)
+            if (canShowStatus && _visibleAlpha > 0.001f)
                 ApplyVisibleAlpha(MoveTowards(_visibleAlpha, 0f, dt * StatusFadeOutSpeed));
         }
 
@@ -334,13 +336,10 @@ namespace Hecton8.UI
             UpdateStatusLabel();
         }
 
-        private bool EnsureUiBuilt(bool allowCreate)
+        private bool EnsureUiBuilt()
         {
             if (_uiBuilt)
                 return true;
-
-            if (!allowCreate)
-                return false;
 
             if (_targetCanvas == null)
                 _targetCanvas = ResolveTargetCanvas();
@@ -352,59 +351,44 @@ namespace Hecton8.UI
             if (canvasRoot == null)
                 return false;
 
-            _root = FindExistingChild(canvasRoot, RootName);
             if (_root == null)
+                _root = FindExistingChild(canvasRoot, RootName);
+            if (_root == null)
+                return false;
+
+            if (_group == null &&
+                !_root.TryGetComponent(out _group))
             {
-                GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
-                rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _root);
-                _root.SetParent(canvasRoot, false);
+                return false;
             }
-
-            _root.anchorMin = new Vector2(0.5f, 1f);
-            _root.anchorMax = new Vector2(0.5f, 1f);
-            _root.pivot = new Vector2(0.5f, 1f);
-            _root.anchoredPosition = new Vector2(0f, -94f);
-            _root.sizeDelta = new Vector2(348f, 34f);
-            _root.SetAsLastSibling();
-
-            if (!_root.TryGetComponent(out _group))
-                _group = _root.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — repairs missing font streaming root component — owner: FontStreamingManager
 
             _group.alpha = 0f;
             _group.blocksRaycasts = false;
             _group.interactable = false;
             _visibleAlpha = 0f;
 
-            if (!_root.TryGetComponent(out Image background))
-                background = _root.gameObject.AddComponent<Image>(); // COLD ALLOC: Image[1] — repairs missing font streaming root component — owner: FontStreamingManager
+            if (_statusBackground == null &&
+                !_root.TryGetComponent(out _statusBackground))
+            {
+                return false;
+            }
 
-            background.color = StatusBackgroundColor;
-            background.raycastTarget = false;
+            _statusBackground.color = StatusBackgroundColor;
+            _statusBackground.raycastTarget = false;
 
             if (_statusLabel == null)
                 _statusLabel = FindText(_root, "StatusLabel");
 
             if (_statusLabel == null)
-            {
-                GameObject labelObject = new GameObject("StatusLabel", typeof(RectTransform));
-                labelObject.layer = _root.gameObject.layer;
-                labelObject.TryGetComponent(out RectTransform labelRect);
-                labelRect.SetParent(_root, false);
-                labelRect.anchorMin = Vector2.zero;
-                labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = new Vector2(12f, 4f);
-                labelRect.offsetMax = new Vector2(-12f, -4f);
+                return false;
 
-                _statusLabel = labelObject.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] — localized font streaming status label — owner: FontStreamingManager
-                _statusLabel.font = LocalizedFontResolver.ResolveReadableFont(null);
-                _statusLabel.color = StatusTextColor;
-                _statusLabel.fontSize = 14f;
-                _statusLabel.textWrappingMode = TextWrappingModes.NoWrap;
-                _statusLabel.alignment = TextAlignmentOptions.MidlineLeft;
-                _statusLabel.raycastTarget = false;
-                TMP_TextRegistry.EnsureRegistered(_statusLabel);
-            }
+            _statusLabel.font = LocalizedFontResolver.ResolveReadableFont(null);
+            _statusLabel.color = StatusTextColor;
+            _statusLabel.fontSize = 14f;
+            _statusLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            _statusLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            _statusLabel.raycastTarget = false;
+            TMP_TextRegistry.EnsureRegistered(_statusLabel);
 
             ApplyStatusBuffer(0);
             _uiBuilt = true;
@@ -414,7 +398,7 @@ namespace Hecton8.UI
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             EnsureRegistryNodes(scene);
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             RefreshFontMaterialCachesCold();
         }
 
@@ -637,7 +621,8 @@ namespace Hecton8.UI
         {
             return font != null &&
                    material != null &&
-                   material.GetTexture(ShaderUtilities.ID_MainTex) != null;
+                   ReferenceEquals(material, font.material) &&
+                   LocalizedFontResolver.IsFontReady(font);
         }
 
         private void WriteStatusLiteral(ReadOnlySpan<char> source)
@@ -710,14 +695,6 @@ namespace Hecton8.UI
 
         private void ReleaseTrackedFontData()
         {
-            LocalizedFontResolver.TryClearDynamicFontData(_primaryFont);
-
-            if (!ReferenceEquals(_targetFont, _primaryFont))
-                LocalizedFontResolver.TryClearDynamicFontData(_targetFont);
-
-            if (_statusLabel != null)
-                LocalizedFontResolver.TryClearDynamicFontData(_statusLabel.font);
-
             LocalizedFontResolver.ReleaseCachedRuntimeFonts();
         }
     }

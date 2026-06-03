@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
@@ -10,6 +11,33 @@ namespace Hecton8.Interaction
         public const int WfcDoorLaserCutSnapshotStrideBytes = 16;
         public const int InteractionPacketStrideBytes = 64;
         public const int InteractionSignalStrideBytes = 128;
+        public const int InteractionAnchorDataStrideBytes = 64;
+    }
+
+    [Serializable]
+    [StructLayout(LayoutKind.Explicit, Size = EquipmentInteractionContractLayout.InteractionAnchorDataStrideBytes)]
+    public struct InteractionAnchorData
+    {
+        public const uint FlagActive = 1u << 0;
+        public const uint FlagTwoHanded = 1u << 1;
+        public const byte HandMaskLeft = 1;
+        public const byte HandMaskRight = 2;
+        public const byte HandMaskBoth = HandMaskLeft | HandMaskRight;
+        public const byte SurfaceKindLever = 1;
+        public const byte SurfaceKindValve = 2;
+        public const byte SurfaceKindToggle = 3;
+
+        [FieldOffset(0)] public float3 LocalPosition;
+        [FieldOffset(12)] public float3 LocalForward;
+        [FieldOffset(24)] public float3 LocalUp;
+        [FieldOffset(36)] public float SnapRadiusMeters;
+        [FieldOffset(40)] public uint AnchorId;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public byte HandMask;
+        [FieldOffset(49)] public byte SurfaceKind;
+        [FieldOffset(50)] private ushort _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     /// <summary>

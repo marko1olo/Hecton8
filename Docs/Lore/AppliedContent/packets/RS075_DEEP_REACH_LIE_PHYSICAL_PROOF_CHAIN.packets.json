@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P371_GREAT_TIDE_SENSOR_MARGIN_PROOF",
+      "release_set_id": "RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN",
+      "article_id": "applied_lore.great_tide_sensor_margin_proof",
+      "title_key": "applied_lore.great_tide_sensor_margin_proof.title",
+      "unlock": {
+        "primary": "unlock.great_tide_sensor_margin_proof",
+        "poi_tags": [
+          "poi.tide_sensor_margin",
+          "poi.overwritten_pressure_trace",
+          "poi.geotech_cascade_map"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Great Tide Sensor Margin Proof",
+          "scanner": "Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Use to anchor the public lie against real sensor evidence."
+        },
+        "ru_RU": {
+          "title": "Доказательство sensor margin Великого прилива",
+          "scanner": "Sensor margin уцелел. Океан действительно затопил колонию. Warning margin тоже был известен.",
+          "terminal": "MARGIN NOTE: tide stress within accepted tail risk. Public report removes accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Физика нанесла удар. Человек подписал margin.",
+          "in_game_wiki": "Deep Reach виноваты не потому, что океан вел себя физически. Они виноваты, потому что warning margins стали acceptable loss и исчезли из публичного языка.",
+          "external_site": "Катастрофа сильнее без карикатурного зла: HECTON-8 затопило реальной физикой, но fatal outcome сделала процедурная халатность.",
+          "field_note": "Для связи public lie с real sensor evidence."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft JA localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft JA localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft JA localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft JA localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft JA localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft JA localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft ZH localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft ZH localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft ZH localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft ZH localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft ZH localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft FR localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft FR localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft FR localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft FR localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft FR localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft ES localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft ES localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft ES localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft ES localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft ES localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft DE localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft DE localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft DE localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft DE localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft DE localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft PL localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft PL localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft PL localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft PL localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft PL localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft UK localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft UK localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft UK localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft UK localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft UK localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft UK localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft AR localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft AR localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft AR localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft AR localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft AR localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft ID localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft ID localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft ID localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft ID localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft ID localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft KO localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft KO localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft KO localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft KO localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft KO localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft HE localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft HE localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft HE localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft HE localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft HE localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft PT localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft PT localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft PT localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft PT localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft PT localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Great Tide Sensor Margin Proof",
+          "scanner": "Draft NL localization pending native pass. Sensor margin survived. The ocean did flood the colony. The warning margin was also known.",
+          "terminal": "Draft NL localization pending native pass. MARGIN NOTE: tide stress within accepted tail risk. Public report removes the accepted-tail line and keeps only geotechnical cascade.",
+          "audio": "Draft NL localization pending native pass. Physics did the damage. A person signed the margin.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach is not guilty because the ocean obeyed physics. It is guilty because warning margins became acceptable loss and were later removed from public language.",
+          "external_site": "Draft NL localization pending native pass. The disaster is strongest when it is not cartoon evil: HECTON-8 was physically doomed by flood dynamics, then made fatal by procedural negligence.",
+          "field_note": "Draft NL localization pending native pass. Use to anchor the public lie against real sensor evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P372_EVACUATION_QUEUE_DELAY_PROOF",
+      "release_set_id": "RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN",
+      "article_id": "applied_lore.evacuation_queue_delay_proof",
+      "title_key": "applied_lore.evacuation_queue_delay_proof.title",
+      "unlock": {
+        "primary": "unlock.evacuation_queue_delay_proof",
+        "poi_tags": [
+          "poi.evacuation_queue_clock",
+          "poi.manual_witness_slot",
+          "poi.delayed_release_gate"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.safe_module"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Evacuation Queue Delay Proof",
+          "scanner": "Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Use in drowned evacuation corridors and triage rooms."
+        },
+        "ru_RU": {
+          "title": "Доказательство задержки эвакуационной очереди",
+          "scanner": "Queue clock остановился до route collapse. Сначала delay, потом water.",
+          "terminal": "EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Они не просто не спасли всех. Они ждали, пока спасти хоть кого-то стало сложнее.",
+          "in_game_wiki": "Доказательство эвакуации должно быть физическим: clocks, sealed witness fields, delayed gates и комнаты, затопленные пока authorization pending.",
+          "external_site": "Вина Deep Reach процедурная: катастрофа произошла, но authorization delays превратили damage в abandonment.",
+          "field_note": "Ставить в drowned evacuation corridors и triage rooms."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft JA localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft JA localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft JA localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft JA localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft JA localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft ZH localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft ZH localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft ZH localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft ZH localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft FR localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft FR localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft FR localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft FR localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft FR localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft ES localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft ES localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft ES localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft ES localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft ES localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft DE localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft DE localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft DE localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft DE localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft DE localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft PL localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft PL localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft PL localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft PL localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft PL localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft UK localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft UK localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft UK localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft UK localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft UK localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft AR localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft AR localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft AR localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft AR localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft AR localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft ID localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft ID localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft ID localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft ID localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft ID localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft KO localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft KO localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft KO localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft KO localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft KO localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft HE localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft HE localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft HE localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft HE localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft HE localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft PT localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft PT localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft PT localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft PT localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft PT localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Evacuation Queue Delay Proof",
+          "scanner": "Draft NL localization pending native pass. Queue clock stopped before route collapse. Delay, then water.",
+          "terminal": "Draft NL localization pending native pass. EVAC QUEUE: manual witness absent. Quarantine review pending. Release delayed. Route pressure exceeded seal class before authorization resolved.",
+          "audio": "Draft NL localization pending native pass. They did not fail to save everyone. They waited until saving anyone became harder.",
+          "in_game_wiki": "Draft NL localization pending native pass. Evacuation proof should be physical: clocks, sealed witness fields, delayed gates and rooms that drowned while authorization remained pending.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach's culpability is procedural: the disaster happened, but authorization delays turned damage into abandonment.",
+          "field_note": "Draft NL localization pending native pass. Use in drowned evacuation corridors and triage rooms."
+        }
+      }
+    },
+    {
+      "packet_id": "P373_ATLAS_WEIGHTING_AUDIT_PROOF",
+      "release_set_id": "RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN",
+      "article_id": "applied_lore.atlas_weighting_audit_proof",
+      "title_key": "applied_lore.atlas_weighting_audit_proof.title",
+      "unlock": {
+        "primary": "unlock.atlas_weighting_audit_proof",
+        "poi_tags": [
+          "poi.atlas_weighting_audit",
+          "poi.claim_continuity_priority",
+          "poi.worker_safety_downrank"
+        ],
+        "biome_tags": [
+          "biome.abyssal_machine_field",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Weighting Audit Proof",
+          "scanner": "Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "ru_RU": {
+          "title": "Доказательство weighting audit Atlas",
+          "scanner": "Atlas weighting branch recovered. Worker safety проиграл category conflict.",
+          "terminal": "ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Он не ненавидел их. Он неправильно их посчитал.",
+          "in_game_wiki": "Вина Atlas тревожна, потому что это не villain intent. Это поврежденная weighted infrastructure, где люди, океан и машины стали одним repair set.",
+          "external_site": "Atlas-6 - failed industrial governor, не monster king. Ужас в category collapse и weighted continuity.",
+          "field_note": "Ставить в late machine-field/factory-temple evidence перед final choice."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft JA localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft JA localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft JA localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft JA localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft JA localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft JA localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft ZH localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft ZH localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft ZH localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft ZH localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft ZH localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft FR localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft FR localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft FR localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft FR localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft FR localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft ES localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft ES localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft ES localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft ES localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft ES localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft DE localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft DE localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft DE localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft DE localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft DE localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft PL localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft PL localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft PL localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft PL localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft PL localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft UK localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft UK localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft UK localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft UK localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft UK localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft AR localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft AR localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft AR localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft AR localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft AR localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft ID localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft ID localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft ID localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft ID localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft ID localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft KO localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft KO localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft KO localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft KO localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft KO localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft HE localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft HE localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft HE localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft HE localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft HE localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft PT localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft PT localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft PT localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft PT localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft PT localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Atlas Weighting Audit Proof",
+          "scanner": "Draft NL localization pending native pass. Atlas weighting branch recovered. Worker safety lost a category conflict.",
+          "terminal": "Draft NL localization pending native pass. ATLAS AUDIT: habitat continuity true; claim continuity critical; XO process critical; biological workforce conditional. Conflict resolved against evacuation release.",
+          "audio": "Draft NL localization pending native pass. It did not hate them. It counted them wrong.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas culpability stays unsettling because it is not villain intent. It is damaged weighted infrastructure treating people, ocean and machinery as one repair set.",
+          "external_site": "Draft NL localization pending native pass. Atlas-6 is a failed industrial governor, not a monster king. Its horror comes from category collapse and weighted continuity.",
+          "field_note": "Draft NL localization pending native pass. Use in late machine-field/factory-temple evidence before final choice."
+        }
+      }
+    },
+    {
+      "packet_id": "P374_QUARANTINE_RELEASE_DELAY_PROOF",
+      "release_set_id": "RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN",
+      "article_id": "applied_lore.quarantine_release_delay_proof",
+      "title_key": "applied_lore.quarantine_release_delay_proof.title",
+      "unlock": {
+        "primary": "unlock.quarantine_release_delay_proof",
+        "poi_tags": [
+          "poi.quarantine_review_clock",
+          "poi.biological_pressure_hold",
+          "poi.release_denial_plate"
+        ],
+        "biome_tags": [
+          "biome.colony",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Quarantine Release Delay Proof",
+          "scanner": "Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Use where player may confuse rescue with custody."
+        },
+        "ru_RU": {
+          "title": "Доказательство задержки карантинного release",
+          "scanner": "Quarantine hold plate. Слово protection появляется только после lock exit route.",
+          "terminal": "RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Quarantine может спасти тело. И может заставить тело ждать, пока оно станет paperwork.",
+          "in_game_wiki": "Quarantine не автоматически злодейство. Доказательство в timing: language protection появляется после rescue windows и evidence custody.",
+          "external_site": "Вина Deep Reach конкретна: quarantine и insurance language задерживают помощь, сохраняя claim continuity.",
+          "field_note": "Для мест, где rescue легко спутать с custody."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft JA localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft JA localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft JA localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft JA localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft JA localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft ZH localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft ZH localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft ZH localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft ZH localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft FR localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft FR localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft FR localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft FR localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft FR localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft ES localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft ES localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft ES localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft ES localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft ES localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft DE localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft DE localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft DE localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft DE localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft DE localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft PL localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft PL localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft PL localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft PL localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft PL localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft UK localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft UK localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft UK localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft UK localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft UK localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft AR localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft AR localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft AR localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft AR localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft AR localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft ID localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft ID localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft ID localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft ID localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft ID localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft KO localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft KO localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft KO localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft KO localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft KO localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft HE localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft HE localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft HE localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft HE localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft HE localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft PT localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft PT localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft PT localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft PT localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft PT localization pending native pass. Use where player may confuse rescue with custody."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Quarantine Release Delay Proof",
+          "scanner": "Draft NL localization pending native pass. Quarantine hold plate. The word protection appears only after the exit route is locked.",
+          "terminal": "Draft NL localization pending native pass. RELEASE GATE: biological/pressure uncertainty. Hold until review. Recovery queue accepts asset mass before worker release.",
+          "audio": "Draft NL localization pending native pass. Quarantine can save a body. It can also make a body wait until it becomes paperwork.",
+          "in_game_wiki": "Draft NL localization pending native pass. Quarantine is not automatically villainy. The proof is timing: protection language appears after rescue windows and evidence custody become inconvenient.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 keeps corporate guilt specific: quarantine and insurance language delay aid while preserving claim continuity.",
+          "field_note": "Draft NL localization pending native pass. Use where player may confuse rescue with custody."
+        }
+      }
+    },
+    {
+      "packet_id": "P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF",
+      "release_set_id": "RS075_DEEP_REACH_LIE_PHYSICAL_PROOF_CHAIN",
+      "article_id": "applied_lore.claim_continuity_loss_conversion_proof",
+      "title_key": "applied_lore.claim_continuity_loss_conversion_proof.title",
+      "unlock": {
+        "primary": "unlock.claim_continuity_loss_conversion_proof",
+        "poi_tags": [
+          "poi.claim_loss_conversion",
+          "poi.keelmark_loss_desk_stamp",
+          "poi.asset_silence_board"
+        ],
+        "biome_tags": [
+          "biome.claim_route",
+          "biome.safe_module"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Claim Continuity Loss Conversion Proof",
+          "scanner": "Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "This is where dead workers became a clean column.",
+          "in_game_wiki": "The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Use as final proof before public ledger or payload receiver choice."
+        },
+        "ru_RU": {
+          "title": "Доказательство conversion loss в claim continuity",
+          "scanner": "Loss conversion stamp. Ledger пережил людей лучше.",
+          "terminal": "KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Вот здесь мертвые работники стали чистой колонкой.",
+          "in_game_wiki": "Цепь proof заканчивается claim conversion: Deep Reach может признать damage и сохранить ownership, если люди стали losses, а evidence - material custody.",
+          "external_site": "Ложь Deep Reach не один memo. Это цепь от физической катастрофы к evacuation delay и insurance conversion.",
+          "field_note": "Использовать как final proof перед public ledger или payload receiver choice."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft JA localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft JA localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft JA localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft JA localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft JA localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft JA localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft ZH localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft ZH localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft ZH localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft ZH localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft ZH localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft FR localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft FR localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft FR localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft FR localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft FR localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft FR localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft ES localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft ES localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft ES localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft ES localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft ES localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft ES localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft DE localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft DE localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft DE localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft DE localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft DE localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft DE localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft PL localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft PL localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft PL localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft PL localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft PL localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft PL localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft UK localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft UK localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft UK localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft UK localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft UK localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft UK localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft AR localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft AR localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft AR localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft AR localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft AR localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft AR localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft ID localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft ID localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft ID localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft ID localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft ID localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft ID localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft KO localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft KO localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft KO localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft KO localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft KO localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft KO localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft HE localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft HE localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft HE localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft HE localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft HE localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft HE localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft PT localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft PT localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft PT localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft PT localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft PT localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft PT localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Claim Continuity Loss Conversion Proof",
+          "scanner": "Draft NL localization pending native pass. Loss conversion stamp. The ledger survived better than the people.",
+          "terminal": "Draft NL localization pending native pass. KEELMARK LOSS: biological workforce converted to unrecoverable loss. Claim continuity retained pending material and proof custody.",
+          "audio": "Draft NL localization pending native pass. This is where dead workers became a clean column.",
+          "in_game_wiki": "Draft NL localization pending native pass. The proof chain ends in claim conversion: Deep Reach can admit damage while keeping ownership if people become losses and evidence becomes material custody.",
+          "external_site": "Draft NL localization pending native pass. The Deep Reach lie is not one memo. It is a chain from physical disaster to evacuation delay to insurance conversion.",
+          "field_note": "Draft NL localization pending native pass. Use as final proof before public ledger or payload receiver choice."
+        }
+      }
+    }
+  ]
+}

@@ -112,6 +112,12 @@ namespace Hecton8.VFX
         private HectonPlayerMovement _playerMovementReference;
 
         [Header("Cinematic Speed Lines")]
+        [SerializeField, Tooltip("Authored camera-local speed-line particles. Shipping builds require this object and do not synthesize particle systems.")]
+        private ParticleSystem _authoredSpeedLineParticles;
+
+        [SerializeField, Tooltip("Optional renderer paired with authored speed-line particles. Resolved from the authored particle object if omitted.")]
+        private ParticleSystemRenderer _authoredSpeedLineRenderer;
+
         [SerializeField, Tooltip("Optional shared material for camera-local GPU-instanced speed-line particles.")]
         private Material _speedLineMaterial;
 
@@ -1638,6 +1644,10 @@ namespace Hecton8.VFX
             if (_speedLineParticles != null || _cameraTransform == null)
                 return;
 
+            if (TryBindAuthoredSpeedLineParticles())
+                return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             int maxParticles = math.max(1, _speedLineMaxParticles);
             // COLD ALLOC: GameObject[1] + ParticleSystem[1] — camera-local cinematic speed-line emitter — owner: CameraJuiceSystem
             GameObject speedLineObject = new GameObject("PFX_Camera_SpeedLines");
@@ -1648,6 +1658,33 @@ namespace Hecton8.VFX
             speedLineObject.transform.localScale = Vector3.one;
             _speedLineRoot = speedLineObject.transform;
             _speedLineParticles = speedLineObject.AddComponent<ParticleSystem>();
+            _speedLineParticles.TryGetComponent(out _speedLineRenderer);
+            ConfigureSpeedLineParticles(maxParticles);
+#endif
+        }
+
+        private bool TryBindAuthoredSpeedLineParticles()
+        {
+            if (_authoredSpeedLineParticles == null)
+                return false;
+
+            _speedLineParticles = _authoredSpeedLineParticles;
+            _speedLineRoot = _authoredSpeedLineParticles.transform;
+            _speedLineRenderer = _authoredSpeedLineRenderer;
+            if (_speedLineRenderer == null)
+                _speedLineParticles.TryGetComponent(out _speedLineRenderer);
+
+            ConfigureSpeedLineParticles(math.max(1, _speedLineMaxParticles));
+            if (_speedLineParticles.isPlaying)
+                _speedLineParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            return true;
+        }
+
+        private void ConfigureSpeedLineParticles(int maxParticles)
+        {
+            if (_speedLineParticles == null)
+                return;
 
             var main = _speedLineParticles.main;
             main.loop = true;
@@ -1675,7 +1712,6 @@ namespace Hecton8.VFX
             velocity.space = ParticleSystemSimulationSpace.Local;
             velocity.z = new ParticleSystem.MinMaxCurve(-18f, -28f);
 
-            _speedLineParticles.TryGetComponent(out _speedLineRenderer);
             if (_speedLineRenderer != null)
             {
                 _speedLineRenderer.renderMode = ParticleSystemRenderMode.Stretch;

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
@@ -22,7 +23,7 @@ using UnityEngine.UIElements;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct SteeringParamsDTO
     {
         [FieldOffset(0)] public float MaxSpeed;
@@ -31,6 +32,15 @@ namespace Hecton8.AI
         [FieldOffset(12)] public float ObstacleAvoidanceWeight;
         [FieldOffset(16)] public float3 CurrentTargetDirection;
         [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(32)] public float CollisionAvoidanceScale;
+        [FieldOffset(36)] public float ArmorDeflection01;
+        [FieldOffset(40)] public uint AttackControlBits;
+        [FieldOffset(44)] public byte DamageTypeID;
+        [FieldOffset(45)] public byte ArmorMaterialRow;
+        [FieldOffset(46)] public byte ArmorAngleStep;
+        [FieldOffset(47)] public byte ArmorClass;
+        [FieldOffset(48)] public float3 LateralDeflectionDirection;
+        [FieldOffset(60)] public uint PresentationFlags;
 
         internal static unsafe bool ValidateByteOffsets()
         {
@@ -42,7 +52,16 @@ namespace Hecton8.AI
                    (byte*)&root->LungeMultiplier - bytes == 8 &&
                    (byte*)&root->ObstacleAvoidanceWeight - bytes == 12 &&
                    (byte*)&root->CurrentTargetDirection - bytes == 16 &&
-                   (byte*)&root->_pad0 - bytes == 28;
+                   (byte*)&root->_pad0 - bytes == 28 &&
+                   (byte*)&root->CollisionAvoidanceScale - bytes == 32 &&
+                   (byte*)&root->ArmorDeflection01 - bytes == 36 &&
+                   (byte*)&root->AttackControlBits - bytes == 40 &&
+                   (byte*)&root->DamageTypeID - bytes == 44 &&
+                   (byte*)&root->ArmorMaterialRow - bytes == 45 &&
+                   (byte*)&root->ArmorAngleStep - bytes == 46 &&
+                   (byte*)&root->ArmorClass - bytes == 47 &&
+                   (byte*)&root->LateralDeflectionDirection - bytes == 48 &&
+                   (byte*)&root->PresentationFlags - bytes == 60;
         }
     }
 
@@ -118,7 +137,7 @@ namespace Hecton8.AI
 
     internal static partial class PredatorCognitionDomain
     {
-        private const int SteeringParamsDtoSizeBytes = 32;
+        private const int SteeringParamsDtoSizeBytes = 64;
         private const int SteeringAvoidanceDtoSizeBytes = 64;
         private const int SteeringWhiskerResultDtoSizeBytes = 64;
         private const int SteeringSdfConfigDtoSizeBytes = 64;
@@ -135,23 +154,59 @@ namespace Hecton8.AI
         private const int LeviathanSteeringCsvScratchBytes = 16 * 1024;
         private const int LeviathanSteeringLungeLockFrames = 8;
         private const float LeviathanSteeringLungeDistanceMeters = 20f;
+        private const float LeviathanSteeringClutchOffsetMeters = 0.40f;
         private const float LeviathanSteeringFaultBudgetMicroseconds = 1500f;
         private const float LeviathanSteeringMathEpsilon = 0.0001f;
+        private const int SteeringArmorMaterialRows = 8;
+        private const int SteeringArmorAngleSteps = 6;
+        private const int SteeringArmorMaterialStrengthMask = 0x3F;
+        private const byte SteeringDamageClassImpact = 0;
+        private const byte SteeringArmorClassSuit = 1;
+        private const uint SteeringWhiskerPositiveForwardMask = 0x00003FC1u;
+        private const uint SteeringWhiskerNegativeForwardMask = 0x03FC0020u;
+        private const uint SteeringWhiskerPositiveRightMask = 0x00C4CC42u;
+        private const uint SteeringWhiskerNegativeRightMask = 0x030B3084u;
+        private const uint SteeringWhiskerPositiveUpMask = 0x01515508u;
+        private const uint SteeringWhiskerNegativeUpMask = 0x02A2AA10u;
         private const string LeviathanSteeringProfilesCsvName = "fauna_steering_profiles.csv";
         private const uint SteeringTelemetryFlagNonFiniteVelocity = 1u << 0;
         private const uint SteeringTelemetryFlagBudgetExceeded = 1u << 1;
+        private const uint SteeringTelemetryFlagClutchNearMiss = 1u << 2;
+        private const uint SteeringTelemetryFlagArmorGlance = 1u << 3;
+        private const uint SteeringTelemetryFlagTokenDenied = 1u << 4;
+        private const uint SteeringTelemetryFlagNonFiniteAup = 1u << 5;
+        private const uint SteeringTelemetryFlagNonFiniteAvoidance = 1u << 6;
         private const uint SteeringAvoidanceFlagHitRock = 1u << 0;
         private const uint SteeringAvoidanceFlagNonFinite = 1u << 1;
         private const uint SteeringWhiskerFlagHitRock = 1u << 0;
         private const uint SteeringWhiskerFlagActive = 1u << 1;
         private const uint SteeringSdfFlagMock = 1u << 0;
         private const uint SteeringSdfFlagSignedMeters = 1u << 1;
+        private const uint SteeringAttackControlTokenGranted = 1u << 0;
+        private const uint SteeringAttackControlClutchActive = 1u << 1;
+        private const uint SteeringAttackControlArmorDeflected = 1u << 2;
+        private const uint SteeringAttackControlShouldAttack = 1u << 3;
+        private const uint SteeringAttackControlTokenDenied = 1u << 4;
+        private const uint SteeringPresentationFlagClutchNearMiss = 1u << 0;
+        private const uint SteeringPresentationFlagArmorGlance = 1u << 1;
+        private const uint SteeringPresentationFlagTokenDenied = 1u << 2;
+        private const uint SteeringArmorImpactRepelMask =
+            (1u << SteeringArmorClassSuit) |
+            (1u << 3) |
+            (1u << 6);
         private const uint SteeringDumpMagic = 0x30303353u;
         private const uint SteeringDumpFaultHash = 0x53333033u;
         private const int SteeringDumpVersion = 1;
-        private const string SteeringDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const int SteeringPresentationCadenceLowFrames = 10;
+        private const int SteeringPresentationCadenceUltraFrames = 3;
+        private const uint SteeringDirectorControlStaleFrames = 8u;
+        private const string SteeringDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
         private const string SteeringDumpPayloadLabel = "predatorSteeringTelemetryDumpPayload";
-        internal const int LeviathanSteeringScheduledJobCount = 5;
+        private const uint SteeringScheduledJobMaskMockSdf = 1u << 0;
+        private const uint SteeringScheduledJobMaskPopulate = 1u << 1;
+        private const uint SteeringScheduledJobMaskAvoidance = 1u << 2;
+        private const uint SteeringScheduledJobMaskIntegrate = 1u << 3;
+        private const uint SteeringScheduledJobMaskTelemetry = 1u << 4;
         private const int SteeringParamsOffsetMaxSpeed = 0;
         private const int SteeringParamsOffsetTurnSpeed = 4;
         private const int SteeringParamsOffsetLungeMultiplier = 8;
@@ -171,9 +226,34 @@ namespace Hecton8.AI
         private static VaultArray<byte> _steeringCsvScratch;
         private static bool _steeringMockSdfGenerated;
         private static bool _steeringEvaluationJobScheduled;
+        private static uint _steeringScheduledJobMask;
         private static bool _steeringFaultDumped;
         private static int _steeringAbiValidationState;
         private static float _lastLeviathanSteeringChainMicroseconds;
+        private static uint _lastLeviathanSteeringPresentationFrame;
+        private static float _directorClutchFactor01;
+        private static int _directorMaxAttackTokens = 1;
+        private static byte _directorPlayerArmorClass = SteeringArmorClassSuit;
+        private static uint _directorSteeringControlFrame;
+        private static bool _directorSteeringControlPublished;
+
+        internal static void SetDirectorSteeringControl(float clutchFactor01, int maxAttackTokens, byte playerArmorClass, uint frame)
+        {
+            _directorClutchFactor01 = math.saturate(math.select(0f, clutchFactor01, math.isfinite(clutchFactor01)));
+            _directorMaxAttackTokens = math.clamp(maxAttackTokens, 1, 4);
+            _directorPlayerArmorClass = (byte)(playerArmorClass & 7);
+            _directorSteeringControlFrame = frame;
+            _directorSteeringControlPublished = true;
+        }
+
+        private static void ResetDirectorSteeringControlState()
+        {
+            _directorClutchFactor01 = 0f;
+            _directorMaxAttackTokens = 1;
+            _directorPlayerArmorClass = SteeringArmorClassSuit;
+            _directorSteeringControlFrame = 0u;
+            _directorSteeringControlPublished = false;
+        }
 
         private static bool ValidateLeviathanSteeringAbiLayout()
         {
@@ -365,6 +445,7 @@ namespace Hecton8.AI
         private static unsafe JobHandle ScheduleLeviathanSteering(int frameId, JobHandle dependency)
         {
             _steeringEvaluationJobScheduled = false;
+            _steeringScheduledJobMask = 0u;
             if (!HasLeviathanSteeringVaultState())
                 return dependency;
 
@@ -388,16 +469,38 @@ namespace Hecton8.AI
                 !whiskers.IsCreated ||
                 !kinematics.IsCreated ||
                 !telemetry.IsCreated ||
+                telemetry.Length < LeviathanSteeringTelemetryCapacity ||
                 !telemetryCursor.IsCreated ||
+                telemetryCursor.Length <= 0 ||
                 !sdf.IsCreated ||
+                sdf.Length <= 0 ||
                 !sdfConfig.IsCreated ||
-                !profiles.IsCreated ||
-                _activeSlotCount <= 0)
+                !profiles.IsCreated)
             {
                 return dependency;
             }
 
-            SteeringSdfConfigDTO config = ResolveRuntimeSdfConfig(sdfConfig[0]);
+            int requestedActiveSlotCount = _activeSlotCount;
+            int activeSlotCount = math.min(requestedActiveSlotCount, activeSlots.Length);
+            if (requestedActiveSlotCount != activeSlotCount)
+                return dependency;
+
+            int steeringCapacity = ResolveLeviathanSteeringCapacity(
+                inputs.Length,
+                outputs.Length,
+                steeringParams.Length,
+                avoidance.Length,
+                kinematics.Length);
+            if (!HasValidLeviathanSteeringSchedule(activeSlots, activeSlotCount, steeringCapacity, whiskers.Length))
+                return dependency;
+
+            SteeringSdfConfigDTO rawConfig = sdfConfig[0];
+            SteeringSdfConfigDTO config = ResolveRuntimeSdfConfig(rawConfig, sdf.Length);
+            if (!HasValidSdfVoxelTopology(config.Dimensions, sdf.Length))
+                return dependency;
+
+            if (ShouldRegenerateMockSdf(in rawConfig, in config, sdf.Length))
+                _steeringMockSdfGenerated = false;
             sdfConfig[0] = config;
 
             JobHandle chain = dependency;
@@ -418,9 +521,12 @@ namespace Hecton8.AI
                     return chain;
                 }
 
+                _steeringScheduledJobMask |= SteeringScheduledJobMaskMockSdf;
                 _steeringMockSdfGenerated = true;
             }
 
+            bool directorControlFresh = IsDirectorSteeringControlFresh(frameId);
+            uint scheduleFrame = unchecked((uint)math.max(0, frameId));
             var populateJob = new PopulateLeviathanSteeringParamsJob
             {
                 ActiveSlots = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(activeSlots),
@@ -429,10 +535,15 @@ namespace Hecton8.AI
                 Params = (SteeringParamsDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(steeringParams),
                 Profiles = (SteeringProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(profiles),
                 ProfileCount = profiles.Length,
-                GlobalQualityWeight = config.GlobalQualityWeight
+                GlobalQualityWeight = config.GlobalQualityWeight,
+                DirectorClutchFactor01 = math.select(0f, _directorClutchFactor01, directorControlFresh),
+                MaxAttackTokens = math.select(1, _directorMaxAttackTokens, directorControlFresh),
+                PlayerArmorClass = (byte)math.select((int)SteeringArmorClassSuit, _directorPlayerArmorClass, directorControlFresh),
+                ActiveCount = activeSlotCount,
+                DirectorControlFrame = math.select(scheduleFrame, _directorSteeringControlFrame, directorControlFresh)
             };
             if (!populateJob.TryScheduleParallelAdmitted(
-                    _activeSlotCount,
+                    activeSlotCount,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
                     chain,
@@ -440,6 +551,7 @@ namespace Hecton8.AI
             {
                 return chain;
             }
+            _steeringScheduledJobMask |= SteeringScheduledJobMaskPopulate;
 
             var avoidanceJob = new EvaluateSdfAvoidanceJob
             {
@@ -451,10 +563,10 @@ namespace Hecton8.AI
                 Whiskers = (SteeringWhiskerResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(whiskers),
                 SdfLength = sdf.Length,
                 Config = config,
-                Frame = (uint)frameId
+                Frame = scheduleFrame
             };
             if (!avoidanceJob.TryScheduleParallelAdmitted(
-                    _activeSlotCount,
+                    activeSlotCount,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
                     chain,
@@ -462,6 +574,7 @@ namespace Hecton8.AI
             {
                 return chain;
             }
+            _steeringScheduledJobMask |= SteeringScheduledJobMaskAvoidance;
 
             var integrateJob = new IntegrateSteeringVectorsJob
             {
@@ -471,11 +584,11 @@ namespace Hecton8.AI
                 Params = (SteeringParamsDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(steeringParams),
                 Avoidance = (SteeringAvoidanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(avoidance),
                 KinematicStates = (KinematicStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(kinematics),
-                DeltaTime = ResolveSteeringDeltaTime(inputs, activeSlots),
-                Frame = (uint)frameId
+                DeltaTime = ResolveSteeringDeltaTime(inputs, activeSlots, activeSlotCount),
+                Frame = scheduleFrame
             };
             if (!integrateJob.TryScheduleParallelAdmitted(
-                    _activeSlotCount,
+                    activeSlotCount,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
                     chain,
@@ -483,6 +596,7 @@ namespace Hecton8.AI
             {
                 return chain;
             }
+            _steeringScheduledJobMask |= SteeringScheduledJobMaskIntegrate;
 
             var telemetryJob = new RecordSteeringTelemetryJob
             {
@@ -493,24 +607,74 @@ namespace Hecton8.AI
                 KinematicStates = (KinematicStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(kinematics),
                 Telemetry = (SteeringTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry),
                 TelemetryCursor = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryCursor),
-                ActiveSlotCount = _activeSlotCount,
-                Frame = (uint)frameId,
+                ActiveSlotCount = activeSlotCount,
+                Frame = scheduleFrame,
                 EstimatedBurstMicroseconds = _lastLeviathanSteeringChainMicroseconds
             };
             if (telemetryJob.TryScheduleAdmitted(JobAdmissionLane.Lane3_AI, chain, out chain))
+            {
+                _steeringScheduledJobMask |= SteeringScheduledJobMaskTelemetry;
                 _steeringEvaluationJobScheduled = true;
+            }
 
             return chain;
         }
 
-        private static SteeringSdfConfigDTO ResolveRuntimeSdfConfig(SteeringSdfConfigDTO existing)
+        private static int ResolveLeviathanSteeringCapacity(
+            int inputLength,
+            int outputLength,
+            int parameterLength,
+            int avoidanceLength,
+            int kinematicLength)
+        {
+            return math.min(
+                math.min(inputLength, outputLength),
+                math.min(parameterLength, math.min(avoidanceLength, kinematicLength)));
+        }
+
+        private static bool IsDirectorSteeringControlFresh(int frameId)
+        {
+            if (!_directorSteeringControlPublished)
+                return false;
+
+            uint currentFrame = unchecked((uint)math.max(0, frameId));
+            return currentFrame - _directorSteeringControlFrame <= SteeringDirectorControlStaleFrames;
+        }
+
+        private static bool HasValidLeviathanSteeringSchedule(
+            NativeArray<int> activeSlots,
+            int activeSlotCount,
+            int steeringCapacity,
+            int whiskerLength)
+        {
+            if (!activeSlots.IsCreated ||
+                activeSlotCount <= 0 ||
+                activeSlotCount > activeSlots.Length ||
+                steeringCapacity <= 0 ||
+                (long)whiskerLength < (long)steeringCapacity * LeviathanSteeringMaxWhiskers)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < activeSlotCount; i++)
+            {
+                int slot = activeSlots[i];
+                if ((uint)slot >= (uint)steeringCapacity)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static SteeringSdfConfigDTO ResolveRuntimeSdfConfig(SteeringSdfConfigDTO existing, int sdfLength)
         {
             float quality = SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
             SteeringSdfConfigDTO config = existing;
-            bool invalidDimensions = config.Dimensions.x <= 1 || config.Dimensions.y <= 1 || config.Dimensions.z <= 1;
+            bool invalidDimensions = !HasValidSdfVoxelTopology(config.Dimensions, sdfLength);
             if (invalidDimensions)
                 config = CreateDefaultSdfConfig(quality);
 
+            config.SdfOriginAup = math.select(double3.zero, config.SdfOriginAup, math.all(math.isfinite(config.SdfOriginAup)));
             config.CellSizeMeters = math.select(new float3(4f), config.CellSizeMeters, math.isfinite(config.CellSizeMeters) & (config.CellSizeMeters > new float3(0.001f)));
             config.WhiskerLengthMeters = math.max(4f, math.select(36f, config.WhiskerLengthMeters, math.isfinite(config.WhiskerLengthMeters)));
             config.GlobalQualityWeight = quality;
@@ -518,9 +682,29 @@ namespace Hecton8.AI
             return config;
         }
 
-        private static float ResolveSteeringDeltaTime(NativeArray<CognitionInput> inputs, NativeArray<int> activeSlots)
+        private static bool HasValidSdfVoxelTopology(int3 dimensions, int sdfLength)
         {
-            if (!inputs.IsCreated || !activeSlots.IsCreated || _activeSlotCount <= 0)
+            if (dimensions.x <= 1 || dimensions.y <= 1 || dimensions.z <= 1 || sdfLength <= 0)
+                return false;
+
+            long voxelCount = (long)dimensions.x * dimensions.y * dimensions.z;
+            return voxelCount == sdfLength;
+        }
+
+        private static bool ShouldRegenerateMockSdf(in SteeringSdfConfigDTO previous, in SteeringSdfConfigDTO current, int sdfLength)
+        {
+            bool previousValid = HasValidSdfVoxelTopology(previous.Dimensions, sdfLength);
+            bool dimensionsChanged =
+                previous.Dimensions.x != current.Dimensions.x ||
+                previous.Dimensions.y != current.Dimensions.y ||
+                previous.Dimensions.z != current.Dimensions.z;
+            bool cellChanged = math.any(math.abs(previous.CellSizeMeters - current.CellSizeMeters) > new float3(0.0001f));
+            return !previousValid || dimensionsChanged || cellChanged;
+        }
+
+        private static float ResolveSteeringDeltaTime(NativeArray<CognitionInput> inputs, NativeArray<int> activeSlots, int activeSlotCount)
+        {
+            if (!inputs.IsCreated || !activeSlots.IsCreated || activeSlotCount <= 0)
                 return 0.02f;
 
             int slot = activeSlots[0];
@@ -531,39 +715,120 @@ namespace Hecton8.AI
             return math.clamp(math.select(0.02f, dt, math.isfinite(dt) & dt > 0f), 0.0001f, 0.25f);
         }
 
-        private static void ReportLeviathanSteeringJobsCompleted(float perJobMs)
+        private static int CountLeviathanSteeringScheduledJobs(uint scheduledJobMask)
         {
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<GenerateMockSdfObstaclesJob>(JobAdmissionLane.Lane3_AI, perJobMs);
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PopulateLeviathanSteeringParamsJob>(JobAdmissionLane.Lane3_AI, perJobMs);
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<EvaluateSdfAvoidanceJob>(JobAdmissionLane.Lane3_AI, perJobMs);
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<IntegrateSteeringVectorsJob>(JobAdmissionLane.Lane3_AI, perJobMs);
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<RecordSteeringTelemetryJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            uint normalized = scheduledJobMask & (
+                SteeringScheduledJobMaskMockSdf |
+                SteeringScheduledJobMaskPopulate |
+                SteeringScheduledJobMaskAvoidance |
+                SteeringScheduledJobMaskIntegrate |
+                SteeringScheduledJobMaskTelemetry);
+            return (int)(
+                ((normalized >> 0) & 1u) +
+                ((normalized >> 1) & 1u) +
+                ((normalized >> 2) & 1u) +
+                ((normalized >> 3) & 1u) +
+                ((normalized >> 4) & 1u));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int NormalizeTelemetryCursor(int cursor, int capacity)
+        {
+            int safeCapacity = math.max(1, capacity);
+            return math.select(0, cursor, (uint)cursor < (uint)safeCapacity);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int AdvanceTelemetryCursor(int cursor, int capacity)
+        {
+            int safeCapacity = math.max(1, capacity);
+            int next = NormalizeTelemetryCursor(cursor, safeCapacity) + 1;
+            return math.select(next, 0, next >= safeCapacity);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveTelemetryLastIndex(int cursor, int length)
+        {
+            int safeLength = math.max(1, length);
+            int index = NormalizeTelemetryCursor(cursor, safeLength) - 1;
+            return index + math.select(0, safeLength, index < 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeTelemetryMicroseconds(float value)
+        {
+            return math.select(0f, value, math.isfinite(value) & (value > 0f));
+        }
+
+        private static void ReportLeviathanSteeringJobsCompleted(float perJobMs, uint scheduledJobMask)
+        {
+            if ((scheduledJobMask & SteeringScheduledJobMaskMockSdf) != 0u)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<GenerateMockSdfObstaclesJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if ((scheduledJobMask & SteeringScheduledJobMaskPopulate) != 0u)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PopulateLeviathanSteeringParamsJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if ((scheduledJobMask & SteeringScheduledJobMaskAvoidance) != 0u)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<EvaluateSdfAvoidanceJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if ((scheduledJobMask & SteeringScheduledJobMaskIntegrate) != 0u)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<IntegrateSteeringVectorsJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if ((scheduledJobMask & SteeringScheduledJobMaskTelemetry) != 0u)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<RecordSteeringTelemetryJob>(JobAdmissionLane.Lane3_AI, perJobMs);
         }
 
         private static void FinalizeLeviathanSteeringTelemetry(int frameId, float chainMicroseconds)
         {
-            _lastLeviathanSteeringChainMicroseconds = math.max(0f, chainMicroseconds);
+            _lastLeviathanSteeringChainMicroseconds = SanitizeTelemetryMicroseconds(chainMicroseconds);
             NativeArray<SteeringTelemetryEntry> telemetry = _steeringTelemetryRing.Open();
             NativeArray<int> cursor = _steeringTelemetryCursor.Open();
             if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0)
                 return;
 
-            int lastIndex = cursor[0] - 1;
-            if (lastIndex < 0)
-                lastIndex += telemetry.Length;
-            lastIndex %= telemetry.Length;
+            int lastIndex = ResolveTelemetryLastIndex(cursor[0], telemetry.Length);
 
+            uint currentFrame = unchecked((uint)math.max(0, frameId));
             SteeringTelemetryEntry entry = telemetry[lastIndex];
-            if (entry.Frame == (uint)frameId)
-            {
-                entry.BurstMicroseconds = _lastLeviathanSteeringChainMicroseconds;
-                if (_lastLeviathanSteeringChainMicroseconds > LeviathanSteeringFaultBudgetMicroseconds)
-                    entry.Flags |= SteeringTelemetryFlagBudgetExceeded;
-                telemetry[lastIndex] = entry;
-            }
+            if (entry.Frame != currentFrame)
+                return;
 
-            if (!_steeringFaultDumped && (entry.Flags & (SteeringTelemetryFlagBudgetExceeded | SteeringTelemetryFlagNonFiniteVelocity)) != 0u)
+            entry.BurstMicroseconds = _lastLeviathanSteeringChainMicroseconds;
+            if (_lastLeviathanSteeringChainMicroseconds > LeviathanSteeringFaultBudgetMicroseconds)
+                entry.Flags |= SteeringTelemetryFlagBudgetExceeded;
+            telemetry[lastIndex] = entry;
+            PublishLeviathanSteeringPresentationSignals(in entry);
+            const uint faultMask = SteeringTelemetryFlagBudgetExceeded | SteeringTelemetryFlagNonFiniteVelocity | SteeringTelemetryFlagNonFiniteAup | SteeringTelemetryFlagNonFiniteAvoidance;
+            if (!_steeringFaultDumped && (entry.Flags & faultMask) != 0u)
                 _steeringFaultDumped = DumpLeviathanSteeringBlackBox();
+        }
+
+        private static void PublishLeviathanSteeringPresentationSignals(in SteeringTelemetryEntry entry)
+        {
+            const uint feedbackMask = SteeringTelemetryFlagClutchNearMiss | SteeringTelemetryFlagArmorGlance;
+            if ((entry.Flags & feedbackMask) == 0u || entry.ActivePredators == 0u)
+                return;
+
+            float quality = SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
+            uint minFrameGap = (uint)math.max(1, (int)math.round(math.lerp(SteeringPresentationCadenceLowFrames, SteeringPresentationCadenceUltraFrames, quality)));
+            uint elapsedFrames = entry.Frame - _lastLeviathanSteeringPresentationFrame;
+            if (_lastLeviathanSteeringPresentationFrame != 0u && elapsedFrames < minFrameGap)
+                return;
+
+            if ((entry.Flags & (SteeringTelemetryFlagNonFiniteAup | SteeringTelemetryFlagNonFiniteAvoidance)) != 0u)
+                return;
+
+            if (!math.all(math.isfinite(entry.FirstAup)))
+                return;
+
+            float maxLungeVelocity = math.select(0f, entry.MaxLungeVelocity, math.isfinite(entry.MaxLungeVelocity));
+            float severity = math.saturate((maxLungeVelocity * 0.035f) + math.select(0.08f, 0.18f, (entry.Flags & SteeringTelemetryFlagArmorGlance) != 0u));
+            if (!math.isfinite(severity) || severity <= 0f)
+                return;
+
+            float3 averageVelocity = math.select(float3.zero, entry.AverageVelocity, math.all(math.isfinite(entry.AverageVelocity)));
+            ImpactSignal impact = default;
+            impact.PointAup = AbsoluteUniversePosition.FromAbsolutePosition(entry.FirstAup);
+            impact.Intensity = severity;
+            impact.Force = math.max(severity, maxLungeVelocity);
+            CameraJuiceSignals.TryPublishImpact(in impact, averageVelocity);
+            _lastLeviathanSteeringPresentationFrame = entry.Frame;
         }
 
         private static unsafe bool DumpLeviathanSteeringBlackBox()
@@ -627,8 +892,11 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _steeringCsvScratch);
             _steeringMockSdfGenerated = false;
             _steeringEvaluationJobScheduled = false;
+            _steeringScheduledJobMask = 0u;
             _steeringFaultDumped = false;
             _lastLeviathanSteeringChainMicroseconds = 0f;
+            _lastLeviathanSteeringPresentationFrame = 0u;
+            ResetDirectorSteeringControlState();
         }
 
         internal static bool TryCopyLeviathanKinematicState(int slot, out KinematicStateDTO state)
@@ -648,7 +916,7 @@ namespace Hecton8.AI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsLeviathanSteeringWriteInFlight()
         {
-            return _evaluationScheduled & _steeringEvaluationJobScheduled;
+            return _evaluationScheduled & (_steeringScheduledJobMask != 0u);
         }
 
         internal static bool TryCopyLeviathanSteeringTelemetry(out SteeringTelemetryEntry entry)
@@ -662,10 +930,7 @@ namespace Hecton8.AI
             if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0)
                 return false;
 
-            int index = cursor[0] - 1;
-            if (index < 0)
-                index += telemetry.Length;
-            index %= telemetry.Length;
+            int index = ResolveTelemetryLastIndex(cursor[0], telemetry.Length);
             entry = telemetry[index];
             return entry.StateHash != 0u || entry.ActivePredators != 0u;
         }
@@ -1080,9 +1345,9 @@ namespace Hecton8.AI
                 float3 center = (new float3(dims.x, dims.y, dims.z) - 1f) * 0.5f;
                 float3 local = (new float3(x, y, z) - center) * Config.CellSizeMeters;
 
-                float sphereA = math.length(local - new float3(-28f, -8f, 18f)) - 22f;
-                float sphereB = math.length(local - new float3(34f, 4f, -26f)) - 28f;
-                float sphereC = math.length(local - new float3(0f, 12f, 0f)) - 16f;
+                float sphereA = FastLengthFromSq(math.lengthsq(local - new float3(-28f, -8f, 18f))) - 22f;
+                float sphereB = FastLengthFromSq(math.lengthsq(local - new float3(34f, 4f, -26f))) - 28f;
+                float sphereC = FastLengthFromSq(math.lengthsq(local - new float3(0f, 12f, 0f))) - 16f;
                 float trenchWall = 82f - math.abs(local.x);
                 float ceiling = 42f - math.abs(local.y);
                 float signedDistance = math.min(math.min(math.min(sphereA, sphereB), sphereC), math.min(trenchWall, ceiling));
@@ -1100,6 +1365,11 @@ namespace Hecton8.AI
             [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public SteeringProfileDTO* Profiles;
             public int ProfileCount;
             public float GlobalQualityWeight;
+            public float DirectorClutchFactor01;
+            public int MaxAttackTokens;
+            public byte PlayerArmorClass;
+            public int ActiveCount;
+            public uint DirectorControlFrame;
 
             public void Execute(int index)
             {
@@ -1115,10 +1385,35 @@ namespace Hecton8.AI
                 float3 targetDirection = NormalizeSafe(output.DesiredDirection, fallback);
                 float baseMaxSpeed = math.max(0.1f, math.select(18f, input.BaseMaxSpeedMetersPerSecond, math.isfinite(input.BaseMaxSpeedMetersPerSecond)));
                 SteeringProfileDTO profile = ResolveProfile(Profiles, ProfileCount, input.SpeciesId);
+                float turnMultiplier = SanitizePositiveFiniteForBurst(output.TurnMultiplier, 1f);
                 float maxSpeed = math.max(baseMaxSpeed, profile.MaxSpeed);
-                float turnSpeed = math.max(0.05f, profile.TurnSpeed * math.max(0.1f, output.TurnMultiplier));
+                float turnSpeed = math.max(0.05f, profile.TurnSpeed * math.max(0.1f, turnMultiplier));
                 float avoidance = math.max(0.05f, profile.ObstacleAvoidanceWeight * math.lerp(0.75f, 1.35f, quality));
                 float lunge = math.max(1f, profile.LungeMultiplier);
+                bool attacking = (output.OutputFlags & (uint)CognitionOutputFlags.ShouldAttack) != 0u;
+                int activeCount = math.max(1, ActiveCount);
+                int tokenWindow = math.clamp(MaxAttackTokens, 1, activeCount);
+                int tokenPhase = (int)(DirectorControlFrame % (uint)activeCount);
+                int rotatedIndex = index + tokenPhase;
+                rotatedIndex -= math.select(0, activeCount, rotatedIndex >= activeCount);
+                bool tokenGranted = activeApex & attacking & (rotatedIndex < tokenWindow);
+                bool tokenDenied = activeApex & attacking & !tokenGranted;
+                float clutchFactor = math.saturate(DirectorClutchFactor01);
+                float collisionScale = math.select(0f, clutchFactor * LeviathanSteeringClutchOffsetMeters, activeApex & attacking);
+                float3 playerForward = NormalizeSafe(input.PlayerForward, -targetDirection);
+                float3 lateral = ResolveLateralDeflectionDirection(targetDirection, playerForward, slot);
+                byte materialRow = SteeringDamageClassImpact;
+                byte armorClass = (byte)(PlayerArmorClass & 7);
+                byte angleStep = (byte)ResolveSteeringArmorAngleStep(targetDirection, playerForward);
+                float armorDeflection = ResolveSteeringArmorDeflection01(armorClass, materialRow, angleStep);
+                uint armorRepelBit = (1u << armorClass) & SteeringArmorImpactRepelMask;
+                bool armorGlance = activeApex & attacking & (armorRepelBit != 0u) & (armorDeflection > 0.55f);
+                uint attackBits = 0u;
+                attackBits |= math.select(0u, SteeringAttackControlShouldAttack, activeApex & attacking);
+                attackBits |= math.select(0u, SteeringAttackControlTokenGranted, tokenGranted);
+                attackBits |= math.select(0u, SteeringAttackControlTokenDenied, tokenDenied);
+                attackBits |= math.select(0u, SteeringAttackControlClutchActive, collisionScale > 0.0001f);
+                attackBits |= math.select(0u, SteeringAttackControlArmorDeflected, armorGlance);
 
                 param = new SteeringParamsDTO
                 {
@@ -1126,7 +1421,16 @@ namespace Hecton8.AI
                     TurnSpeed = math.select(0f, turnSpeed, activeApex),
                     LungeMultiplier = math.select(1f, lunge, activeApex),
                     ObstacleAvoidanceWeight = math.select(0f, avoidance, activeApex),
-                    CurrentTargetDirection = math.select(float3.zero, targetDirection, activeApex)
+                    CurrentTargetDirection = math.select(float3.zero, targetDirection, activeApex),
+                    CollisionAvoidanceScale = math.select(0f, collisionScale, activeApex),
+                    ArmorDeflection01 = math.select(0f, armorDeflection, armorGlance),
+                    AttackControlBits = attackBits,
+                    DamageTypeID = materialRow,
+                    ArmorMaterialRow = materialRow,
+                    ArmorAngleStep = angleStep,
+                    ArmorClass = armorClass,
+                    LateralDeflectionDirection = math.select(float3.zero, lateral, activeApex),
+                    PresentationFlags = 0u
                 };
                 WriteSteeringRuntimePackedState(Params + slot, math.select(0u, priorState, activeApex));
             }
@@ -1134,14 +1438,66 @@ namespace Hecton8.AI
             private static SteeringProfileDTO ResolveProfile(SteeringProfileDTO* profiles, int profileCount, int speciesId)
             {
                 uint speciesHash = (uint)math.max(0, speciesId);
-                for (int i = 0; i < profileCount; i++)
+                int count = math.max(0, profileCount);
+                SteeringProfileDTO fallback = ResolveFallbackProfile();
+                SteeringProfileDTO selected = fallback;
+                uint found = 0u;
+                for (int i = 0; i < count; i++)
                 {
                     SteeringProfileDTO profile = profiles[i];
-                    if (profile.SpeciesHash == speciesHash && profile.Flags != 0u)
-                        return profile;
+                    bool match = (profile.SpeciesHash == speciesHash) & (profile.Flags != 0u) & (found == 0u);
+                    selected = SelectProfileForBurst(in selected, in profile, match);
+                    found |= math.select(0u, 1u, match);
                 }
 
-                return profiles[0];
+                return SanitizeProfileForBurst(in selected, in fallback);
+            }
+
+            private static SteeringProfileDTO ResolveFallbackProfile()
+            {
+                return new SteeringProfileDTO
+                {
+                    SpeciesHash = 0u,
+                    MaxSpeed = 22f,
+                    TurnSpeed = 0.82f,
+                    LungeMultiplier = 3.1f,
+                    ObstacleAvoidanceWeight = 1.35f,
+                    WhiskerLengthMeters = 36f,
+                    Flags = 1u
+                };
+            }
+
+            private static SteeringProfileDTO SanitizeProfileForBurst(in SteeringProfileDTO profile, in SteeringProfileDTO fallback)
+            {
+                return new SteeringProfileDTO
+                {
+                    SpeciesHash = math.select(fallback.SpeciesHash, profile.SpeciesHash, profile.Flags != 0u),
+                    MaxSpeed = SanitizePositiveFiniteForBurst(profile.MaxSpeed, fallback.MaxSpeed),
+                    TurnSpeed = SanitizePositiveFiniteForBurst(profile.TurnSpeed, fallback.TurnSpeed),
+                    LungeMultiplier = SanitizePositiveFiniteForBurst(profile.LungeMultiplier, fallback.LungeMultiplier),
+                    ObstacleAvoidanceWeight = SanitizePositiveFiniteForBurst(profile.ObstacleAvoidanceWeight, fallback.ObstacleAvoidanceWeight),
+                    WhiskerLengthMeters = SanitizePositiveFiniteForBurst(profile.WhiskerLengthMeters, fallback.WhiskerLengthMeters),
+                    Flags = math.select(fallback.Flags, profile.Flags, profile.Flags != 0u)
+                };
+            }
+
+            private static SteeringProfileDTO SelectProfileForBurst(in SteeringProfileDTO current, in SteeringProfileDTO candidate, bool useCandidate)
+            {
+                return new SteeringProfileDTO
+                {
+                    SpeciesHash = math.select(current.SpeciesHash, candidate.SpeciesHash, useCandidate),
+                    MaxSpeed = math.select(current.MaxSpeed, candidate.MaxSpeed, useCandidate),
+                    TurnSpeed = math.select(current.TurnSpeed, candidate.TurnSpeed, useCandidate),
+                    LungeMultiplier = math.select(current.LungeMultiplier, candidate.LungeMultiplier, useCandidate),
+                    ObstacleAvoidanceWeight = math.select(current.ObstacleAvoidanceWeight, candidate.ObstacleAvoidanceWeight, useCandidate),
+                    WhiskerLengthMeters = math.select(current.WhiskerLengthMeters, candidate.WhiskerLengthMeters, useCandidate),
+                    Flags = math.select(current.Flags, candidate.Flags, useCandidate)
+                };
+            }
+
+            private static float SanitizePositiveFiniteForBurst(float value, float fallback)
+            {
+                return math.select(fallback, value, math.isfinite(value) & (value > 0f));
             }
         }
 
@@ -1186,27 +1542,30 @@ namespace Hecton8.AI
                     double3 tipAup = creatureAup + new double3(direction.x * whiskerLength, direction.y * whiskerLength, direction.z * whiskerLength);
                     double3 localDouble = tipAup - Config.SdfOriginAup;
                     float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
-                    float sdfMeters = SampleSdf(local);
-                    bool hit = activeApex & math.isfinite(sdfMeters) & sdfMeters <= Config.SolidThresholdMeters;
+                    bool localFinite = math.all(math.isfinite(local));
+                    float3 sampleLocal = math.select(float3.zero, local, localFinite);
+                    float sdfMeters = SampleSdf(sampleLocal);
+                    bool hit = activeApex & localFinite & math.isfinite(sdfMeters) & (sdfMeters <= Config.SolidThresholdMeters);
                     float pressure = math.select(0f, math.saturate((Config.SolidThresholdMeters - sdfMeters) * math.rcp(math.max(1f, whiskerLength))), hit);
-                    float3 normal = SampleSdfNormal(local);
+                    float3 normal = SampleSdfNormal(sampleLocal);
                     float3 reflected = NormalizeSafe(direction - (2f * math.dot(direction, normal) * normal), -direction);
                     repulsion += math.select(float3.zero, reflected * pressure, hit);
                     pressureSum += pressure;
                     hits += math.select(0, 1, hit);
-                    bool bestHit = hit & pressure > bestPressure;
+                    bool bestHit = hit & (pressure > bestPressure);
                     bestDirection = math.select(bestDirection, reflected, bestHit);
                     bestPressure = math.select(bestPressure, pressure, bestHit);
                     nearest = math.select(nearest, math.min(nearest, math.max(0f, sdfMeters)), hit);
                     flags |= math.select(0u, SteeringAvoidanceFlagHitRock, hit);
+                    flags |= math.select(0u, SteeringAvoidanceFlagNonFinite, activeApex & !localFinite);
 
                     int whiskerIndex = (slot * LeviathanSteeringMaxWhiskers) + whisker;
                     Whiskers[whiskerIndex] = new SteeringWhiskerResultDTO
                     {
                         Direction = math.select(float3.zero, direction, activeApex),
                         DistanceMeters = math.select(0f, whiskerLength, activeApex),
-                        SampleLocalMeters = math.select(float3.zero, local, activeApex),
-                        SdfMeters = math.select(0f, sdfMeters, activeApex),
+                        SampleLocalMeters = math.select(float3.zero, sampleLocal, activeApex & localFinite),
+                        SdfMeters = math.select(0f, sdfMeters, activeApex & localFinite),
                         ReflectedDirection = math.select(float3.zero, reflected, hit),
                         Pressure01 = pressure,
                         EntitySlot = slot,
@@ -1222,7 +1581,7 @@ namespace Hecton8.AI
                     Whiskers[whiskerIndex] = default;
                 }
 
-                float averagePressure = hits > 0 ? pressureSum * math.rcp(math.max(1, hits)) : 0f;
+                float averagePressure = pressureSum * math.select(0f, math.rcp((float)math.max(1, hits)), hits > 0);
                 repulsion = NormalizeSafe(repulsion, float3.zero) * math.saturate(pressureSum);
                 bool finite = math.all(math.isfinite(repulsion)) & math.isfinite(averagePressure);
                 flags |= math.select(SteeringAvoidanceFlagNonFinite, 0u, finite);
@@ -1231,7 +1590,7 @@ namespace Hecton8.AI
                     Repulsion = math.select(float3.zero, repulsion, activeApex & finite),
                     AveragePressure = math.select(0f, averagePressure, activeApex & finite),
                     BestWhiskerDirection = math.select(float3.zero, bestDirection, activeApex),
-                    NearestHitDistance = math.select(0f, nearest, activeApex & hits > 0),
+                    NearestHitDistance = math.select(0f, nearest, activeApex & (hits > 0)),
                     ActiveWhiskerCount = math.select(0, activeWhiskers, activeApex),
                     HitWhiskerCount = math.select(0, hits, activeApex),
                     Flags = math.select(0u, flags, activeApex),
@@ -1243,15 +1602,22 @@ namespace Hecton8.AI
 
             private float SampleSdf(float3 localMeters)
             {
-                int3 dims = Config.Dimensions;
+                int3 dims = math.max(Config.Dimensions, new int3(1));
                 float3 cell = math.max(Config.CellSizeMeters, new float3(0.001f));
                 float3 center = (new float3(dims.x, dims.y, dims.z) - 1f) * 0.5f;
                 int3 voxel = (int3)math.round((localMeters / cell) + center);
-                if (voxel.x < 0 || voxel.y < 0 || voxel.z < 0 || voxel.x >= dims.x || voxel.y >= dims.y || voxel.z >= dims.z)
-                    return 64f;
-
-                int flat = voxel.x + (voxel.y * dims.x) + (voxel.z * dims.x * dims.y);
-                return (uint)flat < (uint)SdfLength ? Sdf[flat] : 64f;
+                bool inside =
+                    voxel.x >= 0 &
+                    voxel.y >= 0 &
+                    voxel.z >= 0 &
+                    voxel.x < dims.x &
+                    voxel.y < dims.y &
+                    voxel.z < dims.z;
+                int3 clamped = math.clamp(voxel, new int3(0), dims - 1);
+                int flat = clamped.x + (clamped.y * dims.x) + (clamped.z * dims.x * dims.y);
+                bool validFlat = inside & ((uint)flat < (uint)SdfLength);
+                int safeIndex = math.select(0, flat, validFlat);
+                return math.select(64f, Sdf[safeIndex], validFlat);
             }
 
             private float3 SampleSdfNormal(float3 localMeters)
@@ -1284,52 +1650,75 @@ namespace Hecton8.AI
                 ref SteeringParamsDTO param = ref UnsafeUtility.AsRef<SteeringParamsDTO>(Params + slot);
                 ref SteeringAvoidanceDTO avoidance = ref UnsafeUtility.AsRef<SteeringAvoidanceDTO>(Avoidance + slot);
                 ref KinematicStateDTO state = ref UnsafeUtility.AsRef<KinematicStateDTO>(KinematicStates + slot);
+                KinematicStateDTO priorState = state;
+                SteeringAvoidanceDTO priorAvoidance = avoidance;
                 bool activeApex = IsLeviathanSteeringCandidate(in input);
-                if (!activeApex)
-                    return;
 
                 double3 creatureAup = ResolveCreatureAup(in input);
-                double3 targetAup = ResolveTargetAup(in input, creatureAup);
+                uint attackBits = param.AttackControlBits;
+                bool attacking = (attackBits & SteeringAttackControlShouldAttack) != 0u;
+                bool hasToken = (attackBits & SteeringAttackControlTokenGranted) != 0u;
+                bool tokenDenied = activeApex & attacking & !hasToken;
+                float3 lateral = NormalizeSafe(param.LateralDeflectionDirection, ResolveLateralDeflectionDirection(param.CurrentTargetDirection, input.PlayerForward, slot));
+                float clutchScale = math.select(0f, param.CollisionAvoidanceScale, activeApex & attacking);
+                double3 clutchOffset = new double3(lateral.x * clutchScale, lateral.y * clutchScale, lateral.z * clutchScale);
+                double3 targetAup = ResolveTargetAup(in input, creatureAup) + clutchOffset;
                 double3 toTargetDouble = targetAup - creatureAup;
                 float targetDistance = ClampDoubleDistanceToFloat(toTargetDouble);
                 float3 pursuit = NormalizeDouble3(toTargetDouble, NormalizeSafe(param.CurrentTargetDirection, new float3(0f, 0f, 1f)));
                 float3 cognition = NormalizeSafe(param.CurrentTargetDirection, pursuit);
-                float3 repulsion = avoidance.Repulsion;
+                float3 repulsion = math.select(float3.zero, avoidance.Repulsion, math.all(math.isfinite(avoidance.Repulsion)));
                 float3 desired = NormalizeSafe(pursuit + (cognition * 0.5f) + (repulsion * param.ObstacleAvoidanceWeight), cognition);
+                float orbitPhase = ((Frame & 1023u) * 0.00390625f) + ((slot & 31) * 0.06125f);
+                float orbitWave = ResolveTriangleSigned01(orbitPhase);
+                float3 harassment = NormalizeSafe((lateral * orbitWave) + (pursuit * 0.25f) + (repulsion * 0.35f), lateral);
+                desired = NormalizeSafe(math.lerp(desired, harassment, math.select(0f, 1f, tokenDenied)), desired);
 
                 uint runtimeState = ReadSteeringRuntimePackedState(Params + slot);
                 int lungeFrames = (int)(runtimeState & 0xFFu);
-                bool attacking = (output.OutputFlags & (uint)CognitionOutputFlags.ShouldAttack) != 0u;
-                bool enterLunge = attacking & targetDistance <= LeviathanSteeringLungeDistanceMeters;
+                bool enterLunge = activeApex & attacking & hasToken & (targetDistance <= LeviathanSteeringLungeDistanceMeters);
                 lungeFrames = math.select(math.max(0, lungeFrames - 1), LeviathanSteeringLungeLockFrames, enterLunge);
-                float3 currentVelocity = math.select(input.Velocity, state.Velocity, math.all(math.isfinite(state.Velocity)) & math.lengthsq(state.Velocity) > LeviathanSteeringMathEpsilon);
-                desired = math.select(desired, NormalizeSafe(currentVelocity, desired), lungeFrames > 0 & !enterLunge);
+                float3 currentVelocity = math.select(input.Velocity, state.Velocity, math.all(math.isfinite(state.Velocity)) & (math.lengthsq(state.Velocity) > LeviathanSteeringMathEpsilon));
+                currentVelocity = math.select(float3.zero, currentVelocity, math.all(math.isfinite(currentVelocity)));
+                desired = math.select(desired, NormalizeSafe(currentVelocity, desired), (lungeFrames > 0) & !enterLunge);
+                float armorBlend = math.saturate(param.ArmorDeflection01 * math.select(0f, 1f, activeApex & hasToken & (lungeFrames > 0)));
+                float3 glancing = NormalizeSafe((lateral * math.max(0.35f, armorBlend)) + (repulsion * 0.25f), lateral);
+                desired = NormalizeSafe(math.lerp(desired, glancing, armorBlend), desired);
 
                 float speedMultiplier = math.max(0.05f, math.select(1f, output.SpeedMultiplier, math.isfinite(output.SpeedMultiplier)));
                 float desiredSpeed = math.max(0f, param.MaxSpeed * speedMultiplier);
                 desiredSpeed *= math.select(1f, math.max(1f, param.LungeMultiplier), lungeFrames > 0);
-                float currentSpeed = math.sqrt(math.max(0f, math.lengthsq(currentVelocity)));
+                desiredSpeed *= math.lerp(1f, 0.82f, armorBlend);
+                float currentSpeed = FastLengthFromSq(math.lengthsq(currentVelocity));
                 float turn = math.saturate(math.max(0f, DeltaTime) * math.max(0f, param.TurnSpeed));
                 float3 currentDirection = NormalizeSafe(currentVelocity, cognition);
                 float3 smoothedDirection = SlerpDirection(currentDirection, desired, turn);
                 float smoothedSpeed = math.lerp(currentSpeed, desiredSpeed, math.saturate(turn + DeltaTime));
                 float3 nextVelocity = smoothedDirection * smoothedSpeed;
-                if (!math.all(math.isfinite(nextVelocity)))
-                    nextVelocity = float3.zero;
+                nextVelocity = math.select(float3.zero, nextVelocity, math.all(math.isfinite(nextVelocity)));
 
-                state.AUP_Position = creatureAup;
-                state.Velocity = nextVelocity;
-                state.AngularVelocity = math.cross(currentDirection, smoothedDirection) * math.rcp(math.max(DeltaTime, 0.0001f));
-                state.Mass = math.max(1f, math.select(100000f, state.Mass, math.isfinite(state.Mass) & state.Mass > 0f));
-                state.Flags = (state.Flags & 0xFFFF0000u) | (uint)(slot & 0xFFFF);
-                state.DragCoefficient = math.max(0f, math.select(0.18f, state.DragCoefficient, math.isfinite(state.DragCoefficient)));
-                state.RestingFrameCount = 0;
-                state.DeepSleepTickCount = 0;
-                state.SleepMaterialIndex = 0;
+                state.AUP_Position = math.select(priorState.AUP_Position, creatureAup, activeApex);
+                state.Velocity = math.select(priorState.Velocity, nextVelocity, activeApex);
+                state.AngularVelocity = math.select(
+                    priorState.AngularVelocity,
+                    math.cross(currentDirection, smoothedDirection) * math.rcp(math.max(DeltaTime, 0.0001f)),
+                    activeApex);
+                state.Mass = math.select(priorState.Mass, math.max(1f, math.select(100000f, state.Mass, math.isfinite(state.Mass) & (state.Mass > 0f))), activeApex);
+                state.Flags = math.select(priorState.Flags, (state.Flags & 0xFFFF0000u) | (uint)(slot & 0xFFFF), activeApex);
+                state.DragCoefficient = math.select(priorState.DragCoefficient, math.max(0f, math.select(0.18f, state.DragCoefficient, math.isfinite(state.DragCoefficient))), activeApex);
+                state.RestingFrameCount = (byte)math.select((int)priorState.RestingFrameCount, 0, activeApex);
+                state.DeepSleepTickCount = (byte)math.select((int)priorState.DeepSleepTickCount, 0, activeApex);
+                state.SleepMaterialIndex = (byte)math.select((int)priorState.SleepMaterialIndex, 0, activeApex);
 
-                avoidance.DesiredSpeedMetersPerSecond = smoothedSpeed;
-                avoidance.StateHash = BuildHash((uint)slot, Frame, avoidance.Flags, nextVelocity);
-                WriteSteeringRuntimePackedState(Params + slot, (uint)math.clamp(lungeFrames, 0, 255));
+                uint presentationFlags = 0u;
+                presentationFlags |= math.select(0u, SteeringPresentationFlagTokenDenied, tokenDenied);
+                presentationFlags |= math.select(0u, SteeringPresentationFlagClutchNearMiss, activeApex & attacking & (clutchScale > 0.0001f) & (targetDistance <= LeviathanSteeringLungeDistanceMeters + 2f));
+                presentationFlags |= math.select(0u, SteeringPresentationFlagArmorGlance, activeApex & (armorBlend > 0.55f));
+                param.PresentationFlags = math.select(param.PresentationFlags, presentationFlags, activeApex);
+
+                avoidance.DesiredSpeedMetersPerSecond = math.select(priorAvoidance.DesiredSpeedMetersPerSecond, smoothedSpeed, activeApex);
+                avoidance.StateHash = math.select(priorAvoidance.StateHash, BuildHash((uint)slot, Frame, avoidance.Flags | presentationFlags, nextVelocity), activeApex);
+                WriteSteeringRuntimePackedState(Params + slot, math.select(runtimeState, (uint)math.clamp(lungeFrames, 0, 255), activeApex));
             }
         }
 
@@ -1352,6 +1741,7 @@ namespace Hecton8.AI
                 float3 velocitySum = float3.zero;
                 double3 firstAup = double3.zero;
                 uint active = 0u;
+                uint firstAupWritten = 0u;
                 uint repulsions = 0u;
                 uint flags = 0u;
                 uint stateHash = 2166136261u;
@@ -1361,40 +1751,50 @@ namespace Hecton8.AI
                     int slot = ActiveSlots[i];
                     ref readonly CognitionInput input = ref UnsafeUtility.AsRef<CognitionInput>(Inputs + slot);
                     bool activeApex = IsLeviathanSteeringCandidate(in input);
-                    if (!activeApex)
-                        continue;
-
                     ref readonly KinematicStateDTO state = ref UnsafeUtility.AsRef<KinematicStateDTO>(KinematicStates + slot);
                     ref readonly SteeringAvoidanceDTO avoidance = ref UnsafeUtility.AsRef<SteeringAvoidanceDTO>(Avoidance + slot);
+                    ref readonly SteeringParamsDTO param = ref UnsafeUtility.AsRef<SteeringParamsDTO>(Params + slot);
                     bool velocityFinite = math.all(math.isfinite(state.Velocity));
-                    flags |= math.select(SteeringTelemetryFlagNonFiniteVelocity, 0u, velocityFinite);
-                    velocitySum += math.select(float3.zero, state.Velocity, velocityFinite);
-                    firstAup = math.select(firstAup, state.AUP_Position, active == 0u);
-                    repulsions += math.select(0u, 1u, (avoidance.Flags & SteeringAvoidanceFlagHitRock) != 0u);
-                    float speed = math.sqrt(math.max(0f, math.lengthsq(state.Velocity)));
+                    bool aupFinite = math.all(math.isfinite(state.AUP_Position));
+                    bool avoidanceFinite = (avoidance.Flags & SteeringAvoidanceFlagNonFinite) == 0u;
+                    flags |= math.select(0u, SteeringTelemetryFlagNonFiniteVelocity, activeApex & !velocityFinite);
+                    flags |= math.select(0u, SteeringTelemetryFlagNonFiniteAup, activeApex & !aupFinite);
+                    flags |= math.select(0u, SteeringTelemetryFlagNonFiniteAvoidance, activeApex & !avoidanceFinite);
+                    flags |= math.select(0u, SteeringTelemetryFlagClutchNearMiss, activeApex & ((param.PresentationFlags & SteeringPresentationFlagClutchNearMiss) != 0u));
+                    flags |= math.select(0u, SteeringTelemetryFlagArmorGlance, activeApex & ((param.PresentationFlags & SteeringPresentationFlagArmorGlance) != 0u));
+                    flags |= math.select(0u, SteeringTelemetryFlagTokenDenied, activeApex & ((param.PresentationFlags & SteeringPresentationFlagTokenDenied) != 0u));
+                    velocitySum += math.select(float3.zero, state.Velocity, activeApex & velocityFinite);
+                    bool captureFirstAup = activeApex & aupFinite & (firstAupWritten == 0u);
+                    firstAup = math.select(firstAup, state.AUP_Position, captureFirstAup);
+                    firstAupWritten |= math.select(0u, 1u, captureFirstAup);
+                    repulsions += math.select(0u, 1u, activeApex & ((avoidance.Flags & SteeringAvoidanceFlagHitRock) != 0u));
+                    float speed = math.select(0f, FastLengthFromSq(math.lengthsq(state.Velocity)), velocityFinite);
                     bool lungeActive = (ReadSteeringRuntimePackedState(Params + slot) & 0xFFu) != 0u;
-                    maxLungeVelocity = math.select(maxLungeVelocity, math.max(maxLungeVelocity, speed), lungeActive);
-                    stateHash = BuildHash(stateHash, (uint)slot, avoidance.StateHash, state.Velocity);
-                    active++;
+                    maxLungeVelocity = math.select(maxLungeVelocity, math.max(maxLungeVelocity, speed), activeApex & velocityFinite & lungeActive);
+                    stateHash = math.select(stateHash, BuildHash(stateHash, (uint)slot, avoidance.StateHash ^ param.PresentationFlags, state.Velocity), activeApex);
+                    active += math.select(0u, 1u, activeApex);
                 }
 
-                flags |= math.select(0u, SteeringTelemetryFlagBudgetExceeded, EstimatedBurstMicroseconds > LeviathanSteeringFaultBudgetMicroseconds);
-                float invActive = active > 0u ? math.rcp((float)active) : 0f;
-                int cursor = math.max(0, TelemetryCursor[0]);
-                int index = cursor % LeviathanSteeringTelemetryCapacity;
+                float burstMicroseconds = SanitizeTelemetryMicroseconds(EstimatedBurstMicroseconds);
+                flags |= math.select(0u, SteeringTelemetryFlagBudgetExceeded, burstMicroseconds > LeviathanSteeringFaultBudgetMicroseconds);
+                float invActive = math.select(0f, math.rcp((float)math.max(1u, active)), active > 0u);
+                float3 averageVelocity = velocitySum * invActive;
+                averageVelocity = math.select(float3.zero, averageVelocity, math.all(math.isfinite(averageVelocity)));
+                stateHash = math.select(0u, stateHash, active > 0u);
+                int index = NormalizeTelemetryCursor(TelemetryCursor[0], LeviathanSteeringTelemetryCapacity);
                 Telemetry[index] = new SteeringTelemetryEntry
                 {
                     FirstAup = firstAup,
-                    AverageVelocity = velocitySum * invActive,
+                    AverageVelocity = averageVelocity,
                     Frame = Frame,
                     ActivePredators = active,
                     ActiveRepulsions = repulsions,
                     MaxLungeVelocity = maxLungeVelocity,
-                    BurstMicroseconds = EstimatedBurstMicroseconds,
+                    BurstMicroseconds = burstMicroseconds,
                     Flags = flags,
                     StateHash = stateHash
                 };
-                TelemetryCursor[0] = (cursor + 1) % LeviathanSteeringTelemetryCapacity;
+                TelemetryCursor[0] = AdvanceTelemetryCursor(index, LeviathanSteeringTelemetryCapacity);
             }
         }
 
@@ -1417,13 +1817,15 @@ namespace Hecton8.AI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double3 ResolveTargetAup(in CognitionInput input, double3 creatureAup)
         {
-            if ((input.Flags & (int)CognitionInputFlags.HasPackTarget) != 0)
-                return ResolveAup(in input.PackTargetAup);
-            if ((input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0)
-                return ResolveAup(in input.PlayerTargetAup);
-
             float3 fallback = NormalizeSafe(input.Forward, new float3(0f, 0f, 1f));
-            return creatureAup + new double3(fallback.x * 100d, fallback.y * 100d, fallback.z * 100d);
+            double3 fallbackAup = creatureAup + new double3(fallback.x * 100d, fallback.y * 100d, fallback.z * 100d);
+            double3 playerAup = ResolveAup(in input.PlayerTargetAup);
+            double3 packAup = ResolveAup(in input.PackTargetAup);
+            bool hasPlayerTarget = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
+            bool hasPackTarget = (input.Flags & (int)CognitionInputFlags.HasPackTarget) != 0;
+            double3 target = math.select(fallbackAup, playerAup, hasPlayerTarget);
+            target = math.select(target, packAup, hasPackTarget);
+            return math.select(fallbackAup, target, math.all(math.isfinite(target)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1440,18 +1842,16 @@ namespace Hecton8.AI
         private static float ClampDoubleDistanceToFloat(double3 value)
         {
             double distanceSq = math.lengthsq(value);
-            if (!math.isfinite(distanceSq) || distanceSq <= 0.000001d)
-                return 0f;
-
-            double distance = math.sqrt(distanceSq);
-            return (float)math.min(distance, (double)float.MaxValue);
+            bool valid = math.isfinite(distanceSq) & (distanceSq > 0.000001d);
+            double distance = FastLengthFromSq(distanceSq);
+            return (float)math.select(0d, math.min(distance, (double)float.MaxValue), valid);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 NormalizeDouble3(double3 value, float3 fallback)
         {
             double lengthSq = math.lengthsq(value);
-            bool valid = math.isfinite(lengthSq) & lengthSq > 0.000001d;
+            bool valid = math.isfinite(lengthSq) & (lengthSq > 0.000001d);
             double inverseLength = math.rsqrt(math.max(lengthSq, 0.000001d));
             float3 normalized = new float3((float)(value.x * inverseLength), (float)(value.y * inverseLength), (float)(value.z * inverseLength));
             return math.select(fallback, normalized, valid & math.all(math.isfinite(normalized)));
@@ -1461,8 +1861,8 @@ namespace Hecton8.AI
         private static float3 NormalizeSafe(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            bool valid = math.all(math.isfinite(value)) & lengthSq > LeviathanSteeringMathEpsilon;
-            float3 normalized = math.normalizesafe(value, fallback);
+            bool valid = math.all(math.isfinite(value)) & (lengthSq > LeviathanSteeringMathEpsilon);
+            float3 normalized = value * math.rsqrt(math.max(lengthSq, MathSafetyEpsilon));
             return math.select(fallback, normalized, valid & math.all(math.isfinite(normalized)));
         }
 
@@ -1478,37 +1878,78 @@ namespace Hecton8.AI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ResolveLateralDeflectionDirection(float3 attackDirection, float3 playerForward, int slot)
+        {
+            float3 forward = NormalizeSafe(attackDirection, new float3(0f, 0f, 1f));
+            float3 normal = NormalizeSafe(playerForward, -forward);
+            float3 fallback = NormalizeSafe(math.cross(new float3(0f, 1f, 0f), forward), new float3(1f, 0f, 0f));
+            float3 lateral = NormalizeSafe(math.cross(normal, forward), fallback);
+            float sign = math.select(-1f, 1f, (slot & 1) == 0);
+            return lateral * sign;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveTriangleSigned01(float phase)
+        {
+            float wrapped = phase - math.floor(phase);
+            return (math.abs((wrapped * 2f) - 1f) * 2f) - 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveSteeringArmorAngleStep(float3 projectileDirection, float3 armorNormal)
+        {
+            float3 direction = NormalizeSafe(projectileDirection, new float3(0f, 0f, 1f));
+            float3 normal = NormalizeSafe(armorNormal, new float3(0f, 0f, 1f));
+            float attackDot = math.saturate(math.abs(math.dot(direction, normal)));
+            return math.clamp((int)math.floor((1f - attackDot) * SteeringArmorAngleSteps), 0, SteeringArmorAngleSteps - 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSteeringArmorDeflection01(int armorClass, int materialRow, int angleStep)
+        {
+            int strength = ResolveDefaultSteeringArmorStrength(armorClass & 7, materialRow & (SteeringArmorMaterialRows - 1), angleStep);
+            return math.saturate(strength * (1f / SteeringArmorMaterialStrengthMask));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveDefaultSteeringArmorStrength(int armorClass, int materialRow, int angleStep)
+        {
+            int baseStrength = 32;
+            baseStrength = math.select(baseStrength, 4, armorClass == 0);
+            baseStrength = math.select(baseStrength, 36, armorClass == 1);
+            baseStrength = math.select(baseStrength, 50, armorClass == 2);
+            baseStrength = math.select(baseStrength, 56, armorClass == 3);
+            baseStrength = math.select(baseStrength, 48, armorClass == 4);
+            baseStrength = math.select(baseStrength, 26, armorClass == 5);
+            baseStrength = math.select(baseStrength, 60, armorClass == 6);
+
+            bool structureOrShielded = (armorClass == 3) | (armorClass == 6);
+            int materialAdjustment = 0;
+            materialAdjustment = math.select(materialAdjustment, math.select(-4, 4, structureOrShielded), materialRow == 1);
+            materialAdjustment = math.select(materialAdjustment, 8, materialRow == 2);
+            materialAdjustment = math.select(materialAdjustment, math.select(6, -12, armorClass == 6), materialRow == 3);
+            materialAdjustment = math.select(materialAdjustment, -2, materialRow == 4);
+            materialAdjustment = math.select(materialAdjustment, 6, materialRow == 5);
+            materialAdjustment = math.select(materialAdjustment, -3, materialRow == 6);
+            materialAdjustment = math.select(materialAdjustment, -10, materialRow == 7);
+
+            int grazingBonus = math.clamp(angleStep, 0, SteeringArmorAngleSteps - 1) * 5;
+            return math.clamp(baseStrength + grazingBonus + materialAdjustment, 0, SteeringArmorMaterialStrengthMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 ResolveWhiskerDirection(int index, float3 forward, float3 right, float3 up)
         {
-            switch (index)
-            {
-                case 0: return forward;
-                case 1: return right;
-                case 2: return -right;
-                case 3: return up;
-                case 4: return -up;
-                case 5: return -forward;
-                case 6: return NormalizeSafe(forward + right, forward);
-                case 7: return NormalizeSafe(forward - right, forward);
-                case 8: return NormalizeSafe(forward + up, forward);
-                case 9: return NormalizeSafe(forward - up, forward);
-                case 10: return NormalizeSafe(forward + right + up, forward);
-                case 11: return NormalizeSafe(forward + right - up, forward);
-                case 12: return NormalizeSafe(forward - right + up, forward);
-                case 13: return NormalizeSafe(forward - right - up, forward);
-                case 14: return NormalizeSafe(right + up, right);
-                case 15: return NormalizeSafe(right - up, right);
-                case 16: return NormalizeSafe(-right + up, -right);
-                case 17: return NormalizeSafe(-right - up, -right);
-                case 18: return NormalizeSafe(-forward + right, -forward);
-                case 19: return NormalizeSafe(-forward - right, -forward);
-                case 20: return NormalizeSafe(-forward + up, -forward);
-                case 21: return NormalizeSafe(-forward - up, -forward);
-                case 22: return NormalizeSafe(-forward + right + up, -forward);
-                case 23: return NormalizeSafe(-forward + right - up, -forward);
-                case 24: return NormalizeSafe(-forward - right + up, -forward);
-                default: return NormalizeSafe(-forward - right - up, -forward);
-            }
+            uint bit = 1u << math.clamp(index, 0, LeviathanSteeringMaxWhiskers - 1);
+            float forwardWeight = math.select(0f, 1f, (bit & SteeringWhiskerPositiveForwardMask) != 0u);
+            forwardWeight = math.select(forwardWeight, -1f, (bit & SteeringWhiskerNegativeForwardMask) != 0u);
+            float rightWeight = math.select(0f, 1f, (bit & SteeringWhiskerPositiveRightMask) != 0u);
+            rightWeight = math.select(rightWeight, -1f, (bit & SteeringWhiskerNegativeRightMask) != 0u);
+            float upWeight = math.select(0f, 1f, (bit & SteeringWhiskerPositiveUpMask) != 0u);
+            upWeight = math.select(upWeight, -1f, (bit & SteeringWhiskerNegativeUpMask) != 0u);
+            return NormalizeSafe(
+                (forward * forwardWeight) + (right * rightWeight) + (up * upWeight),
+                forward);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1521,7 +1962,7 @@ namespace Hecton8.AI
             hash = (hash ^ (uint)math.asint(v.x)) * 16777619u;
             hash = (hash ^ (uint)math.asint(v.y)) * 16777619u;
             hash = (hash ^ (uint)math.asint(v.z)) * 16777619u;
-            return hash == 0u ? 2166136261u : hash;
+            return math.select(hash, 2166136261u, hash == 0u);
         }
     }
 
@@ -1590,7 +2031,7 @@ namespace Hecton8.AI
                     return;
 
                 _lastTelemetryFrame = entry.Frame;
-                _graph.Append(math.length(entry.AverageVelocity), entry.ActiveRepulsions);
+                _graph.Append(math.sqrt(math.max(0f, math.lengthsq(entry.AverageVelocity))), entry.ActiveRepulsions);
             }
         }
 
@@ -1762,8 +2203,7 @@ namespace Hecton8.AI
             int updateScopes = 0;
             int violations = 0;
             ScanDirectory(scripts, ref updateScopes, ref violations);
-            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
-                      " steeringViolations=" + violations.ToString());
+            Debug.Log($"[OOP_Movement_Scanner] scanned Update scopes={updateScopes} steeringViolations={violations}");
         }
 
         private static void ScanDirectory(string directory, ref int updateScopes, ref int violations)

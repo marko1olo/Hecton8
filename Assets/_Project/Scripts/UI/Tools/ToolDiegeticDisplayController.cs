@@ -23,7 +23,9 @@ namespace Hecton8.UI.Tools
         private const float TierHysteresisSeconds = 2f;
         private const float PoolRetrySeconds = 2f;
         private const float InvisibleReleaseSeconds = 0.75f;
+        private const int MaxRenderCadenceFrames = 6;
         private const float PropertyEpsilon = 0.0005f;
+        private const float DecorativeShaderMinimumWeight = 0.0001f;
         private const string ToolUiLayerName = "ToolUI";
         private const int StatusOk = 0;
         private const int StatusLowPower = 1;
@@ -108,6 +110,7 @@ namespace Hecton8.UI.Tools
         private int _lastBatteryBucket = InvalidDisplayBucket;
         private int _lastDistanceBucket = InvalidDisplayBucket;
         private int _lastScannerProgressBucket = InvalidDisplayBucket;
+        private int _nextAllowedRenderFrame;
         private uint _lastScannerArtifactHash;
         private uint _scannerTitleCacheHash;
         private int _scannerTitleCacheVersion;
@@ -165,6 +168,7 @@ namespace Hecton8.UI.Tools
         {
             _stateDirty = true;
             _renderRequested = true;
+            _nextAllowedRenderFrame = 0;
             _notRenderableSeconds = 0f;
             ResolveQualityImmediate();
             CacheRenderTexturePoolCold();
@@ -194,6 +198,7 @@ namespace Hecton8.UI.Tools
             _poolUnavailableFallback = false;
             _poolRetrySeconds = 0f;
             _notRenderableSeconds = 0f;
+            _nextAllowedRenderFrame = 0;
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
         }
 
@@ -289,7 +294,7 @@ namespace Hecton8.UI.Tools
                     applyScreenTexture: true,
                     useRenderTexture: true,
                     fallbackActive: false,
-                    renderThisFrame: _renderRequested);
+                    renderThisFrame: _renderRequested && IsRenderCadenceOpen());
                 return;
             }
 
@@ -329,7 +334,6 @@ namespace Hecton8.UI.Tools
         public void SlowTick()
         {
             QueueQualityCandidate(HomeostasisBrain.GlobalQualityWeight);
-            FlushPendingRenderTextureResourceState();
         }
 
         public void LateFrameTick()
@@ -344,6 +348,9 @@ namespace Hecton8.UI.Tools
 
             bool hasPresentationCommit = _pendingPresentationCommit;
             bool releaseRenderTexture = _pendingReleaseRenderTexture;
+            if (hasPresentationCommit)
+                FlushPendingRenderTextureResourceState();
+
             if (_pendingStateRefresh || _stateDirty)
             {
                 _pendingStateRefresh = false;
@@ -399,6 +406,7 @@ namespace Hecton8.UI.Tools
             _lastScannerArtifactHash = 0u;
             _stateDirty = true;
             _renderRequested = true;
+            _nextAllowedRenderFrame = 0;
             _notRenderableSeconds = 0f;
         }
 
@@ -522,14 +530,14 @@ namespace Hecton8.UI.Tools
             if (_primaryLabel == null)
                 return;
 
-            Span<char> span = _primaryBuffer.AsSpan();
+            Span<char> span = stackalloc char[TextBufferCapacity];
             int cursor = 0;
             ZeroGCFormatter.AppendToSpan("AMMO ".AsSpan(), span, ref cursor);
             ZeroGCFormatter.FastIntToChars(ammoBucket, span, ref cursor);
             ZeroGCFormatter.AppendToSpan("  HEAT ".AsSpan(), span, ref cursor);
             ZeroGCFormatter.FastIntToChars(heatBucket, span, ref cursor);
             ZeroGCFormatter.AppendChar('%', span, ref cursor);
-            _primaryLabel.SetCharArray(_primaryBuffer, 0, math.max(0, cursor));
+            SetLabelFromStack(_primaryLabel, span, _primaryBuffer, cursor);
         }
 
         private void WriteSecondaryLine(int distanceBucket, int batteryBucket, int statusBucket)
@@ -537,7 +545,7 @@ namespace Hecton8.UI.Tools
             if (_secondaryLabel == null)
                 return;
 
-            Span<char> span = _secondaryBuffer.AsSpan();
+            Span<char> span = stackalloc char[TextBufferCapacity];
             int cursor = 0;
             ZeroGCFormatter.AppendToSpan("DST ".AsSpan(), span, ref cursor);
             ZeroGCFormatter.FastIntToChars(distanceBucket, span, ref cursor);
@@ -546,7 +554,7 @@ namespace Hecton8.UI.Tools
             ZeroGCFormatter.AppendChar('%', span, ref cursor);
             ZeroGCFormatter.AppendToSpan("  ".AsSpan(), span, ref cursor);
             AppendStatusToken(statusBucket, span, ref cursor);
-            _secondaryLabel.SetCharArray(_secondaryBuffer, 0, math.max(0, cursor));
+            SetLabelFromStack(_secondaryLabel, span, _secondaryBuffer, cursor);
         }
 
         private void WriteScannerPrimaryLine(uint artifactHash, uint scannerFrame, int progressPercent)
@@ -554,7 +562,7 @@ namespace Hecton8.UI.Tools
             if (_primaryLabel == null)
                 return;
 
-            Span<char> span = _primaryBuffer.AsSpan();
+            Span<char> span = stackalloc char[TextBufferCapacity];
             int cursor = 0;
             bool compactTitle = _fallbackActive;
             if (compactTitle ||
@@ -571,7 +579,7 @@ namespace Hecton8.UI.Tools
                 ScrambleDecryptionSpan(span.Slice(0, cursor), artifactHash, unchecked((int)scannerFrame), progressPercent * 0.01f);
             }
 
-            _primaryLabel.SetCharArray(_primaryBuffer, 0, math.max(0, cursor));
+            SetLabelFromStack(_primaryLabel, span, _primaryBuffer, cursor);
         }
 
         private void WriteScannerSecondaryLine(int progressPercent, int statusBucket)
@@ -579,14 +587,22 @@ namespace Hecton8.UI.Tools
             if (_secondaryLabel == null)
                 return;
 
-            Span<char> span = _secondaryBuffer.AsSpan();
+            Span<char> span = stackalloc char[TextBufferCapacity];
             int cursor = 0;
             ZeroGCFormatter.AppendToSpan("DECRYPT ".AsSpan(), span, ref cursor);
             ZeroGCFormatter.FastIntToChars(math.clamp(progressPercent, 0, 100), span, ref cursor);
             ZeroGCFormatter.AppendChar('%', span, ref cursor);
             ZeroGCFormatter.AppendToSpan("  ".AsSpan(), span, ref cursor);
             AppendStatusToken(statusBucket, span, ref cursor);
-            _secondaryLabel.SetCharArray(_secondaryBuffer, 0, math.max(0, cursor));
+            SetLabelFromStack(_secondaryLabel, span, _secondaryBuffer, cursor);
+        }
+
+        private static void SetLabelFromStack(TMP_Text label, Span<char> source, char[] staging, int cursor)
+        {
+            int length = math.clamp(cursor, 0, math.min(source.Length, staging.Length));
+            if (length > 0)
+                source.Slice(0, length).CopyTo(staging.AsSpan());
+            label.SetCharArray(staging, 0, length);
         }
 
         private bool TryResolveScannerTitle(uint artifactHash, Span<char> destination, out int written)
@@ -757,15 +773,25 @@ namespace Hecton8.UI.Tools
             float fault01,
             float toolTypeHue01)
         {
+            float decorativeWeight = Sanitize01(visualOverkill01);
+            if (decorativeWeight <= DecorativeShaderMinimumWeight)
+            {
+                ResetDecorativeScreenScalarsForLowQuality();
+                return;
+            }
+
+            float weightedCriticalFlash = criticalFlash * decorativeWeight;
+            float weightedFault01 = fault01 * decorativeWeight;
+            float weightedToolTypeHue01 = toolTypeHue01 * decorativeWeight;
             bool changed = !NearlyEqual(_appliedHeat01, heat01) ||
                 !NearlyEqual(_appliedBattery01, battery01) ||
                 !NearlyEqual(_appliedVisorBatteryNormalized, battery01) ||
                 !NearlyEqual(_appliedDistanceMeters, distanceMeters) ||
                 !NearlyEqual(_appliedAmmoUnits, ammoUnits) ||
-                !NearlyEqual(_appliedCriticalFlash, criticalFlash) ||
-                !NearlyEqual(_appliedVisualOverkill01, visualOverkill01) ||
-                !NearlyEqual(_appliedFault01, fault01) ||
-                !NearlyEqual(_appliedToolTypeHue01, toolTypeHue01);
+                !NearlyEqual(_appliedCriticalFlash, weightedCriticalFlash) ||
+                !NearlyEqual(_appliedVisualOverkill01, decorativeWeight) ||
+                !NearlyEqual(_appliedFault01, weightedFault01) ||
+                !NearlyEqual(_appliedToolTypeHue01, weightedToolTypeHue01);
             if (!changed || _screenRenderer == null)
                 return;
 
@@ -775,10 +801,29 @@ namespace Hecton8.UI.Tools
             SetScreenFloat(_ToolBatteryNormalizedId, battery01, ref _appliedVisorBatteryNormalized);
             SetScreenFloat(_ToolDistanceMetersId, distanceMeters, ref _appliedDistanceMeters);
             SetScreenFloat(_ToolAmmoUnitsId, ammoUnits, ref _appliedAmmoUnits);
-            SetScreenFloat(_ToolCriticalFlash01Id, criticalFlash, ref _appliedCriticalFlash);
-            SetScreenFloat(_ToolVisualOverkill01Id, visualOverkill01, ref _appliedVisualOverkill01);
-            SetScreenFloat(_ToolFault01Id, fault01, ref _appliedFault01);
-            SetScreenFloat(_ToolTypeHue01Id, toolTypeHue01, ref _appliedToolTypeHue01);
+            SetScreenFloat(_ToolCriticalFlash01Id, weightedCriticalFlash, ref _appliedCriticalFlash);
+            SetScreenFloat(_ToolVisualOverkill01Id, decorativeWeight, ref _appliedVisualOverkill01);
+            SetScreenFloat(_ToolFault01Id, weightedFault01, ref _appliedFault01);
+            SetScreenFloat(_ToolTypeHue01Id, weightedToolTypeHue01, ref _appliedToolTypeHue01);
+            _screenRenderer.SetPropertyBlock(_screenPropertyBlock);
+        }
+
+        private void ResetDecorativeScreenScalarsForLowQuality()
+        {
+            if (_screenRenderer == null ||
+                (NearlyEqual(_appliedCriticalFlash, 0f) &&
+                 NearlyEqual(_appliedVisualOverkill01, 0f) &&
+                 NearlyEqual(_appliedFault01, 0f) &&
+                 NearlyEqual(_appliedToolTypeHue01, 0f)))
+            {
+                return;
+            }
+
+            _screenRenderer.GetPropertyBlock(_screenPropertyBlock);
+            SetScreenFloat(_ToolCriticalFlash01Id, 0f, ref _appliedCriticalFlash);
+            SetScreenFloat(_ToolVisualOverkill01Id, 0f, ref _appliedVisualOverkill01);
+            SetScreenFloat(_ToolFault01Id, 0f, ref _appliedFault01);
+            SetScreenFloat(_ToolTypeHue01Id, 0f, ref _appliedToolTypeHue01);
             _screenRenderer.SetPropertyBlock(_screenPropertyBlock);
         }
 
@@ -804,7 +849,10 @@ namespace Hecton8.UI.Tools
                 _toolCamera.enabled = enableCamera;
 
             if (enableCamera)
+            {
                 _renderRequested = false;
+                _nextAllowedRenderFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + ResolveRenderCadenceFrames();
+            }
         }
 
         private void QueuePresentationCommit(
@@ -983,6 +1031,18 @@ namespace Hecton8.UI.Tools
         private bool ResolveRequestedFallback()
         {
             return _poolUnavailableFallback;
+        }
+
+        private bool IsRenderCadenceOpen()
+        {
+            return Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _nextAllowedRenderFrame;
+        }
+
+        private int ResolveRenderCadenceFrames()
+        {
+            float qualityCurve = SmoothStep01(_qualityWeight01);
+            int cadence = (int)math.round(math.lerp(MaxRenderCadenceFrames, 1f, qualityCurve));
+            return math.clamp(cadence, 1, MaxRenderCadenceFrames);
         }
 
         private void TryRegisterSlowTickable()

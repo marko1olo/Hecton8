@@ -1,10 +1,17 @@
 ---
 packet_id: P044_MEDICAL_LOCK_DELAY
+release_set_id: RS009_COLONY_LAYOUT_WORKER_EVIDENCE
 article_id: hecton8.medical_lock_delay
+unlock_id: unlock.first_medical_lock_delay
+poi_tags: poi.medical_lock;poi.triage_airlock
+biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: pl_PL
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Opóźnienie śluzy medycznej

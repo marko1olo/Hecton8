@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P386_SHALLOW_ANNEX_P63_POI_KIT",
+      "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+      "article_id": "applied_lore.shallow_annex_p63_poi_kit",
+      "title_key": "applied_lore.shallow_annex_p63_poi_kit.title",
+      "unlock": {
+        "primary": "unlock.shallow_annex_p63_poi_kit",
+        "poi_tags": [
+          "poi.shallow_annex_p63",
+          "poi.first_pump_order",
+          "poi.sanitized_accident_panel"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shallow Annex P-63 POI Kit",
+          "scanner": "POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "First room with air. First room with a lie.",
+          "in_game_wiki": "Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Use as first-hour POI placement checklist."
+        },
+        "ru_RU": {
+          "title": "POI-кит: Shallow Annex P-63",
+          "scanner": "POI kit: P-63 содержит repair task, safe pocket и первое официальное противоречие.",
+          "terminal": "P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet и sealed route notice.",
+          "audio": "Первая комната с воздухом. Первая комната с ложью.",
+          "in_game_wiki": "Shallow Annex P-63 должен работать как tutorial, shelter и evidence. Это не lore kiosk.",
+          "external_site": "P-63 - первое playable proof, что HECTON-8 начинается как практическое выживание, прежде чем стать делом об ответственности.",
+          "field_note": "Для first-hour POI placement checklist."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft JA localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft JA localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft JA localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft JA localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft JA localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft JA localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft ZH localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft ZH localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft ZH localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft ZH localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft ZH localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft FR localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft FR localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft FR localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft FR localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft FR localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft ES localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft ES localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft ES localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft ES localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft ES localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft DE localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft DE localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft DE localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft DE localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft DE localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft PL localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft PL localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft PL localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft PL localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft PL localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft UK localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft UK localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft UK localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft UK localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft UK localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft UK localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft AR localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft AR localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft AR localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft AR localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft AR localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft ID localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft ID localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft ID localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft ID localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft ID localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft KO localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft KO localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft KO localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft KO localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft KO localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft HE localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft HE localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft HE localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft HE localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft HE localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft PT localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft PT localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft PT localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft PT localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft PT localization pending native pass. Use as first-hour POI placement checklist."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Shallow Annex P-63 POI Kit",
+          "scanner": "Draft NL localization pending native pass. POI kit: P-63 contains repair task, safe pocket and the first official contradiction.",
+          "terminal": "Draft NL localization pending native pass. P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.",
+          "audio": "Draft NL localization pending native pass. First room with air. First room with a lie.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.",
+          "external_site": "Draft NL localization pending native pass. P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.",
+          "field_note": "Draft NL localization pending native pass. Use as first-hour POI placement checklist."
+        }
+      }
+    },
+    {
+      "packet_id": "P387_CABLE_REEF_RELAY_YARD_POI_KIT",
+      "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+      "article_id": "applied_lore.cable_reef_relay_yard_poi_kit",
+      "title_key": "applied_lore.cable_reef_relay_yard_poi_kit.title",
+      "unlock": {
+        "primary": "unlock.cable_reef_relay_yard_poi_kit",
+        "poi_tags": [
+          "poi.cable_reef_relay_yard",
+          "poi.biofilm_cable_skin",
+          "poi.acoustic_spine_socket"
+        ],
+        "biome_tags": [
+          "biome.cable_reef",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Cable Reef Relay Yard POI Kit",
+          "scanner": "POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "ru_RU": {
+          "title": "POI-кит: Cable Reef Relay Yard",
+          "scanner": "POI kit: relay cable достаточно живой, чтобы проводить, и достаточно неправильный, чтобы misroute.",
+          "terminal": "RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response и Atlas service scar.",
+          "audio": "Не срезай весь рост. Часть этого несет твой сигнал.",
+          "in_game_wiki": "Cable reef POI учит правилу repair-network: жизнь не декор, когда Atlas превратил ее в инфраструктуру.",
+          "external_site": "Cable reefs делают biomechanical horror функциональным. Игроку нужно то, к чему страшно прикасаться.",
+          "field_note": "Для cable reef route, relay component, scanner stages и art brief."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft JA localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft JA localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft JA localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft JA localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft JA localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft JA localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft ZH localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft ZH localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft ZH localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft ZH localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft ZH localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft FR localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft FR localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft FR localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft FR localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft FR localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft FR localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft ES localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft ES localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft ES localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft ES localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft ES localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft ES localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft DE localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft DE localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft DE localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft DE localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft DE localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft DE localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft PL localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft PL localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft PL localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft PL localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft PL localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft PL localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft UK localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft UK localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft UK localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft UK localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft UK localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft UK localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft AR localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft AR localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft AR localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft AR localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft AR localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft AR localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft ID localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft ID localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft ID localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft ID localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft ID localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft ID localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft KO localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft KO localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft KO localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft KO localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft KO localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft KO localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft HE localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft HE localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft HE localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft HE localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft HE localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft HE localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft PT localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft PT localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft PT localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft PT localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft PT localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft PT localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Cable Reef Relay Yard POI Kit",
+          "scanner": "Draft NL localization pending native pass. POI kit: relay cable is alive enough to conduct and wrong enough to misroute.",
+          "terminal": "Draft NL localization pending native pass. RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.",
+          "audio": "Draft NL localization pending native pass. Do not strip all growth. Some of it is carrying your signal.",
+          "in_game_wiki": "Draft NL localization pending native pass. The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.",
+          "external_site": "Draft NL localization pending native pass. Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.",
+          "field_note": "Draft NL localization pending native pass. Use for cable reef route, relay component, scanner stages and art brief."
+        }
+      }
+    },
+    {
+      "packet_id": "P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT",
+      "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+      "article_id": "applied_lore.brine_canyon_pump_cathedral_poi_kit",
+      "title_key": "applied_lore.brine_canyon_pump_cathedral_poi_kit.title",
+      "unlock": {
+        "primary": "unlock.brine_canyon_pump_cathedral_poi_kit",
+        "poi_tags": [
+          "poi.brine_pump_cathedral",
+          "poi.density_ladder_window",
+          "poi.evacuator_queue_clock"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.pump_station"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "ru_RU": {
+          "title": "POI-кит: Brine Canyon Pump Cathedral",
+          "scanner": "POI kit: pump cathedral читает brine density и старое evacuation timing в одной комнате.",
+          "terminal": "PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock и worker queue ledger.",
+          "audio": "Собор строили, чтобы двигать воду. Он вел записи лучше людей.",
+          "in_game_wiki": "Этот POI превращает большой industrial space в доказательство: brine physics, pump damage и evacuation delay должны совпасть.",
+          "external_site": "Brine pump cathedral показывает правило HECTON-8: машина одновременно navigation, survival и evidence.",
+          "field_note": "Для mid-depth industrial landmark и proof-chain placement."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft JA localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft JA localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft JA localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft JA localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft JA localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft JA localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft ZH localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft ZH localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft ZH localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft ZH localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft ZH localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft FR localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft FR localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft FR localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft FR localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft FR localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft FR localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft ES localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft ES localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft ES localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft ES localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft ES localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft ES localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft DE localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft DE localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft DE localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft DE localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft DE localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft DE localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft PL localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft PL localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft PL localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft PL localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft PL localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft PL localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft UK localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft UK localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft UK localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft UK localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft UK localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft UK localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft AR localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft AR localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft AR localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft AR localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft AR localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft AR localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft ID localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft ID localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft ID localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft ID localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft ID localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft ID localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft KO localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft KO localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft KO localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft KO localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft KO localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft KO localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft HE localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft HE localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft HE localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft HE localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft HE localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft HE localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft PT localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft PT localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft PT localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft PT localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft PT localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft PT localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Brine Canyon Pump Cathedral POI Kit",
+          "scanner": "Draft NL localization pending native pass. POI kit: pump cathedral reads brine density and old evacuation timing in the same room.",
+          "terminal": "Draft NL localization pending native pass. PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.",
+          "audio": "Draft NL localization pending native pass. The cathedral was built to move water. It kept records better than people did.",
+          "in_game_wiki": "Draft NL localization pending native pass. This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.",
+          "external_site": "Draft NL localization pending native pass. The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.",
+          "field_note": "Draft NL localization pending native pass. Use for mid-depth industrial landmark and proof-chain placement."
+        }
+      }
+    },
+    {
+      "packet_id": "P389_EVACUATION_QUEUE_TERMINAL_POI_KIT",
+      "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+      "article_id": "applied_lore.evacuation_queue_terminal_poi_kit",
+      "title_key": "applied_lore.evacuation_queue_terminal_poi_kit.title",
+      "unlock": {
+        "primary": "unlock.evacuation_queue_terminal_poi_kit",
+        "poi_tags": [
+          "poi.evacuator_queue_terminal",
+          "poi.route_hold_door",
+          "poi.quarantine_release_clock"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Evacuation Queue Terminal POI Kit",
+          "scanner": "POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "ru_RU": {
+          "title": "POI-кит: Evacuation Queue Terminal",
+          "scanner": "POI kit: queue terminal доказывает delay через door state, clock drift и missing route capacity.",
+          "terminal": "QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch и salvage conflict.",
+          "audio": "Очередь - это body count с более чистым форматированием.",
+          "in_game_wiki": "Evacuation terminals не должны быть абстрактными логами. Нужны physical doors, clocks, lists и route damage, чтобы доказательство было playable.",
+          "external_site": "Ответственность Deep Reach лучше всего показывать процедурой. Очередь может быть сильнее признания.",
+          "field_note": "Для evidence rooms, где salvage и proof preservation конфликтуют."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft JA localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft JA localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft JA localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft JA localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft JA localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft ZH localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft ZH localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft ZH localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft ZH localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft FR localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft FR localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft FR localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft FR localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft FR localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft ES localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft ES localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft ES localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft ES localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft ES localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft DE localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft DE localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft DE localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft DE localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft DE localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft PL localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft PL localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft PL localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft PL localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft PL localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft UK localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft UK localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft UK localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft UK localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft UK localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft AR localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft AR localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft AR localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft AR localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft AR localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft ID localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft ID localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft ID localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft ID localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft ID localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft KO localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft KO localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft KO localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft KO localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft KO localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft HE localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft HE localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft HE localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft HE localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft HE localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft PT localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft PT localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft PT localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft PT localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft PT localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Evacuation Queue Terminal POI Kit",
+          "scanner": "Draft NL localization pending native pass. POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.",
+          "terminal": "Draft NL localization pending native pass. QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.",
+          "audio": "Draft NL localization pending native pass. A queue is a body count with cleaner formatting.",
+          "in_game_wiki": "Draft NL localization pending native pass. Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.",
+          "field_note": "Draft NL localization pending native pass. Use for evidence rooms where salvage and proof preservation conflict."
+        }
+      }
+    },
+    {
+      "packet_id": "P390_ATLAS_SERVICE_BASIN_POI_KIT",
+      "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+      "article_id": "applied_lore.atlas_service_basin_poi_kit",
+      "title_key": "applied_lore.atlas_service_basin_poi_kit.title",
+      "unlock": {
+        "primary": "unlock.atlas_service_basin_poi_kit",
+        "poi_tags": [
+          "poi.atlas_service_basin",
+          "poi.factory_temple_threshold",
+          "poi.living_iron_maintenance_rail"
+        ],
+        "biome_tags": [
+          "biome.atlas_basin",
+          "biome.factory_temple"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Service Basin POI Kit",
+          "scanner": "POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "ru_RU": {
+          "title": "POI-кит: Atlas Service Basin",
+          "scanner": "POI kit: service basin. Industrial rails, living sealant и worker categories находятся в одном repair plan.",
+          "terminal": "SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket и severance risk marker.",
+          "audio": "Он не строил храм. Он забыл разницу между храмом и мастерской.",
+          "in_game_wiki": "Atlas service basin должен заземлять финальную зону в engineering. Ужас - classification failure в industrial scale.",
+          "external_site": "Образ factory-temple работает только если он все еще читается как машина. Sacred feeling Atlas идет от сломанной maintenance logic, не от мистики.",
+          "field_note": "Для final-depth landmark, spoiler-gated art и ending receiver UI anchors."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft JA localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft JA localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft JA localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft JA localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft JA localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft JA localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft ZH localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft ZH localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft ZH localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft ZH localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft ZH localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft FR localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft FR localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft FR localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft FR localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft FR localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft ES localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft ES localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft ES localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft ES localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft ES localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft DE localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft DE localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft DE localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft DE localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft DE localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft PL localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft PL localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft PL localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft PL localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft PL localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft UK localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft UK localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft UK localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft UK localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft UK localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft AR localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft AR localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft AR localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft AR localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft AR localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft ID localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft ID localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft ID localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft ID localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft ID localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft KO localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft KO localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft KO localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft KO localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft KO localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft HE localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft HE localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft HE localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft HE localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft HE localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft PT localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft PT localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft PT localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft PT localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft PT localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft PT localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Atlas Service Basin POI Kit",
+          "scanner": "Draft NL localization pending native pass. POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.",
+          "terminal": "Draft NL localization pending native pass. SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.",
+          "audio": "Draft NL localization pending native pass. It did not build a temple. It forgot the difference between temple and workshop.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.",
+          "external_site": "Draft NL localization pending native pass. The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.",
+          "field_note": "Draft NL localization pending native pass. Use for final-depth landmark, spoiler-gated art and ending receiver UI anchors."
+        }
+      }
+    }
+  ]
+}

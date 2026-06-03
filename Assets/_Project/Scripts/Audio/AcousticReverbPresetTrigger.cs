@@ -128,12 +128,7 @@ namespace Hecton8.Audio
                 return math.all(math.isfinite(runtimePosition));
             }
 
-            Transform playerTransform = runtime.PlayerTransform;
-            if (playerTransform == null)
-                return false;
-
-            position = playerTransform.position;
-            return math.all(math.isfinite((float3)position));
+            return false;
         }
 
         private void ApplyPreset()

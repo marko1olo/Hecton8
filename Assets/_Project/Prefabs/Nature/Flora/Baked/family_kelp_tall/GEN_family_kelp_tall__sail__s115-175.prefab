@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 186035276161839760}
   - component: {fileID: 1304447335709656200}
+  - component: {fileID: 7047437691929599461}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__sail__s115-175
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1144290234857843010}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.5465873, y: 6.4539256, z: -0.5444286}
-  m_Size: 12.907851
+  m_LocalReferencePoint: {x: -0.5446039, y: 6.801943, z: -0.49466026}
+  m_Size: 13.603886
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 1809935744207580639}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &7047437691929599461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1144290234857843010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 6fbfd60472bf0774a985b78263330a7d, type: 2}
 --- !u!1 &1284349202605318471
 GameObject:
   m_ObjectHideFlags: 0

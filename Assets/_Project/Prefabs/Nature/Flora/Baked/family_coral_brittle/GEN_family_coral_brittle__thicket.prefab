@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5526208315792619855}
   - component: {fileID: 7333270212304947232}
+  - component: {fileID: 8071594918221103892}
   m_Layer: 0
   m_Name: GEN_family_coral_brittle__thicket
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8815742131684948836}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.028323203, y: 1.0099825, z: -0.31282884}
-  m_Size: 2.019965
+  m_LocalReferencePoint: {x: 0.028318435, y: 1.0099828, z: -0.3128643}
+  m_Size: 2.0199656
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 6754341192481474234}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8071594918221103892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8815742131684948836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 4dad1a9104a6e5d4c89048d62fcd2d3e, type: 2}

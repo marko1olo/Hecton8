@@ -1,10 +1,10 @@
-using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     [DisallowMultipleComponent]
-    public sealed class HectonWorldShellVisualDriver1428 : MonoBehaviour
+    public sealed class HectonWorldShellVisualDriver1428 : MonoBehaviour, ILateFrameTickable
     {
         [SerializeField] private Transform[] causticRibs;
         [SerializeField] private Transform[] hazeBands;
@@ -18,14 +18,29 @@ namespace Hecton8.World
         private Vector3[] _particleBasePositions;
         private Quaternion[] _particleBaseRotations;
         private float[] _lightBaseIntensities;
+        private bool _registeredLateFrame;
 
         private void Awake()
         {
-            BuildColdCachesIfNeeded();
             CaptureBases();
         }
 
-        private void LateUpdate()
+        private void OnEnable()
+        {
+            TryRegisterDispatcher();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterDispatcher();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterDispatcher();
+        }
+
+        public void LateFrameTick()
         {
             float weight = Mathf.Clamp01(motionWeight);
             if (weight <= 0f)
@@ -36,36 +51,6 @@ namespace Hecton8.World
             AnimateHaze(time, weight);
             AnimateParticles(time, weight);
             AnimateLights(time, weight);
-        }
-
-        private void BuildColdCachesIfNeeded()
-        {
-            Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Exclude);
-
-            if (causticRibs == null || causticRibs.Length == 0)
-                causticRibs = CollectTransformsByPrefix(transforms, "WATER_CAUSTIC_RIB_");
-
-            if (hazeBands == null || hazeBands.Length == 0)
-                hazeBands = CollectTransformsByPrefix(transforms, "ABYSS_HAZE_BAND_");
-
-            if (suspendedParticles == null || suspendedParticles.Length == 0)
-                suspendedParticles = CollectTransformsByPrefix(transforms, "SUSPENDED_PARTICULATE_");
-
-            if (pulseLights == null || pulseLights.Length == 0)
-                pulseLights = FindObjectsByType<Light>(FindObjectsInactive.Exclude);
-        }
-
-        private static Transform[] CollectTransformsByPrefix(Transform[] transforms, string prefix)
-        {
-            var collected = new List<Transform>(16); // COLD ALLOC: editor/runtime shell startup cache, owner: HectonWorldShellVisualDriver1428.
-            for (int i = 0; i < transforms.Length; i++)
-            {
-                Transform candidate = transforms[i];
-                if (candidate != null && candidate.name.StartsWith(prefix, System.StringComparison.Ordinal))
-                    collected.Add(candidate);
-            }
-
-            return collected.ToArray();
         }
 
         private void CaptureBases()
@@ -187,6 +172,23 @@ namespace Hecton8.World
                 float pulse = 0.86f + Mathf.Sin(phase) * 0.14f * weight;
                 lightSource.intensity = _lightBaseIntensities[i] * pulse;
             }
+        }
+
+        private void TryRegisterDispatcher()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatcher()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
     }
 }

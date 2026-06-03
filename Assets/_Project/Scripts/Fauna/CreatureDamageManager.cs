@@ -30,8 +30,7 @@ namespace Hecton8.AI
 
         // COLD ALLOC: Vector4[8] - shared leviathan wound upload cache bound into shader globals - owner: CreatureDamageManager
         private readonly Vector4[] _woundUpload = new Vector4[MaxWounds];
-        // COLD ALLOC: List<Renderer>[8] - wound-owner renderer bounds discovery scratch - owner: CreatureDamageManager
-        private readonly System.Collections.Generic.List<Renderer> _rendererScratch = new System.Collections.Generic.List<Renderer>(8);
+        private System.Collections.Generic.List<Renderer> _rendererScratch;
 
         private static CreatureDamageManager s_activeOwner;
         private static bool s_shaderClearPending;
@@ -39,6 +38,7 @@ namespace Hecton8.AI
 
         private Transform _cachedTransform;
         private FaunaBrain _faunaBrain;
+        private FaunaMetadata _faunaMetadata;
         private Bounds _localBounds = new Bounds(Vector3.zero, Vector3.one * 4f);
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
@@ -59,6 +59,7 @@ namespace Hecton8.AI
         {
             _cachedTransform = base.transform;
             TryGetComponent(out _faunaBrain);
+            TryGetComponent(out _faunaMetadata);
             _faunaBrain?.BindCreatureDamageManagerOwner(this);
             RefreshBounds();
         }
@@ -69,6 +70,7 @@ namespace Hecton8.AI
                 _cachedTransform = base.transform;
 
             TryGetComponent(out _faunaBrain);
+            TryGetComponent(out _faunaMetadata);
             _faunaBrain?.BindCreatureDamageManagerOwner(this);
             RefreshBounds();
             TryRegisterHotSwapListener();
@@ -130,6 +132,8 @@ namespace Hecton8.AI
         internal void BindFromFauna(FaunaBrain faunaBrain)
         {
             _faunaBrain = faunaBrain;
+            if (_faunaMetadata == null)
+                TryGetComponent(out _faunaMetadata);
             faunaBrain?.BindCreatureDamageManagerOwner(this);
             RefreshBounds();
         }
@@ -225,32 +229,41 @@ namespace Hecton8.AI
 
         private void RefreshBounds()
         {
-            _rendererScratch.Clear();
-            GetComponentsInChildren(true, _rendererScratch);
+            if (_faunaMetadata != null && _faunaMetadata.TryGetLocalRenderBounds(out Bounds metadataBounds))
+            {
+                _localBounds = metadataBounds;
+                return;
+            }
 
+            System.Collections.Generic.List<Renderer> scratch = _rendererScratch;
+            if (scratch == null)
+            {
+                scratch = new System.Collections.Generic.List<Renderer>(8); // COLD ALLOC: List<Renderer>[8] - legacy no-metadata wound bounds discovery scratch - owner: CreatureDamageManager
+                _rendererScratch = scratch;
+            }
+
+            scratch.Clear();
+            GetComponentsInChildren(true, scratch);
+
+            Transform ownerTransform = ResolveCachedTransform();
             bool hasBounds = false;
             Bounds combinedBounds = default;
-            for (int i = 0; i < _rendererScratch.Count; i++)
+            for (int i = 0; i < scratch.Count; i++)
             {
-                Renderer renderer = _rendererScratch[i];
+                Renderer renderer = scratch[i];
                 if (renderer == null)
                     continue;
 
-                Bounds localBounds = renderer.localBounds;
-                if (!hasBounds)
-                {
-                    combinedBounds = localBounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    combinedBounds.Encapsulate(localBounds.min);
-                    combinedBounds.Encapsulate(localBounds.max);
-                }
+                Bounds worldBounds = renderer.bounds;
+                if (!IsFinite(worldBounds.center) || !IsFinite(worldBounds.extents))
+                    continue;
+
+                AppendWorldBoundsAsOwnerLocal(ownerTransform, worldBounds, ref combinedBounds, ref hasBounds);
             }
 
             if (hasBounds)
                 _localBounds = combinedBounds;
+            scratch.Clear();
         }
 
         private void PublishShaderGlobals()
@@ -296,6 +309,51 @@ namespace Hecton8.AI
             return maxAxis * 1.75f;
         }
 
+        private static void AppendWorldBoundsAsOwnerLocal(
+            Transform ownerTransform,
+            Bounds worldBounds,
+            ref Bounds combinedBounds,
+            ref bool hasBounds)
+        {
+            Vector3 center = worldBounds.center;
+            Vector3 extents = worldBounds.extents;
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x - extents.x, center.y - extents.y, center.z - extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x - extents.x, center.y - extents.y, center.z + extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x - extents.x, center.y + extents.y, center.z - extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x - extents.x, center.y + extents.y, center.z + extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x + extents.x, center.y - extents.y, center.z - extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x + extents.x, center.y - extents.y, center.z + extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x + extents.x, center.y + extents.y, center.z - extents.z), ref combinedBounds, ref hasBounds);
+            AppendOwnerLocalBoundsPoint(ownerTransform, new Vector3(center.x + extents.x, center.y + extents.y, center.z + extents.z), ref combinedBounds, ref hasBounds);
+        }
+
+        private static void AppendOwnerLocalBoundsPoint(
+            Transform ownerTransform,
+            Vector3 worldPoint,
+            ref Bounds combinedBounds,
+            ref bool hasBounds)
+        {
+            Vector3 localPoint = ownerTransform.InverseTransformPoint(worldPoint);
+            if (!IsFinite(localPoint))
+                return;
+
+            if (!hasBounds)
+            {
+                combinedBounds = new Bounds(localPoint, Vector3.zero);
+                hasBounds = true;
+                return;
+            }
+
+            combinedBounds.Encapsulate(localPoint);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
         private static void ClearShaderGlobals()
         {
             Shader.SetGlobalFloat(WoundCountId, 0f);
@@ -320,10 +378,23 @@ namespace Hecton8.AI
             public void LateFrameTick()
             {
                 if (!s_shaderClearPending)
+                {
+                    TryUnregisterShaderClearProxy();
                     return;
+                }
 
                 ClearShaderGlobals();
                 s_shaderClearPending = false;
+                TryUnregisterShaderClearProxy();
+            }
+
+            private static void TryUnregisterShaderClearProxy()
+            {
+                if (!s_shaderClearProxyRegistered)
+                    return;
+
+                GlobalRegistry.UnregisterLateFrameTickable(s_shaderClearProxy, PriorityLayer.Environment);
+                s_shaderClearProxyRegistered = false;
             }
         }
     }

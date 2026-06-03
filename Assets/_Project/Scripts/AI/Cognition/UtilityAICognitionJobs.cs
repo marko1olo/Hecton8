@@ -22,8 +22,8 @@ namespace Hecton8.AI.Cognition
             CognitionUtilityTuningDTO tuning = UtilityAICognitionJobMath.ReadTuning(Tuning);
             float quality = UtilityAICognitionJobMath.ResolveQuality(tuning.Runtime.x);
             uint hash = UtilityAICognitionJobMath.Hash(index, Frame ^ UtilityAICognitionConstants.AgentHash);
-            float phase = (hash & 1023u) * (1f / 1023f);
-            float alt = ((hash >> 10) & 1023u) * (1f / 1023f);
+            float phase = (hash & 1023u) * UtilityAICognitionConstants.Inverse1023;
+            float alt = ((hash >> 10) & 1023u) * UtilityAICognitionConstants.Inverse1023;
 
             if ((uint)index < (uint)States.Length)
             {
@@ -55,8 +55,8 @@ namespace Hecton8.AI.Cognition
             if ((uint)index < (uint)Targets.Length)
             {
                 uint targetHash = UtilityAICognitionJobMath.Hash(index + 4919, Frame ^ 0xDEAD302u);
-                float t0 = (targetHash & 2047u) * (1f / 2047f);
-                float t1 = ((targetHash >> 11) & 2047u) * (1f / 2047f);
+                float t0 = (targetHash & 2047u) * UtilityAICognitionConstants.Inverse2047;
+                float t1 = ((targetHash >> 11) & 2047u) * UtilityAICognitionConstants.Inverse2047;
                 float angle = t0 * 6.2831855f;
                 float radius = math.lerp(24f, 620f, t1);
                 UtilityAICognitionJobMath.ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
@@ -159,7 +159,7 @@ namespace Hecton8.AI.Cognition
                 float distanceSq = math.select(float.MaxValue, (float)math.min(distanceSqD, (double)float.MaxValue), distanceFinite);
                 float proximity = math.saturate(1f - (distanceSq * math.rcp(math.max(threatRadiusSq, UtilityAICognitionConstants.Epsilon))));
                 float volume = UtilityAICognitionJobMath.SanitizeNonNegative(signal.Volume, 0f);
-                float velocity = math.sqrt(UtilityAICognitionJobMath.SanitizeNonNegative(signal.VelocitySq, 0f));
+                float velocity = UtilityAICognitionJobMath.FastLengthFromSq(UtilityAICognitionJobMath.SanitizeNonNegative(signal.VelocitySq, 0f));
                 float valid = math.select(0f, 1f, selfFinite & distanceFinite & math.all(math.isfinite(signalAup)));
                 acousticFear = math.max(acousticFear, proximity * (volume + (velocity * 0.05f)) * acousticGain * valid);
             }
@@ -211,7 +211,7 @@ namespace Hecton8.AI.Cognition
 
             CognitionUtilityTuningDTO tuning = UtilityAICognitionJobMath.ReadTuning(Tuning);
             float quality = UtilityAICognitionJobMath.ResolveQuality(tuning.Runtime.x);
-            float dt = UtilityAICognitionJobMath.SanitizePositive(tuning.Runtime.y, 1f / 30f);
+            float dt = UtilityAICognitionJobMath.SanitizePositive(tuning.Runtime.y, UtilityAICognitionConstants.DefaultTickDeltaSeconds);
             float tickInterval = UtilityAICognitionJobMath.ResolveTickInterval(quality);
             int candidateBudget = UtilityAICognitionJobMath.ResolveCandidateBudget(quality);
             byte candidateCount = 0;
@@ -532,6 +532,15 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return float.NaN;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, UtilityAICognitionConstants.Epsilon));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 NormalizeSafe(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
@@ -544,7 +553,7 @@ namespace Hecton8.AI.Cognition
         public static float3 HashDirection(int index, uint frame)
         {
             uint hash = Hash(index, frame);
-            float angle = ((hash & 4095u) * (1f / 4095f)) * 6.2831855f;
+            float angle = ((hash & 4095u) * UtilityAICognitionConstants.Inverse4095) * 6.2831855f;
             ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
             return new float3(angleCos, 0f, angleSin);
         }

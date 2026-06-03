@@ -4,10 +4,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.UI
 {
     /// <summary>
@@ -26,11 +22,6 @@ namespace Hecton8.UI
         private const float VisibilityDotThreshold = 0.035f;
         private const float MinimumDirectionLengthSq = 0.0001f;
         private const string RuntimeMeshName = "Runtime_SubmarineSonarHoloMap";
-        private const string RuntimeMaterialName = "Runtime_SubmarineSonarHoloMap";
-        private const string SonarMapShaderName = "Hecton8/Submarine/SonarHoloMapStencil";
-#if UNITY_EDITOR
-        private const string SonarMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader";
-#endif
 
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
 
@@ -45,7 +36,7 @@ namespace Hecton8.UI
         [SerializeField, Min(1f)] private float maxHeightDeltaMeters = 80f;
 
         [Header("Rendering")]
-        [SerializeField] private Shader sonarMapShader = null;
+        [SerializeField] private Material sonarMapMaterial = null;
         [SerializeField] private Color sonarColor = new Color(0.10f, 0.92f, 0.76f, 1f);
         [SerializeField] private int renderLayer = 0;
 
@@ -59,7 +50,7 @@ namespace Hecton8.UI
         private readonly int[] _lineIndices = new int[MaxLineIndexCount];
 
         private Mesh _runtimeMesh;
-        private Material _runtimeMaterial;
+        private MaterialPropertyBlock _materialProperties;
         private Camera _viewCamera;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private Color _appliedSonarColor;
@@ -69,7 +60,6 @@ namespace Hecton8.UI
         private bool _hasPreviousSample;
         private bool _visibleToPlayer;
         private bool _materialPropertiesDirty = true;
-        private bool _runtimeMaterialHasBaseColor;
         private float _sampleAccumulator;
         private float _interpolationAgeSeconds;
         private float _interpolationBlendWeight;
@@ -114,7 +104,7 @@ namespace Hecton8.UI
             ApplyMaterialPropertiesIfNeeded();
             ResolveViewCamera();
             _visibleToPlayer = ResolveVisibleToPlayer();
-            if (!_visibleToPlayer || _runtimeMesh == null || _runtimeMaterial == null)
+            if (!_visibleToPlayer || _runtimeMesh == null || sonarMapMaterial == null)
             {
                 return;
             }
@@ -141,7 +131,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             RunVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
-            if (!_visibleToPlayer || _runtimeMesh == null || _runtimeMaterial == null || !_hasCurrentSample)
+            if (!_visibleToPlayer || _runtimeMesh == null || sonarMapMaterial == null || !_hasCurrentSample)
                 return;
 
             Camera renderCamera = ResolveRenderCamera();
@@ -156,11 +146,11 @@ namespace Hecton8.UI
             UnityEngine.Graphics.DrawMesh(
                 _runtimeMesh,
                 matrix,
-                _runtimeMaterial,
+                sonarMapMaterial,
                 renderLayer,
                 renderCamera,
                 0,
-                null,
+                _materialProperties,
                 ShadowCastingMode.Off,
                 false,
                 null,
@@ -397,6 +387,13 @@ namespace Hecton8.UI
 
         private void EnsureResources()
         {
+            if (sonarMapMaterial == null)
+            {
+                DestroyRuntimeResources();
+                return;
+            }
+
+            EnsureMaterialPropertiesCold();
             if (_runtimeMesh == null)
             {
                 _runtimeMesh = new Mesh
@@ -418,40 +415,32 @@ namespace Hecton8.UI
                 RebuildLineIndices(ResolveGridCells(_cachedQualityWeight01));
             }
 
-#if UNITY_EDITOR
-            if (sonarMapShader == null)
-                sonarMapShader = AssetDatabase.LoadAssetAtPath<Shader>(SonarMapShaderPath);
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (sonarMapShader == null)
-                sonarMapShader = Shader.Find(SonarMapShaderName);
-#endif
-
-            if (_runtimeMaterial == null && sonarMapShader != null)
-            {
-                _runtimeMaterial = new Material(sonarMapShader)
-                {
-                    name = RuntimeMaterialName,
-                    hideFlags = HideFlags.DontSave
-                };
-                _runtimeMaterialHasBaseColor = _runtimeMaterial.HasProperty(_BaseColorId);
-                _materialPropertiesDirty = true;
-            }
-
+            UnityEngine.Assertions.Assert.IsNotNull(sonarMapMaterial, "Fatal: Missing Authored Submarine Sonar Holo Map Material.");
             ApplyMaterialPropertiesIfNeeded();
+        }
+
+        private void EnsureMaterialPropertiesCold()
+        {
+            if (_materialProperties != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] - submarine sonar holo map draw payload - owner: SubmarineSonarHoloMapRenderer.
+            _materialProperties = new MaterialPropertyBlock();
+            _materialPropertiesDirty = true;
         }
 
         private void ApplyMaterialPropertiesIfNeeded()
         {
-            if (_runtimeMaterial == null)
+            if (sonarMapMaterial == null)
                 return;
+
+            EnsureMaterialPropertiesCold();
 
             if (!_materialPropertiesDirty && SameColor(_appliedSonarColor, sonarColor))
                 return;
 
-            if (_runtimeMaterialHasBaseColor)
-                _runtimeMaterial.SetColor(_BaseColorId, sonarColor);
-
+            _materialProperties.Clear();
+            _materialProperties.SetColor(_BaseColorId, sonarColor);
             _appliedSonarColor = sonarColor;
             _materialPropertiesDirty = false;
         }
@@ -501,12 +490,6 @@ namespace Hecton8.UI
 
         private void DestroyRuntimeResources()
         {
-            if (_runtimeMaterial != null)
-            {
-                DestroyUnityObject(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
             if (_runtimeMesh != null)
             {
                 DestroyUnityObject(_runtimeMesh);
@@ -535,8 +518,6 @@ namespace Hecton8.UI
             displayRadiusMeters = math.max(0.02f, displayRadiusMeters);
             verticalExaggeration = math.clamp(verticalExaggeration, 0.02f, 1.25f);
             maxHeightDeltaMeters = math.max(1f, maxHeightDeltaMeters);
-            if (sonarMapShader == null)
-                sonarMapShader = AssetDatabase.LoadAssetAtPath<Shader>(SonarMapShaderPath);
             _materialPropertiesDirty = true;
         }
 #endif

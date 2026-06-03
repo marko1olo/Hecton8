@@ -1,874 +1,625 @@
-using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Contracts.Signals;
+using Hecton8.Physics.Vehicles;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
-using Hecton8.Core.Contracts;
 
 namespace Hecton8.Vehicles.VFX
 {
     /// <summary>
-    /// Shader-only submarine hull dent presenter. Gameplay collision remains pristine.
+    /// Publishes immutable baked hull deformation assets to shaders.
+    /// Runtime CPU mesh dents were removed for Agent 1722; damage shape now comes from offline displacement maps.
     /// </summary>
     [DisallowMultipleComponent]
-    [AddComponentMenu("Hecton/Vehicles/VFX/Hull Dent Shader Controller")]
+    [AddComponentMenu("Hecton8/Vehicles/Hull Dent Shader Controller")]
     public sealed class HullDentShaderController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private static int s_x001HullDentShaderControllerSignalPushDropCount;
-        private const int MaxHullDents = 16;
-        private const int RadiusQuantizationStepsPerMeter = 16;
-        private const float InvRadiusQuantizationStepsPerMeter = 1f / RadiusQuantizationStepsPerMeter;
-        private const float InvDepthQuantizationSteps = 1f / 255f;
-        private const float MinimumStoredDepthMeters = 0.001f;
-        private const float RepairMatchPaddingMeters = 0.35f;
-        private const float LocalTransformEpsilon = 0.000001f;
-        private const uint HullDentTelemetryHash = 0x48444E54u; // HDNT
-        private static readonly ulong HullDentsMutationGuardMask = HullDentMutationGuardBit(BufferID.HullDents);
+        private static readonly int H8HullAlbedoMapId = Shader.PropertyToID("_H8HullAlbedoMap");
+        private static readonly int H8HullMraoMapId = Shader.PropertyToID("_H8HullMraoMap");
+        private static readonly int H8HullDisplacementMapId = Shader.PropertyToID("_H8HullDisplacementMap");
+        private static readonly int H8HullCavitationFlipbookId = Shader.PropertyToID("_H8HullCavitationFlipbook");
+        private static readonly int H8HullBakeParamsId = Shader.PropertyToID("_H8HullBakeParams");
+        private static readonly int H8HullBakeUvParamsId = Shader.PropertyToID("_H8HullBakeUvParams");
+        private static readonly int H8HullCavitationParamsId = Shader.PropertyToID("_H8HullCavitationParams");
+        private static readonly int H8HullCavitationUvParamsId = Shader.PropertyToID("_H8HullCavitationUvParams");
+        private static readonly int HullDentParamsId = Shader.PropertyToID("_HectonHullDentParams");
+        private static readonly int VesselCareParamsId = Shader.PropertyToID("_HectonVesselCareParams");
+        private static readonly int VesselCareMaskId = Shader.PropertyToID("_HectonVesselCareMask");
 
-        private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.VehicleVFX.HullDents.LateFrame");
-        private static readonly int _HullDentsId = Shader.PropertyToID("_HectonHullDents");
-        private static readonly int _HullDentParamsId = Shader.PropertyToID("_HectonHullDentParams");
+        private static readonly ProfilerMarker LateFrameMarker = new ProfilerMarker("HullDentShaderController1722.LateFrame");
+        private static readonly ProfilerMarker UploadMarker = new ProfilerMarker("HullDentShaderController1722.UploadShaderGlobals");
+        private static readonly ProfilerMarker TelemetryMarker = new ProfilerMarker("HullDentShaderController1722.TelemetryRead");
 
-        [Header("Authority")]
-        [SerializeField] private Transform submarineRoot;
-        [SerializeField] private MonoBehaviour breachReadModelSource;
-        [SerializeField] private uint acceptedTargetHash;
-        [SerializeField] private ushort acceptedTargetId;
-        [SerializeField] private bool acceptUnfilteredSignals = true;
-#pragma warning disable CS0414
-        [SerializeField] private bool acceptLegacyLocalPoints = true;
-#pragma warning restore CS0414
-        [SerializeField, Min(1f)] private float maxLocalImpactDistanceMeters = 42f;
+        private const byte MinQualityByte = 1;
+        private const float DefaultDisplacementMeters = 0.18f;
+        private const float DefaultCavitationRateHz = 18f;
+        private const int DefaultFlipbookFrames = 64;
+        private const int DefaultFlipbookTiles = 8;
+        private const int TelemetrySampleMask = 15;
+        private const int TelemetryRebindMask = 63;
+        private const int BlackBoxCapacity = 300;
+        private const float InverseHullMaintenancePanels = 1f / 64f;
 
-        [Header("Dent Shape")]
-        [SerializeField, Range(0.25f, 8f)] private float baseDentRadiusMeters = 1.35f;
-        [SerializeField, Range(0f, 0.08f)] private float radiusPerMagnitude = 0.012f;
-        [SerializeField, Range(0.005f, 1f)] private float maxDentDepthMeters = 0.24f;
-        [SerializeField, Range(0.0005f, 0.02f)] private float depthMetersPerMagnitude = 0.0035f;
-        [SerializeField, Range(1f, 200f)] private float fullIntensityMagnitude = 80f;
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HullDentBlackBoxEntry
+        {
+            public uint Frame;
+            public uint Flags;
+            public float Cleanliness;
+            public float CareTone;
+            public float BallastHealth;
+            public float QualityWeight;
+            public float CavitationPhase;
+            public float ScarScalar;
+            public float DisplacementMeters;
+            private uint _pad0;
+        }
 
-        [Header("Repair")]
-        [SerializeField, Range(0.01f, 1f)] private float repairFadeMetersPerSecond = 0.16f;
+        [Header("Baked Hull Maps")]
+        [SerializeField] private Texture2D hullAlbedoMap;
+        [SerializeField] private Texture2D hullMraoMask;
+        [SerializeField] private Texture2D hullDisplacementMap;
+        [SerializeField] private Texture2D cavitationFlipbook;
 
-        // COLD ALLOC: Vector4[16] - fixed global shader dent buffer, xyz local point and w packed radius/depth - owner: HullDentShaderController
-        private readonly Vector4[] _dentBuffer = new Vector4[MaxHullDents];
+        [Header("Baked Displacement")]
+        [SerializeField, Min(0f)] private float displacementStrengthMeters = DefaultDisplacementMeters;
+        [SerializeField, Range(0f, 1f)] private float bakedScarBlend = 1f;
+        [SerializeField] private Vector2 bakedUvScale = Vector2.one;
+        [SerializeField] private Vector2 bakedUvOffset;
 
-        private ISubmarineHullBreachReadModel _breachReadModel;
-        private ITickDispatcher _tickDispatcher;
+        [Header("Cavitation")]
+        [SerializeField, Range(0f, 1f)] private float cavitationIntensity = 1f;
+        [SerializeField, Min(0f)] private float cavitationPhaseRateHz = DefaultCavitationRateHz;
+        [SerializeField, Min(1)] private int cavitationFlipbookFrames = DefaultFlipbookFrames;
+        [SerializeField, Min(1)] private int cavitationFlipbookTiles = DefaultFlipbookTiles;
+        [SerializeField] private Vector2 cavitationUvScale = new Vector2(4f, 2f);
+        [SerializeField] private Vector2 cavitationUvOffset = new Vector2(-3f, -0.5f);
+
+        [Header("Registry")]
+        [SerializeField] private bool bindTexturesOnEnable = true;
+
         private IDataVault _dataVault;
-        private VaultGenerationHandle<float4> _hullDentsHandle;
-        private Transform _cachedRoot;
-        private int _writeHead;
-        private int _activeDentCount;
-        private int _lastProcessedFrame = int.MinValue;
-        private byte _qualityWeightByte = byte.MaxValue;
-        private float _qualityWeight01 = 1f;
-        private bool _dirty;
-        private bool _registeredLateFrame;
-        private bool _registeredHotSwap;
-        private bool _ownsHullDentsBuffer;
+        private VaultGenerationHandle<VesselTelemetryEntry> _vesselTelemetryHandle;
+        private bool _hasTelemetryHandle;
+        private bool _isRegistered;
+        private bool _registryListenerRegistered;
+        private bool _warnedMissingTextures;
+        private float _cleanliness = 1f;
+        private float _careTone;
+        private float _ballastHealth = 1f;
+        private float _qualityWeight = 1f;
+        private float _cavitationPhase01;
+        private int _frameCounter;
+        private int _blackBoxCursor;
+        private HullDentBlackBoxEntry[] _blackBox;
+        private bool _blackBoxFaulted;
+        private bool _shaderGlobalsDirty = true;
+
+        public bool IsTickEnabled => isActiveAndEnabled;
+
+        private bool HasBakedHullTextures => hullAlbedoMap != null && hullMraoMask != null && hullDisplacementMap != null;
+        private bool HasCavitationFlipbook => cavitationFlipbook != null;
 
         private void OnEnable()
         {
-            ResolveRoot();
-            ResolveBreachReadModel();
-            ResolveTickDispatcher();
-            RefreshQualityPolicy();
-            CacheDataVaultCold();
-            EnsureHullDentsBuffer();
-            SyncDentBufferFromVault();
-            TryRegisterLateFrameTickable();
-            TryRegisterHotSwapListener();
-            UploadShaderGlobals();
+            SanitizeSerializedFields();
+            if (!IsBlackBoxEntryLayoutAligned())
+            {
+                enabled = false;
+                return;
+            }
+
+            CacheRegistryServicesCold();
+            EnsureBlackBoxAllocated();
+            RegisterRegistryListenerCold();
+            TryRegisterTick();
+
+            if (bindTexturesOnEnable)
+            {
+                UploadBakedTextureGlobalsCold();
+            }
+
+            UploadStaticShaderGlobalsFromLocal();
+            UploadCavitationShaderGlobalsFromLocal();
+            _shaderGlobalsDirty = false;
+            ReportBlackBoxState();
         }
 
         private void OnDisable()
         {
-            TryUnregisterHotSwapListener();
+            TryUnregisterTick();
+            UnregisterRegistryListenerCold();
+            _blackBoxCursor = 0;
 
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
-            }
-
-            ClearLocalDentBuffer();
-            UploadShaderGlobalsFromLocal();
-            ReleaseHullDentsBuffer();
-            _tickDispatcher = null;
-            _dataVault = null;
+            Shader.SetGlobalVector(H8HullBakeParamsId, Vector4.zero);
+            Shader.SetGlobalVector(H8HullCavitationParamsId, Vector4.zero);
+            Shader.SetGlobalVector(H8HullCavitationUvParamsId, Vector4.zero);
+            Shader.SetGlobalVector(HullDentParamsId, Vector4.zero);
         }
 
-        public void OnGlobalRegistryServiceReplaced(
-            GlobalRegistryServiceSlot serviceSlot,
-            object previousService,
-            object currentService)
+        private void OnValidate()
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            SanitizeSerializedFields();
+            _shaderGlobalsDirty = true;
+
+            if (isActiveAndEnabled)
             {
-                _tickDispatcher = currentService as ITickDispatcher;
-                _registeredLateFrame = false;
-                if (isActiveAndEnabled)
-                    TryRegisterLateFrameTickable();
-
-                return;
+                UploadBakedTextureGlobalsCold();
+                UploadStaticShaderGlobalsFromLocal();
+                UploadCavitationShaderGlobalsFromLocal();
+                _shaderGlobalsDirty = false;
             }
-
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
-                return;
-
-            ReleaseVaultBuffer(previousService is IDataVault previousVault ? previousVault : _dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
-            _dataVault = currentService is IDataVault currentVault ? currentVault : null;
-            ClearLocalDentBuffer();
-            EnsureHullDentsBuffer();
-            SyncDentBufferFromVault();
-            UploadShaderGlobalsFromLocal();
         }
 
         public void LateFrameTick()
         {
-            using (_lateFrameProfilerMarker.Auto())
+            using (LateFrameMarker.Auto())
             {
-                ResolveRoot();
-                if (_cachedRoot == null)
-                    return;
+                ++_frameCounter;
 
-                int acceptedSignals = ConsumeCombatDamageSignals();
-                bool repairChanged = ApplyRepairCoupling(ResolveUnscaledDeltaTime());
-                RefreshQualityPolicy();
+                bool telemetryChanged = false;
+                if (!_hasTelemetryHandle || ((_frameCounter & TelemetrySampleMask) == 0))
+                {
+                    telemetryChanged = TryRefreshVesselTelemetry();
+                }
 
-                if (_dirty)
-                    UploadShaderGlobals();
+                bool qualityChanged = RefreshQualityWeight();
 
-                if (acceptedSignals > 0 || repairChanged)
-                    CrashTelemetryBuffer.ReportHullDentState(HullDentTelemetryHash, _activeDentCount, BuildTelemetryFlags());
+                bool cavitationChanged = RefreshCavitationPhase(SystemDispatcher.CurrentFrameDeltaTime);
+                if (telemetryChanged || qualityChanged)
+                {
+                    _shaderGlobalsDirty = true;
+                }
+
+                if (_shaderGlobalsDirty)
+                {
+                    UploadStaticShaderGlobalsFromLocal();
+                    _shaderGlobalsDirty = false;
+                }
+
+                if (cavitationChanged)
+                {
+                    UploadCavitationShaderGlobalsFromLocal();
+                }
+
+                ReportBlackBoxState();
             }
         }
 
-        private void TryRegisterLateFrameTickable()
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot slot, object previous, object current)
         {
-            if (_registeredLateFrame)
-                return;
-
-            ResolveTickDispatcher();
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-        }
-
-        private void TryRegisterHotSwapListener()
-        {
-            if (_registeredHotSwap || !Application.isPlaying)
-                return;
-
-            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
-        }
-
-        private void TryUnregisterHotSwapListener()
-        {
-            if (!_registeredHotSwap)
-                return;
-
-            GlobalRegistry.TryUnregisterHotSwapListener(this);
-            _registeredHotSwap = false;
-        }
-
-        private void ResolveRoot()
-        {
-            if (submarineRoot != null)
+            if (slot == GlobalRegistryServiceSlot.DataVault)
             {
-                _cachedRoot = submarineRoot;
+                _dataVault = current as IDataVault;
+                _vesselTelemetryHandle = default;
+                _hasTelemetryHandle = false;
+                TryBindVesselTelemetryHandle();
+                if (TryRefreshVesselTelemetry())
+                {
+                    _shaderGlobalsDirty = true;
+                }
+
+                UploadStaticShaderGlobalsFromLocal();
+                _shaderGlobalsDirty = false;
                 return;
             }
 
-            if (_cachedRoot == null)
-                _cachedRoot = transform;
-        }
-
-        private void ResolveBreachReadModel()
-        {
-            _breachReadModel = breachReadModelSource as ISubmarineHullBreachReadModel;
-            if (_breachReadModel == null &&
-                TryGetComponent(typeof(ISubmarineHullBreachReadModel), out Component component))
+            if (slot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _breachReadModel = component as ISubmarineHullBreachReadModel;
+                TryUnregisterTick();
+                TryRegisterTick();
             }
         }
 
-        private void ResolveTickDispatcher()
-        {
-            _tickDispatcher = GlobalRegistry.TickDispatcher;
-        }
-
-        private void CacheDataVaultCold()
+        private void CacheRegistryServicesCold()
         {
             if (_dataVault == null)
+            {
                 _dataVault = GlobalRegistry.DataVault;
-        }
-
-        private bool RefreshQualityPolicy()
-        {
-            float nextQualityWeight01 = ResolveCurrentQualityWeight(_qualityWeight01);
-            byte nextQualityWeightByte = ResolveQualityWeightByte(nextQualityWeight01);
-            if (math.abs(nextQualityWeight01 - _qualityWeight01) <= 0.001f &&
-                nextQualityWeightByte == _qualityWeightByte)
-            {
-                _qualityWeight01 = nextQualityWeight01;
-                return false;
             }
 
-            _qualityWeight01 = nextQualityWeight01;
-            _qualityWeightByte = nextQualityWeightByte;
-            _dirty = true;
-            return true;
+            TryBindVesselTelemetryHandle();
         }
 
-        private static float ResolveCurrentQualityWeight(float fallbackWeight01)
+        private void RegisterRegistryListenerCold()
         {
-            float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.select(fallbackWeight01, qualityWeight01, math.isfinite(qualityWeight01)));
-        }
-
-        private static byte ResolveQualityWeightByte(float qualityWeight01)
-        {
-            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
-        }
-
-        private static float ResolveDearLieScarProxyWeight(float qualityWeight01)
-        {
-            return math.saturate(1f - math.smoothstep(0.18f, 0.72f, math.saturate(qualityWeight01)));
-        }
-
-        private int ConsumeCombatDamageSignals()
-        {
-            int frame = SystemDispatcher.CurrentFrameIndex;
-            if (_lastProcessedFrame == frame)
-                return 0;
-
-            _lastProcessedFrame = frame;
-            ReadOnlySpan<CombatDamageSignal> signals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
-            int accepted = 0;
-            for (int i = 0; i < signals.Length; i++)
+            if (_registryListenerRegistered || !Application.isPlaying)
             {
-                CombatDamageSignal signal = signals[i];
-                if (!IsAcceptedSubmarineSignal(in signal))
-                    continue;
-
-                if (!TryResolveLocalImpact(in signal, out float3 localPoint))
-                    continue;
-
-                float radius = ResolveDentRadius(signal.Magnitude);
-                float depth = ResolveDentDepth(signal.Magnitude);
-                if (depth <= MinimumStoredDepthMeters)
-                    continue;
-
-                PushDent(localPoint, radius, depth);
-                PublishHullDeformedSignal(in signal, localPoint, radius, depth);
-                accepted++;
-            }
-
-            return accepted;
-        }
-
-        private bool IsAcceptedSubmarineSignal(in CombatDamageSignal signal)
-        {
-            if (acceptedTargetHash != 0u && signal.TargetHash == acceptedTargetHash)
-                return true;
-
-            if (acceptedTargetId != 0 && signal.TargetId == acceptedTargetId)
-                return true;
-
-            return acceptUnfilteredSignals;
-        }
-
-        private bool TryResolveLocalImpact(in CombatDamageSignal signal, out float3 localPoint)
-        {
-            localPoint = default;
-            if (!CombatDamageSignalCodec.TryToRuntimePoint(in signal, out float3 runtimePoint))
-                return false;
-
-            Vector3 worldPoint = new Vector3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
-            if (!IsFiniteVector(worldPoint))
-                return false;
-
-            if (!TryResolveLocalImpactAup(worldPoint, out localPoint))
-                return false;
-
-            if (!math.all(math.isfinite(localPoint)))
-                return false;
-
-            float maxDistance = FiniteAtLeast(maxLocalImpactDistanceMeters, 1f);
-            return math.lengthsq(localPoint) <= maxDistance * maxDistance;
-        }
-
-        private float ResolveDentRadius(float magnitude)
-        {
-            float safeMagnitude = FiniteNonNegativeOrZero(magnitude);
-            float radius = FiniteNonNegativeOrZero(baseDentRadiusMeters) +
-                           safeMagnitude * FiniteNonNegativeOrZero(radiusPerMagnitude);
-            return math.clamp(radius, 0.25f, 15.9f);
-        }
-
-        private float ResolveDentDepth(float magnitude)
-        {
-            float safeMagnitude = FiniteNonNegativeOrZero(magnitude);
-            float intensity01 = math.saturate(safeMagnitude * math.rcp(FiniteAtLeast(fullIntensityMagnitude, 1f)));
-            float rawDepth = safeMagnitude * FiniteNonNegativeOrZero(depthMetersPerMagnitude) * math.max(0.25f, intensity01);
-            return math.clamp(rawDepth, 0f, FiniteNonNegativeOrZero(maxDentDepthMeters));
-        }
-
-        private void PushDent(float3 localPoint, float radius, float depth)
-        {
-            SyncDentBufferFromVault();
-            int existingIndex = FindMergeDentIndex(localPoint, radius);
-            int writeIndex = existingIndex >= 0 ? existingIndex : _writeHead;
-            float storedDepth = existingIndex >= 0 ? math.max(UnpackDepth(_dentBuffer[existingIndex].w), depth) : depth;
-
-            _dentBuffer[writeIndex] = new Vector4(localPoint.x, localPoint.y, localPoint.z, PackRadiusDepth(radius, storedDepth));
-            WriteDentToVault(writeIndex, _dentBuffer[writeIndex]);
-
-            if (existingIndex < 0)
-            {
-                _writeHead = (_writeHead + 1) & (MaxHullDents - 1);
-                _activeDentCount = math.min(MaxHullDents, _activeDentCount + 1);
-            }
-
-            _dirty = true;
-        }
-
-        private int FindMergeDentIndex(float3 localPoint, float radius)
-        {
-            float mergeRadius = math.max(0.15f, radius * 0.45f);
-            float mergeRadiusSq = mergeRadius * mergeRadius;
-            for (int i = 0; i < MaxHullDents; i++)
-            {
-                Vector4 dent = _dentBuffer[i];
-                if (UnpackDepth(dent.w) <= MinimumStoredDepthMeters)
-                    continue;
-
-                float3 delta = new float3(dent.x, dent.y, dent.z) - localPoint;
-                if (math.lengthsq(delta) <= mergeRadiusSq)
-                    return i;
-            }
-
-            return -1;
-        }
-
-        private bool ApplyRepairCoupling(float deltaTime)
-        {
-            SyncDentBufferFromVault();
-            if (_breachReadModel == null || !_breachReadModel.IsReady || _activeDentCount <= 0)
-                return false;
-
-            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
-            float safeRepairFade = FiniteNonNegativeOrZero(repairFadeMetersPerSecond);
-            float fadeDelta = safeDeltaTime * safeRepairFade;
-            if (fadeDelta <= 0f)
-                return false;
-
-            int breachCount = _breachReadModel.ActiveBreachCount;
-            bool changed = false;
-            for (int dentIndex = 0; dentIndex < MaxHullDents; dentIndex++)
-            {
-                Vector4 dent = _dentBuffer[dentIndex];
-                float depth = UnpackDepth(dent.w);
-                if (depth <= MinimumStoredDepthMeters)
-                    continue;
-
-                float radius = UnpackRadius(dent.w);
-                if (IsDentStillBackedByBreach(dent, radius + RepairMatchPaddingMeters, breachCount))
-                    continue;
-
-                float newDepth = math.max(0f, depth - fadeDelta);
-                _dentBuffer[dentIndex].w = newDepth <= MinimumStoredDepthMeters ? 0f : PackRadiusDepth(radius, newDepth);
-                changed = true;
-            }
-
-            if (changed)
-            {
-                _activeDentCount = CountActiveDents();
-                FlushDentBufferToVault();
-                _dirty = true;
-            }
-
-            return changed;
-        }
-
-        private float ResolveUnscaledDeltaTime()
-        {
-            ITickDispatcher dispatcher = _tickDispatcher;
-            if (dispatcher != null)
-            {
-                double dispatcherDelta = dispatcher.TimeSnapshot.UnscaledDeltaTime;
-                if (dispatcherDelta > 0d && double.IsFinite(dispatcherDelta))
-                    return dispatcherDelta > 1d ? 1f : (float)dispatcherDelta;
-            }
-
-            float fallbackDelta = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            return math.isfinite(fallbackDelta) && fallbackDelta > 0f
-                ? math.min(fallbackDelta, 1f)
-                : 0f;
-        }
-
-        private bool IsDentStillBackedByBreach(Vector4 dent, float matchRadius, int breachCount)
-        {
-            if (breachCount <= 0)
-                return false;
-
-            float3 dentPoint = new float3(dent.x, dent.y, dent.z);
-            float matchRadiusSq = matchRadius * matchRadius;
-            int cappedCount = math.min(breachCount, 64);
-            for (int i = 0; i < cappedCount; i++)
-            {
-                if (!_breachReadModel.TryGetActiveBreach(i, out Vector4 breach) || breach.w <= 0.0001f)
-                    continue;
-
-                float3 breachPoint = new float3(breach.x, breach.y, breach.z);
-                float3 delta = breachPoint - dentPoint;
-                if (math.lengthsq(delta) <= matchRadiusSq)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private int CountActiveDents()
-        {
-            int count = 0;
-            for (int i = 0; i < MaxHullDents; i++)
-            {
-                if (UnpackDepth(_dentBuffer[i].w) > MinimumStoredDepthMeters)
-                    count++;
-            }
-
-            return count;
-        }
-
-        private void UploadShaderGlobals()
-        {
-            SyncDentBufferFromVault();
-            UploadShaderGlobalsFromLocal();
-        }
-
-        private void UploadShaderGlobalsFromLocal()
-        {
-            _activeDentCount = CountActiveDents();
-            float scarScalar = ResolveHullScarScalar();
-            float scarProxyWeight = ResolveDearLieScarProxyWeight(_qualityWeight01);
-            Shader.SetGlobalVectorArray(_HullDentsId, _dentBuffer);
-            Shader.SetGlobalVector(
-                _HullDentParamsId,
-                new Vector4(_activeDentCount, scarProxyWeight, scarScalar, _qualityWeightByte));
-            _dirty = false;
-        }
-
-        private IDataVault ResolveDataVault()
-        {
-            CacheDataVaultCold();
-            return _dataVault;
-        }
-
-        private bool EnsureHullDentsBuffer()
-        {
-            IDataVault vault = ResolveDataVault();
-            return EnsureHullDentsHandle(vault);
-        }
-
-        private bool SyncDentBufferFromVault()
-        {
-            IDataVault vault = ResolveDataVault();
-            if (vault == null)
-                return false;
-
-            if (!EnsureHullDentsHandle(vault) || !vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
-                return false;
-
-            try
-            {
-                if (!TryResolveHullDents(vault, out NativeArray<float4> dents, allowEnsure: false))
-                    return false;
-
-                bool changed = false;
-                int count = math.min(MaxHullDents, dents.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    float4 dent = dents[i];
-                    Vector4 next = math.all(math.isfinite(dent))
-                        ? new Vector4(dent.x, dent.y, dent.z, SanitizePackedDentValue(dent.w))
-                        : Vector4.zero;
-                    if (_dentBuffer[i] != next)
-                        changed = true;
-
-                    _dentBuffer[i] = next;
-                }
-
-                for (int i = count; i < MaxHullDents; i++)
-                {
-                    if (_dentBuffer[i] != Vector4.zero)
-                        changed = true;
-
-                    _dentBuffer[i] = Vector4.zero;
-                }
-
-                RefreshDentWriteState();
-                if (changed)
-                    _dirty = true;
-
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
-            }
-        }
-
-        private bool FlushDentBufferToVault()
-        {
-            IDataVault vault = ResolveDataVault();
-            if (vault == null)
-                return false;
-
-            if (!EnsureHullDentsHandle(vault) || !vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
-                return false;
-
-            try
-            {
-                if (!TryResolveHullDents(vault, out NativeArray<float4> dents, allowEnsure: false))
-                    return false;
-
-                int count = math.min(MaxHullDents, dents.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    Vector4 dent = _dentBuffer[i];
-                    dents[i] = IsFiniteVector(dent)
-                        ? new float4(dent.x, dent.y, dent.z, SanitizePackedDentValue(dent.w))
-                        : float4.zero;
-                }
-
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
-            }
-        }
-
-        private bool WriteDentToVault(int dentIndex, Vector4 dent)
-        {
-            if ((uint)dentIndex >= MaxHullDents || !IsFiniteVector(dent))
-                return false;
-
-            IDataVault vault = ResolveDataVault();
-            if (vault == null)
-                return false;
-
-            if (!EnsureHullDentsHandle(vault) || !vault.TryAcquireMutationGuard(HullDentsMutationGuardMask))
-                return false;
-
-            try
-            {
-                if (!TryResolveHullDents(vault, out NativeArray<float4> dents, allowEnsure: false) ||
-                    (uint)dentIndex >= (uint)dents.Length)
-                {
-                    return false;
-                }
-
-                dents[dentIndex] = new float4(dent.x, dent.y, dent.z, SanitizePackedDentValue(dent.w));
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(HullDentsMutationGuardMask);
-            }
-        }
-
-        private bool EnsureHullDentsHandle(IDataVault vault)
-        {
-            if (vault == null)
-                return false;
-
-            if (vault.IsCompactionFenceActive)
-            {
-                return false;
-            }
-
-            if (IsHullDentsHandle(in _hullDentsHandle) &&
-                vault.TryResolveHandle(in _hullDentsHandle, out NativeArray<float4> currentDents) &&
-                currentDents.IsCreated &&
-                currentDents.Length >= MaxHullDents)
-            {
-                return true;
-            }
-
-            ClearHullDentsDescriptor();
-            if (vault.TryGetGenerationHandle(BufferID.HullDents, out VaultGenerationHandle<float4> existing) &&
-                IsHullDentsHandle(in existing) &&
-                vault.TryResolveHandle(in existing, out NativeArray<float4> existingDents) &&
-                existingDents.IsCreated &&
-                existingDents.Length >= MaxHullDents)
-            {
-                _hullDentsHandle = existing;
-                _ownsHullDentsBuffer = false;
-                return true;
-            }
-
-            if (vault.IsAllocationLocked)
-                return false;
-
-            VaultGenerationHandle<float4> acquired = vault.EnsureGenerationHandle<float4>(
-                BufferID.HullDents,
-                MaxHullDents,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            if (!IsHullDentsHandle(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out NativeArray<float4> acquiredDents) ||
-                !acquiredDents.IsCreated ||
-                acquiredDents.Length < MaxHullDents)
-            {
-                bool ownsAcquired = true;
-                ReleaseVaultBuffer(vault, ref acquired, ref ownsAcquired);
-                ClearHullDentsDescriptor();
-                return false;
-            }
-
-            _hullDentsHandle = acquired;
-            _ownsHullDentsBuffer = true;
-            return true;
-        }
-
-        private bool TryResolveHullDents(IDataVault vault, out NativeArray<float4> dents, bool allowEnsure)
-        {
-            dents = default;
-            if (vault == null)
-                return false;
-
-            if (allowEnsure && !EnsureHullDentsHandle(vault))
-                return false;
-
-            if (!IsHullDentsHandle(in _hullDentsHandle))
-                return false;
-
-            if (!vault.TryResolveHandle(in _hullDentsHandle, out dents) ||
-                !dents.IsCreated ||
-                dents.Length < MaxHullDents)
-            {
-                if (allowEnsure)
-                    ClearHullDentsDescriptor();
-
-                return false;
-            }
-
-            return true;
-        }
-
-        private void ClearHullDentsDescriptor()
-        {
-            _hullDentsHandle = default;
-            _ownsHullDentsBuffer = false;
-        }
-
-        private void ReleaseHullDentsBuffer()
-        {
-            ReleaseVaultBuffer(_dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
-        }
-
-        private static bool IsHullDentsHandle(in VaultGenerationHandle<float4> handle)
-        {
-            return handle.BufferID == unchecked((uint)(int)BufferID.HullDents) &&
-                   handle.SystemID == (uint)SystemID.Vfx &&
-                   handle.Generation != 0u;
-        }
-
-        private static ulong HullDentMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 63);
-        }
-
-        private static void ReleaseVaultBuffer<T>(
-            IDataVault vault,
-            ref VaultGenerationHandle<T> handle,
-            ref bool ownsBuffer) where T : struct
-        {
-            if (ownsBuffer &&
-                vault != null &&
-                handle.BufferID == unchecked((uint)(int)BufferID.HullDents) &&
-                handle.SystemID == (uint)SystemID.Vfx &&
-                handle.Generation != 0u)
-            {
-                vault.ReleaseBuffer(in handle);
-            }
-
-            handle = default;
-            ownsBuffer = false;
-        }
-
-        private void RefreshDentWriteState()
-        {
-            _activeDentCount = CountActiveDents();
-            if (_activeDentCount >= MaxHullDents)
-            {
-                _writeHead = 0;
                 return;
             }
 
-            for (int i = 0; i < MaxHullDents; i++)
+            if (GlobalRegistry.TryRegisterHotSwapListener(this))
             {
-                if (UnpackDepth(_dentBuffer[i].w) <= MinimumStoredDepthMeters)
-                {
-                    _writeHead = i;
-                    return;
-                }
+                _registryListenerRegistered = true;
+            }
+        }
+
+        private void UnregisterRegistryListenerCold()
+        {
+            if (!_registryListenerRegistered)
+            {
+                return;
             }
 
-            _writeHead = 0;
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registryListenerRegistered = false;
+        }
+
+        private void TryRegisterTick()
+        {
+            if (_isRegistered || !Application.isPlaying)
+            {
+                return;
+            }
+
+            _isRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterTick()
+        {
+            if (!_isRegistered)
+            {
+                _isRegistered = false;
+                return;
+            }
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _isRegistered = false;
+        }
+
+        private void TryBindVesselTelemetryHandle()
+        {
+            if (_hasTelemetryHandle || _dataVault == null)
+            {
+                return;
+            }
+
+            _hasTelemetryHandle = _dataVault.TryGetGenerationHandle<VesselTelemetryEntry>(
+                SubmarineBallastBufferIds.VesselTelemetry,
+                out _vesselTelemetryHandle) &&
+                IsVesselTelemetryHandle(in _vesselTelemetryHandle);
+        }
+
+        private bool TryRefreshVesselTelemetry()
+        {
+            using (TelemetryMarker.Auto())
+            {
+                if (_dataVault == null)
+                {
+                    return false;
+                }
+
+                if (!_hasTelemetryHandle || ((_frameCounter & TelemetryRebindMask) == 0))
+                {
+                    _hasTelemetryHandle = false;
+                    TryBindVesselTelemetryHandle();
+                }
+
+                if (!_hasTelemetryHandle)
+                {
+                    return false;
+                }
+
+                if (_dataVault.IsCompactionFenceActive)
+                {
+                    return false;
+                }
+
+                if (!_dataVault.TryReadOnlyHandle(in _vesselTelemetryHandle, out NativeArray<VesselTelemetryEntry>.ReadOnly telemetry) || !telemetry.IsCreated || telemetry.Length == 0)
+                {
+                    return false;
+                }
+
+                VesselTelemetryEntry entry = telemetry[0];
+                float nextCleanliness = ResolveCleanliness01(entry.HullCleanlinessMask);
+                float nextCareTone = math.saturate(VesselTelemetryEntry.ResolveToneWeight01(entry.TotalCareActionsCount));
+                float nextBallastHealth = ResolveBallastHealth01(entry.CurrentBallastRatio);
+
+                bool changed =
+                    math.abs(nextCleanliness - _cleanliness) > 0.002f ||
+                    math.abs(nextCareTone - _careTone) > 0.002f ||
+                    math.abs(nextBallastHealth - _ballastHealth) > 0.002f;
+
+                _cleanliness = nextCleanliness;
+                _careTone = nextCareTone;
+                _ballastHealth = nextBallastHealth;
+                return changed;
+            }
+        }
+
+        private bool RefreshQualityWeight()
+        {
+            float nextQuality = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(nextQuality))
+            {
+                nextQuality = 1f;
+            }
+
+            nextQuality = math.saturate(nextQuality);
+            if (math.abs(nextQuality - _qualityWeight) <= 0.002f)
+            {
+                return false;
+            }
+
+            _qualityWeight = nextQuality;
+            return true;
+        }
+
+        private bool RefreshCavitationPhase(float deltaTime)
+        {
+            if (!HasCavitationFlipbook || cavitationIntensity <= 0f || cavitationPhaseRateHz <= 0f)
+            {
+                return false;
+            }
+
+            float dt = math.max(0f, deltaTime);
+            if (dt <= 0f)
+            {
+                return false;
+            }
+
+            float previous = _cavitationPhase01;
+            float visualRate = cavitationPhaseRateHz * math.lerp(0.35f, 1.35f, _qualityWeight);
+            _cavitationPhase01 = math.frac(_cavitationPhase01 + dt * visualRate);
+            return math.abs(_cavitationPhase01 - previous) > 0.000001f;
+        }
+
+        private void UploadBakedTextureGlobalsCold()
+        {
+            if (!HasBakedHullTextures && !_warnedMissingTextures)
+            {
+                Debug.LogWarning("HullDentShaderController1722: no baked displacement texture assigned. Runtime CPU dents remain disabled.", this);
+                _warnedMissingTextures = true;
+            }
+
+            if (hullAlbedoMap != null)
+            {
+                Shader.SetGlobalTexture(H8HullAlbedoMapId, hullAlbedoMap);
+            }
+
+            if (hullMraoMask != null)
+            {
+                Shader.SetGlobalTexture(H8HullMraoMapId, hullMraoMask);
+            }
+
+            if (hullDisplacementMap != null)
+            {
+                Shader.SetGlobalTexture(H8HullDisplacementMapId, hullDisplacementMap);
+            }
+
+            if (cavitationFlipbook != null)
+            {
+                Shader.SetGlobalTexture(H8HullCavitationFlipbookId, cavitationFlipbook);
+            }
+        }
+
+        private void UploadStaticShaderGlobalsFromLocal()
+        {
+            using (UploadMarker.Auto())
+            {
+                float bakedEnabled = HasBakedHullTextures ? 1f : 0f;
+                float scarScalar = ResolveHullScarScalar();
+
+                Shader.SetGlobalVector(
+                    H8HullBakeParamsId,
+                    new Vector4(bakedEnabled, displacementStrengthMeters, scarScalar, _qualityWeight));
+
+                Shader.SetGlobalVector(
+                    H8HullBakeUvParamsId,
+                    new Vector4(bakedUvScale.x, bakedUvScale.y, bakedUvOffset.x, bakedUvOffset.y));
+
+                Shader.SetGlobalVector(
+                    HullDentParamsId,
+                    new Vector4(0f, 1f, scarScalar, ResolveQualityWeightByte()));
+
+                Shader.SetGlobalVector(
+                    VesselCareParamsId,
+                    new Vector4(_cleanliness, _careTone, _ballastHealth, 0f));
+
+                Shader.SetGlobalVector(
+                    VesselCareMaskId,
+                    new Vector4(_cleanliness, _careTone, _ballastHealth, 1f));
+            }
+        }
+
+        private void UploadCavitationShaderGlobalsFromLocal()
+        {
+            float cavitationEnabled = HasCavitationFlipbook ? cavitationIntensity : 0f;
+            Shader.SetGlobalVector(
+                H8HullCavitationParamsId,
+                new Vector4(cavitationEnabled, _cavitationPhase01, cavitationFlipbookFrames, cavitationFlipbookTiles));
+            Shader.SetGlobalVector(
+                H8HullCavitationUvParamsId,
+                new Vector4(cavitationUvScale.x, cavitationUvScale.y, cavitationUvOffset.x, cavitationUvOffset.y));
         }
 
         private float ResolveHullScarScalar()
         {
-            float scar = 0f;
-            for (int i = 0; i < MaxHullDents; i++)
-                scar = math.max(scar, UnpackDepth(_dentBuffer[i].w));
-
-            return math.saturate(scar * math.rcp(FiniteAtLeast(maxDentDepthMeters, 0.01f)));
+            float grimeScar = (1f - _cleanliness) * 0.35f;
+            float careScar = _careTone * 0.12f;
+            float ballastScar = (1f - _ballastHealth) * 0.18f;
+            return math.saturate(bakedScarBlend * math.lerp(0.35f, 1f, _qualityWeight) + grimeScar + careScar + ballastScar);
         }
 
-        private void ClearLocalDentBuffer()
+        private float ResolveQualityWeightByte()
         {
-            for (int i = 0; i < MaxHullDents; i++)
-                _dentBuffer[i] = Vector4.zero;
-
-            _writeHead = 0;
-            _activeDentCount = 0;
-            _dirty = true;
+            int byteValue = Mathf.Clamp(Mathf.RoundToInt(_qualityWeight * 255f), MinQualityByte, 255);
+            return byteValue;
         }
 
-        private void PublishHullDeformedSignal(in CombatDamageSignal signal, float3 localPoint, float radius, float depth)
+        private void ReportBlackBoxState()
         {
-            float intensity01 = math.saturate(depth * math.rcp(FiniteAtLeast(maxDentDepthMeters, 0.01f)));
-            byte flags = 0;
-            if ((signal.Flags & CombatDamageSignal.LegacyMirrorFlag) != 0)
-                flags |= HullDeformedSignal.LegacyLocalPointFlag;
-
-            HullDeformedSignal deformedSignal = new HullDeformedSignal
+            if (_blackBox == null || _blackBox.Length == 0)
             {
-                LocalPoint = localPoint,
-                Radius = radius,
-                Depth = depth,
-                Intensity01 = intensity01,
-                TargetHash = signal.TargetHash,
-                SourceHash = signal.SourceHash,
-                Frame = signal.Frame != 0u ? signal.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                TargetId = signal.TargetId,
-                SourceId = signal.SourceId,
-                ActiveDentCount = (byte)math.min(MaxHullDents, _activeDentCount),
+                return;
+            }
+
+            uint flags = BuildTelemetryFlags();
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
+            HullDentBlackBoxEntry entry = new HullDentBlackBoxEntry
+            {
+                Frame = currentFrame != 0u ? currentFrame : (uint)Mathf.Max(_frameCounter, 0),
                 Flags = flags,
-                QualityTier = _qualityWeightByte,
-                Channel = signal.Channel,
-                DamageType = signal.DamageType
+                Cleanliness = _cleanliness,
+                CareTone = _careTone,
+                BallastHealth = _ballastHealth,
+                QualityWeight = _qualityWeight,
+                CavitationPhase = _cavitationPhase01,
+                ScarScalar = ResolveHullScarScalar(),
+                DisplacementMeters = displacementStrengthMeters
             };
-            SignalBus<HullDeformedSignal>.TryPushTracked(in deformedSignal, ref s_x001HullDentShaderControllerSignalPushDropCount);
+
+            _blackBox[_blackBoxCursor] = entry;
+            _blackBoxCursor++;
+            if (_blackBoxCursor >= _blackBox.Length)
+            {
+                _blackBoxCursor = 0;
+            }
+
+            if (!_blackBoxFaulted &&
+                !IsFinite(
+                    entry.Cleanliness,
+                    entry.CareTone,
+                    entry.BallastHealth,
+                    entry.QualityWeight,
+                    entry.CavitationPhase,
+                    entry.ScarScalar,
+                    entry.DisplacementMeters))
+            {
+                _blackBoxFaulted = true;
+                ResetPresentationStateAfterNonFinite();
+            }
         }
 
         private uint BuildTelemetryFlags()
         {
-            uint scarProxyByte = ResolveQualityWeightByte(ResolveDearLieScarProxyWeight(_qualityWeight01));
-            return (uint)_qualityWeightByte | (scarProxyByte << 8);
+            uint qualityByte = (uint)ResolveQualityWeightByte();
+            uint cleanlinessByte = (uint)Mathf.Clamp(Mathf.RoundToInt(_cleanliness * 255f), 0, 255);
+            uint scarByte = (uint)Mathf.Clamp(Mathf.RoundToInt(ResolveHullScarScalar() * 255f), 0, 255);
+            uint state = qualityByte | (cleanlinessByte << 8) | (scarByte << 16);
+
+            if (HasBakedHullTextures)
+            {
+                state |= 1u << 24;
+            }
+
+            if (HasCavitationFlipbook)
+            {
+                state |= 1u << 25;
+            }
+
+            return state;
         }
 
-        private static float PackRadiusDepth(float radius, float depth)
+        private static float FiniteOrDefault(float value, float fallback)
         {
-            float safeRadius = math.min(FiniteNonNegativeOrZero(radius), 15.9375f);
-            float safeDepth = math.saturate(FiniteNonNegativeOrZero(depth));
-            int radiusQ = Mathf.Clamp(Mathf.RoundToInt(safeRadius * RadiusQuantizationStepsPerMeter), 0, 255);
-            int depthQ = Mathf.Clamp(Mathf.RoundToInt(safeDepth * 255f), 0, 255);
-            return (depthQ << 8) | radiusQ;
+            return math.isfinite(value) ? value : fallback;
         }
 
-        private static float UnpackRadius(float packed)
+        private static float FiniteNonNegativeOrZero(float value, float fallback)
         {
-            int packedInt = Mathf.Max(0, Mathf.RoundToInt(SanitizePackedDentValue(packed)));
-            return (packedInt & 255) * InvRadiusQuantizationStepsPerMeter;
+            return math.isfinite(value) && value >= 0f ? value : fallback;
         }
 
-        private static float UnpackDepth(float packed)
+        private static float FiniteAtLeast(float value, float minimum, float fallback)
         {
-            int packedInt = Mathf.Max(0, Mathf.RoundToInt(SanitizePackedDentValue(packed)));
-            return ((packedInt >> 8) & 255) * InvDepthQuantizationSteps;
+            return math.isfinite(value) && value >= minimum ? value : fallback;
         }
 
-        private bool TryResolveLocalImpactAup(Vector3 worldPoint, out float3 localPoint)
+        private static float ResolveCleanliness01(ulong hullCleanlinessMask)
         {
-            localPoint = default;
-            if (!IsFiniteVector(worldPoint))
-                return false;
-
-            Transform root = _cachedRoot != null ? _cachedRoot : submarineRoot != null ? submarineRoot : transform;
-            _cachedRoot = root;
-            if (root == null || !IsFiniteVector(root.position) || !IsFiniteQuaternion(root.rotation))
-                return false;
-
-            Vector3 relativeWorld = worldPoint - root.position;
-            if (!IsFiniteVector(relativeWorld))
-                return false;
-
-            Quaternion inverseRotation = ConjugateUnitRotation(root.rotation);
-            Vector3 local = inverseRotation * relativeWorld;
-            Vector3 scale = root.lossyScale;
-            local.x /= ResolveSafeScale(scale.x);
-            local.y /= ResolveSafeScale(scale.y);
-            local.z /= ResolveSafeScale(scale.z);
-            if (!IsFiniteVector(local))
-                return false;
-
-            localPoint = new float3(local.x, local.y, local.z);
-            return math.all(math.isfinite(localPoint));
+            return math.saturate(CountSetBits64(hullCleanlinessMask) * InverseHullMaintenancePanels);
         }
 
-        private static bool IsFiniteVector(Vector3 value)
+        private static float ResolveBallastHealth01(float currentBallastRatio)
         {
-            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+            float safeRatio = math.saturate(math.select(0.5f, currentBallastRatio, math.isfinite(currentBallastRatio)));
+            return math.saturate(1f - math.abs(safeRatio - 0.5f) * 0.65f);
         }
 
-        private static Quaternion ConjugateUnitRotation(Quaternion rotation)
+        private static bool IsVesselTelemetryHandle(in VaultGenerationHandle<VesselTelemetryEntry> handle)
         {
-            return new Quaternion(-rotation.x, -rotation.y, -rotation.z, rotation.w);
+            return handle.BufferID == unchecked((uint)(int)SubmarineBallastBufferIds.VesselTelemetry) &&
+                   handle.Generation != 0u;
         }
 
-        private static bool IsFiniteVector(Vector4 value)
+        private static int CountSetBits64(ulong value)
         {
-            return float.IsFinite(value.x) &&
-                   float.IsFinite(value.y) &&
-                   float.IsFinite(value.z) &&
-                   float.IsFinite(value.w);
+            value -= (value >> 1) & 0x5555555555555555UL;
+            value = (value & 0x3333333333333333UL) + ((value >> 2) & 0x3333333333333333UL);
+            return (int)((((value + (value >> 4)) & 0x0F0F0F0F0F0F0F0FUL) * 0x0101010101010101UL) >> 56);
         }
 
-        private static bool IsFiniteQuaternion(Quaternion value)
+        private void SanitizeSerializedFields()
         {
-            return float.IsFinite(value.x) &&
-                   float.IsFinite(value.y) &&
-                   float.IsFinite(value.z) &&
-                   float.IsFinite(value.w);
+            displacementStrengthMeters = FiniteNonNegativeOrZero(displacementStrengthMeters, DefaultDisplacementMeters);
+            bakedScarBlend = Mathf.Clamp01(FiniteNonNegativeOrZero(bakedScarBlend, 1f));
+            cavitationIntensity = Mathf.Clamp01(FiniteNonNegativeOrZero(cavitationIntensity, 1f));
+            cavitationPhaseRateHz = FiniteNonNegativeOrZero(cavitationPhaseRateHz, DefaultCavitationRateHz);
+            cavitationFlipbookFrames = Mathf.Max(1, cavitationFlipbookFrames);
+            cavitationFlipbookTiles = Mathf.Max(1, cavitationFlipbookTiles);
+            cavitationUvScale.x = FiniteAtLeast(cavitationUvScale.x, 0.0001f, 4f);
+            cavitationUvScale.y = FiniteAtLeast(cavitationUvScale.y, 0.0001f, 2f);
+            cavitationUvOffset.x = FiniteOrDefault(cavitationUvOffset.x, -3f);
+            cavitationUvOffset.y = FiniteOrDefault(cavitationUvOffset.y, -0.5f);
+            bakedUvScale.x = FiniteAtLeast(bakedUvScale.x, 0.0001f, 1f);
+            bakedUvScale.y = FiniteAtLeast(bakedUvScale.y, 0.0001f, 1f);
+            bakedUvOffset.x = FiniteOrDefault(bakedUvOffset.x, 0f);
+            bakedUvOffset.y = FiniteOrDefault(bakedUvOffset.y, 0f);
         }
 
-        private static float FiniteNonNegativeOrZero(float value)
+        private void EnsureBlackBoxAllocated()
         {
-            return float.IsFinite(value) && value > 0f ? value : 0f;
+            if (_blackBox != null && _blackBox.Length == BlackBoxCapacity)
+            {
+                return;
+            }
+
+            // COLD ALLOC: HullDentBlackBoxEntry[300] - presentation state ring for finite-state diagnosis - owner: HullDentShaderController
+            _blackBox = new HullDentBlackBoxEntry[BlackBoxCapacity];
+            _blackBoxCursor = 0;
         }
 
-        private static float FiniteAtLeast(float value, float minimum)
+        private void ResetPresentationStateAfterNonFinite()
         {
-            return float.IsFinite(value) && value > minimum ? value : minimum;
+            _cleanliness = 1f;
+            _careTone = 0f;
+            _ballastHealth = 1f;
+            _qualityWeight = 1f;
+            _cavitationPhase01 = 0f;
+            _shaderGlobalsDirty = true;
+            UploadStaticShaderGlobalsFromLocal();
+            UploadCavitationShaderGlobalsFromLocal();
+            _shaderGlobalsDirty = false;
         }
 
-        private static float SanitizePackedDentValue(float value)
+        private static bool IsBlackBoxEntryLayoutAligned()
         {
-            return float.IsFinite(value) && value > 0f ? value : 0f;
+            return (UnsafeUtility.SizeOf<HullDentBlackBoxEntry>() & 7) == 0;
         }
 
-        private static float ResolveSafeScale(float scale)
+        private static bool IsFinite(
+            float a,
+            float b,
+            float c,
+            float d,
+            float e,
+            float f,
+            float g)
         {
-            return float.IsFinite(scale) && math.abs(scale) > LocalTransformEpsilon ? scale : 1f;
+            return
+                math.isfinite(a) &&
+                math.isfinite(b) &&
+                math.isfinite(c) &&
+                math.isfinite(d) &&
+                math.isfinite(e) &&
+                math.isfinite(f) &&
+                math.isfinite(g);
         }
     }
 }

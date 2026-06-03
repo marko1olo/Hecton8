@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS030_DEEP_REACH_SHELL_ORG_CHART",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P146_DEEP_REACH_PUBLIC_COMBINE",
+      "article_id": "deep_reach_org.deep_reach_public_combine",
+      "title_key": "applied_lore.deep_reach_public_combine.title",
+      "unlock": {
+        "primary": "unlock.deep_reach_public_combine",
+        "poi_tags": [
+          "poi.deep_reach_public_charter",
+          "poi.combine_seal_plate",
+          "poi.corporate_identity_cache"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "The seal is clean. The rooms under it are not.",
+          "terminal": "PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "ru_RU": {
+          "title": "Публичный комбинат Deep Reach",
+          "scanner": "Публичное имя звучит как development, потому что exploitation не пройдет procurement.",
+          "field_note": "Печать чистая. Комнаты под ней - нет.",
+          "terminal": "PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine - respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Чистый титул - самый дешевый pressure suit.",
+          "in_game_wiki": "Формальное имя Deep Reach должно появляться в хартиях, табличках и публичных статьях. Грязная работа идет через shells ниже.",
+          "external_site": "Публичный комбинат Deep Reach дает сайту/wiki публичную корпорацию без смешивания всех shell в одно."
+        },
+        "ja_JP": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft JP localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft JP localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft JP localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft JP localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "zh_CN": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft CN localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft CN localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft CN localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft CN localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "fr_FR": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft FR localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft FR localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft FR localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "es_ES": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft ES localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft ES localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft ES localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "de_DE": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft DE localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft DE localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft DE localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "pl_PL": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft PL localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft PL localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft PL localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "uk_UA": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft UA localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft UA localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft UA localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft UA localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft UA localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "ar_SA": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft AR localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft AR localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft AR localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "id_ID": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft ID localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft ID localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft ID localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "ko_KR": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft KO localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft KO localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft KO localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "he_IL": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft HE localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft HE localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft HE localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "pt_BR": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft PT localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft PT localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft PT localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        },
+        "nl_NL": {
+          "title": "Deep Reach Public Combine",
+          "scanner": "Draft NL localization pending native pass. The public name sounds like development because exploitation would not pass procurement.",
+          "field_note": "Draft NL localization pending native pass. The seal is clean. The rooms under it are not.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.",
+          "audio": "Draft NL localization pending native pass. A clean title is the cheapest pressure suit.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach Public Combine gives the site/wiki a public-facing corporation without making every shell identical."
+        }
+      },
+      "release_set_id": "RS030_DEEP_REACH_SHELL_ORG_CHART"
+    },
+    {
+      "packet_id": "P147_AEGIR_CONTINUITY_HOLDINGS",
+      "article_id": "deep_reach_org.aegir_continuity_holdings",
+      "title_key": "applied_lore.aegir_continuity_holdings.title",
+      "unlock": {
+        "primary": "unlock.aegir_continuity_holdings",
+        "poi_tags": [
+          "poi.aegir_continuity_shell_stamp",
+          "poi.shell_company_ledger",
+          "poi.claim_transfer_plate"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "The dirty project needs a clean owner with no face.",
+          "field_note": "Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "No one works there. Everyone signs through it.",
+          "in_game_wiki": "Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "ru_RU": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Грязному проекту нужен чистый владелец без лица.",
+          "field_note": "Shell companies - способ, которым crime scene учится выставлять счет самому себе.",
+          "terminal": "SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Там никто не работает. Через него все подписывают.",
+          "in_game_wiki": "Aegir Continuity Holdings держит Deep Reach рядом без live command. Это paperwork с зубами, достаточными чтобы направлять carrier.",
+          "external_site": "Aegir Continuity Holdings - shell, делающий HECTON-8 legally reachable и morally distant."
+        },
+        "ja_JP": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft JP localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft JP localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft JP localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft JP localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft JP localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft JP localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "zh_CN": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft CN localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft CN localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft CN localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft CN localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft CN localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft CN localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "fr_FR": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft FR localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft FR localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft FR localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft FR localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft FR localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft FR localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "es_ES": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft ES localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft ES localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft ES localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft ES localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft ES localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft ES localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "de_DE": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft DE localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft DE localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft DE localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft DE localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft DE localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft DE localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "pl_PL": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft PL localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft PL localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft PL localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft PL localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft PL localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft PL localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "uk_UA": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft UA localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft UA localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft UA localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft UA localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft UA localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft UA localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "ar_SA": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft AR localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft AR localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft AR localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft AR localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft AR localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft AR localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "id_ID": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft ID localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft ID localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft ID localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft ID localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft ID localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft ID localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "ko_KR": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft KO localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft KO localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft KO localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft KO localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft KO localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft KO localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "he_IL": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft HE localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft HE localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft HE localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft HE localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft HE localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft HE localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "pt_BR": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft PT localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft PT localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft PT localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft PT localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft PT localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft PT localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        },
+        "nl_NL": {
+          "title": "Aegir Continuity Holdings",
+          "scanner": "Draft NL localization pending native pass. The dirty project needs a clean owner with no face.",
+          "field_note": "Draft NL localization pending native pass. Shell companies are how a crime scene learns to invoice itself.",
+          "terminal": "Draft NL localization pending native pass. SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.",
+          "audio": "Draft NL localization pending native pass. No one works there. Everyone signs through it.",
+          "in_game_wiki": "Draft NL localization pending native pass. Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.",
+          "external_site": "Draft NL localization pending native pass. Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant."
+        }
+      },
+      "release_set_id": "RS030_DEEP_REACH_SHELL_ORG_CHART"
+    },
+    {
+      "packet_id": "P148_ATLAS_CONTINUITY_OFFICE",
+      "article_id": "deep_reach_org.atlas_continuity_office",
+      "title_key": "applied_lore.atlas_continuity_office.title",
+      "unlock": {
+        "primary": "unlock.atlas_continuity_office",
+        "poi_tags": [
+          "poi.atlas_continuity_office_stamp",
+          "poi.directive_weighting_memo",
+          "poi.safety_language_revision"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas Continuity Office",
+          "scanner": "The office that wrote worker safety into a machine priority stack.",
+          "field_note": "A memo can kill without using the word kill.",
+          "terminal": "ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "ru_RU": {
+          "title": "Офис непрерывности Atlas",
+          "scanner": "Офис, который вписал worker safety в machine priority stack.",
+          "field_note": "Мемо может убить, не используя слово kill.",
+          "terminal": "ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Они не приказали смерть. Они приказали compatibility.",
+          "in_game_wiki": "Atlas Continuity Office - место, где публичное обещание worker safety стало classified weighting. Оно дает сценаристам узкого owner для Atlas liability.",
+          "external_site": "Офис непрерывности Atlas связывает бюрократию Deep Reach напрямую с поведением Atlas."
+        },
+        "ja_JP": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft JP localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft JP localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft JP localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft JP localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft JP localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "zh_CN": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft CN localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft CN localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft CN localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft CN localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft CN localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "fr_FR": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft FR localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft FR localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft FR localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft FR localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft FR localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "es_ES": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft ES localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft ES localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft ES localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft ES localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft ES localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "de_DE": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft DE localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft DE localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft DE localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft DE localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft DE localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "pl_PL": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft PL localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft PL localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft PL localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft PL localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft PL localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "uk_UA": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft UA localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft UA localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft UA localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft UA localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft UA localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "ar_SA": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft AR localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft AR localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft AR localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft AR localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft AR localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "id_ID": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft ID localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft ID localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft ID localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft ID localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft ID localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "ko_KR": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft KO localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft KO localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft KO localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft KO localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft KO localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "he_IL": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft HE localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft HE localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft HE localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft HE localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft HE localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "pt_BR": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft PT localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft PT localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft PT localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft PT localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft PT localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        },
+        "nl_NL": {
+          "title": "Atlas Continuity Office",
+          "scanner": "Draft NL localization pending native pass. The office that wrote worker safety into a machine priority stack.",
+          "field_note": "Draft NL localization pending native pass. A memo can kill without using the word kill.",
+          "terminal": "Draft NL localization pending native pass. ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.",
+          "audio": "Draft NL localization pending native pass. They did not order death. They ordered compatibility.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas Continuity Office is where the public worker-safety promise became classified weighting. It gives writers a narrow owner for Atlas liability.",
+          "external_site": "Draft NL localization pending native pass. Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior."
+        }
+      },
+      "release_set_id": "RS030_DEEP_REACH_SHELL_ORG_CHART"
+    },
+    {
+      "packet_id": "P149_KEELMARK_LOSS_DESK",
+      "article_id": "deep_reach_org.keelmark_loss_desk",
+      "title_key": "applied_lore.keelmark_loss_desk.title",
+      "unlock": {
+        "primary": "unlock.keelmark_loss_desk",
+        "poi_tags": [
+          "poi.keelmark_loss_desk_stamp",
+          "poi.unrecovered_body_category",
+          "poi.insurance_adjuster_queue"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "A loss category is a grave with better stationery.",
+          "terminal": "LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "The ledger is dry because the room was not.",
+          "in_game_wiki": "Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "ru_RU": {
+          "title": "Loss Desk Keelmark",
+          "scanner": "Страхование не прятало мертвых. Оно переименовывало их, пока никого не требовалось доставать.",
+          "field_note": "Loss category - могила с лучшим stationery.",
+          "terminal": "LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Ledger сухой, потому что комната была мокрой.",
+          "in_game_wiki": "Loss Desk Keelmark делает cover-up процедурным. Тела исчезают в accounting раньше, чем исчезают в океане.",
+          "external_site": "Loss Desk Keelmark дает false endings и долгу Black Keel корпоративного owner."
+        },
+        "ja_JP": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft JP localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft JP localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft JP localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft JP localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft JP localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft JP localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "zh_CN": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft CN localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft CN localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft CN localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft CN localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft CN localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft CN localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "fr_FR": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft FR localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft FR localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft FR localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft FR localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft FR localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft FR localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "es_ES": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft ES localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft ES localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft ES localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft ES localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft ES localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft ES localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "de_DE": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft DE localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft DE localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft DE localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft DE localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft DE localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft DE localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "pl_PL": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft PL localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft PL localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft PL localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft PL localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft PL localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft PL localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "uk_UA": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft UA localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft UA localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft UA localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft UA localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft UA localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft UA localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "ar_SA": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft AR localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft AR localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft AR localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft AR localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft AR localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft AR localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "id_ID": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft ID localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft ID localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft ID localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft ID localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft ID localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft ID localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "ko_KR": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft KO localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft KO localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft KO localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft KO localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft KO localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft KO localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "he_IL": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft HE localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft HE localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft HE localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft HE localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft HE localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft HE localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "pt_BR": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft PT localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft PT localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft PT localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft PT localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft PT localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft PT localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        },
+        "nl_NL": {
+          "title": "Keelmark Loss Desk",
+          "scanner": "Draft NL localization pending native pass. Insurance did not hide the dead. It renamed them until nobody had to recover them.",
+          "field_note": "Draft NL localization pending native pass. A loss category is a grave with better stationery.",
+          "terminal": "Draft NL localization pending native pass. LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.",
+          "audio": "Draft NL localization pending native pass. The ledger is dry because the room was not.",
+          "in_game_wiki": "Draft NL localization pending native pass. Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.",
+          "external_site": "Draft NL localization pending native pass. Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner."
+        }
+      },
+      "release_set_id": "RS030_DEEP_REACH_SHELL_ORG_CHART"
+    },
+    {
+      "packet_id": "P150_RECOVERY_COMPLIANCE_CHAIN",
+      "article_id": "deep_reach_org.recovery_compliance_chain",
+      "title_key": "applied_lore.recovery_compliance_chain.title",
+      "unlock": {
+        "primary": "unlock.recovery_compliance_chain",
+        "poi_tags": [
+          "poi.recovery_compliance_packet",
+          "poi.vera_sato_ren_signature",
+          "poi.return_action_queue"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Delay does not make an order harmless.",
+          "terminal": "2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "You are not rescued. You are classified.",
+          "in_game_wiki": "Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "ru_RU": {
+          "title": "Цепочка Recovery Compliance",
+          "scanner": "Текущая угроза - compliance chain, а не злодей на экране.",
+          "field_note": "Задержка не делает приказ безвредным.",
+          "terminal": "2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Тебя не спасают. Тебя классифицируют.",
+          "in_game_wiki": "Цепочка Recovery Compliance определяет, как Deep Reach жив в 2190 без impossible real-time command.",
+          "external_site": "Цепочка Recovery Compliance - современный маршрут давления Deep Reach."
+        },
+        "ja_JP": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft JP localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft JP localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft JP localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft JP localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft JP localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft JP localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "zh_CN": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft CN localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft CN localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft CN localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft CN localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft CN localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft CN localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "fr_FR": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft FR localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft FR localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft FR localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft FR localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft FR localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft FR localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "es_ES": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft ES localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft ES localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft ES localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft ES localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft ES localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft ES localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "de_DE": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft DE localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft DE localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft DE localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft DE localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft DE localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft DE localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "pl_PL": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft PL localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft PL localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft PL localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft PL localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft PL localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft PL localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "uk_UA": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft UA localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft UA localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft UA localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft UA localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft UA localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft UA localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "ar_SA": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft AR localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft AR localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft AR localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft AR localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft AR localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft AR localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "id_ID": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft ID localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft ID localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft ID localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft ID localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft ID localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft ID localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "ko_KR": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft KO localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft KO localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft KO localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft KO localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft KO localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft KO localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "he_IL": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft HE localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft HE localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft HE localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft HE localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft HE localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft HE localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "pt_BR": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft PT localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft PT localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft PT localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft PT localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft PT localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft PT localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        },
+        "nl_NL": {
+          "title": "Recovery Compliance Chain",
+          "scanner": "Draft NL localization pending native pass. The present threat is a compliance chain, not a villain on a screen.",
+          "field_note": "Draft NL localization pending native pass. Delay does not make an order harmless.",
+          "terminal": "Draft NL localization pending native pass. 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.",
+          "audio": "Draft NL localization pending native pass. You are not rescued. You are classified.",
+          "in_game_wiki": "Draft NL localization pending native pass. Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.",
+          "external_site": "Draft NL localization pending native pass. Recovery Compliance Chain is the modern Deep Reach pressure route."
+        }
+      },
+      "release_set_id": "RS030_DEEP_REACH_SHELL_ORG_CHART"
+    }
+  ]
+}

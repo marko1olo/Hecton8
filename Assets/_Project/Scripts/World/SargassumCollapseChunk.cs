@@ -34,6 +34,10 @@ namespace Hecton8.World
         private ParticleSystem siltTrail;
 
         [SerializeField]
+        [Tooltip("Optional pooled silt trail prefab used when the chunk prefab has no authored child trail.")]
+        private GameObject authoredSiltTrailPrefab;
+
+        [SerializeField]
         [Tooltip("Pooled physical scrap pickup prefab spawned when the chunk disintegrates into salvage.")]
         private GameObject scrapPickupPrefab;
 
@@ -124,6 +128,7 @@ namespace Hecton8.World
         private bool _pendingSiltTrailPlay;
         private bool _pendingSiltTrailClear;
         private float _pendingSiltTrailEmissionRate;
+        private GameObject _pooledSiltTrailInstance;
         private IObjectPoolService _objectPool;
         private SargassumGlobalDragManager _sargassumDrag;
         private IPhysicsService _physicsService;
@@ -132,7 +137,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ResolveRuntimeWiring(createFallbackTrail: true);
+            ResolveRuntimeWiring();
             CacheRegistryServicesCold();
             EnsureSnagJoints();
             EnsureShiftBuffers();
@@ -179,6 +184,7 @@ namespace Hecton8.World
             }
 
             transform.localScale = _defaultLocalScale * Mathf.Max(0.1f, uniformScale);
+            EnsurePooledSiltTrailActive();
 
             if (siltTrail != null)
             {
@@ -261,7 +267,7 @@ namespace Hecton8.World
         /// </summary>
         public void OnSpawn()
         {
-            ResolveRuntimeWiring(createFallbackTrail: true);
+            ResolveRuntimeWiring();
             CacheRegistryServicesCold();
             transform.localScale = _defaultLocalScale;
             _remainingLifetime = 0f;
@@ -330,10 +336,13 @@ namespace Hecton8.World
 
             if (siltTrail != null)
                 siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            ReleasePooledSiltTrail(clearParticles: true);
         }
 
         private void OnDisable()
         {
+            ReleasePooledSiltTrail(clearParticles: true);
             TryUnregisterScavengerHost();
             TryUnregister();
             TryUnregisterHotSwapListener();
@@ -342,6 +351,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            ReleasePooledSiltTrail(clearParticles: true);
             TryUnregisterScavengerHost();
             TryUnregister();
             TryUnregisterHotSwapListener();
@@ -502,12 +512,9 @@ namespace Hecton8.World
                 DisintegrateIntoScrap();
         }
 
-        private void ResolveRuntimeWiring(bool createFallbackTrail)
+        private void ResolveRuntimeWiring()
         {
             ResolveExistingComponentReferences();
-
-            if (siltTrail == null && createFallbackTrail)
-                siltTrail = CreateFallbackSiltTrail();
         }
 
         private bool ResolveExistingComponentReferences()
@@ -527,6 +534,59 @@ namespace Hecton8.World
             }
 
             return changed;
+        }
+
+        private void EnsurePooledSiltTrailActive()
+        {
+            if (siltTrail != null || authoredSiltTrailPrefab == null)
+                return;
+
+            IObjectPoolService poolManager = _objectPool;
+            if (poolManager == null)
+                return;
+
+            GameObject instance = poolManager.Spawn(authoredSiltTrailPrefab, transform.position, transform.rotation, allowExpand: false);
+            if (instance == null)
+                return;
+
+            if (!poolManager.TryGetPooledComponent(instance, out ParticleSystem pooledTrail) || pooledTrail == null)
+            {
+                poolManager.Despawn(instance);
+                return;
+            }
+
+            Transform trailTransform = instance.transform;
+            trailTransform.SetParent(transform, false);
+            trailTransform.localPosition = Vector3.zero;
+            trailTransform.localRotation = Quaternion.identity;
+            trailTransform.localScale = Vector3.one;
+            _pooledSiltTrailInstance = instance;
+            siltTrail = pooledTrail;
+            EnsureShiftBuffers();
+        }
+
+        private void ReleasePooledSiltTrail(bool clearParticles)
+        {
+            GameObject instance = _pooledSiltTrailInstance;
+            if (instance == null)
+                return;
+
+            ParticleSystem pooledTrail = siltTrail;
+            if (pooledTrail != null && (pooledTrail.isPlaying || clearParticles))
+            {
+                pooledTrail.Stop(true, clearParticles
+                    ? ParticleSystemStopBehavior.StopEmittingAndClear
+                    : ParticleSystemStopBehavior.StopEmitting);
+            }
+
+            _pooledSiltTrailInstance = null;
+            siltTrail = null;
+
+            IObjectPoolService poolManager = _objectPool;
+            if (poolManager != null)
+                poolManager.Despawn(instance);
+            else
+                instance.SetActive(false);
         }
 
         internal void ApplyThermalGeyserDamage(float damage)
@@ -665,18 +725,19 @@ namespace Hecton8.World
             }
         }
 
-        private ParticleSystem CreateFallbackSiltTrail()
+#if UNITY_EDITOR
+        private ParticleSystem CreateEditorAuthoredSiltTrail()
         {
-            // COLD ALLOC: GameObject[1] Ã¢â‚¬â€ fallback collapse-chunk muddy trail child created when prefab wiring is missing Ã¢â‚¬â€ owner: SargassumCollapseChunk
+            // EDITOR ALLOC: GameObject[1] - authored collapse-chunk muddy trail child created before build - owner: SargassumCollapseChunk
             GameObject trailObject = new GameObject("SiltTrail");
             trailObject.transform.SetParent(transform, false);
             trailObject.transform.localPosition = Vector3.zero;
             trailObject.transform.localRotation = Quaternion.identity;
             trailObject.transform.localScale = Vector3.one;
 
-            // COLD ALLOC: ParticleSystem[1] Ã¢â‚¬â€ fallback muddy trail component for collapse chunks Ã¢â‚¬â€ owner: SargassumCollapseChunk
+            // EDITOR ALLOC: ParticleSystem[1] - authored muddy trail component for collapse chunks - owner: SargassumCollapseChunk
             ParticleSystem particleSystem = trailObject.AddComponent<ParticleSystem>();
-            // COLD ALLOC: ParticleSystemRenderer[1] Ã¢â‚¬â€ fallback muddy trail renderer for collapse chunks Ã¢â‚¬â€ owner: SargassumCollapseChunk
+            // EDITOR ALLOC: ParticleSystemRenderer[1] - authored muddy trail renderer for collapse chunks - owner: SargassumCollapseChunk
             trailObject.TryGetComponent(out ParticleSystemRenderer particleRenderer);
 
             ParticleSystem.MainModule main = particleSystem.main;
@@ -753,6 +814,7 @@ namespace Hecton8.World
 
             return particleSystem;
         }
+#endif
 
         private void EnsureShiftBuffers()
         {
@@ -867,8 +929,8 @@ namespace Hecton8.World
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("Author Missing Fallback Silt Trail")]
-        private void AuthorMissingFallbackSiltTrail()
+        [ContextMenu("Author Missing Silt Trail")]
+        private void AuthorMissingSiltTrail()
         {
             if (Application.isPlaying)
                 return;
@@ -876,7 +938,7 @@ namespace Hecton8.World
             bool changed = ResolveExistingComponentReferences();
             if (siltTrail == null)
             {
-                siltTrail = CreateFallbackSiltTrail();
+                siltTrail = CreateEditorAuthoredSiltTrail();
                 changed = siltTrail != null;
             }
 

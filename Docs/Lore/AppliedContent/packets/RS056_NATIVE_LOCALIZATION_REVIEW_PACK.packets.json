@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "article_id": "applied_lore.ru_native_review_lock",
+      "title_key": "applied_lore.ru_native_review_lock.title",
+      "unlock": {
+        "primary": "unlock.ru_native_review_lock",
+        "poi_tags": [
+          "poi.ru_review_card",
+          "poi.cyrillic_width_sample",
+          "poi.terminal_ru_proof"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.review"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "RU Review Gate",
+          "scanner": "Cyrillic is not the problem. Tone drift is.",
+          "field_note": "Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "Do not make the machine poetic.",
+          "in_game_wiki": "Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "ru_RU": {
+          "title": "Блок native-review для русского",
+          "scanner": "Кириллица не проблема. Проблема - drift тона.",
+          "field_note": "Review gate: сухой terminal language, стабильные proper nouns, без смягчения корпоративной вины, без ornamental horror prose.",
+          "terminal": "RU REVIEW: сохранить процедуру, давление, долг и evidence. Мелодраму отклонить.",
+          "audio": "Не делай машину поэтичной.",
+          "in_game_wiki": "Блок native-review для русского определяет release gate RU-текста.",
+          "external_site": "Эта статья объясняет, почему русская локализация HECTON-8 должна оставаться операционной и evidence-led."
+        },
+        "ja_JP": {
+          "title": "JP LOC HOLD: RU Review Gate",
+          "scanner": "JP LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "JP LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "JP LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "JP LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "JP LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "JP LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "zh_CN": {
+          "title": "CN LOC HOLD: RU Review Gate",
+          "scanner": "CN LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "CN LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "CN LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "CN LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "CN LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "CN LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "fr_FR": {
+          "title": "FR LOC HOLD: RU Review Gate",
+          "scanner": "FR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "FR LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "FR LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "FR LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "FR LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "FR LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "es_ES": {
+          "title": "ES LOC HOLD: RU Review Gate",
+          "scanner": "ES LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "ES LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "ES LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "ES LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "ES LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "ES LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "de_DE": {
+          "title": "DE LOC HOLD: RU Review Gate",
+          "scanner": "DE LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "DE LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "DE LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "DE LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "DE LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "DE LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "pl_PL": {
+          "title": "PL LOC HOLD: RU Review Gate",
+          "scanner": "PL LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "PL LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "PL LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "PL LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "PL LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "PL LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "uk_UA": {
+          "title": "UA LOC HOLD: RU Review Gate",
+          "scanner": "UA LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "UA LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "UA LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "UA LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "UA LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "UA LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "ar_SA": {
+          "title": "AR LOC HOLD: RU Review Gate",
+          "scanner": "AR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "AR LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "AR LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "AR LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "AR LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "AR LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "id_ID": {
+          "title": "ID LOC HOLD: RU Review Gate",
+          "scanner": "ID LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "ID LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "ID LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "ID LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "ID LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "ID LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "ko_KR": {
+          "title": "KR LOC HOLD: RU Review Gate",
+          "scanner": "KR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "KR LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "KR LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "KR LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "KR LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "KR LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "he_IL": {
+          "title": "HE LOC HOLD: RU Review Gate",
+          "scanner": "HE LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "HE LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "HE LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "HE LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "HE LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "HE LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC HOLD: RU Review Gate",
+          "scanner": "PT-BR LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "PT-BR LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "PT-BR LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "PT-BR LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "PT-BR LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "PT-BR LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        },
+        "nl_NL": {
+          "title": "NL LOC HOLD: RU Review Gate",
+          "scanner": "NL LOC HOLD: Cyrillic is not the problem. Tone drift is.",
+          "field_note": "NL LOC HOLD: Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+          "terminal": "NL LOC HOLD: RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+          "audio": "NL LOC HOLD: Do not make the machine poetic.",
+          "in_game_wiki": "NL LOC HOLD: Russian Native Review Lock defines the release gate for RU text.",
+          "external_site": "NL LOC HOLD: Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led."
+        }
+      }
+    },
+    {
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "article_id": "applied_lore.cjk_review_lock",
+      "title_key": "applied_lore.cjk_review_lock.title",
+      "unlock": {
+        "primary": "unlock.cjk_review_lock",
+        "poi_tags": [
+          "poi.cjk_review_card",
+          "poi.cjk_wrap_sample",
+          "poi.cjk_font_atlas_sheet"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.cjk"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "CJK Review Gate",
+          "scanner": "A missing glyph can erase an alarm.",
+          "field_note": "Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "ru_RU": {
+          "title": "Блок review для CJK",
+          "scanner": "Один missing glyph может стереть alarm.",
+          "field_note": "Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels и spoiler-tier article lengths.",
+          "terminal": "CJK REVIEW: доказать font, wrap, unit, name и terminal-width behavior до публикации.",
+          "audio": "Короткий текст все равно может overflow, если grid неверный.",
+          "in_game_wiki": "Блок review для CJK задает проверки для Japanese, Chinese и Korean surfaces.",
+          "external_site": "Эта статья объясняет font/layout proof перед CJK-публикацией HECTON-8."
+        },
+        "ja_JP": {
+          "title": "JP LOC HOLD: CJK Review Gate",
+          "scanner": "JP LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "JP LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "JP LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "JP LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "JP LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "JP LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "zh_CN": {
+          "title": "CN LOC HOLD: CJK Review Gate",
+          "scanner": "CN LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "CN LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "CN LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "CN LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "CN LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "CN LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "fr_FR": {
+          "title": "FR LOC HOLD: CJK Review Gate",
+          "scanner": "FR LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "FR LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "FR LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "FR LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "FR LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "FR LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "es_ES": {
+          "title": "ES LOC HOLD: CJK Review Gate",
+          "scanner": "ES LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "ES LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "ES LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "ES LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "ES LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "ES LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "de_DE": {
+          "title": "DE LOC HOLD: CJK Review Gate",
+          "scanner": "DE LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "DE LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "DE LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "DE LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "DE LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "DE LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "pl_PL": {
+          "title": "PL LOC HOLD: CJK Review Gate",
+          "scanner": "PL LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "PL LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "PL LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "PL LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "PL LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "PL LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "uk_UA": {
+          "title": "UA LOC HOLD: CJK Review Gate",
+          "scanner": "UA LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "UA LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "UA LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "UA LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "UA LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "UA LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "ar_SA": {
+          "title": "AR LOC HOLD: CJK Review Gate",
+          "scanner": "AR LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "AR LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "AR LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "AR LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "AR LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "AR LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "id_ID": {
+          "title": "ID LOC HOLD: CJK Review Gate",
+          "scanner": "ID LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "ID LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "ID LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "ID LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "ID LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "ID LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "ko_KR": {
+          "title": "KR LOC HOLD: CJK Review Gate",
+          "scanner": "KR LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "KR LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "KR LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "KR LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "KR LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "KR LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "he_IL": {
+          "title": "HE LOC HOLD: CJK Review Gate",
+          "scanner": "HE LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "HE LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "HE LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "HE LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "HE LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "HE LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC HOLD: CJK Review Gate",
+          "scanner": "PT-BR LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "PT-BR LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "PT-BR LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "PT-BR LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "PT-BR LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "PT-BR LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        },
+        "nl_NL": {
+          "title": "NL LOC HOLD: CJK Review Gate",
+          "scanner": "NL LOC HOLD: A missing glyph can erase an alarm.",
+          "field_note": "NL LOC HOLD: Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+          "terminal": "NL LOC HOLD: CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+          "audio": "NL LOC HOLD: Short text can still overflow if the grid is wrong.",
+          "in_game_wiki": "NL LOC HOLD: CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+          "external_site": "NL LOC HOLD: CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication."
+        }
+      }
+    },
+    {
+      "packet_id": "P278_RTL_REVIEW_LOCK",
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "article_id": "applied_lore.rtl_review_lock",
+      "title_key": "applied_lore.rtl_review_lock.title",
+      "unlock": {
+        "primary": "unlock.rtl_review_lock",
+        "poi_tags": [
+          "poi.rtl_review_card",
+          "poi.arabic_hebrew_sample",
+          "poi.bidi_number_strip"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.rtl"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "RTL Review Gate",
+          "scanner": "Direction is a system, not a decoration.",
+          "field_note": "Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "ru_RU": {
+          "title": "Блок review для RTL",
+          "scanner": "Направление - система, а не декор.",
+          "field_note": "Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses и subtitle source tags.",
+          "terminal": "RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "Неверное направление превращает warning в шум.",
+          "in_game_wiki": "Блок RTL review задает proof gates для Arabic и Hebrew.",
+          "external_site": "Эта статья описывает bidirectional layout proof перед RTL-публикацией HECTON-8."
+        },
+        "ja_JP": {
+          "title": "JP LOC HOLD: RTL Review Gate",
+          "scanner": "JP LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "JP LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "JP LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "JP LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "JP LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "JP LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "zh_CN": {
+          "title": "CN LOC HOLD: RTL Review Gate",
+          "scanner": "CN LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "CN LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "CN LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "CN LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "CN LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "CN LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "fr_FR": {
+          "title": "FR LOC HOLD: RTL Review Gate",
+          "scanner": "FR LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "FR LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "FR LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "FR LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "FR LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "FR LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "es_ES": {
+          "title": "ES LOC HOLD: RTL Review Gate",
+          "scanner": "ES LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "ES LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "ES LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "ES LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "ES LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "ES LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "de_DE": {
+          "title": "DE LOC HOLD: RTL Review Gate",
+          "scanner": "DE LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "DE LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "DE LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "DE LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "DE LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "DE LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "pl_PL": {
+          "title": "PL LOC HOLD: RTL Review Gate",
+          "scanner": "PL LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "PL LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "PL LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "PL LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "PL LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "PL LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "uk_UA": {
+          "title": "UA LOC HOLD: RTL Review Gate",
+          "scanner": "UA LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "UA LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "UA LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "UA LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "UA LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "UA LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "ar_SA": {
+          "title": "AR LOC HOLD: RTL Review Gate",
+          "scanner": "AR LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "AR LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "AR LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "AR LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "AR LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "AR LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "id_ID": {
+          "title": "ID LOC HOLD: RTL Review Gate",
+          "scanner": "ID LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "ID LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "ID LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "ID LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "ID LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "ID LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "ko_KR": {
+          "title": "KR LOC HOLD: RTL Review Gate",
+          "scanner": "KR LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "KR LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "KR LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "KR LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "KR LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "KR LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "he_IL": {
+          "title": "HE LOC HOLD: RTL Review Gate",
+          "scanner": "HE LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "HE LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "HE LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "HE LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "HE LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "HE LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC HOLD: RTL Review Gate",
+          "scanner": "PT-BR LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "PT-BR LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "PT-BR LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "PT-BR LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "PT-BR LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "PT-BR LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        },
+        "nl_NL": {
+          "title": "NL LOC HOLD: RTL Review Gate",
+          "scanner": "NL LOC HOLD: Direction is a system, not a decoration.",
+          "field_note": "NL LOC HOLD: Review gate: bidi numerics, HECTON-8/Aegir/Atlas names, pressure units, carrier clauses and subtitle source tags.",
+          "terminal": "NL LOC HOLD: RTL REVIEW: logical string, visual order by TMP, no manual reversal, no broken numbers.",
+          "audio": "NL LOC HOLD: Wrong direction can turn a warning into noise.",
+          "in_game_wiki": "NL LOC HOLD: RTL Review Lock defines Arabic and Hebrew proof gates.",
+          "external_site": "NL LOC HOLD: RTL Review Lock describes the bidirectional layout proof required before HECTON-8 RTL publication."
+        }
+      }
+    },
+    {
+      "packet_id": "P279_EUROPEAN_LANGUAGE_REVIEW_LOCK",
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "article_id": "applied_lore.european_language_review_lock",
+      "title_key": "applied_lore.european_language_review_lock.title",
+      "unlock": {
+        "primary": "unlock.european_language_review_lock",
+        "poi_tags": [
+          "poi.european_review_card",
+          "poi.expansion_width_sample",
+          "poi.contract_label_fit_sheet"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.eu_languages"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "EU Loc Gate",
+          "scanner": "A longer word is allowed. A hidden field is not.",
+          "field_note": "Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "The field that clips is the field the player stops using.",
+          "in_game_wiki": "European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "ru_RU": {
+          "title": "Блок review для европейских языков",
+          "scanner": "Длинное слово допустимо. Скрытое поле - нет.",
+          "field_note": "Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms и public-site paragraph expansion.",
+          "terminal": "EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "Поле, которое клиппит, игрок перестает использовать.",
+          "in_game_wiki": "Блок review европейских языков задает проверки расширения Latin-script languages.",
+          "external_site": "Эта статья объясняет text expansion proof для contract и dossier UI HECTON-8."
+        },
+        "ja_JP": {
+          "title": "JP LOC HOLD: EU Loc Gate",
+          "scanner": "JP LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "JP LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "JP LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "JP LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "JP LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "JP LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "zh_CN": {
+          "title": "CN LOC HOLD: EU Loc Gate",
+          "scanner": "CN LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "CN LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "CN LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "CN LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "CN LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "CN LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "fr_FR": {
+          "title": "FR LOC HOLD: EU Loc Gate",
+          "scanner": "FR LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "FR LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "FR LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "FR LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "FR LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "FR LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "es_ES": {
+          "title": "ES LOC HOLD: EU Loc Gate",
+          "scanner": "ES LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "ES LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "ES LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "ES LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "ES LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "ES LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "de_DE": {
+          "title": "DE LOC HOLD: EU Loc Gate",
+          "scanner": "DE LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "DE LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "DE LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "DE LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "DE LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "DE LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "pl_PL": {
+          "title": "PL LOC HOLD: EU Loc Gate",
+          "scanner": "PL LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "PL LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "PL LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "PL LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "PL LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "PL LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "uk_UA": {
+          "title": "UA LOC HOLD: EU Loc Gate",
+          "scanner": "UA LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "UA LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "UA LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "UA LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "UA LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "UA LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "ar_SA": {
+          "title": "AR LOC HOLD: EU Loc Gate",
+          "scanner": "AR LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "AR LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "AR LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "AR LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "AR LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "AR LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "id_ID": {
+          "title": "ID LOC HOLD: EU Loc Gate",
+          "scanner": "ID LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "ID LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "ID LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "ID LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "ID LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "ID LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "ko_KR": {
+          "title": "KR LOC HOLD: EU Loc Gate",
+          "scanner": "KR LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "KR LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "KR LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "KR LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "KR LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "KR LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "he_IL": {
+          "title": "HE LOC HOLD: EU Loc Gate",
+          "scanner": "HE LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "HE LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "HE LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "HE LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "HE LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "HE LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC HOLD: EU Loc Gate",
+          "scanner": "PT-BR LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "PT-BR LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "PT-BR LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "PT-BR LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "PT-BR LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "PT-BR LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        },
+        "nl_NL": {
+          "title": "NL LOC HOLD: EU Loc Gate",
+          "scanner": "NL LOC HOLD: A longer word is allowed. A hidden field is not.",
+          "field_note": "NL LOC HOLD: Review gate: contract label fit, tooltip fallback, unit abbreviations, legal terms and public-site paragraph expansion.",
+          "terminal": "NL LOC HOLD: EU REVIEW: expanded copy must fit or shorten; never hide lien, custody or return penalty.",
+          "audio": "NL LOC HOLD: The field that clips is the field the player stops using.",
+          "in_game_wiki": "NL LOC HOLD: European Language Review Lock defines expansion checks for dense Latin-script languages.",
+          "external_site": "NL LOC HOLD: European Language Review Lock explains text expansion proof for HECTON-8 contract and dossier UI."
+        }
+      }
+    },
+    {
+      "packet_id": "P280_SUBTITLE_AUDIO_REVIEW_LOCK",
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "article_id": "applied_lore.subtitle_audio_review_lock",
+      "title_key": "applied_lore.subtitle_audio_review_lock.title",
+      "unlock": {
+        "primary": "unlock.subtitle_audio_review_lock",
+        "poi_tags": [
+          "poi.subtitle_audio_review_card",
+          "poi.audio_source_label_sheet",
+          "poi.warning_caption_timing"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.audio"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Subtitle Audio Gate",
+          "scanner": "A caption can spoil more than a voice.",
+          "field_note": "Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "ru_RU": {
+          "title": "Блок review для субтитров и аудио",
+          "scanner": "Caption может заспойлерить больше, чем voice.",
+          "field_note": "Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier и audio timing.",
+          "terminal": "SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "Если игрок не может действовать по этому, оставь тише.",
+          "in_game_wiki": "Блок review субтитров и аудио задает production gates для localized voice, subtitles и warning captions.",
+          "external_site": "Эта статья объясняет, как HECTON-8 сохраняет translated audio полезным без chatter."
+        },
+        "ja_JP": {
+          "title": "JP LOC HOLD: Subtitle Audio Gate",
+          "scanner": "JP LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "JP LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "JP LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "JP LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "JP LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "JP LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "zh_CN": {
+          "title": "CN LOC HOLD: Subtitle Audio Gate",
+          "scanner": "CN LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "CN LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "CN LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "CN LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "CN LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "CN LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "fr_FR": {
+          "title": "FR LOC HOLD: Subtitle Audio Gate",
+          "scanner": "FR LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "FR LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "FR LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "FR LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "FR LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "FR LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "es_ES": {
+          "title": "ES LOC HOLD: Subtitle Audio Gate",
+          "scanner": "ES LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "ES LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "ES LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "ES LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "ES LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "ES LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "de_DE": {
+          "title": "DE LOC HOLD: Subtitle Audio Gate",
+          "scanner": "DE LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "DE LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "DE LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "DE LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "DE LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "DE LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "pl_PL": {
+          "title": "PL LOC HOLD: Subtitle Audio Gate",
+          "scanner": "PL LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "PL LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "PL LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "PL LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "PL LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "PL LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "uk_UA": {
+          "title": "UA LOC HOLD: Subtitle Audio Gate",
+          "scanner": "UA LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "UA LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "UA LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "UA LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "UA LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "UA LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "ar_SA": {
+          "title": "AR LOC HOLD: Subtitle Audio Gate",
+          "scanner": "AR LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "AR LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "AR LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "AR LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "AR LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "AR LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "id_ID": {
+          "title": "ID LOC HOLD: Subtitle Audio Gate",
+          "scanner": "ID LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "ID LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "ID LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "ID LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "ID LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "ID LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "ko_KR": {
+          "title": "KR LOC HOLD: Subtitle Audio Gate",
+          "scanner": "KR LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "KR LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "KR LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "KR LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "KR LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "KR LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "he_IL": {
+          "title": "HE LOC HOLD: Subtitle Audio Gate",
+          "scanner": "HE LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "HE LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "HE LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "HE LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "HE LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "HE LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "pt_BR": {
+          "title": "PT-BR LOC HOLD: Subtitle Audio Gate",
+          "scanner": "PT-BR LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "PT-BR LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "PT-BR LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "PT-BR LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "PT-BR LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "PT-BR LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        },
+        "nl_NL": {
+          "title": "NL LOC HOLD: Subtitle Audio Gate",
+          "scanner": "NL LOC HOLD: A caption can spoil more than a voice.",
+          "field_note": "NL LOC HOLD: Review gate: speaker/source tag, max line length, alarm priority, sensor justification, censor tier and audio timing.",
+          "terminal": "NL LOC HOLD: SUBTITLE REVIEW: survival warnings first, flavor last, no source-less omniscience.",
+          "audio": "NL LOC HOLD: If the player cannot act on it, keep it quiet.",
+          "in_game_wiki": "NL LOC HOLD: Subtitle Audio Review Lock defines production gates for localized voice, subtitles and warning captions.",
+          "external_site": "NL LOC HOLD: Subtitle Audio Review Lock explains how HECTON-8 keeps translated audio useful without turning it into chatter."
+        }
+      }
+    }
+  ]
+}

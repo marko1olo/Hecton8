@@ -485,7 +485,6 @@ namespace Hecton8.Gameplay
             public NativeArray<ScannerVfxDTO> VfxTarget;
             public NativeArray<ScannerQueryStatsDTO> QueryStats;
             public NativeArray<ScannerTelemetryEntry> Telemetry;
-            public NativeArray<ScannerSettingsDTO> Settings;
             public NativeArray<ScanProgressDTO> ScanProgress;
             public NativeArray<ScannerLoreIndexDTO> LoreIndex;
             public NativeArray<ScannerEncyclopediaStateDTO> EncyclopediaState;
@@ -502,7 +501,6 @@ namespace Hecton8.Gameplay
                 VfxTarget.IsCreated &&
                 QueryStats.IsCreated &&
                 Telemetry.IsCreated &&
-                Settings.IsCreated &&
                 ScanProgress.IsCreated &&
                 LoreIndex.IsCreated &&
                 EncyclopediaState.IsCreated;
@@ -557,9 +555,9 @@ namespace Hecton8.Gameplay
         {
             settings = ScannerDataMiningTuning.Settings;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryGetGenerationHandle(BufferID.ShinobuScannerSettings, out VaultGenerationHandle<ScannerSettingsDTO> handle) ||
-                !vault.TryResolveHandle(in handle, out NativeArray<ScannerSettingsDTO> buffer) ||
-                !buffer.IsCreated ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<ScannerSettingsDTO>.ReadOnly buffer) ||
                 buffer.Length == 0)
             {
                 return false;
@@ -571,7 +569,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryWriteVaultSettings(IDataVault vault, in ScannerSettingsDTO settings)
         {
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             VaultGenerationHandle<ScannerSettingsDTO> handle = vault.EnsureGenerationHandle<ScannerSettingsDTO>(
@@ -627,7 +625,12 @@ namespace Hecton8.Gameplay
         private bool TryInitializeRuntimeState()
         {
             if (!EnsureVaultState())
+            {
+                _runtimeStateColdInitRequired = true;
+                if (!_registeredCold)
+                    _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
                 return false;
+            }
 
             _runtimeStateColdInitRequired = false;
 
@@ -759,13 +762,10 @@ namespace Hecton8.Gameplay
             if (_runtimeStateColdInitRequired)
                 return;
 
-            if (!TryReadVaultViews(out ScannerVaultViews views))
-                return;
-
             if (_queryScheduled)
                 return;
 
-            ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
+            ScannerSettingsDTO settings = ResolveCurrentSettings();
             settings.MaxDistanceMeters = math.max(0.1f, maxDistanceMeters > 0f ? maxDistanceMeters : settings.MaxDistanceMeters);
             settings.BeamRadiusMeters = math.max(0.05f, beamRadiusMeters > 0f ? beamRadiusMeters : settings.BeamRadiusMeters);
 
@@ -781,10 +781,10 @@ namespace Hecton8.Gameplay
             bool scheduled = false;
             try
             {
-                if (!TryReadVaultViews(out views))
+                if (!TryReadVaultViews(out ScannerVaultViews views))
                     return;
 
-                settings = ResolveCurrentSettings(views.Settings);
+                settings = ResolveCurrentSettings();
                 settings.MaxDistanceMeters = math.max(0.1f, maxDistanceMeters > 0f ? maxDistanceMeters : settings.MaxDistanceMeters);
                 settings.BeamRadiusMeters = math.max(0.05f, beamRadiusMeters > 0f ? beamRadiusMeters : settings.BeamRadiusMeters);
                 _lastQueryFrame = frame;
@@ -1013,7 +1013,7 @@ namespace Hecton8.Gameplay
                 if (!TryReadVaultViews(out ScannerVaultViews views))
                     return;
 
-                ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
+                ScannerSettingsDTO settings = ResolveCurrentSettings();
                 ScannerQueryStatsDTO stats = views.QueryStats.Length > 0 ? views.QueryStats[0] : default;
                 int resultCount = views.ResultCount.Length > 0 ? views.ResultCount[0] : 0;
 
@@ -1353,6 +1353,9 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             _dataVault = vault;
             int safeEntityCapacity = math.clamp(entityCapacity, 8, 4096);
             int safeBucketCapacity = ResolveSpatialBucketCapacity(safeEntityCapacity);
@@ -1434,15 +1437,26 @@ namespace Hecton8.Gameplay
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            if (!TryRefreshVaultViewsCold(out ScannerVaultViews views))
-            {
-                ReleaseHandlesOnly();
+            if (!TryAcquireScannerMutationGuard(vault, ScannerQueryMutationGuardMask))
                 return false;
+
+            try
+            {
+                if (!TryRefreshVaultViewsCold(out ScannerVaultViews views))
+                {
+                    ReleaseHandlesOnly();
+                    return false;
+                }
+
+                ScannerSpatialHash.ClearBuckets(views.BucketHeads, views.BucketNext);
+            }
+            finally
+            {
+                ReleaseScannerMutationGuard(vault, ScannerQueryMutationGuardMask);
             }
 
-            ScannerSpatialHash.ClearBuckets(views.BucketHeads, views.BucketNext);
-            if (views.Settings[0].CellSizeMeters <= 0f)
-                views.Settings[0] = ScannerDataMiningTuning.Settings;
+            if (!TryReadVaultSettings(vault, out _))
+                TryWriteVaultSettings(vault, ScannerDataMiningTuning.Settings);
             _entityCount = 0;
             return true;
         }
@@ -1473,25 +1487,32 @@ namespace Hecton8.Gameplay
         {
             views = default;
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            vault.TryResolveHandle(in _entitiesHandle, out views.Entities);
-            vault.TryResolveHandle(in _metadataHandle, out views.Metadata);
-            vault.TryResolveHandle(in _occlusionZonesHandle, out views.OcclusionZones);
-            vault.TryResolveHandle(in _bucketHeadsHandle, out views.BucketHeads);
-            vault.TryResolveHandle(in _bucketNextHandle, out views.BucketNext);
-            vault.TryResolveHandle(in _scanResultsHandle, out views.ScanResults);
-            vault.TryResolveHandle(in _resultCountHandle, out views.ResultCount);
-            vault.TryResolveHandle(in _activeStateHandle, out views.ActiveState);
-            vault.TryResolveHandle(in _vfxTargetHandle, out views.VfxTarget);
-            vault.TryResolveHandle(in _queryStatsHandle, out views.QueryStats);
-            vault.TryResolveHandle(in _telemetryHandle, out views.Telemetry);
-            vault.TryResolveHandle(in _settingsHandle, out views.Settings);
-            vault.TryResolveHandle(in _scanProgressHandle, out views.ScanProgress);
-            vault.TryResolveHandle(in _loreIndexHandle, out views.LoreIndex);
-            vault.TryResolveHandle(in _encyclopediaStateHandle, out views.EncyclopediaState);
-            return views.HasCoreBuffers;
+            if (!vault.TryResolveHandle(in _entitiesHandle, out views.Entities) ||
+                !vault.TryResolveHandle(in _metadataHandle, out views.Metadata) ||
+                !vault.TryResolveHandle(in _occlusionZonesHandle, out views.OcclusionZones) ||
+                !vault.TryResolveHandle(in _bucketHeadsHandle, out views.BucketHeads) ||
+                !vault.TryResolveHandle(in _bucketNextHandle, out views.BucketNext) ||
+                !vault.TryResolveHandle(in _scanResultsHandle, out views.ScanResults) ||
+                !vault.TryResolveHandle(in _resultCountHandle, out views.ResultCount) ||
+                !vault.TryResolveHandle(in _activeStateHandle, out views.ActiveState) ||
+                !vault.TryResolveHandle(in _vfxTargetHandle, out views.VfxTarget) ||
+                !vault.TryResolveHandle(in _queryStatsHandle, out views.QueryStats) ||
+                !vault.TryResolveHandle(in _telemetryHandle, out views.Telemetry) ||
+                !vault.TryResolveHandle(in _scanProgressHandle, out views.ScanProgress) ||
+                !vault.TryResolveHandle(in _loreIndexHandle, out views.LoreIndex) ||
+                !vault.TryResolveHandle(in _encyclopediaStateHandle, out views.EncyclopediaState) ||
+                vault.IsCompactionFenceActive ||
+                !views.HasCoreBuffers)
+            {
+                views = default;
+                _vaultViewsCached = false;
+                return false;
+            }
+
+            return true;
         }
 
         private void ReleaseHandlesOnly()
@@ -1648,24 +1669,16 @@ namespace Hecton8.Gameplay
             return 1UL << ((int)bufferId & 31);
         }
 
-        private ScannerSettingsDTO ResolveCurrentSettings(NativeArray<ScannerSettingsDTO> settingsBuffer)
+        private ScannerSettingsDTO ResolveCurrentSettings()
         {
-            if (settingsBuffer.IsCreated && settingsBuffer.Length > 0)
-            {
-                ScannerSettingsDTO settings = settingsBuffer[0];
-                if (settings.CellSizeMeters > 0f && math.isfinite(settings.CellSizeMeters))
-                    return settings;
-            }
+            if (TryReadVaultSettings(_dataVault, out ScannerSettingsDTO settings))
+                return settings;
 
             return ScannerDataMiningTuning.Settings;
         }
 
         private void SeedMockGridFromPose()
         {
-            if (!TryReadVaultViews(out ScannerVaultViews views))
-                return;
-
-            int count = math.clamp(mockEntityCount, 1, views.Entities.Length);
             if (!TryResolveScannerPose(out double3 origin, out float3 forward))
             {
                 if (!TryResolveCachedPlayerAup(out origin))
@@ -1675,23 +1688,35 @@ namespace Hecton8.Gameplay
 
             forward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
             float3 right = ResolveScannerRight(forward);
-            ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
-            new GenerateMockScannableTargetsJob
+            TryReadVaultSettings(_dataVault, out ScannerSettingsDTO settings);
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireScannerMutationGuard(vault, ScannerCompletionMutationGuardMask))
+                return;
+
+            try
             {
-                BucketHeads = views.BucketHeads,
-                BucketNext = views.BucketNext,
-                Entities = views.Entities,
-                Metadata = views.Metadata,
-                LoreIndex = views.LoreIndex,
-                OriginAUP = origin,
-                Forward = forward,
-                Right = right,
-                CellSizeMeters = settings.CellSizeMeters,
-                Count = count
-            }.Execute();
-            _entityCount = count;
-            if (views.OcclusionZones.IsCreated && views.OcclusionZones.Length > 0)
-            {
+                if (!TryReadVaultViews(out ScannerVaultViews views))
+                    return;
+
+                int count = math.clamp(mockEntityCount, 1, views.Entities.Length);
+                new GenerateMockScannableTargetsJob
+                {
+                    BucketHeads = views.BucketHeads,
+                    BucketNext = views.BucketNext,
+                    Entities = views.Entities,
+                    Metadata = views.Metadata,
+                    LoreIndex = views.LoreIndex,
+                    OriginAUP = origin,
+                    Forward = forward,
+                    Right = right,
+                    CellSizeMeters = settings.CellSizeMeters,
+                    Count = count
+                }.Execute();
+                _entityCount = count;
+                if (!views.OcclusionZones.IsCreated || views.OcclusionZones.Length <= 0)
+                    return;
+
                 views.OcclusionZones[0] = new MockSdfOcclusionZoneDTO
                 {
                     CenterAUP = origin + new double3(right * 11f + forward * 32f),
@@ -1699,14 +1724,33 @@ namespace Hecton8.Gameplay
                     Flags = 1u
                 };
             }
+            finally
+            {
+                ReleaseScannerMutationGuard(vault, ScannerCompletionMutationGuardMask);
+            }
         }
 
         private void DumpTelemetryRing()
         {
-            if (!TryReadVaultViews(out ScannerVaultViews views) || !views.Telemetry.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<ScannerTelemetryEntry>.ReadOnly telemetry) ||
+                !telemetry.IsCreated)
+            {
+                return;
+            }
+
+            DumpTelemetryRing(telemetry);
+        }
+
+        private void DumpTelemetryRing(NativeArray<ScannerTelemetryEntry>.ReadOnly telemetry)
+        {
+            if (!telemetry.IsCreated)
                 return;
 
-            DumpTelemetryRing(views.Telemetry);
+            DumpTelemetryRing(telemetry, ResolveDumpPath(DumpFileName));
+            DumpTelemetryRing(telemetry, ResolveDumpPath(H8DumpFileName));
         }
 
         private void DumpTelemetryRing(NativeArray<ScannerTelemetryEntry> telemetry)
@@ -1727,6 +1771,16 @@ namespace Hecton8.Gameplay
         }
 
         public static unsafe void DumpTelemetryRing(NativeArray<ScannerTelemetryEntry> telemetry, string path)
+        {
+            if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(path))
+                return;
+
+            int byteCount = UnsafeUtility.SizeOf<ScannerTelemetryEntry>() * telemetry.Length;
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+            NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, byteCount), byteCount);
+        }
+
+        public static unsafe void DumpTelemetryRing(NativeArray<ScannerTelemetryEntry>.ReadOnly telemetry, string path)
         {
             if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(path))
                 return;

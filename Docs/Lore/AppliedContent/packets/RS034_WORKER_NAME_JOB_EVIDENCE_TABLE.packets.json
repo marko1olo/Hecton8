@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS034_WORKER_NAME_JOB_EVIDENCE_TABLE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P166_WORKER_NAME_POOL_PROTOCOL",
+      "release_set_id": "RS034_WORKER_NAME_JOB_EVIDENCE_TABLE",
+      "article_id": "worker_evidence.worker_name_pool_protocol",
+      "title_key": "applied_lore.worker_name_pool_protocol.title",
+      "unlock": {
+        "primary": "unlock.worker_name_pool_protocol",
+        "poi_tags": [
+          "poi.name_pool_card",
+          "poi.shift_name_strip",
+          "poi.worker_manifest_clip"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Names are evidence, not collectible flavor.",
+          "field_note": "Seed names must preserve identity without making family melodrama.",
+          "terminal": "NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "ru_RU": {
+          "title": "Протокол пула имен рабочих",
+          "scanner": "Имена - доказательство, а не коллекционный flavor.",
+          "field_note": "Seed names должны сохранять личность без семейной мелодрамы.",
+          "terminal": "NAME POOL: генерировать рабочих из domain-origin band, job role, shift, badge fragment и route permission. Никогда не переводить личные имена live at runtime.",
+          "audio": "Имя - это маршрут, работа и человек, которого Deep Reach пыталась оценить.",
+          "in_game_wiki": "Пул имен рабочих позволяет шкафчикам, ledger и job cards меняться по seed, сохраняя колонию человеческой и читаемой.",
+          "external_site": "Протокол пула имен рабочих задает правила сайта/wiki и игры для seeded worker evidence."
+        },
+        "ja_JP": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft JP localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft JP localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft JP localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft JP localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft JP localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft JP localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "zh_CN": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft CN localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft CN localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft CN localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft CN localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft CN localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft CN localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "fr_FR": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft FR localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft FR localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft FR localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft FR localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft FR localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft FR localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "es_ES": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft ES localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft ES localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft ES localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft ES localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft ES localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft ES localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "de_DE": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft DE localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft DE localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft DE localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft DE localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft DE localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft DE localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "pl_PL": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft PL localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft PL localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft PL localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft PL localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft PL localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft PL localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "uk_UA": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft UA localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft UA localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft UA localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft UA localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft UA localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft UA localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "ar_SA": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft AR localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft AR localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft AR localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft AR localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft AR localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft AR localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "id_ID": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft ID localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft ID localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft ID localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft ID localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft ID localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft ID localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "ko_KR": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft KO localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft KO localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft KO localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft KO localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft KO localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft KO localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "he_IL": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft HE localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft HE localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft HE localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft HE localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft HE localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft HE localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "pt_BR": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft PT localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft PT localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft PT localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft PT localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft PT localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft PT localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        },
+        "nl_NL": {
+          "title": "Worker Name Pool Protocol",
+          "scanner": "Draft NL localization pending native pass. Names are evidence, not collectible flavor.",
+          "field_note": "Draft NL localization pending native pass. Seed names must preserve identity without making family melodrama.",
+          "terminal": "Draft NL localization pending native pass. NAME POOL: generate workers from domain-origin bands, job role, shift, badge fragment and route permission. Never translate personal names live at runtime.",
+          "audio": "Draft NL localization pending native pass. A name is a route, a job, and a person Deep Reach tried to price.",
+          "in_game_wiki": "Draft NL localization pending native pass. The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.",
+          "external_site": "Draft NL localization pending native pass. Worker Name Pool Protocol defines site/wiki and game rules for seeded worker evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P167_PRESSURE_JOB_TITLE_TABLE",
+      "release_set_id": "RS034_WORKER_NAME_JOB_EVIDENCE_TABLE",
+      "article_id": "worker_evidence.pressure_job_title_table",
+      "title_key": "applied_lore.pressure_job_title_table.title",
+      "unlock": {
+        "primary": "unlock.pressure_job_title_table",
+        "poi_tags": [
+          "poi.job_title_board",
+          "poi.pressure_cert_stamp",
+          "poi.route_task_card"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Job titles should explain what kept the colony alive.",
+          "field_note": "Every title should imply a tool, route or failure.",
+          "terminal": "JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "ru_RU": {
+          "title": "Таблица должностей под давлением",
+          "scanner": "Должности должны объяснять, что держало колонию живой.",
+          "field_note": "Каждая должность должна подразумевать инструмент, маршрут или отказ.",
+          "terminal": "JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader и shift supervisor.",
+          "audio": "Никто не умер как Employee 438. Они умерли, делая работу.",
+          "in_game_wiki": "Таблица должностей превращает worker evidence в механику: pumps, medlocks, routes, kilns и Atlas safety consoles.",
+          "external_site": "Таблица должностей под давлением дает авторам и UI устойчивый словарь труда колонии."
+        },
+        "ja_JP": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft JP localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft JP localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft JP localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft JP localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft JP localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft JP localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "zh_CN": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft CN localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft CN localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft CN localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft CN localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft CN localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft CN localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "fr_FR": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft FR localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft FR localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft FR localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft FR localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft FR localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft FR localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "es_ES": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft ES localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft ES localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft ES localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft ES localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft ES localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft ES localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "de_DE": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft DE localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft DE localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft DE localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft DE localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft DE localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft DE localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "pl_PL": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft PL localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft PL localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft PL localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft PL localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft PL localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft PL localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "uk_UA": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft UA localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft UA localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft UA localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft UA localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft UA localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft UA localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "ar_SA": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft AR localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft AR localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft AR localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft AR localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft AR localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft AR localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "id_ID": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft ID localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft ID localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft ID localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft ID localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft ID localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft ID localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "ko_KR": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft KO localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft KO localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft KO localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft KO localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft KO localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft KO localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "he_IL": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft HE localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft HE localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft HE localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft HE localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft HE localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft HE localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "pt_BR": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft PT localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft PT localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft PT localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft PT localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft PT localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft PT localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        },
+        "nl_NL": {
+          "title": "Pressure Job Title Table",
+          "scanner": "Draft NL localization pending native pass. Job titles should explain what kept the colony alive.",
+          "field_note": "Draft NL localization pending native pass. Every title should imply a tool, route or failure.",
+          "terminal": "Draft NL localization pending native pass. JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.",
+          "audio": "Draft NL localization pending native pass. Nobody died as Employee 438. They died doing a job.",
+          "in_game_wiki": "Draft NL localization pending native pass. The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.",
+          "external_site": "Draft NL localization pending native pass. Pressure Job Title Table gives writers and UI a stable colony labor vocabulary."
+        }
+      }
+    },
+    {
+      "packet_id": "P168_LOCKER_PROP_VARIANTS",
+      "release_set_id": "RS034_WORKER_NAME_JOB_EVIDENCE_TABLE",
+      "article_id": "worker_evidence.locker_prop_variants",
+      "title_key": "applied_lore.locker_prop_variants.title",
+      "unlock": {
+        "primary": "unlock.locker_prop_variants",
+        "poi_tags": [
+          "poi.locker_prop_variant_set",
+          "poi.tool_wear_strip",
+          "poi.meal_credit_label"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Locker Prop Variants",
+          "scanner": "A locker should say what a worker touched before the flood.",
+          "field_note": "Avoid sentimental clutter. Use work marks.",
+          "terminal": "LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "ru_RU": {
+          "title": "Варианты предметов шкафчика",
+          "scanner": "Шкафчик должен говорить, к чему рабочий прикасался до flood.",
+          "field_note": "Избегать сентиментального хлама. Использовать следы работы.",
+          "terminal": "LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip и Marauder correction note.",
+          "audio": "Лучший мемориал - инструмент, еще грязный с последней смены.",
+          "in_game_wiki": "Варианты шкафчика позволяют procedural placement нести человеческую фактуру без custom cutscenes.",
+          "external_site": "Варианты предметов шкафчика задают reusable art и wiki hooks для evidence колонии."
+        },
+        "ja_JP": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft JP localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft JP localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft JP localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft JP localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft JP localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft JP localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "zh_CN": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft CN localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft CN localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft CN localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft CN localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft CN localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft CN localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "fr_FR": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft FR localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft FR localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft FR localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft FR localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft FR localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft FR localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "es_ES": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft ES localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft ES localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft ES localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft ES localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft ES localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft ES localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "de_DE": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft DE localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft DE localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft DE localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft DE localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft DE localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft DE localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "pl_PL": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft PL localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft PL localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft PL localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft PL localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft PL localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft PL localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "uk_UA": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft UA localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft UA localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft UA localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft UA localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft UA localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft UA localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "ar_SA": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft AR localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft AR localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft AR localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft AR localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft AR localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft AR localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "id_ID": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft ID localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft ID localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft ID localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft ID localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft ID localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft ID localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "ko_KR": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft KO localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft KO localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft KO localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft KO localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft KO localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft KO localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "he_IL": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft HE localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft HE localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft HE localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft HE localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft HE localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft HE localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "pt_BR": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft PT localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft PT localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft PT localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft PT localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft PT localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft PT localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        },
+        "nl_NL": {
+          "title": "Locker Prop Variants",
+          "scanner": "Draft NL localization pending native pass. A locker should say what a worker touched before the flood.",
+          "field_note": "Draft NL localization pending native pass. Avoid sentimental clutter. Use work marks.",
+          "terminal": "Draft NL localization pending native pass. LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.",
+          "audio": "Draft NL localization pending native pass. The best memorial is a tool still dirty from the last shift.",
+          "in_game_wiki": "Draft NL localization pending native pass. Locker variants let procedural placement carry human texture without custom cutscenes.",
+          "external_site": "Draft NL localization pending native pass. Locker Prop Variants defines reusable art and wiki hooks for colony evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P169_NATIVE_LOCALIZED_NAME_HANDLING",
+      "release_set_id": "RS034_WORKER_NAME_JOB_EVIDENCE_TABLE",
+      "article_id": "worker_evidence.native_localized_name_handling",
+      "title_key": "applied_lore.native_localized_name_handling.title",
+      "unlock": {
+        "primary": "unlock.native_localized_name_handling",
+        "poi_tags": [
+          "poi.localized_name_policy",
+          "poi.rtl_name_strip",
+          "poi.cjk_badge_layout"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Worker names need localization policy before they become UI bugs.",
+          "field_note": "No live name translation. Preserve identity through baked strings.",
+          "terminal": "NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "ru_RU": {
+          "title": "Нативная обработка локализованных имен",
+          "scanner": "Именам рабочих нужна политика локализации до того, как они станут UI bugs.",
+          "field_note": "Никакого live translation имен. Личность сохраняется через baked strings.",
+          "terminal": "NAME LOC: личные имена остаются authored/baked per locale. Должности, отделы и route permissions локализуются. RTL/CJK layouts требуют заранее baked short forms и fallback-safe name strips.",
+          "audio": "Имя, ломающее UI, - не уважение. Это еще одно стирание.",
+          "in_game_wiki": "Нативная обработка имен держит worker-evidence layer совместимым с многоязычной wiki, сайтом, шкафчиками и терминалами.",
+          "external_site": "Нативная обработка локализованных имен задает безопасное для локализации именование колонии."
+        },
+        "ja_JP": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft JP localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft JP localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft JP localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft JP localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft JP localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft JP localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "zh_CN": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft CN localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft CN localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft CN localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft CN localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft CN localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft CN localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "fr_FR": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft FR localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft FR localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft FR localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft FR localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft FR localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft FR localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "es_ES": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft ES localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft ES localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft ES localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft ES localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft ES localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft ES localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "de_DE": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft DE localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft DE localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft DE localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft DE localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft DE localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft DE localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "pl_PL": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft PL localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft PL localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft PL localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft PL localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft PL localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft PL localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "uk_UA": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft UA localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft UA localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft UA localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft UA localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft UA localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft UA localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "ar_SA": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft AR localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft AR localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft AR localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft AR localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft AR localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft AR localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "id_ID": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft ID localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft ID localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft ID localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft ID localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft ID localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft ID localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "ko_KR": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft KO localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft KO localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft KO localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft KO localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft KO localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft KO localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "he_IL": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft HE localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft HE localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft HE localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft HE localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft HE localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft HE localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "pt_BR": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft PT localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft PT localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft PT localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft PT localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft PT localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft PT localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        },
+        "nl_NL": {
+          "title": "Native Localized Name Handling",
+          "scanner": "Draft NL localization pending native pass. Worker names need localization policy before they become UI bugs.",
+          "field_note": "Draft NL localization pending native pass. No live name translation. Preserve identity through baked strings.",
+          "terminal": "Draft NL localization pending native pass. NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.",
+          "audio": "Draft NL localization pending native pass. A name that breaks the UI is not respect. It is another erasure.",
+          "in_game_wiki": "Draft NL localization pending native pass. Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.",
+          "external_site": "Draft NL localization pending native pass. Native Localized Name Handling defines localization-safe colony naming."
+        }
+      }
+    },
+    {
+      "packet_id": "P170_SHIFT_CREW_STORY_SEEDS",
+      "release_set_id": "RS034_WORKER_NAME_JOB_EVIDENCE_TABLE",
+      "article_id": "worker_evidence.shift_crew_story_seeds",
+      "title_key": "applied_lore.shift_crew_story_seeds.title",
+      "unlock": {
+        "primary": "unlock.shift_crew_story_seeds",
+        "poi_tags": [
+          "poi.shift_seed_card",
+          "poi.crew_route_seed",
+          "poi.worker_microstory_board"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Microstories should change route evidence, not canon truth.",
+          "field_note": "Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "A different locker can hurt the same truth again.",
+          "in_game_wiki": "Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "ru_RU": {
+          "title": "Сюжетные seeds сменных команд",
+          "scanner": "Микроистории должны менять route evidence, а не canon truth.",
+          "field_note": "Seed variety нужна для порядка, имен и объектов, не для противоречий.",
+          "terminal": "SHIFT SEEDS: каждый seed может менять roster order, job pairings, locker contents, denial slips и Marauder annotations, сохраняя Great Tide и вину Deep Reach стабильными.",
+          "audio": "Другой шкафчик может снова ранить той же правдой.",
+          "in_game_wiki": "Seeds сменных команд делают повторные колонии authored-feeling, не меняя core history.",
+          "external_site": "Сюжетные seeds сменных команд превращают worker evidence в replay-safe content."
+        },
+        "ja_JP": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft JP localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft JP localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft JP localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft JP localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft JP localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft JP localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "zh_CN": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft CN localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft CN localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft CN localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft CN localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft CN localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft CN localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "fr_FR": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft FR localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft FR localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft FR localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft FR localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft FR localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "es_ES": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft ES localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft ES localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft ES localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft ES localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft ES localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "de_DE": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft DE localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft DE localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft DE localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft DE localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft DE localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "pl_PL": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft PL localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft PL localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft PL localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft PL localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft PL localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "uk_UA": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft UA localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft UA localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft UA localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft UA localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft UA localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft UA localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "ar_SA": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft AR localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft AR localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft AR localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft AR localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft AR localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "id_ID": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft ID localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft ID localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft ID localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft ID localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft ID localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "ko_KR": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft KO localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft KO localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft KO localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft KO localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft KO localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "he_IL": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft HE localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft HE localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft HE localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft HE localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft HE localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "pt_BR": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft PT localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft PT localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft PT localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft PT localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft PT localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        },
+        "nl_NL": {
+          "title": "Shift Crew Story Seeds",
+          "scanner": "Draft NL localization pending native pass. Microstories should change route evidence, not canon truth.",
+          "field_note": "Draft NL localization pending native pass. Seed variety is for order, names and objects, not contradiction.",
+          "terminal": "Draft NL localization pending native pass. SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.",
+          "audio": "Draft NL localization pending native pass. A different locker can hurt the same truth again.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shift crew seeds make replayed colonies feel authored without changing core history.",
+          "external_site": "Draft NL localization pending native pass. Shift Crew Story Seeds turns worker evidence into replay-safe content."
+        }
+      }
+    }
+  ]
+}

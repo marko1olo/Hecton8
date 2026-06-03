@@ -1,0 +1,343 @@
+#pragma kernel CSBakeFaunaAlbedo
+#pragma kernel CSBakeFaunaNormalMap
+#pragma kernel CSBakeFaunaMaskV1
+#pragma kernel CSBakeFaunaBiolumPulse64
+
+StructuredBuffer<float4> _BonePathPoints1725;
+RWTexture2D<float4> _OutputAlbedo;
+RWTexture2D<float4> _OutputNormalMap;
+RWTexture2D<float4> _OutputMask;
+RWTexture2D<float4> _OutputBiolumPulse;
+
+float4 _BakeParams1725;          // x=quality, y=seed, z=crease count, w=pore gain
+float4 _SurfaceParams1725;       // x=wrinkle gain, y=chitin gain, z=biolum gain, w=displacement meters
+float4 _AtlasParams1725;         // x=frames, y=tiles per axis, z=tile resolution, w=skeleton path count
+float4 _MeshBoundsCenter1725;
+float4 _MeshBoundsSize1725;
+
+static const float H8_PI_1725 = 3.14159265359;
+static const float H8_TAU_1725 = 6.28318530718;
+static const int H8_MAX_BONE_POINTS_1725 = 8;
+
+struct H8FaunaSurface1725
+{
+    float height;
+    float wrinkle;
+    float pore;
+    float chitin;
+    float vein;
+    float ao;
+    float smoothness;
+    float metallic;
+};
+
+float H8SaturateFinite1725(float value)
+{
+    return isfinite(value) ? saturate(value) : 0.0;
+}
+
+float2 H8Finite2_1725(float2 value)
+{
+    return all(isfinite(value)) ? value : float2(0.0, 0.0);
+}
+
+float3 H8Finite3_1725(float3 value)
+{
+    return all(isfinite(value)) ? value : float3(0.0, 0.0, 0.0);
+}
+
+float H8Hash11_1725(float n)
+{
+    return frac(sin(n) * 43758.5453123);
+}
+
+float2 H8Hash22_1725(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float H8Hash31_1725(float3 p)
+{
+    p = frac(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return frac((p.x + p.y) * p.z);
+}
+
+float H8ValueNoise3_1725(float3 p)
+{
+    p = H8Finite3_1725(p);
+    float3 i = floor(p);
+    float3 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float n000 = H8Hash31_1725(i + float3(0.0, 0.0, 0.0));
+    float n100 = H8Hash31_1725(i + float3(1.0, 0.0, 0.0));
+    float n010 = H8Hash31_1725(i + float3(0.0, 1.0, 0.0));
+    float n110 = H8Hash31_1725(i + float3(1.0, 1.0, 0.0));
+    float n001 = H8Hash31_1725(i + float3(0.0, 0.0, 1.0));
+    float n101 = H8Hash31_1725(i + float3(1.0, 0.0, 1.0));
+    float n011 = H8Hash31_1725(i + float3(0.0, 1.0, 1.0));
+    float n111 = H8Hash31_1725(i + float3(1.0, 1.0, 1.0));
+
+    float nx00 = lerp(n000, n100, f.x);
+    float nx10 = lerp(n010, n110, f.x);
+    float nx01 = lerp(n001, n101, f.x);
+    float nx11 = lerp(n011, n111, f.x);
+    float nxy0 = lerp(nx00, nx10, f.y);
+    float nxy1 = lerp(nx01, nx11, f.y);
+    return lerp(nxy0, nxy1, f.z);
+}
+
+float H8Fbm3_1725(float3 p, float quality)
+{
+    float value = 0.0;
+    float amp = 0.5;
+    float freq = 1.0;
+    int octaveCount = (int)lerp(2.0, 5.0, saturate(quality));
+    [loop]
+    for (int i = 0; i < 5; i++)
+    {
+        if (i >= octaveCount)
+            break;
+
+        value += H8ValueNoise3_1725(p * freq) * amp;
+        freq *= 2.03;
+        amp *= 0.5;
+    }
+
+    return value;
+}
+
+float H8Ridge1725(float value)
+{
+    return 1.0 - abs(frac(value) * 2.0 - 1.0);
+}
+
+float H8CellularPores1725(float2 uv, float density, float seed)
+{
+    float2 scaled = uv * density;
+    float2 cell = floor(scaled);
+    float2 f = frac(scaled);
+    float minDist = 8.0;
+
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 offset = float2((float)x, (float)y);
+            float2 randomPoint = H8Hash22_1725(cell + offset + seed * 0.071);
+            float2 d = offset + randomPoint - f;
+            minDist = min(minDist, dot(d, d));
+        }
+    }
+
+    float pore = smoothstep(0.026, 0.0, minDist);
+    float rim = smoothstep(0.075, 0.028, minDist) * (1.0 - pore);
+    return saturate(pore + rim * 0.42);
+}
+
+float2 H8BonePointUv1725(float4 bonePoint)
+{
+    float3 safeSize = max(abs(_MeshBoundsSize1725.xyz), float3(0.01, 0.01, 0.01));
+    float3 normalized = (bonePoint.xyz - _MeshBoundsCenter1725.xyz) / safeSize + 0.5;
+    return saturate(float2(normalized.x, normalized.z));
+}
+
+float H8DistanceToSegment1725(float2 p, float2 a, float2 b, out float t)
+{
+    float2 ab = b - a;
+    float denom = max(dot(ab, ab), 0.000001);
+    t = saturate(dot(p - a, ab) / denom);
+    float2 closest = a + ab * t;
+    return length(p - closest);
+}
+
+float H8SkeletonInfluence1725(float2 uv, out float pathT, out float nearestDist)
+{
+    int pointCount = (int)clamp(_AtlasParams1725.w, 2.0, (float)H8_MAX_BONE_POINTS_1725);
+    float influence = 0.0;
+    pathT = 0.0;
+    nearestDist = 8.0;
+
+    [loop]
+    for (int i = 0; i < H8_MAX_BONE_POINTS_1725 - 1; i++)
+    {
+        if (i >= pointCount - 1)
+            break;
+
+        float2 a = H8BonePointUv1725(_BonePathPoints1725[i]);
+        float2 b = H8BonePointUv1725(_BonePathPoints1725[i + 1]);
+        float localT;
+        float dist = H8DistanceToSegment1725(uv, a, b, localT);
+        float width = lerp(0.16, 0.07, saturate(_BakeParams1725.x));
+        float localInfluence = smoothstep(width, 0.0, dist);
+        if (dist < nearestDist)
+        {
+            nearestDist = dist;
+            pathT = ((float)i + localT) / max((float)(pointCount - 1), 1.0);
+        }
+
+        influence = max(influence, localInfluence);
+    }
+
+    return saturate(influence);
+}
+
+float H8ChitinPlateField1725(float2 uv, float quality, float seed, float skeleton, float pathT)
+{
+    float dorsal = smoothstep(0.16, 0.68, skeleton) * smoothstep(0.04, 0.92, uv.y);
+    float2 plateDomain = uv + float2(pathT * 0.17, seed * 0.0041);
+    float longitudinal = H8Ridge1725(plateDomain.y * lerp(10.0, 28.0, quality) + H8Fbm3_1725(float3(uv * 5.5, seed), quality) * 0.42);
+    float lateral = H8Ridge1725(plateDomain.x * lerp(5.0, 13.0, quality) + pathT * 2.0);
+    float cells = smoothstep(0.45, 0.94, longitudinal * 0.72 + lateral * 0.36);
+    float cracks = smoothstep(0.92, 0.985, H8Ridge1725(uv.x * 36.0 + uv.y * 19.0 + seed));
+    float plate = saturate(dorsal * cells * _SurfaceParams1725.y);
+    return saturate(plate * (1.0 - cracks * 0.62));
+}
+
+float H8BiolumVeinField1725(float2 uv, float quality, float seed, float pathT, float nearestDist)
+{
+    float mainWidth = lerp(0.026, 0.012, quality);
+    float mainVein = smoothstep(mainWidth, 0.0, nearestDist);
+    float branchPhase = pathT * lerp(18.0, 42.0, quality) + seed * 0.031;
+    float branchWave = sin(branchPhase * H8_TAU_1725 + uv.x * 9.0);
+    float branchOffset = (abs(uv.x - 0.5) - 0.08 - branchWave * 0.025);
+    float branchGate = smoothstep(0.82, 0.98, H8Ridge1725(branchPhase));
+    float branch = smoothstep(lerp(0.025, 0.011, quality), 0.0, abs(branchOffset)) * branchGate;
+    float capillaryNoise = H8Fbm3_1725(float3(uv * lerp(24.0, 72.0, quality), seed + 77.0), quality);
+    float capillary = smoothstep(0.68, 0.93, capillaryNoise) * smoothstep(0.27, 0.0, nearestDist);
+    return saturate((mainVein + branch * 0.55 + capillary * 0.35) * _SurfaceParams1725.z);
+}
+
+H8FaunaSurface1725 H8EvaluateFaunaSurface1725(float2 uv)
+{
+    uv = saturate(H8Finite2_1725(uv));
+    float quality = saturate(_BakeParams1725.x);
+    float seed = _BakeParams1725.y;
+    float pathT;
+    float nearestDist;
+    float skeleton = H8SkeletonInfluence1725(uv, pathT, nearestDist);
+    float warp = H8Fbm3_1725(float3(uv * lerp(3.0, 9.0, quality), seed * 0.019), quality);
+    float creaseDensity = clamp(_BakeParams1725.z, 8.0, 64.0);
+    float longitudinalFold = H8Ridge1725((uv.y + warp * 0.065 + pathT * 0.12) * creaseDensity);
+    float transverseFold = H8Ridge1725((uv.x * lerp(8.0, 20.0, quality) + pathT * 3.0 + seed * 0.011));
+    float wrinkle = saturate((longitudinalFold * 0.72 + transverseFold * 0.36) * skeleton * _SurfaceParams1725.x);
+    float pores = H8CellularPores1725(uv + warp * 0.017, lerp(54.0, 180.0, quality), seed) * _BakeParams1725.w;
+    float chitin = H8ChitinPlateField1725(uv, quality, seed, skeleton, pathT);
+    float vein = H8BiolumVeinField1725(uv, quality, seed, pathT, nearestDist);
+    float cavityNoise = H8Fbm3_1725(float3(uv * lerp(18.0, 74.0, quality), seed + 31.0), quality);
+    float microCavity = saturate((1.0 - cavityNoise) * pores * 0.42 + wrinkle * 0.55);
+    float chitinRaise = chitin * lerp(0.045, 0.16, quality);
+    float creaseCut = wrinkle * lerp(0.035, 0.11, quality);
+    float poreCut = pores * lerp(0.006, 0.024, quality);
+    float softFlesh = H8Fbm3_1725(float3(uv * lerp(9.0, 26.0, quality), seed + 13.0), quality) * lerp(0.018, 0.065, quality);
+
+    H8FaunaSurface1725 s;
+    s.height = saturate(0.50 + softFlesh + chitinRaise - creaseCut - poreCut);
+    s.wrinkle = saturate(wrinkle);
+    s.pore = saturate(pores);
+    s.chitin = saturate(chitin);
+    s.vein = saturate(vein);
+    s.ao = saturate(1.0 - microCavity * lerp(0.28, 0.58, quality) - pores * 0.10 + chitin * 0.06);
+    s.smoothness = saturate(0.34 + chitin * 0.52 + vein * 0.18 - pores * 0.18 - wrinkle * 0.10);
+    s.metallic = saturate(chitin * lerp(0.18, 0.54, quality));
+    return s;
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeFaunaAlbedo(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputAlbedo.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    float quality = saturate(_BakeParams1725.x);
+    float seed = _BakeParams1725.y;
+    H8FaunaSurface1725 s = H8EvaluateFaunaSurface1725(uv);
+    float tissueNoise = H8Fbm3_1725(float3(uv * lerp(12.0, 48.0, quality), seed + 5.0), quality);
+    float3 abyssFlesh = float3(0.035, 0.048, 0.058);
+    float3 bruisedMembrane = float3(0.092, 0.047, 0.071);
+    float3 wetChitin = float3(0.055, 0.072, 0.083);
+    float3 veinTint = float3(0.04, 0.72, 0.86);
+    float3 color = lerp(abyssFlesh, bruisedMembrane, saturate(tissueNoise * 0.78 + s.wrinkle * 0.24));
+    color *= lerp(0.72, 1.18, H8Fbm3_1725(float3(uv * 96.0, seed + 41.0), quality));
+    color = lerp(color, wetChitin, s.chitin);
+    color = lerp(color, color + veinTint * 0.32, s.vein * lerp(0.18, 0.55, quality));
+    color *= lerp(0.76, 1.02, s.ao);
+    _OutputAlbedo[id.xy] = float4(saturate(color), 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeFaunaNormalMap(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputNormalMap.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 texel = 1.0 / float2(max(width, 1u), max(height, 1u));
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    H8FaunaSurface1725 center = H8EvaluateFaunaSurface1725(uv);
+    float hx = H8EvaluateFaunaSurface1725(uv + float2(texel.x, 0.0)).height;
+    float hy = H8EvaluateFaunaSurface1725(uv + float2(0.0, texel.y)).height;
+    float displacementScale = max(_SurfaceParams1725.w, 0.001) * lerp(12.0, 42.0, saturate(_BakeParams1725.x));
+    float3 normalTs = normalize(float3((center.height - hx) * displacementScale, (center.height - hy) * displacementScale, 1.0));
+    _OutputNormalMap[id.xy] = saturate(float4(normalTs.x * 0.5 + 0.5, normalTs.y * 0.5 + 0.5, normalTs.z * 0.5 + 0.5, 1.0));
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeFaunaMaskV1(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputMask.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    H8FaunaSurface1725 s = H8EvaluateFaunaSurface1725(uv);
+    _OutputMask[id.xy] = saturate(float4(s.metallic, s.ao, s.smoothness, s.vein));
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeFaunaBiolumPulse64(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _OutputBiolumPulse.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    uint tiles = (uint)max(_AtlasParams1725.y, 1.0);
+    uint frames = (uint)max(_AtlasParams1725.x, 1.0);
+    uint tileWidth = max(width / tiles, 1u);
+    uint tileHeight = max(height / tiles, 1u);
+    uint tileX = min(id.x / tileWidth, tiles - 1u);
+    uint tileY = min(id.y / tileHeight, tiles - 1u);
+    uint frame = tileY * tiles + tileX;
+    if (frame >= frames)
+    {
+        _OutputBiolumPulse[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
+
+    float2 localUv = (float2(id.x - tileX * tileWidth, id.y - tileY * tileHeight) + 0.5) / float2(tileWidth, tileHeight);
+    float frameDenominator = max((float)frames - 1.0, 1.0);
+    float phase01 = frames > 1u ? (float)frame / frameDenominator : 0.0;
+    float phase = phase01 * H8_TAU_1725;
+    H8FaunaSurface1725 s = H8EvaluateFaunaSurface1725(localUv);
+    float wave = sin(phase + localUv.x * 8.0 + localUv.y * 3.0 + H8Fbm3_1725(float3(localUv * 18.0, _BakeParams1725.y + 91.0), saturate(_BakeParams1725.x)) * H8_TAU_1725);
+    float contraction = saturate(0.42 + wave * 0.58);
+    float negativeBoundary = saturate(1.0 - contraction) * s.vein * 0.18;
+    float pulse = saturate(s.vein * (0.30 + contraction * 0.92) - negativeBoundary);
+    float3 color = float3(0.05, 0.72, 0.92) * pulse;
+    _OutputBiolumPulse[id.xy] = float4(color, pulse);
+}

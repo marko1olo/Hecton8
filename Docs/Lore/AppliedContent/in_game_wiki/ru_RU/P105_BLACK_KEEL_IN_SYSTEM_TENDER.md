@@ -1,10 +1,17 @@
 ---
 packet_id: P105_BLACK_KEEL_IN_SYSTEM_TENDER
+release_set_id: RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY
 article_id: black_keel.in_system_tender_limit
+unlock_id: unlock.first_black_keel_in_system_tender
+poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
+biome_tags: biome.carrier_link;biome.shallow_annex
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Black Keel как внутрисистемный tender

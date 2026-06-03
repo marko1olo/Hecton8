@@ -43,7 +43,13 @@ namespace Hecton8.Gameplay
                 return null;
 
             if (!playerTransform.TryGetComponent(out PlayerNoiseEmitter emitter))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 emitter = playerTransform.gameObject.AddComponent<PlayerNoiseEmitter>();
+#else
+                return null;
+#endif
+            }
 
             return emitter;
         }

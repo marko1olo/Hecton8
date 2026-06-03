@@ -1,30 +1,37 @@
 ---
 packet_id: P097_RECOVERY_COMPLIANCE_OFFICE
+release_set_id: RS020_ATLAS_ENDING_AGENCY_DOSSIER
 article_id: deep_reach.recovery_compliance_office
+unlock_id: unlock.first_recovery_compliance_office
+poi_tags: poi.recovery_compliance_packet;poi.proxy_authority_window
+biome_tags: biome.drowned_admin;biome.carrier_link
 locale: ja_JP
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Recovery Compliance Office
 
-Draft JP localization pending native pass. The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
 
 ## Scanner
 
-Draft JP localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
 
 ## Terminal
 
-Draft JP localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
 
 ## Audio
 
-Draft JP localization pending native pass. They are late enough to be legal and current enough to be dangerous.
+They are late enough to be legal and current enough to be dangerous.
 
 ## Field Note
 
-Draft JP localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+A living faction makes pressure current without turning the whole corporation into a single shouting villain.
 
 <!-- In-Game Wiki; generated from P097_RECOVERY_COMPLIANCE_OFFICE/ja_JP. -->

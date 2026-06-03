@@ -1,0 +1,1875 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "DRAFT_PREFIX_LONG": 420,
+    "TEXT_EXPANSION_GT_1_35": 261,
+    "TEXT_OVERFLOW_LINES": 66
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Блок native-review для русского",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JP localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft CN localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft FR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ES localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft DE localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PL localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pl_PL",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft UA localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UA localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UA localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UA localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UA localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "uk_UA",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UA localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft AR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ar_SA",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ID localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "id_ID",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft KR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "ko_KR",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KR localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft HE localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "he_IL",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PT-BR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT-BR localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT-BR localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT-BR localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT-BR localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft NL localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Ru Native Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Cyrillic is not the problem. Tone drift is.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. RU REVIEW: preserve procedure, pressure, debt and evidence. Reject melodrama.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Do not make the machine poetic.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Russian Native Review Lock defines the release gate for RU text.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Russian Native Review Lock describes why HECTON-8 Russian localization must stay operational and evidence-led.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P276_RU_NATIVE_REVIEW_LOCK",
+      "locale": "nl_NL",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Review gate: terse terminal language, stable proper nouns, no softened corporate guilt, no ornamental horror prose.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JP localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JP localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "ja_JP",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JP localization pending native pass. Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft CN localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft CN localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "zh_CN",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft CN localization pending native pass. Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft FR localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "fr_FR",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ES localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. A missing glyph can erase an alarm.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. CJK REVIEW: prove font, wrap, unit, name and terminal-width behavior before publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Short text can still overflow if the grid is wrong.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. CJK Review Lock defines release checks for Japanese, Chinese and Korean text surfaces.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. CJK Review Lock explains the font and layout proof required before HECTON-8 CJK publication.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "es_ES",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Review gate: glyph subset, overflow proof, mixed Latin names, meters/tonne-window labels and spoiler-tier article lengths.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft DE localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS056_NATIVE_LOCALIZATION_REVIEW_PACK",
+      "packet_id": "P277_CJK_REVIEW_LOCK",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Cjk Review Lock",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS056_NATIVE_LOCALIZATION_REVIEW_PACK.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

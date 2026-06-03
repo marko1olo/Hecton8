@@ -1,10 +1,17 @@
 ---
 packet_id: P110_VERA_SATO_REN_RETURN_ACTION
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.vera_sato_ren_return_action
+unlock_id: unlock.first_vera_sato_ren_return_action
+poi_tags: poi.recovery_compliance_signature;poi.return_action_notice
+biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Vera Sato-Ren: return action

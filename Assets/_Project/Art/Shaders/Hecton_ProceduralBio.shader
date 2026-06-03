@@ -18,6 +18,8 @@ Shader "Hecton8/Flora/ProceduralBio"
         _TriplanarSharpness ("High Tier Blend Sharpness", Range(1, 8)) = 4
         _SeedOffsetScale ("Seed Offset Scale", Range(0, 8)) = 1.25
         _NormalScale ("Normal Scale", Range(0, 2)) = 0.82
+        _SwayAmplitude ("Vertex Sway Amplitude", Range(0, 1)) = 0.06
+        _BiolumPhase ("Biolum Phase", Range(0, 6.283185)) = 0
 
         [Header(Shading)]
         _AmbientStrength ("Ambient Strength", Range(0, 2)) = 0.52
@@ -78,6 +80,8 @@ Shader "Hecton8/Flora/ProceduralBio"
                 half _TriplanarSharpness;
                 half _SeedOffsetScale;
                 half _NormalScale;
+                half _SwayAmplitude;
+                half _BiolumPhase;
                 half _AmbientStrength;
                 half _SubsurfaceStrength;
                 half _RimStrength;
@@ -152,6 +156,18 @@ Shader "Hecton8/Flora/ProceduralBio"
             {
                 half t = saturate((value - low) * rcp(max(high - low, 0.0001h)));
                 return t * t * (3.0h - 2.0h * t);
+            }
+
+            float3 ResolveProceduralBioSwayedPositionOS(float3 positionOS, float seed, half vertexSway01)
+            {
+                half qualityWeight = HectonProceduralBioGlobalQualityWeight();
+                float timeSeconds = isfinite(_TimeParameters.x) ? _TimeParameters.x : 0.0;
+                float phase = (float)_BiolumPhase + seed * 6.2831853;
+                float primary = sin(timeSeconds * 0.43 + phase);
+                float detail = sin(timeSeconds * 1.21 + positionOS.y * 2.7 + phase * 1.79);
+                float detailWeight = HectonProceduralBioSmoothRange01(0.55h, 0.95h, qualityWeight);
+                float sway = (primary + detail * 0.35 * detailWeight) * (float)_SwayAmplitude * (float)saturate(vertexSway01);
+                return positionOS + float3(sway, 0.0, sway * 0.31);
             }
 
             float ResolveProceduralBioInstanceSeed()
@@ -351,17 +367,20 @@ Shader "Hecton8/Flora/ProceduralBio"
                 float3 positionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
                 float3 normalOS = all(isfinite(input.normalOS)) ? input.normalOS : float3(0.0, 1.0, 0.0);
                 normalOS = dot(normalOS, normalOS) > 0.000001 ? normalOS : float3(0.0, 1.0, 0.0);
+                float seed = ResolveProceduralBioInstanceSeed();
+                half4 vertexColor = all(isfinite(input.color)) ? input.color : half4(1.0h, 1.0h, 1.0h, 1.0h);
+                positionOS = ResolveProceduralBioSwayedPositionOS(positionOS, seed, vertexColor.r);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(positionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS);
 
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.projectWS = ResolveProceduralBioProjectionPosition(positionInputs.positionWS);
-                output.seed = ResolveProceduralBioInstanceSeed();
+                output.seed = seed;
                 output.biolumLocalAupCoord = positionInputs.positionWS - TransformObjectToWorld(float3(0.0, 0.0, 0.0));
                 output.viewDirWS = HectonProceduralBioNormalizeRsqrt(GetWorldSpaceViewDir(positionInputs.positionWS));
                 output.normalWS = HectonProceduralBioNormalizeRsqrt(normalInputs.normalWS);
-                output.color = all(isfinite(input.color)) ? input.color : half4(1.0h, 1.0h, 1.0h, 1.0h);
+                output.color = vertexColor;
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 return output;
             }

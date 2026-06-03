@@ -344,6 +344,7 @@ namespace Hecton8.Audio
         private IAudioService _cachedAudioService;
         private IAcousticZoneReadModel _cachedAcousticZone;
         private IDepthZoneReadModel _cachedDepthZoneReadModel;
+        private IEncounterDirectorService _cachedEncounterDirector;
         private ISurfaceWeatherReadModel _cachedSurfaceWeatherDirector;
         private IFirstHourReadModel _cachedFirstHourDirector;
         private bool _depthZoneDirectorRuntimeCached;
@@ -370,6 +371,10 @@ namespace Hecton8.Audio
         private float _lastDangerDb = float.MinValue;
         private float _nextEditorDebugStateTime;
         private uint _musicRandomState;
+        private bool _biomeMatrixDirectorRuntimeOwned;
+        private bool _encounterDirectorRuntimeOwned;
+        private bool _worldZoneDirectorRuntimeOwned;
+        private bool _worldZoneDirectorListenerRegistered;
 
         /// <summary>
         /// Currently resolved runtime profile.
@@ -455,6 +460,7 @@ namespace Hecton8.Audio
             StopMusicInternal(0f);
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             TryUnregisterHotSwapListener();
+            TryUnregisterWorldZoneDirectorListener();
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
             ClearCachedRuntimeServices();
@@ -464,6 +470,7 @@ namespace Hecton8.Audio
         {
             StopMusicInternal(0f);
             TryUnregisterHotSwapListener();
+            TryUnregisterWorldZoneDirectorListener();
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
             ClearCachedRuntimeServices();
@@ -924,17 +931,16 @@ namespace Hecton8.Audio
                 return false;
 
             GameObject runtimeDirectorPrefab = sceneConfig.RuntimeDirectorPrefab.gameObject;
-            if (pool.GetAvailableCount(runtimeDirectorPrefab) <= 0)
-                pool.Warmup(runtimeDirectorPrefab, 1);
+            if (!pool.HasPool(runtimeDirectorPrefab) || pool.GetAvailableCount(runtimeDirectorPrefab) <= 0)
+                return false;
 
-            pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity);
+            pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity, false);
             return s_activeRuntimeInstance != null;
         }
 
         private static IObjectPoolService ResolveRuntimeObjectPool()
         {
-            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
-            return pool != null ? pool : ObjectPoolManager.ActiveRuntimeInstance;
+            return GlobalRegistry.ObjectPoolService;
         }
 
         private void BindAuthoredVoicePool()
@@ -990,6 +996,18 @@ namespace Hecton8.Audio
                 _depthZoneDirectorRuntimeCached = false;
             }
 
+            if (_biomeMatrixDirectorRuntimeOwned)
+            {
+                _biomeMatrixDirector = null;
+                _biomeMatrixDirectorRuntimeOwned = false;
+            }
+
+            if (_encounterDirectorRuntimeOwned)
+            {
+                _cachedEncounterDirector = null;
+                _encounterDirectorRuntimeOwned = false;
+            }
+
             _cachedSurfaceWeatherDirector = null;
             _cachedFirstHourDirector = null;
             _nextPlayerContextResolveFrame = 0;
@@ -1020,6 +1038,15 @@ namespace Hecton8.Audio
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
                     CacheAcousticZone(currentService as IAcousticZoneReadModel, frame);
                     _hasLastAcousticInteriorState = false;
+                    break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    CacheBiomeMatrixDirector(currentService as BiomeMatrixDirector);
+                    _observedMatrixProfile = null;
+                    _hasObservedMatrixState = false;
+                    break;
+                case GlobalRegistryServiceSlot.EncounterDirector:
+                    CacheEncounterDirector(currentService as IEncounterDirectorService);
+                    _hasLastDirectorPredatorPressure = false;
                     break;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
                     if (_depthZoneDirectorRuntimeCached ||
@@ -1066,6 +1093,15 @@ namespace Hecton8.Audio
             return null;
         }
 
+        private IEncounterDirectorService ResolveEncounterDirector()
+        {
+            if (_directorAI != null)
+                return _directorAI;
+
+            IEncounterDirectorService encounterDirector = _cachedEncounterDirector;
+            return encounterDirector != null && encounterDirector.IsInitialized ? encounterDirector : null;
+        }
+
         private ISurfaceWeatherReadModel ResolveSurfaceWeatherDirector()
         {
             return _cachedSurfaceWeatherDirector;
@@ -1082,6 +1118,8 @@ namespace Hecton8.Audio
             CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
             CacheAudioService(GlobalRegistry.Audio, frame);
             CacheAcousticZone(GlobalRegistry.AcousticZoneReadModel, frame);
+            CacheBiomeMatrixDirector(GlobalRegistry.BiomeMatrix);
+            CacheEncounterDirector(GlobalRegistry.EncounterDirector);
             CacheDepthZoneReadModel(GlobalRegistry.DepthZoneReadModel, frame);
             CacheSurfaceWeatherDirector(GlobalRegistry.SurfaceWeatherReadModel, frame);
             CacheFirstHourDirector(GlobalRegistry.FirstHourReadModel, frame);
@@ -1119,6 +1157,30 @@ namespace Hecton8.Audio
             _nextDepthZoneResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
+        private void CacheBiomeMatrixDirector(BiomeMatrixDirector director)
+        {
+            if (_biomeMatrixDirector != null && !_biomeMatrixDirectorRuntimeOwned)
+                return;
+
+            _biomeMatrixDirector = director;
+            _biomeMatrixDirectorRuntimeOwned = true;
+        }
+
+        private void CacheEncounterDirector(IEncounterDirectorService encounterDirector)
+        {
+            if (_directorAI != null)
+            {
+                _cachedEncounterDirector = _directorAI;
+                _encounterDirectorRuntimeOwned = false;
+                return;
+            }
+
+            _cachedEncounterDirector = encounterDirector != null && encounterDirector.IsInitialized
+                ? encounterDirector
+                : null;
+            _encounterDirectorRuntimeOwned = _cachedEncounterDirector != null;
+        }
+
         private void CacheSurfaceWeatherDirector(ISurfaceWeatherReadModel surfaceWeather, int frame)
         {
             _cachedSurfaceWeatherDirector = surfaceWeather;
@@ -1136,10 +1198,46 @@ namespace Hecton8.Audio
             ResolveDependenciesForSceneCold(SceneManager.GetActiveScene());
         }
 
+        private void TryRegisterWorldZoneDirectorListenerCold()
+        {
+            if (_worldZoneDirector == null || _worldZoneDirectorRuntimeOwned)
+                CacheRuntimeWorldZoneDirectorCold(WorldZoneDirector.ActiveRuntimeInstance);
+
+            if (_worldZoneDirectorListenerRegistered || !Application.isPlaying)
+                return;
+
+            WorldZoneDirector.ActiveRuntimeInstanceChanged += HandleWorldZoneDirectorChanged;
+            _worldZoneDirectorListenerRegistered = true;
+        }
+
+        private void TryUnregisterWorldZoneDirectorListener()
+        {
+            if (!_worldZoneDirectorListenerRegistered)
+                return;
+
+            WorldZoneDirector.ActiveRuntimeInstanceChanged -= HandleWorldZoneDirectorChanged;
+            _worldZoneDirectorListenerRegistered = false;
+        }
+
+        private void HandleWorldZoneDirectorChanged(WorldZoneDirector director)
+        {
+            CacheRuntimeWorldZoneDirectorCold(director);
+        }
+
+        private void CacheRuntimeWorldZoneDirectorCold(WorldZoneDirector director)
+        {
+            if (_worldZoneDirector != null && !_worldZoneDirectorRuntimeOwned)
+                return;
+
+            _worldZoneDirector = director;
+            _worldZoneDirectorRuntimeOwned = true;
+        }
+
         private void ResolveDependenciesForSceneCold(Scene activeScene)
         {
             RefreshCachedRuntimeServicesCold();
             ApplySceneConfigCold(activeScene);
+            TryRegisterWorldZoneDirectorListenerCold();
             ResolveDependencies();
             BindRuntimeVoiceRoutingCold();
         }
@@ -1163,16 +1261,7 @@ namespace Hecton8.Audio
 
         private void ResolveDependencies()
         {
-            if (_worldZoneDirector == null)
-                _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
-
-            if (_biomeMatrixDirector == null)
-                _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
-
             ResolveDepthZoneReadModel();
-
-            if (_directorAI == null)
-                _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
 
             IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             Transform resolvedPlayerTransform = playerContext != null && playerContext.PlayerTransform != null
@@ -1558,10 +1647,11 @@ namespace Hecton8.Audio
 
         private void RefreshObservedDirectorPressureState()
         {
-            if (_directorAI == null)
+            IEncounterDirectorService encounterDirector = ResolveEncounterDirector();
+            if (encounterDirector == null)
                 return;
 
-            bool pressureEnabled = _directorAI.IsPredatorPressureEnabled;
+            bool pressureEnabled = encounterDirector.IsPredatorPressureEnabled;
             if (!_hasLastDirectorPredatorPressure)
             {
                 _hasLastDirectorPredatorPressure = true;
@@ -1758,8 +1848,9 @@ namespace Hecton8.Audio
             IDepthZoneReadModel depthZoneReadModel = ResolveDepthZoneReadModel();
             DepthZoneProfile depthZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
 
-            float aiTension01 = _directorAI != null
-                ? math.saturate(_directorAI.TensionScore * 0.01f)
+            IEncounterDirectorService encounterDirector = ResolveEncounterDirector();
+            float aiTension01 = encounterDirector != null
+                ? math.saturate(encounterDirector.TensionScore * 0.01f)
                 : 0f;
             float biomePressure01 = ResolveBiomePressure01(matrixProfile);
             float zonePressure01 = ResolveZonePressure01(currentZone);
@@ -3068,9 +3159,9 @@ namespace Hecton8.Audio
             if (debugVoiceIndex >= 0 && debugVoiceIndex < MusicVoiceCount && _voiceActive[debugVoiceIndex] && !string.IsNullOrEmpty(_voiceClips[debugVoiceIndex].CueId))
                 _debugActiveCueId = _voiceClips[debugVoiceIndex].CueId;
             else if (_overrideClip != null)
-                _debugActiveCueId = _overrideClip.name;
+                _debugActiveCueId = "Override Clip";
             else if (_stingerSource != null && _stingerSource.isPlaying && _stingerSource.clip != null)
-                _debugActiveCueId = _stingerSource.clip.name;
+                _debugActiveCueId = "Stinger Clip";
             else if (!HasAnyActiveVoice())
                 _debugActiveCueId = "None";
 

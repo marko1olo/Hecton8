@@ -166,6 +166,7 @@ namespace Hecton8.Atmosphere
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneRuntime()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!Application.isPlaying)
                 return;
 
@@ -175,6 +176,7 @@ namespace Hecton8.Atmosphere
             GameObject host = new GameObject("H8_ShinobuStormPropagationRuntime"); // COLD ALLOC: GameObject[1] - scene-local storm propagation runtime root - owner: ShinobuStormPropagationRuntime
             host.hideFlags = HideFlags.DontSave;
             host.AddComponent<ShinobuStormPropagationRuntime>(); // COLD ALLOC: ShinobuStormPropagationRuntime[1] - auto-bootstrap fallback component - owner: ShinobuStormPropagationRuntime
+#endif
         }
 
         private void OnEnable()
@@ -863,7 +865,7 @@ namespace Hecton8.Atmosphere
             _lastSeaLevelAup = ResolveSeaLevelAupDouble(_lastOriginFallbackAup, in weatherRow, weatherAvailable);
             float time = ResolveTimeSeconds();
             JobHandle dependency = default;
-            bool useMockHurricane = autoGenerateEmergencyMockHurricane &&
+            bool useMockHurricane = ShouldGenerateEmergencyMockHurricane() &&
                                     (!weatherAvailable || IsWeatherSourceInvalid(in weatherRow));
 
             if (useMockHurricane)
@@ -924,6 +926,15 @@ namespace Hecton8.Atmosphere
             _attenuationScheduled = false;
             uint publicationFlags = PublishCompletedState();
             StampScheduleToPublishTelemetry(publicationFlags);
+        }
+
+        private bool ShouldGenerateEmergencyMockHurricane()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return autoGenerateEmergencyMockHurricane;
+#else
+            return false;
+#endif
         }
 
         private void CompleteScheduledJobsForShutdown()

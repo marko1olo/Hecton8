@@ -222,6 +222,7 @@ namespace Hecton8.Bootstrap
         private const int BootstrapSceneRootScratchCapacity = 256;
         private const int BootstrapTransformScratchCapacity = 4096;
         private const double BootstrapAddressablePrewarmSoftTimeoutSeconds = 2.5d;
+        private const double BootstrapRequiredAddressableGateTimeoutSeconds = 15.0d;
 #if UNITY_INCLUDE_TESTS
         private static readonly bool _isUnityTestRunnerProcess = ResolveUnityTestRunnerProcess();
 #endif
@@ -1768,6 +1769,9 @@ namespace Hecton8.Bootstrap
 
         private void EnsureBootstrapPresentationFallbackCold()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return;
+#else
             if (!Application.isPlaying || Application.isBatchMode || _headlessBootMode)
                 return;
 
@@ -1878,8 +1882,10 @@ namespace Hecton8.Bootstrap
                 new Vector3(0f, 1.18f, 1.54f),
                 0.19f,
                 new Color(1f, 0.60f, 0.18f, 1f));
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool HasBootstrapPresentationRoot(Scene scene)
         {
             if (!scene.IsValid() || !scene.isLoaded)
@@ -1942,18 +1948,14 @@ namespace Hecton8.Bootstrap
             Quaternion localRotation,
             Material material)
         {
-            GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube); // COLD ALLOC: visual boot block; bootstrap scene only.
-            block.name = objectName;
-            block.transform.SetParent(parent, false);
-            block.transform.localPosition = localPosition;
-            block.transform.localRotation = localRotation;
-            block.transform.localScale = localScale;
-
-            if (block.TryGetComponent(out Collider collider))
-                Destroy(collider);
-
-            if (block.TryGetComponent(out MeshRenderer renderer))
-                renderer.sharedMaterial = material;
+            Hecton8.World.WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                parent,
+                PrimitiveType.Cube,
+                objectName,
+                localPosition,
+                localRotation,
+                localScale,
+                material);
         }
 
         private static void CreateBootstrapPresentationText(
@@ -1980,6 +1982,7 @@ namespace Hecton8.Bootstrap
             text.color = color;
             text.raycastTarget = false;
         }
+#endif
 
         private static bool ClaimRuntimeBootstrapInstance(GameBootstrapper instance)
         {
@@ -3334,9 +3337,25 @@ namespace Hecton8.Bootstrap
                 if (!handle.IsValid())
                     continue;
 
+                long waitStartTimestamp = Stopwatch.GetTimestamp();
                 while (!handle.IsDone)
                 {
                     ct.ThrowIfCancellationRequested();
+                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapRequiredAddressableGateTimeoutSeconds, out double elapsedSeconds))
+                    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Debug.LogError(
+                            "[GameBootstrapper] UI addressable prefab timed out during bootstrap UI gate. index=" +
+                            i +
+                            " elapsed=" +
+                            elapsedSeconds.ToString("0.000"));
+#endif
+                        if (handle.IsValid())
+                            Addressables.ReleaseInstance(handle);
+                        _uiPrefabInstanceHandles[i] = default;
+                        return false;
+                    }
+
                     await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
                     handle = _uiPrefabInstanceHandles[i];
                 }
@@ -3443,9 +3462,23 @@ namespace Hecton8.Bootstrap
                     continue;
 
                 AsyncOperationHandle handle = Addressables.DownloadDependenciesAsync(group.labelString, false);
+                long waitStartTimestamp = Stopwatch.GetTimestamp();
                 while (!handle.IsDone)
                 {
                     ct.ThrowIfCancellationRequested();
+                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapRequiredAddressableGateTimeoutSeconds, out double elapsedSeconds))
+                    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Debug.LogError(
+                            "[GameBootstrapper] Addressables dependency group timed out during bootstrap. label=" +
+                            group.labelString +
+                            " elapsed=" +
+                            elapsedSeconds.ToString("0.000"));
+#endif
+                        TryReleaseBootstrapDependencyHandle(handle);
+                        return false;
+                    }
+
                     await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
                 }
 
@@ -6642,7 +6675,17 @@ namespace Hecton8.Bootstrap
             _entryRecoveryIssued = true;
             if (!GameStartContextHolder.TryGetPendingTargetSceneName(out _))
                 GameStartContextHolder.Reset();
-            SceneManager.LoadScene(BootstrapScenePath);
+            AsyncOperation operation = LoadProductionSceneAsync(
+                BootstrapScenePath,
+                LoadSceneMode.Single);
+            if (operation == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(
+                    "[GameBootstrapper] Failed to schedule async bootstrap entry recovery load.");
+#endif
+            }
+
             return false;
         }
 
@@ -8200,6 +8243,7 @@ namespace Hecton8.Bootstrap
         }
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
     internal sealed class BootstrapPresentationFallbackRuntime : MonoBehaviour
     {
         private Material _abyss;
@@ -8247,6 +8291,7 @@ namespace Hecton8.Bootstrap
                 DestroyImmediate(material);
         }
     }
+#endif
 
     [DisallowMultipleComponent]
     internal sealed class HardwareErrorCanvas : MonoBehaviour

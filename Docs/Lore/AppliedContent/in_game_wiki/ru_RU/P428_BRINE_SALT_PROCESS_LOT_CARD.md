@@ -1,0 +1,37 @@
+---
+packet_id: P428_BRINE_SALT_PROCESS_LOT_CARD
+release_set_id: RS086_RESOURCE_ECONOMY_ARTIFACTS
+article_id: applied_lore.brine_salt_process_lot_card
+unlock_id: unlock.brine_salt_process_lot_card
+poi_tags: poi.brine_lot_card;poi.density_ladder_sample
+biome_tags: biome.brine_canyon;biome.process_chemistry
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Процессная lot-карта brine salt
+
+Brine materials связывают geology, survival chemistry и colony process infrastructure.
+
+## Scanner
+
+Process lot: brine salts несут density-ladder origin, vent exposure и filtration risk.
+
+## Terminal
+
+LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload и Atlas-filter contact логируются до recipe use.
+
+## Audio
+
+Соль - запись маршрута. Пробуешь на вкус - читаешь неправильно.
+
+## Field Note
+
+Для brine canyon scanner cards и resource article.
+
+<!-- In-Game Wiki; generated from P428_BRINE_SALT_PROCESS_LOT_CARD/ru_RU. -->

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P351_DROWNED_CRUST_STRATA_GUIDE",
+      "release_set_id": "RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE",
+      "article_id": "applied_lore.drowned_crust_strata_guide",
+      "title_key": "applied_lore.drowned_crust_strata_guide.title",
+      "unlock": {
+        "primary": "unlock.drowned_crust_strata_guide",
+        "poi_tags": [
+          "poi.drowned_strata_slate",
+          "poi.pressure_glass_shelf",
+          "poi.extraction_scar_map"
+        ],
+        "biome_tags": [
+          "biome.geology",
+          "biome.ocean"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Drowned Crust Strata Guide",
+          "scanner": "Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Use for geology codex and procedural world labels."
+        },
+        "ru_RU": {
+          "title": "Fieldguide drowned crust strata",
+          "scanner": "Strata guide. Затопленная кора открывает старую индустрию, pressure glass и unstable mineral bands.",
+          "terminal": "FIELD GUIDE: drowned crust HECTON-8 - не плоское дно. Это folded settlement rock, collapsed ice history, pressure glass и extraction scars под moving brine.",
+          "audio": "Карта - не terrain. Это стопка затоплений.",
+          "in_game_wiki": "Drowned crust fieldguide помогает процедурной геологии чувствоваться authored: strata, shelves, pressure glass, scars and hazards.",
+          "external_site": "Геология HECTON-8 поддерживает реиграбельность: меняются strata и routes, сохраняются hard-sci-fi rules.",
+          "field_note": "Для geology codex и world labels."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft JA localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft JA localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft JA localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft JA localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft JA localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft ZH localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft ZH localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft ZH localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft ZH localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft FR localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft FR localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft FR localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft FR localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft FR localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft ES localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft ES localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft ES localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft ES localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft ES localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft DE localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft DE localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft DE localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft DE localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft DE localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft PL localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft PL localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft PL localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft PL localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft PL localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft UK localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft UK localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft UK localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft UK localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft UK localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft AR localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft AR localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft AR localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft AR localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft AR localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft ID localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft ID localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft ID localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft ID localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft ID localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft KO localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft KO localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft KO localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft KO localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft KO localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft HE localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft HE localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft HE localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft HE localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft HE localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft PT localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft PT localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft PT localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft PT localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft PT localization pending native pass. Use for geology codex and procedural world labels."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Drowned Crust Strata Guide",
+          "scanner": "Draft NL localization pending native pass. Strata guide. Flooded crust exposes old industry, new pressure glass and unstable mineral bands.",
+          "terminal": "Draft NL localization pending native pass. FIELD GUIDE: HECTON-8's drowned crust is not flat ocean floor. It is folded settlement rock, collapsed ice history, pressure glass and extraction scars under moving brine.",
+          "audio": "Draft NL localization pending native pass. The map is not terrain. It is a stack of drownings.",
+          "in_game_wiki": "Draft NL localization pending native pass. The drowned crust fieldguide lets procedural geology feel authored: strata, collapse shelves, pressure glass, extraction scars and route hazards repeat with variation.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's geology supports replayability by changing local strata and POI routes while preserving the same hard-sci-fi rules.",
+          "field_note": "Draft NL localization pending native pass. Use for geology codex and procedural world labels."
+        }
+      }
+    },
+    {
+      "packet_id": "P352_BRINE_CANYON_DENSITY_LADDER_GUIDE",
+      "release_set_id": "RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE",
+      "article_id": "applied_lore.brine_canyon_density_ladder_guide",
+      "title_key": "applied_lore.brine_canyon_density_ladder_guide.title",
+      "unlock": {
+        "primary": "unlock.brine_canyon_density_ladder_guide",
+        "poi_tags": [
+          "poi.brine_density_slate",
+          "poi.current_shelf_marker",
+          "poi.pressure_boundary_probe"
+        ],
+        "biome_tags": [
+          "biome.brine",
+          "biome.geology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Brine Canyon Density Ladder Guide",
+          "scanner": "Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Use for scanner tutorials and resource route articles."
+        },
+        "ru_RU": {
+          "title": "Brine canyon density ladder guide",
+          "scanner": "Обнаружен brine canyon ladder. Density layers превращают depth в route planning.",
+          "terminal": "FIELD GUIDE: brine canyons - не просто visual depth. Они прячут pressure boundaries, current shelves, resource pockets и scanner false positives.",
+          "audio": "Каньон - лестница, если hull может платить за каждую ступень.",
+          "in_game_wiki": "Brine canyons делают progression физической: density layers, hull limits, pressure failures and pockets.",
+          "external_site": "Depth на HECTON-8 - инженерная география. Brine canyons - route ladders.",
+          "field_note": "Для scanner tutorials и resource route articles."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft JA localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft JA localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft JA localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft JA localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft JA localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft ZH localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft ZH localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft ZH localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft ZH localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft FR localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft FR localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft FR localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft FR localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft FR localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft ES localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft ES localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft ES localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft ES localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft ES localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft DE localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft DE localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft DE localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft DE localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft DE localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft PL localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft PL localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft PL localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft PL localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft PL localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft UK localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft UK localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft UK localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft UK localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft UK localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft AR localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft AR localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft AR localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft AR localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft AR localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft ID localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft ID localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft ID localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft ID localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft ID localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft KO localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft KO localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft KO localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft KO localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft KO localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft HE localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft HE localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft HE localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft HE localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft HE localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft PT localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft PT localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft PT localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft PT localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft PT localization pending native pass. Use for scanner tutorials and resource route articles."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Brine Canyon Density Ladder Guide",
+          "scanner": "Draft NL localization pending native pass. Brine canyon ladder detected. Density layers turn depth into route planning.",
+          "terminal": "Draft NL localization pending native pass. FIELD GUIDE: brine canyons are not just visual depth. They hide pressure boundaries, current shelves, resource pockets and scanner false positives.",
+          "audio": "Draft NL localization pending native pass. A canyon is a staircase if your hull can pay for each step.",
+          "in_game_wiki": "Draft NL localization pending native pass. Brine canyons make progression physical: the player learns density layers, hull limits, pressure failures and resource pockets before deeper routes open.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 treats depth as engineering geography. Brine canyons are route ladders, not decorative trenches.",
+          "field_note": "Draft NL localization pending native pass. Use for scanner tutorials and resource route articles."
+        }
+      }
+    },
+    {
+      "packet_id": "P353_VENT_FORGE_FIELD_PROCESS_GUIDE",
+      "release_set_id": "RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE",
+      "article_id": "applied_lore.vent_forge_field_process_guide",
+      "title_key": "applied_lore.vent_forge_field_process_guide.title",
+      "unlock": {
+        "primary": "unlock.vent_forge_field_process_guide",
+        "poi_tags": [
+          "poi.vent_forge_sample",
+          "poi.cooling_path_tag",
+          "poi.sulfide_brine_probe"
+        ],
+        "biome_tags": [
+          "biome.vent",
+          "biome.resource"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Vent Forge Field Process Guide",
+          "scanner": "Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Use for resource taxonomy and crafting-table handoff."
+        },
+        "ru_RU": {
+          "title": "Vent forge field process guide",
+          "scanner": "Vent-forge chemistry активна. Resource quality зависит от pressure history и cooling path.",
+          "terminal": "FIELD GUIDE: vent forges готовят sulfides, noble-gas pockets, ceramics and sealant precursors. Путь sample через heat and pressure важнее label.",
+          "audio": "Vent сделал не ore. Он сделал процесс, который ты прервал.",
+          "in_game_wiki": "Vent forges делают ресурсы научными: heat, brine, cooling paths и pressure history без magic ore.",
+          "external_site": "Resource collection HECTON-8 основан на vents, brines, ceramics, sealants и pressure history.",
+          "field_note": "Для resource taxonomy и crafting-table handoff."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft JA localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft JA localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft JA localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft JA localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft JA localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft JA localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft ZH localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft ZH localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft ZH localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft ZH localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft ZH localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft FR localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft FR localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft FR localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft FR localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft FR localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft FR localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft ES localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft ES localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft ES localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft ES localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft ES localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft ES localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft DE localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft DE localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft DE localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft DE localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft DE localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft DE localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft PL localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft PL localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft PL localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft PL localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft PL localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft PL localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft UK localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft UK localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft UK localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft UK localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft UK localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft UK localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft AR localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft AR localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft AR localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft AR localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft AR localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft AR localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft ID localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft ID localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft ID localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft ID localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft ID localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft ID localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft KO localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft KO localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft KO localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft KO localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft KO localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft KO localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft HE localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft HE localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft HE localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft HE localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft HE localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft HE localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft PT localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft PT localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft PT localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft PT localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft PT localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft PT localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Vent Forge Field Process Guide",
+          "scanner": "Draft NL localization pending native pass. Vent-forge chemistry active. Resource quality depends on pressure history and cooling path.",
+          "terminal": "Draft NL localization pending native pass. FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat and pressure matters more than its label.",
+          "audio": "Draft NL localization pending native pass. The vent did not make ore. It made a process you interrupted.",
+          "in_game_wiki": "Draft NL localization pending native pass. Vent forges make resources feel scientific: heat, brine, cooling paths and pressure history produce useful materials without magic ore logic.",
+          "external_site": "Draft NL localization pending native pass. Resource collection in HECTON-8 is grounded in field processes: vents, brines, ceramics, sealants and pressure history.",
+          "field_note": "Draft NL localization pending native pass. Use for resource taxonomy and crafting-table handoff."
+        }
+      }
+    },
+    {
+      "packet_id": "P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE",
+      "release_set_id": "RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE",
+      "article_id": "applied_lore.blue_debt_pressure_history_guide",
+      "title_key": "applied_lore.blue_debt_pressure_history_guide.title",
+      "unlock": {
+        "primary": "unlock.blue_debt_pressure_history_guide",
+        "poi_tags": [
+          "poi.blue_debt_sample",
+          "poi.xenon_omega_ledger",
+          "poi.pressure_history_stamp"
+        ],
+        "biome_tags": [
+          "biome.resource",
+          "biome.deep"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blue Debt Pressure History Guide",
+          "scanner": "Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Use for resource glossary and Deep Reach motive articles."
+        },
+        "ru_RU": {
+          "title": "Blue debt pressure history guide",
+          "scanner": "Blue debt sample tagged. Pressure history важнее surface color.",
+          "terminal": "MARAUDER NOTE: blue debt - salvage slang для Xenon-Omega-bearing pressure-stable substrate. Ценность в extreme computation и energy isolation, не в свечении.",
+          "audio": "Blue debt - так это называют после счёта.",
+          "in_game_wiki": "Blue debt - полевой сленг для Xenon-Omega pressure substrate. Термин связывает material с контрактами, риском и мотивом Deep Reach.",
+          "external_site": "Xenon-Omega, blue debt для salvagers, связывает HECTON-8, Atlas, Deep Reach и цену возвращения.",
+          "field_note": "Для resource glossary и Deep Reach motive articles."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft JA localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft JA localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft JA localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft JA localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft JA localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft JA localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft ZH localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft ZH localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft ZH localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft ZH localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft ZH localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft FR localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft FR localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft FR localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft FR localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft FR localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft ES localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft ES localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft ES localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft ES localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft ES localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft DE localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft DE localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft DE localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft DE localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft DE localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft PL localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft PL localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft PL localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft PL localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft PL localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft UK localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft UK localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft UK localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft UK localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft UK localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft UK localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft AR localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft AR localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft AR localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft AR localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft AR localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft ID localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft ID localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft ID localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft ID localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft ID localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft KO localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft KO localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft KO localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft KO localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft KO localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft KO localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft HE localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft HE localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft HE localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft HE localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft HE localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft PT localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft PT localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft PT localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft PT localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft PT localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft PT localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Blue Debt Pressure History Guide",
+          "scanner": "Draft NL localization pending native pass. Blue debt sample tagged. Pressure history matters more than surface color.",
+          "terminal": "Draft NL localization pending native pass. MARAUDER NOTE: blue debt is salvage slang for Xenon-Omega-bearing pressure-stable substrate. It is valuable because extreme computation and energy isolation like it, not because it glows.",
+          "audio": "Draft NL localization pending native pass. Blue debt is what people call it after the invoice arrives.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blue debt is the field slang for Xenon-Omega-bearing pressure substrate. The term keeps the material grounded in contracts, danger and Deep Reach's return motive.",
+          "external_site": "Draft NL localization pending native pass. Xenon-Omega, called blue debt by salvagers, ties HECTON-8's resources to Atlas, Deep Reach and the cost of returning to a drowned claim.",
+          "field_note": "Draft NL localization pending native pass. Use for resource glossary and Deep Reach motive articles."
+        }
+      }
+    },
+    {
+      "packet_id": "P355_PRESSURE_GLASS_AND_SEALANT_GUIDE",
+      "release_set_id": "RS071_HECTON8_GEOLOGY_RESOURCE_FIELDGUIDE",
+      "article_id": "applied_lore.pressure_glass_and_sealant_guide",
+      "title_key": "applied_lore.pressure_glass_and_sealant_guide.title",
+      "unlock": {
+        "primary": "unlock.pressure_glass_and_sealant_guide",
+        "poi_tags": [
+          "poi.pressure_glass_fracture",
+          "poi.sealant_growth_edge",
+          "poi.atlas_damage_map"
+        ],
+        "biome_tags": [
+          "biome.geology",
+          "biome.atlas"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Glass and Sealant Guide",
+          "scanner": "Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "ru_RU": {
+          "title": "Pressure glass and sealant guide",
+          "scanner": "Pressure glass fracture sealed. Atlas repair chemistry использует тот же damage map, что geology.",
+          "terminal": "FIELD GUIDE: pressure glass хранит old tide stress. Atlas sealant идёт по cracks, потому что cracks уже описывают failure lines.",
+          "audio": "Repair network читает трещины так же, как ты читаешь карту.",
+          "in_game_wiki": "Pressure glass связывает geology и Atlas: сеть идёт по fractures, mineral edges and pressure memories.",
+          "external_site": "Biomechanical horror HECTON-8 основан на repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Для Atlas repair-network explanation и geology crosslink."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft JA localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft JA localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft JA localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft JA localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft JA localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft JA localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft ZH localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft ZH localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft ZH localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft ZH localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft ZH localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft FR localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft FR localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft FR localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft FR localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft FR localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft ES localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft ES localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft ES localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft ES localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft ES localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft DE localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft DE localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft DE localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft DE localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft DE localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft PL localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft PL localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft PL localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft PL localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft PL localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft UK localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft UK localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft UK localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft UK localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft UK localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft UK localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft AR localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft AR localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft AR localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft AR localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft AR localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft ID localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft ID localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft ID localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft ID localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft ID localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft KO localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft KO localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft KO localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft KO localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft KO localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft HE localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft HE localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft HE localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft HE localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft HE localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft PT localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft PT localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft PT localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft PT localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft PT localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft PT localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Pressure Glass and Sealant Guide",
+          "scanner": "Draft NL localization pending native pass. Pressure glass fracture sealed. Atlas repair chemistry uses the same damage map as geology.",
+          "terminal": "Draft NL localization pending native pass. FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.",
+          "audio": "Draft NL localization pending native pass. The repair network reads fractures the way you read a map.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure glass connects geology to Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes.",
+          "external_site": "Draft NL localization pending native pass. The biomechanical horror of HECTON-8 is grounded in repair logic: Atlas follows cracks, cables, biofilms and pressure scars.",
+          "field_note": "Draft NL localization pending native pass. Use for Atlas repair-network explanation and geology crosslink."
+        }
+      }
+    }
+  ]
+}

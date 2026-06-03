@@ -162,18 +162,25 @@ namespace GPUInstancer
                 {
                     foreach (RegisteredPrefabsData rpd in registeredPrefabs)
                     {
+                        if (rpd == null || rpd.prefabPrototype == null)
+                            continue;
+
+                        List<GPUInstancerPrefab> sourcePrefabs = rpd.registeredPrefabs ?? new List<GPUInstancerPrefab>();
                         if (!_registeredPrefabsRuntimeData.ContainsKey(rpd.prefabPrototype))
-                            _registeredPrefabsRuntimeData.Add(rpd.prefabPrototype, rpd.registeredPrefabs);
+                            _registeredPrefabsRuntimeData.Add(rpd.prefabPrototype, sourcePrefabs);
                         else
-                            _registeredPrefabsRuntimeData[rpd.prefabPrototype].AddRange(rpd.registeredPrefabs);
+                            _registeredPrefabsRuntimeData[rpd.prefabPrototype].AddRange(sourcePrefabs);
                     }
                     registeredPrefabs.Clear();
                 }
 
-                if (_registeredPrefabsRuntimeData.Count != prototypeList.Count)
+                if (prototypeList != null && _registeredPrefabsRuntimeData.Count != prototypeList.Count)
                 {
                     foreach (GPUInstancerPrototype p in prototypeList)
                     {
+                        if (p == null)
+                            continue;
+
                         if (!_registeredPrefabsRuntimeData.ContainsKey(p))
                             _registeredPrefabsRuntimeData.Add(p, new List<GPUInstancerPrefab>());
                     }

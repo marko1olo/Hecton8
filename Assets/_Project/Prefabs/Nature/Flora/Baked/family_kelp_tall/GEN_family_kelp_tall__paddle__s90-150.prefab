@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2321981628782460316}
   - component: {fileID: 2665958853045462461}
+  - component: {fileID: 6708659798073188013}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__paddle__s90-150
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4086552252229417448}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.61389935, y: 4.197637, z: 0.28128165}
-  m_Size: 8.395274
+  m_LocalReferencePoint: {x: -0.6342023, y: 4.37159, z: 0.30772132}
+  m_Size: 8.74318
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 6293568287086376931}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &6708659798073188013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086552252229417448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 2a52478b677a2124b8f321ee735b151a, type: 2}
 --- !u!1 &6911081830973779315
 GameObject:
   m_ObjectHideFlags: 0

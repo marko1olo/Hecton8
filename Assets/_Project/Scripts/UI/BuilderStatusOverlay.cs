@@ -42,24 +42,24 @@ namespace Hecton8.UI
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
+        [Header("Authored UI")]
+        [SerializeField] private RectTransform _self;
+        [SerializeField] private CanvasGroup _canvasGroup;
+        [SerializeField] private Image _panel;
+        [SerializeField] private Image _headerRule;
+        [SerializeField] private TextMeshProUGUI _title;
+        [SerializeField] private TextMeshProUGUI _moduleName;
+        [SerializeField] private TextMeshProUGUI _indexLine;
+        [SerializeField] private TextMeshProUGUI _queueLine;
+        [SerializeField] private TextMeshProUGUI _placementLine;
+        [SerializeField] private TextMeshProUGUI _resourceLine;
+        [SerializeField] private TextMeshProUGUI _powerLine;
+        [SerializeField] private TextMeshProUGUI _costLine;
+        [SerializeField] private TextMeshProUGUI _hintLine;
+
         [Header("Layout")]
-        [SerializeField] private Vector2 anchoredOffset = new Vector2(-198f, -168f);
-        [SerializeField] private Vector2 panelSize = new Vector2(308f, 198f);
         [SerializeField] private float refreshInterval = 0.1f;
 
-        private RectTransform _self;
-        private CanvasGroup _canvasGroup;
-        private Image _panel;
-        private Image _headerRule;
-        private TextMeshProUGUI _title;
-        private TextMeshProUGUI _moduleName;
-        private TextMeshProUGUI _indexLine;
-        private TextMeshProUGUI _queueLine;
-        private TextMeshProUGUI _placementLine;
-        private TextMeshProUGUI _resourceLine;
-        private TextMeshProUGUI _powerLine;
-        private TextMeshProUGUI _costLine;
-        private TextMeshProUGUI _hintLine;
         private float _refreshTimer;
         private float _autoResolveRetryTimer;
         private int _lastStaticStateHash;
@@ -92,6 +92,7 @@ namespace Hecton8.UI
         private uint _lastToolLoadoutSignalSequence;
         private int _inventoryRevision;
         private bool _lastVisibleState;
+        private bool _uiBound;
 
         private void OnEnable()
         {
@@ -374,87 +375,85 @@ namespace Hecton8.UI
 
         private void EnsureBuilt()
         {
-            if (_self != null)
+            if (_uiBound)
                 return;
 
-            _self = transform as RectTransform;
+            _self = ResolveAuthoredRoot(_self);
             if (_self == null)
-            {
-                RectTransform parentRect = transform.parent as RectTransform;
-                if (parentRect == null)
-                    return;
+                return;
 
-                Transform existingRoot = transform.Find("BuilderStatusOverlay_Root");
-                if (existingRoot != null)
-                {
-                    _self = existingRoot as RectTransform;
-                }
-                else
-                {
-                    _self = CreateRect("BuilderStatusOverlay_Root", parentRect);
-                }
+            if (_canvasGroup == null &&
+                !_self.TryGetComponent(out _canvasGroup))
+            {
+                return;
             }
 
-            _self.anchorMin = new Vector2(1f, 1f);
-            _self.anchorMax = new Vector2(1f, 1f);
-            _self.pivot = new Vector2(1f, 1f);
-            _self.anchoredPosition = anchoredOffset;
-            _self.sizeDelta = panelSize;
-
-            if (!_self.gameObject.TryGetComponent(out _canvasGroup))
-                _canvasGroup = _self.gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
 
-            if (!_self.gameObject.TryGetComponent(out _panel))
-                _panel = _self.gameObject.AddComponent<Image>();
+            if (_panel == null &&
+                !_self.TryGetComponent(out _panel))
+            {
+                _canvasGroup.alpha = 0f;
+                return;
+            }
+
             _panel.color = PanelColor;
             _panel.raycastTarget = false;
 
-            RectTransform headerRule = CreateRect("HeaderRule", _self);
-            headerRule.anchorMin = new Vector2(0f, 1f);
-            headerRule.anchorMax = new Vector2(1f, 1f);
-            headerRule.pivot = new Vector2(0.5f, 1f);
-            headerRule.anchoredPosition = new Vector2(0f, -28f);
-            headerRule.sizeDelta = new Vector2(-20f, 1f);
-            _headerRule = headerRule.gameObject.AddComponent<Image>();
+            _headerRule = ResolveChildImage(_self, _headerRule, "HeaderRule");
+            if (_headerRule == null)
+            {
+                _canvasGroup.alpha = 0f;
+                return;
+            }
+
             _headerRule.color = RuleColor;
             _headerRule.raycastTarget = false;
 
-            _title = CreateText("Title", _self, labelFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left);
-            Anchor(_title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -10f), new Vector2(-14f, 18f));
+            _title = ResolveChildText(_self, _title, "Title");
+            _moduleName = ResolveChildText(_self, _moduleName, "ModuleName");
+            _indexLine = ResolveChildText(_self, _indexLine, "IndexLine");
+            _queueLine = ResolveChildText(_self, _queueLine, "QueueLine");
+            _placementLine = ResolveChildText(_self, _placementLine, "PlacementLine");
+            _resourceLine = ResolveChildText(_self, _resourceLine, "ResourceLine");
+            _powerLine = ResolveChildText(_self, _powerLine, "PowerLine");
+            _costLine = ResolveChildText(_self, _costLine, "CostLine");
+            _hintLine = ResolveChildText(_self, _hintLine, "HintLine");
+
+            if (_title == null ||
+                _moduleName == null ||
+                _indexLine == null ||
+                _queueLine == null ||
+                _placementLine == null ||
+                _resourceLine == null ||
+                _powerLine == null ||
+                _costLine == null ||
+                _hintLine == null)
+            {
+                _canvasGroup.alpha = 0f;
+                return;
+            }
+
+            ConfigureText(_title, labelFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
             int titleLength = CopyToBuffer(_indexBuffer, TitleChars);
             SetBufferText(_title, _indexBuffer, titleLength);
 
-            _moduleName = CreateText("ModuleName", _self, labelFont, 18f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
-            Anchor(_moduleName.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -40f), new Vector2(-14f, 24f));
+            ConfigureText(_moduleName, labelFont, 18f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
+            ConfigureText(_indexLine, numericFont, 12f, FontStyles.Bold, DimColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
+            ConfigureText(_queueLine, labelFont, 10f, FontStyles.Bold, DimColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
+            ConfigureText(_placementLine, numericFont, 13f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
+            ConfigureText(_resourceLine, numericFont, 13f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
+            ConfigureText(_powerLine, numericFont, 12f, FontStyles.Bold, DimColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
+            ConfigureText(_costLine, labelFont, 11f, FontStyles.Normal, DimColor, TextAlignmentOptions.TopLeft, TextWrappingModes.Normal);
+            ConfigureText(_hintLine, numericFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left, TextWrappingModes.NoWrap);
 
-            _indexLine = CreateText("IndexLine", _self, numericFont, 12f, FontStyles.Bold, DimColor, TextAlignmentOptions.Left);
-            Anchor(_indexLine.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -64f), new Vector2(-14f, 18f));
-
-            _queueLine = CreateText("QueueLine", _self, labelFont, 10f, FontStyles.Bold, DimColor, TextAlignmentOptions.Left);
-            Anchor(_queueLine.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -82f), new Vector2(-14f, 16f));
-
-            _placementLine = CreateText("PlacementLine", _self, numericFont, 13f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
-            Anchor(_placementLine.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -104f), new Vector2(-14f, 18f));
-
-            _resourceLine = CreateText("ResourceLine", _self, numericFont, 13f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
-            Anchor(_resourceLine.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -126f), new Vector2(-14f, 18f));
-
-            _powerLine = CreateText("PowerLine", _self, numericFont, 12f, FontStyles.Bold, DimColor, TextAlignmentOptions.Left);
-            Anchor(_powerLine.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -148f), new Vector2(-14f, 18f));
-
-            _costLine = CreateText("CostLine", _self, labelFont, 11f, FontStyles.Normal, DimColor, TextAlignmentOptions.TopLeft);
-            _costLine.textWrappingMode = TextWrappingModes.Normal;
-            Anchor(_costLine.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(14f, 36f), new Vector2(-14f, 58f));
-
-            _hintLine = CreateText("HintLine", _self, numericFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left);
-            Anchor(_hintLine.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(14f, 12f), new Vector2(-14f, 18f));
+            _uiBound = true;
         }
 
         private void RefreshState()
         {
-            if (_self == null || playerBuilder == null)
+            if (!_uiBound || _self == null || playerBuilder == null)
                 return;
 
             bool shouldShow = playerBuilder.IsEquipped && playerBuilder.ActiveBuildable != null;
@@ -592,7 +591,7 @@ namespace Hecton8.UI
 
         private void EvaluateTickRegistration()
         {
-            if (!isActiveAndEnabled)
+            if (!isActiveAndEnabled || !_uiBound)
             {
                 UnregisterTick();
                 return;
@@ -799,36 +798,55 @@ namespace Hecton8.UI
             return -1;
         }
 
-        private static RectTransform CreateRect(string name, RectTransform parent)
+        private RectTransform ResolveAuthoredRoot(RectTransform configuredRoot)
         {
-            GameObject go = new GameObject(name, typeof(RectTransform));
-            go.layer = parent.gameObject.layer;
-            go.TryGetComponent(out RectTransform rect);
-            rect.SetParent(parent, false);
-            return rect;
+            if (configuredRoot != null)
+                return configuredRoot;
+
+            RectTransform localRoot = transform as RectTransform;
+            if (localRoot != null)
+                return localRoot;
+
+            Transform child = transform.Find("BuilderStatusOverlay_Root");
+            return child as RectTransform;
         }
 
-        private static void Anchor(RectTransform rect, Vector2 min, Vector2 max, Vector2 pos, Vector2 size)
+        private static Image ResolveChildImage(RectTransform root, Image configuredImage, string childName)
         {
-            rect.anchorMin = min;
-            rect.anchorMax = max;
-            rect.pivot = new Vector2(min.x, max.y);
-            rect.anchoredPosition = pos;
-            rect.sizeDelta = size;
+            if (configuredImage != null)
+                return configuredImage;
+
+            Transform child = root != null ? root.Find(childName) : null;
+            if (child == null)
+                return null;
+
+            return child.TryGetComponent(out Image image) ? image : null;
         }
 
-        private static TextMeshProUGUI CreateText(string name, RectTransform parent, TMP_FontAsset font, float size, FontStyles style, Color color, TextAlignmentOptions alignment)
+        private static TextMeshProUGUI ResolveChildText(RectTransform root, TextMeshProUGUI configuredText, string childName)
         {
-            RectTransform rect = CreateRect(name, parent);
-            TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            if (configuredText != null)
+                return configuredText;
+
+            Transform child = root != null ? root.Find(childName) : null;
+            if (child == null)
+                return null;
+
+            return child.TryGetComponent(out TextMeshProUGUI text) ? text : null;
+        }
+
+        private static void ConfigureText(TextMeshProUGUI text, TMP_FontAsset font, float size, FontStyles style, Color color, TextAlignmentOptions alignment, TextWrappingModes wrappingMode)
+        {
+            if (text == null)
+                return;
+
             text.font = font;
             text.fontSize = size;
             text.fontStyle = style;
             text.color = color;
             text.alignment = alignment;
             text.raycastTarget = false;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            return text;
+            text.textWrappingMode = wrappingMode;
         }
 
         private static void SetNumericText(TextMeshProUGUI label, char[] destination, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)

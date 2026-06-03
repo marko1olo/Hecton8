@@ -1,10 +1,17 @@
 ---
 packet_id: P130_ATLAS_PUBLIC_MEMORY_AFTER_2147
+release_set_id: RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION
 article_id: atlas.public_memory_after_2147
+unlock_id: unlock.atlas_public_memory_after_2147
+poi_tags: poi.cleaned_atlas_summary;poi.failed_automation_clip
+biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Публичная память об Atlas после 2147

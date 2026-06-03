@@ -55,7 +55,7 @@ namespace Hecton8.Quest
     public static class QuestEvents
     {
         private const int ListenerCapacity = 16;
-        private const int PendingEventCapacity = 16;
+        private const int PendingEventCapacity = QuestDagRuntimeConstants.DefaultQuestStateCapacity;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _QueueOverflowWarningHash = unchecked((uint)LocHash.Compute("QuestEvents.QueueOverflow"));
         private static readonly uint _DuplicateListenerWarningHash = unchecked((uint)LocHash.Compute("QuestEvents.DuplicateListener"));
@@ -344,7 +344,7 @@ namespace Hecton8.Quest
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[16] — deferred quest event lane flushed by SystemDispatcher LateUpdate — owner: QuestEvents
+                _pendingEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[64] - deferred quest event lane flushed by SystemDispatcher LateUpdate - owner: QuestEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -356,7 +356,7 @@ namespace Hecton8.Quest
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[16] — next-frame quest event lane prevents same-frame reentrant dispatch — owner: QuestEvents
+                _nextFrameEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[64] - next-frame quest event lane prevents same-frame reentrant dispatch - owner: QuestEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

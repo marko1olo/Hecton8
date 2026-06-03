@@ -3,6 +3,24 @@
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: main menu, boot flow, pause, settings, save/load, death/retry, confirmation dialogs, frontend route screens, and non-HUD menu states.
 
+## 0. Prime Menu Law
+
+Menus are product surfaces. They must make HECTON-8 feel playable, physical, premium, and operational before the first input is accepted. They are not landing pages, static wallpapers, template panels, or generic sci-fi launchers.
+
+A menu is accepted only if a player can read the main action quickly, understand the current state, trust save/settings/accessibility behavior, and feel the machine carrying the interface. Beauty without operation is rejected. Operation without HECTON-8 identity is rejected.
+
+## 0A. Truth Ownership
+
+Menu screens present boot, save, settings, profile, archive, warning, build, route, and accessibility state. They do not own save truth, settings semantics, input routing, localization data, build identity, or gameplay state.
+
+Required:
+
+- save/load data comes from persistence owners;
+- settings write through settings owners;
+- input navigation follows input/UI owners;
+- localized text uses stable IDs and fallback policy;
+- menu cameras/backgrounds cannot imply gameplay, platform, demo, or build readiness that is not proven elsewhere.
+
 ## 1. Menu Identity
 
 HECTON-8 menus must feel like operational consoles, black-box systems, damaged boot sequences, cockpit panels, dock terminals, suit firmware, or archived mission interfaces. They must not feel like a website, generic game launcher, or empty sci-fi wallpaper.
@@ -162,6 +180,20 @@ Reject if:
 - color roles do not match `ui.md`;
 - interactive UI violates diegetic/performance rules without approved bridge reason;
 - no screenshot exists for compact and normal layouts.
+
+## 12A. Proof Artifacts
+
+Menu work must provide:
+
+- compact screenshot and normal/high-tier screenshot;
+- primary-command 3-second read statement;
+- save/load state proof if archive screens changed;
+- settings schema/owner/range/default proof if settings changed;
+- input navigation proof for keyboard/gamepad/controller;
+- localization expansion and 720p text-fit capture or risk note;
+- accessibility route proof for subtitle/UI scale/flashing/hold alternatives where touched;
+- profiler/GC proof when runtime menu update paths, render textures, cameras, or transitions changed;
+- explicit truth label for background/capture material: gameplay, engine scene, mockup, profile art, or concept.
 
 ## 13. Acceptance Sentence
 

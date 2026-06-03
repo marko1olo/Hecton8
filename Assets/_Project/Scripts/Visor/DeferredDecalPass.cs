@@ -7,9 +7,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine.Serialization;
 
 namespace Hecton8.Visor
 {
@@ -18,13 +16,12 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class DeferredDecalPass : ScriptableRendererFeature, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private const string DeferredDecalShaderPath = "Assets/_Project/Art/Shaders/Hecton_VisorTrauma.shader";
-
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Fullscreen visor trauma shader. Must reconstruct world position from depth and project the global visor trauma buffer.")]
-            public Shader deferredDecalShader = null;
+            [Tooltip("Authored fullscreen visor trauma material. Must reconstruct world position from depth and project the global visor trauma buffer.")]
+            [FormerlySerializedAs("deferredDecalShader")]
+            public Material material = null;
 
             [Tooltip("Texture2DArray atlas sampled by the visor trauma pass. Null uses procedural crack/blood fallback.")]
             public Texture2DArray decalAtlas = null;
@@ -447,7 +444,6 @@ namespace Hecton8.Visor
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private DeferredDecalCompositePass _pass;
-        private Material _material;
         private Camera _pendingVisualSyncCamera;
         private float _pendingVisualSyncDeltaTime;
         private bool _hasPendingVisualSyncCamera;
@@ -456,23 +452,17 @@ namespace Hecton8.Visor
 
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.deferredDecalShader == null)
-                settings.deferredDecalShader = AssetDatabase.LoadAssetAtPath<Shader>(DeferredDecalShaderPath);
-#endif
-
             _pass ??= new DeferredDecalCompositePass();
             TryRegisterHotSwapListener();
             if (Application.isPlaying)
                 DynamicDecalVaultRuntime.TryInitializeColdStorage();
-            RecreateMaterial();
             _pass.PrepareDecalAtlasHandleCold(settings);
             TryRegisterLateFrame();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (settings == null || settings.deferredDecalShader == null || _material == null || _pass == null)
+            if (settings == null || settings.material == null || _pass == null)
                 return;
 
             CameraData cameraData = renderingData.cameraData;
@@ -482,7 +472,7 @@ namespace Hecton8.Visor
             if (!DynamicDecalVaultRuntime.IsColdStorageReady())
                 return;
 
-            _pass.Setup(settings, _material);
+            _pass.Setup(settings, settings.material);
             _pass.PublishStagedUpload();
             StageVisualSyncContext(cameraData.camera);
             if (!_pass.HasReadableFrame)
@@ -495,13 +485,13 @@ namespace Hecton8.Visor
         {
             _pass?.DrainPendingVisualSync();
 
-            if (!_hasPendingVisualSyncCamera || _pass == null || settings == null || _material == null)
+            if (!_hasPendingVisualSyncCamera || _pass == null || settings == null || settings.material == null)
                 return;
 
             if (!DynamicDecalVaultRuntime.IsColdStorageReady())
                 return;
 
-            _pass.Setup(settings, _material);
+            _pass.Setup(settings, settings.material);
             _pass.PrepareFrame(_pendingVisualSyncCamera, _pendingVisualSyncDeltaTime);
             _hasPendingVisualSyncCamera = false;
         }
@@ -512,11 +502,6 @@ namespace Hecton8.Visor
             TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             _pass?.Dispose();
-            if (_material != null)
-            {
-                CoreUtils.Destroy(_material);
-                _material = null;
-            }
         }
 
         private void StageVisualSyncContext(Camera camera)
@@ -586,28 +571,6 @@ namespace Hecton8.Visor
                 _registeredLateFrame = false;
                 if (currentService != null && isActive)
                     TryRegisterLateFrame();
-            }
-        }
-
-        private void RecreateMaterial()
-        {
-            if (settings == null || settings.deferredDecalShader == null)
-            {
-                if (_material != null)
-                {
-                    CoreUtils.Destroy(_material);
-                    _material = null;
-                }
-
-                return;
-            }
-
-            if (_material == null || _material.shader != settings.deferredDecalShader)
-            {
-                if (_material != null)
-                    CoreUtils.Destroy(_material);
-
-                _material = CoreUtils.CreateEngineMaterial(settings.deferredDecalShader);
             }
         }
     }

@@ -478,14 +478,6 @@ namespace Hecton8.Visor
             Shader stencilWriteShader = settings != null ? settings.stencilWriteShader : null;
             Shader restoreShader = settings != null ? settings.restoreShader : null;
             Shader clearShader = settings != null ? settings.clearShader : null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (stencilWriteShader == null)
-                stencilWriteShader = Shader.Find(StencilWriteShaderName);
-            if (restoreShader == null)
-                restoreShader = Shader.Find(RestoreShaderName);
-            if (clearShader == null)
-                clearShader = Shader.Find(ClearShaderName);
-#endif
 
             _preUnderwaterCopyPass ??= new PreUnderwaterColorCopyPass();
             _restorePass ??= new DryRestorePass();

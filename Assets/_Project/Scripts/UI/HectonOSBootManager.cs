@@ -38,10 +38,9 @@ namespace Hecton8.UI
         private const float FadeSharpness = 5.5f;
         private const float FatalPressureTrigger01 = 0.18f;
         private const float HiddenAlphaCutoff = 0.01f;
-        private const float OverlayWidth = 920f;
-        private const float OverlayHeight = 312f;
         private const int BootPayloadCharCapacity = 1024;
         private const string OverlayName = "HectonOSBootManagerOverlay";
+        private const string ConsoleTextName = "ConsoleText";
         private const string DefaultBootHeader = "HECTON-OS // BIOS HANDOFF";
         private const string DefaultLoadVector = "LOAD HANDOFF";
         private const string DefaultIntrusionVector = "EMI RECOVERY";
@@ -66,9 +65,15 @@ namespace Hecton8.UI
         [Tooltip("Optional TMP font override for the boot log. Leave empty to use the readable fallback resolver.")]
         [SerializeField] private TMP_FontAsset font;
 
-        private RectTransform _overlayRoot;
-        private CanvasGroup _overlayGroup;
-        private TextMeshProUGUI _consoleLabel;
+        [Header("-- Authored Overlay ------------------")]
+        [Tooltip("Pre-authored boot overlay root. If empty, the manager looks for HectonOSBootManagerOverlay under the HUD content root.")]
+        [SerializeField] private RectTransform _overlayRoot;
+        [Tooltip("Pre-authored overlay visibility gate.")]
+        [SerializeField] private CanvasGroup _overlayGroup;
+        [Tooltip("Pre-authored overlay background image. Required to prevent runtime component repair.")]
+        [SerializeField] private Image _overlayBackground;
+        [Tooltip("Pre-authored console TMP label. Must also carry HectonTextNode for font streaming.")]
+        [SerializeField] private TextMeshProUGUI _consoleLabel;
         private bool _uiBuilt;
         private bool _tickRegistered;
         private bool _awaitingLoadBoot;
@@ -381,6 +386,9 @@ namespace Hecton8.UI
 
         private void StartSequence(BootReason reason, string slotName)
         {
+            if (!_uiBuilt && !EnsureUiBuilt())
+                return;
+
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
 
@@ -394,6 +402,7 @@ namespace Hecton8.UI
             _overlayGroup.interactable = false;
             _state = SequenceState.Typing;
             _stateTimer = 0f;
+            RegisterToTickManager();
         }
 
         private int BuildSequenceText(char[] destination, BootReason reason, string slotName)
@@ -605,7 +614,7 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_tickRegistered || !Application.isPlaying)
+            if (_tickRegistered || !Application.isPlaying || !_uiBuilt)
                 return;
 
             _tickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
@@ -680,64 +689,57 @@ namespace Hecton8.UI
                 _consoleLabel.maxVisibleCharacters = int.MaxValue;
         }
 
-        private void EnsureUiBuilt()
+        private bool EnsureUiBuilt()
         {
-            if (_uiBuilt)
-                return;
-
-            Canvas targetCanvas = ResolveTargetCanvas();
-            if (targetCanvas == null)
-                return;
-
-            RectTransform contentRoot = HectonUIScaler.ResolveContentRoot(targetCanvas);
-            if (contentRoot == null)
-                return;
-
-            _overlayRoot = FindExistingChild(contentRoot, OverlayName);
-            if (_overlayRoot == null)
+            if (_uiBuilt &&
+                _overlayRoot != null &&
+                _overlayGroup != null &&
+                _overlayBackground != null &&
+                _consoleLabel != null)
             {
-                GameObject overlayObject = new GameObject(
-                    OverlayName,
-                    typeof(RectTransform),
-                    typeof(CanvasGroup),
-                    typeof(Image));
-                overlayObject.layer = targetCanvas.gameObject.layer;
-
-                overlayObject.TryGetComponent(out _overlayRoot);
-                _overlayRoot.SetParent(contentRoot, false);
+                return true;
             }
 
-            _overlayRoot.anchorMin = new Vector2(0f, 1f);
-            _overlayRoot.anchorMax = new Vector2(0f, 1f);
-            _overlayRoot.pivot = new Vector2(0f, 1f);
-            _overlayRoot.anchoredPosition = new Vector2(48f, -52f);
-            _overlayRoot.sizeDelta = new Vector2(OverlayWidth, OverlayHeight);
-            _overlayRoot.localScale = Vector3.one;
-            _overlayRoot.SetAsLastSibling();
+            _uiBuilt = false;
+
+            if (_overlayRoot == null)
+            {
+                Canvas targetCanvas = ResolveTargetCanvas();
+                if (targetCanvas == null)
+                    return false;
+
+                RectTransform contentRoot = HectonUIScaler.ResolveContentRoot(targetCanvas);
+                if (contentRoot == null)
+                    return false;
+
+                _overlayRoot = FindExistingChild(contentRoot, OverlayName);
+            }
+
+            if (_overlayRoot == null)
+                return false;
 
             if (!_overlayRoot.TryGetComponent(out _overlayGroup))
-                _overlayGroup = _overlayRoot.gameObject.AddComponent<CanvasGroup>();
+                return false;
+
+            if (_overlayBackground == null && !_overlayRoot.TryGetComponent(out _overlayBackground))
+                return false;
+
+            if (_consoleLabel == null)
+            {
+                RectTransform textRoot = FindExistingChild(_overlayRoot, ConsoleTextName);
+                if (textRoot == null || !textRoot.TryGetComponent(out _consoleLabel))
+                    return false;
+            }
+
+            if (!_consoleLabel.TryGetComponent(out HectonTextNode _))
+                return false;
+
             _overlayGroup.alpha = 0f;
             _overlayGroup.blocksRaycasts = false;
             _overlayGroup.interactable = false;
 
-            if (!_overlayRoot.TryGetComponent(out Image background))
-                background = _overlayRoot.gameObject.AddComponent<Image>();
-            background.color = new Color(0.02f, 0.06f, 0.08f, 0.82f);
-            background.raycastTarget = false;
+            _overlayBackground.raycastTarget = false;
 
-            ClearChildren(_overlayRoot);
-
-            GameObject textObject = new GameObject("ConsoleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            textObject.layer = _overlayRoot.gameObject.layer;
-            textObject.TryGetComponent(out RectTransform textRoot);
-            textRoot.SetParent(_overlayRoot, false);
-            textRoot.anchorMin = Vector2.zero;
-            textRoot.anchorMax = Vector2.one;
-            textRoot.offsetMin = new Vector2(24f, 20f);
-            textRoot.offsetMax = new Vector2(-24f, -20f);
-
-            textObject.TryGetComponent(out _consoleLabel);
             if (font != null)
                 _consoleLabel.font = font;
 
@@ -747,9 +749,9 @@ namespace Hecton8.UI
             _consoleLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _consoleLabel.overflowMode = TextOverflowModes.Overflow;
             _consoleLabel.maxVisibleCharacters = int.MaxValue;
-            TMP_TextRegistry.EnsureRegistered(_consoleLabel);
 
             _uiBuilt = true;
+            return true;
         }
 
         private static Canvas ResolveTargetCanvas()
@@ -788,16 +790,5 @@ namespace Hecton8.UI
             return null;
         }
 
-        private static void ClearChildren(Transform parent)
-        {
-            for (int i = parent.childCount - 1; i >= 0; i--)
-            {
-                Transform child = parent.GetChild(i);
-                if (Application.isPlaying)
-                    UnityEngine.Object.Destroy(child.gameObject);
-                else
-                    UnityEngine.Object.DestroyImmediate(child.gameObject);
-            }
-        }
     }
 }

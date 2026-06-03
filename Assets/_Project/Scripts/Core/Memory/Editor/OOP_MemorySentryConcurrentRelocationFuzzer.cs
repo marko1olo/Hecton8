@@ -1179,7 +1179,7 @@ namespace Hecton8.Core.Memory.Editor
             Type type = Type.GetType("Hecton8.Core.HomeostasisBrain, Assembly-CSharp");
             if (type == null)
             {
-                Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
                 for (int i = 0; i < assemblies.Length; i++)
                 {
                     type = assemblies[i].GetType("Hecton8.Core.HomeostasisBrain", throwOnError: false);

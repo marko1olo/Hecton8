@@ -35,6 +35,12 @@ Required:
 
 Flat planes, smooth sinusoidal hills, isolated random rocks, and resource dots are rejected.
 
+## Surface Terrain Beauty Boundary
+
+Surface and photic-zone terrain must read as wet, bright, geologically shaped, and materially detailed. Exposed rock, shore shelves, arches, shallows, and waterline cliffs need strata, erosion, sediment, puddled water, foam contact, mineral breakup, and readable silhouettes. They are not abyss props with the brightness raised.
+
+Dark, oppressive terrain treatment belongs to abyssal depth, caves, interior voids, storms, and temporary route events. Compact may reduce scatter density and texture resolution, but surface terrain still needs the Subnautica-level floor for beauty, clarity, material richness, and scenic composition.
+
 ## Biome And Scatter Rules
 
 Scatter is an ecological/geological consequence:

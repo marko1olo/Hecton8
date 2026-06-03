@@ -1,0 +1,37 @@
+---
+packet_id: P448_ECOLOGY_SCAN_PLACEMENT_BRIEF
+release_set_id: RS090_UNITY_PLACEMENT_SCENE_BRIEFS
+article_id: applied_lore.ecology_scan_placement_brief
+unlock_id: unlock.ecology_scan_placement_brief
+poi_tags: poi.ecology_scan_anchor_batch;poi.fauna_route_grammar_anchor
+biome_tags: biome.deep_ecology;biome.scanner_ui
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Brief расстановки ecology scans
+
+Публичные ecology articles должны показывать beauty under pressure и более позднее вмешательство Atlas repair logic.
+
+## Scanner
+
+Placement brief: fauna/flora scan anchors подходят только когда меняют sound, route safety, resource handling или suspicion на Atlas-contamination.
+
+## Terminal
+
+PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.
+
+## Audio
+
+Scan rule: creature является хорошим content только если меняет следующее действие игрока.
+
+## Field Note
+
+Unity pass: scatter by decision pressure, не by species checklist. Использовать absence, sound и route deformation до full reveal.
+
+<!-- External Site; generated from P448_ECOLOGY_SCAN_PLACEMENT_BRIEF/ru_RU. -->

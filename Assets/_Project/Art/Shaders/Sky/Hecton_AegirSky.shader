@@ -9,14 +9,18 @@ Shader "HECTON/Sky/Hecton_AegirSky"
         _AtmosphereTint ("Atmosphere Tint", Color) = (0.42, 0.73, 1.0, 1.0)
         _RingTint ("Ring Tint", Color) = (0.78, 0.9, 1.0, 1.0)
         _VoidTint ("Void Tint", Color) = (0.001, 0.0014, 0.0022, 1.0)
+        _ScreenAegirCenterRadius ("Screen Aegir Center Radius", Vector) = (0.60, 0.56, 0.155, 0.0)
+        _ScreenAegirOpacity ("Screen Aegir Opacity", Range(0.0, 1.0)) = 0.88
+        _RingOpacity ("Ring Opacity", Range(0.0, 1.0)) = 0.18
+        _DiscTextureWeight ("Disc Texture Weight", Range(0.0, 1.0)) = 0.82
     }
 
     SubShader
     {
         Tags
         {
-            "Queue" = "Background"
-            "RenderType" = "Background"
+            "Queue" = "Transparent-40"
+            "RenderType" = "Transparent"
             "PreviewType" = "Skybox"
             "RenderPipeline" = "UniversalPipeline"
         }
@@ -24,6 +28,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
         Cull Off
         ZWrite Off
         ZTest LEqual
+        Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
         {
@@ -47,6 +52,11 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float _StarDensity;
                 float _StarIntensity;
                 float _pad0;
+                float4 _ScreenAegirCenterRadius;
+                float _ScreenAegirOpacity;
+                float _RingOpacity;
+                float _DiscTextureWeight;
+                float _pad1;
             CBUFFER_END
 
             float4 _H8AegirSunDirection;
@@ -205,33 +215,36 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 return star * _StarIntensity * lerp(0.55, 1.35, quality);
             }
 
-            float3 DrawScreenSpaceAegir(float3 background, float4 positionCS, float quality, float flowSpeed)
+            float3 DrawScreenSpaceAegir(float3 background, float4 positionCS, float quality, float flowSpeed, inout float alpha)
             {
                 float2 screenSize = max(_ScreenParams.xy, float2(1.0, 1.0));
                 float2 screenUv = positionCS.xy / screenSize;
                 float aspect = screenSize.x / screenSize.y;
-                float2 anchor = float2(0.68, 0.58);
+                float2 anchor = _ScreenAegirCenterRadius.xy;
                 float2 delta = screenUv - anchor;
                 delta.x *= aspect;
 
-                float radius = lerp(0.215, 0.285, saturate(quality));
+                float radius = max(0.035, _ScreenAegirCenterRadius.z * lerp(0.94, 1.06, saturate(quality)));
                 float dist = length(delta);
-                float discMask = 1.0 - smoothstep(radius - 0.008, radius + 0.012, dist);
+                float discMask = 1.0 - smoothstep(radius - 0.004, radius + 0.014, dist);
 
                 float2 ringDelta = delta;
-                ringDelta.y *= 4.35;
+                ringDelta.y *= lerp(5.80, 4.70, quality);
                 float ringDistance = length(ringDelta);
-                float ringInner = radius * 1.05;
-                float ringOuter = radius * lerp(1.62, 1.92, quality);
+                float ringInner = radius * 1.10;
+                float ringOuter = radius * lerp(1.72, 2.16, quality);
                 float ringMask =
-                    smoothstep(ringInner - 0.012, ringInner + 0.010, ringDistance) *
-                    (1.0 - smoothstep(ringOuter - 0.012, ringOuter + 0.018, ringDistance));
-                float ringLane = 0.68 + Hash11(floor(ringDistance * 92.0)) * 0.32;
-                float ringCut = step(0.12, frac(ringDistance * 47.0 + delta.x * 3.0));
-                float ringAlpha = ringMask * ringCut * lerp(0.22, 0.52, quality);
-                float ringBackOcclusion = lerp(1.0 - discMask * 0.72, 1.0, step(0.0, delta.y));
-                float3 ringColor = _RingTint.rgb * ringLane * lerp(0.42, 0.92, quality);
+                    smoothstep(ringInner - 0.018, ringInner + 0.020, ringDistance) *
+                    (1.0 - smoothstep(ringOuter - 0.020, ringOuter + 0.035, ringDistance));
+                float ringLaneA = Hash11(floor(ringDistance * 31.0 + delta.x * 6.0));
+                float ringLaneB = Hash11(floor(ringDistance * 57.0 - delta.x * 4.0));
+                float dustyLane = lerp(0.46, 1.0, ringLaneA) * lerp(0.58, 1.0, ringLaneB);
+                float broadBand = 0.64 + 0.36 * sin(ringDistance * 38.0 + delta.x * 2.1);
+                float ringAlpha = ringMask * dustyLane * broadBand * _RingOpacity * lerp(0.58, 1.0, quality);
+                float ringBackOcclusion = lerp(1.0 - discMask * 0.86, 1.0, smoothstep(-0.015, 0.025, delta.y));
+                float3 ringColor = _RingTint.rgb * lerp(0.24, 0.72, dustyLane) * lerp(0.52, 0.95, quality);
                 background = lerp(background, ringColor, ringAlpha * ringBackOcclusion);
+                alpha = max(alpha, ringAlpha * ringBackOcclusion);
 
                 float radiusSafe = max(radius, 0.0001);
                 float2 normalXY = delta / radiusSafe;
@@ -240,32 +253,43 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float3 lightDir = SafeUnit(float3(-0.42, 0.24, 0.88));
                 float light = saturate(dot(normal, lightDir) * 0.86 + 0.38);
                 float limb = saturate(1.0 - normalZ);
-                float2 bandUv = float2(
-                    frac(normalXY.y * 0.72 + 0.5 + _Time.y * flowSpeed),
-                    saturate(normalXY.x * 0.5 + 0.5));
+                float latitude01 = saturate(normalXY.y * 0.5 + 0.5);
+                float longitude01 = frac(normalXY.x * 0.46 + 0.5);
+                float latShear = sin(latitude01 * 18.0 + normalXY.x * 3.2) * 0.014
+                               + sin(latitude01 * 43.0 - normalXY.x * 7.0) * 0.006;
+                float2 bandUv = float2(frac(longitude01 + latShear + _Time.y * flowSpeed), latitude01);
+                float2 detailUv = float2(frac(longitude01 * 1.73 - latShear * 1.4 - _Time.y * flowSpeed * 0.42),
+                                         saturate(latitude01 * 0.94 + 0.03));
                 float3 bands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, bandUv).rgb;
-                float bandBreakup = 0.76 + Hash11(floor((normalXY.y + 1.0) * 74.0)) * 0.24;
+                float3 detailBands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, detailUv).rgb;
+                float textureLuma = saturate(dot(bands, float3(0.3333, 0.3333, 0.3333)) * 2.10);
+                float detailLuma = saturate(dot(detailBands, float3(0.3333, 0.3333, 0.3333)) * 1.65);
+                float cloudTexture = saturate(textureLuma * 0.72 + detailLuma * 0.34);
+                float bandBreakup = 0.78 + Hash11(floor((latitude01 + normalXY.x * 0.17) * 89.0)) * 0.22;
                 float bandPhase = normalXY.y * lerp(11.0, 19.0, quality) + _Time.y * flowSpeed * 1.7;
                 float wideBand = 0.5 + 0.5 * sin(bandPhase);
                 float stormBand = 0.5 + 0.5 * sin(bandPhase * 2.37 + normalXY.x * 5.0);
                 float shearBand = 0.5 + 0.5 * sin(bandPhase * 0.71 + normalXY.x * 10.5 + stormBand * 1.7);
-                float3 coldGas = float3(0.045, 0.125, 0.19);
-                float3 tealBand = float3(0.10, 0.42, 0.56);
-                float3 iceBand = float3(0.44, 0.82, 0.92);
-                float3 stormCopper = float3(0.34, 0.23, 0.12);
-                float3 proceduralGas = lerp(tealBand, iceBand, wideBand);
-                proceduralGas = lerp(proceduralGas, stormCopper, stormBand * 0.18 * saturate(quality + 0.25));
-                proceduralGas = lerp(proceduralGas, proceduralGas * float3(1.12, 0.97, 0.76), shearBand * 0.10);
-                proceduralGas *= lerp(0.92, 1.10, saturate(dot(bands, float3(0.3333, 0.3333, 0.3333))));
+                float3 coldGas = float3(0.020, 0.070, 0.082);
+                float3 deepTeal = float3(0.050, 0.220, 0.270);
+                float3 iceCloud = float3(0.255, 0.690, 0.760);
+                float3 stormCopper = float3(0.300, 0.185, 0.090);
+                float3 textureGas = lerp(deepTeal, iceCloud, cloudTexture);
+                float3 proceduralGas = lerp(deepTeal, iceCloud, wideBand * 0.26 + cloudTexture * 0.74);
+                proceduralGas = lerp(proceduralGas, textureGas, _DiscTextureWeight);
+                proceduralGas = lerp(proceduralGas, stormCopper, stormBand * cloudTexture * 0.15 * saturate(quality + 0.25));
+                proceduralGas = lerp(proceduralGas, proceduralGas * float3(1.10, 0.99, 0.82), shearBand * cloudTexture * 0.12);
                 proceduralGas *= _AegirExposure * bandBreakup;
                 float nightFill = saturate(0.28 + limb * 0.45);
                 float3 gasColor = lerp(coldGas * nightFill, proceduralGas, light);
                 gasColor += _AtmosphereTint.rgb * limb * limb * lerp(0.44, 0.92, quality);
                 gasColor += float3(0.03, 0.18, 0.22) * saturate(1.0 - light) * (0.35 + limb * 0.5);
-                gasColor *= 1.0 - smoothstep(0.64, 0.96, abs(normalXY.y)) * 0.22;
+                gasColor *= 1.0 - smoothstep(0.66, 0.98, abs(normalXY.y)) * 0.30;
                 gasColor *= 1.0 - smoothstep(0.0, 0.72, max(-normalXY.x * 0.38 + normalXY.y * 0.22, 0.0)) * 0.10;
 
-                return lerp(background, gasColor, discMask);
+                float discAlpha = discMask * _ScreenAegirOpacity;
+                alpha = max(alpha, discAlpha);
+                return lerp(background, gasColor, discAlpha);
             }
 
             float3 DrawAegir(float3 rayDir, float3 center, float3 lightDir, float3 ringNormal, float quality, float flowSpeed, float ringInnerSq, float ringOuterSq, float shadowStrength, float3 hitPoint, float3 hitNormal)
@@ -311,7 +335,9 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float shadowStrength = saturate(_H8AegirOrbitScalars.y);
                 float flowSpeed = max(_H8AegirOrbitScalars.z, 0.0);
 
-                float3 color = _VoidTint.rgb + StarField(rayDir, quality);
+                float3 starColor = StarField(rayDir, quality);
+                float3 color = _VoidTint.rgb + starColor;
+                float alpha = saturate(dot(starColor, float3(0.3333, 0.3333, 0.3333)) * 1.15);
 
                 float ringT;
                 float3 ringLocal;
@@ -337,14 +363,20 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 bool planetHit = RaySphere(rayDir, center, radius, planetT, planetPoint, planetNormal);
 
                 if (ringMask > 0.0 && (!planetHit || ringT < planetT))
+                {
                     color = lerp(color, ringColor, ringAlpha);
+                    alpha = max(alpha, ringAlpha);
+                }
 
                 if (planetHit)
+                {
                     color = DrawAegir(rayDir, center, lightDir, ringNormal, quality, flowSpeed, ringInnerSq, ringOuterSq, shadowStrength, planetPoint, planetNormal);
+                    alpha = max(alpha, 1.0);
+                }
 
-                color = DrawScreenSpaceAegir(color, input.positionCS, quality, flowSpeed);
+                color = DrawScreenSpaceAegir(color, input.positionCS, quality, flowSpeed, alpha);
 
-                return float4(color, 1.0);
+                return float4(color, saturate(alpha));
             }
             ENDHLSL
         }

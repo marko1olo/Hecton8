@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6057033099105394206}
   - component: {fileID: 7377880840096006684}
+  - component: {fileID: 3999903373207315687}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__rosette
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2934898087572560932}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.0461787, y: 1.8814068, z: -0.06360102}
-  m_Size: 3.7628136
+  m_LocalReferencePoint: {x: -0.03734827, y: 1.9275513, z: -0.052701116}
+  m_Size: 3.8551025
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 7717366150874338016}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &3999903373207315687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2934898087572560932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 503c439c078aa9c4192cbd00ec7e2793, type: 2}
 --- !u!1 &7963655804693229602
 GameObject:
   m_ObjectHideFlags: 0

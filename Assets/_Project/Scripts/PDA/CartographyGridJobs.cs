@@ -19,6 +19,8 @@ namespace Hecton8.Cartography
         public const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         public const int VoxelSizeMeters = 10;
         public const int MacroCellSizeMeters = VoxelSizeMeters;
+        public const double InverseMacroCellSizeMetersDouble = 0.1d;
+        public const float InverseHash24Max = 0.000000059604648f;
         public const int AxisBits = 7;
         public const int AxisLength = 1 << AxisBits;
         public const int OriginOffset = AxisLength >> 1;
@@ -1413,6 +1415,22 @@ namespace Hecton8.Cartography
     public static class CartographyGridMath
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double FastLengthFromSq(double lengthSq)
+        {
+            double sanitized = math.select(0.0d, lengthSq, math.isfinite(lengthSq));
+            double estimate = sanitized * math.rsqrt(math.max(sanitized, 0.00000001d));
+            return math.select(0.0d, estimate, sanitized > 0.0d);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            float sanitized = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float estimate = sanitized * math.rsqrt(math.max(sanitized, 0.000001f));
+            return math.select(0f, estimate, sanitized > 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryEncode(
             in CartographyAup aup,
             out int bitIndex,
@@ -1466,7 +1484,7 @@ namespace Hecton8.Cartography
             if (!math.all(math.isfinite(absoluteAup)))
                 return false;
 
-            double invCell = 1.0 / CartographyGridConstants.MacroCellSizeMeters;
+            double invCell = CartographyGridConstants.InverseMacroCellSizeMetersDouble;
             double3 macro = math.floor(absoluteAup * invCell);
             if (!math.all(math.isfinite(macro)) ||
                 macro.x < int.MinValue ||
@@ -1486,7 +1504,7 @@ namespace Hecton8.Cartography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int3 ToGridIndex(double3 absoluteAup)
         {
-            double invCell = 1.0 / CartographyGridConstants.MacroCellSizeMeters;
+            double invCell = CartographyGridConstants.InverseMacroCellSizeMetersDouble;
             double3 grid = math.floor(absoluteAup * invCell);
             return new int3((int)grid.x, (int)grid.y, (int)grid.z);
         }
@@ -1891,6 +1909,7 @@ namespace Hecton8.Cartography
             }
 
             double cellSize = math.max(1.0, CartographyGridConstants.MacroCellSizeMeters);
+            double invCellSize = math.rcp(cellSize);
             double radiusInput = math.isfinite(RadiusMeters) ? RadiusMeters : CartographyGridConstants.MacroCellSizeMeters;
             double radius = math.clamp(
                 radiusInput,
@@ -1898,7 +1917,7 @@ namespace Hecton8.Cartography
                 CartographyGridConstants.MaxRevealRadiusMeters);
             double softShell = math.max(0.25f, SurfaceThicknessMeters);
             double radiusSq = radius * radius;
-            int radiusCells = math.max(0, (int)math.ceil(radius / cellSize));
+            int radiusCells = math.max(0, (int)math.ceil(radius * invCellSize));
             int changedCount = 0;
             int lastChangedBitIndex = -1;
             ulong* words = (ulong*)NativeArrayUnsafeUtility.GetUnsafePtr(DiscoveredSectors);
@@ -1923,9 +1942,9 @@ namespace Hecton8.Cartography
                         if (!math.isfinite(rowRadiusSq) || rowRadiusSq < 0d)
                             continue;
 
-                        double rowRadius = math.sqrt(rowRadiusSq);
-                        int macroMinX = (int)math.ceil(((centerAbsolute.x - rowRadius) / cellSize) - 0.5d);
-                        int macroMaxX = (int)math.floor(((centerAbsolute.x + rowRadius) / cellSize) - 0.5d);
+                        double rowRadius = CartographyGridMath.FastLengthFromSq(rowRadiusSq);
+                        int macroMinX = (int)math.ceil(((centerAbsolute.x - rowRadius) * invCellSize) - 0.5d);
+                        int macroMaxX = (int)math.floor(((centerAbsolute.x + rowRadius) * invCellSize) - 0.5d);
                         RevealMacroXRange(
                             words,
                             macroMinX,
@@ -1984,8 +2003,8 @@ namespace Hecton8.Cartography
             if (UseSdfSurfaceMask != 0 && SurfaceMaskWords.IsCreated && (uint)wordIndex < (uint)SurfaceMaskWords.Length)
                 return (SurfaceMaskWords[wordIndex] & (1UL << bitOffset)) != 0UL;
 
-            double radialDistance = math.sqrt(math.max(0.0001, math.lengthsq(delta)));
-            return math.abs(radialDistance - math.round(radialDistance / CartographyGridConstants.MacroCellSizeMeters) * CartographyGridConstants.MacroCellSizeMeters) <= shellMeters ||
+            double radialDistance = CartographyGridMath.FastLengthFromSq(math.max(0.0001, math.lengthsq(delta)));
+            return math.abs(radialDistance - math.round(radialDistance * CartographyGridConstants.InverseMacroCellSizeMetersDouble) * CartographyGridConstants.MacroCellSizeMeters) <= shellMeters ||
                    UseSdfSurfaceMask == 0;
         }
 
@@ -2318,7 +2337,7 @@ namespace Hecton8.Cartography
                     rng.NextFloat(-2200f, 2200f));
                 float radius = rng.NextFloat(180f, math.lerp(420f, 980f, qualityCurve));
                 float shell = math.lerp(80f, 24f, qualityCurve);
-                float dist = math.sqrt(math.max(0.0001f, math.lengthsq(position - center)));
+                float dist = CartographyGridMath.FastLengthFromSq(math.max(0.0001f, math.lengthsq(position - center)));
                 bool active = i < clusterCount;
                 bool inside = active & (dist <= radius) & (math.abs(dist - radius) <= shell);
                 hit |= math.select(0u, 1u, inside);
@@ -2426,7 +2445,7 @@ namespace Hecton8.Cartography
             uint hash = (uint)voxelIndex * 747796405u + 2891336453u;
             hash = ((hash >> ((int)(hash >> 28) + 4)) ^ hash) * 277803737u;
             hash = (hash >> 22) ^ hash;
-            float normalized = (hash & 0x00FFFFFFu) * (1f / 16777215f);
+            float normalized = (hash & 0x00FFFFFFu) * CartographyGridConstants.InverseHash24Max;
             return normalized <= visualKeep;
         }
     }

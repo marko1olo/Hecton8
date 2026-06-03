@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Editor.GeologyForge",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Project.Editor",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

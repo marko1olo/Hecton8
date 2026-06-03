@@ -1,0 +1,73 @@
+{
+  "agentId": "1708",
+  "status": "PENDING_VERIFICATION",
+  "compileStatus": "BLOCKED_BY_ENVIRONMENT",
+  "compileGate": {
+    "cpuLoadPercent": 100,
+    "activeCompilerProcess": "dotnet",
+    "activeCompilerPids": [3100, 5664],
+    "action": "dotnet build not launched"
+  },
+  "changedFiles": [
+    "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+    "Assets/_Project/Scripts/SaveManager.cs",
+    "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+    "Docs/Tasks/Status_1708.md",
+    "Docs/AgentLogs/Rationale_1708.md",
+    "Docs/AgentLogs/LOG_1708.md",
+    "Docs/Reports/DATA_AND_SAVE_PURIFICATION_1708.json"
+  ],
+  "saveHeader": {
+    "version": "0x000B",
+    "headerBytes": 56,
+    "dialogueMaskBits": 16,
+    "storage": "SaveFileHeader.DeltaCount high 16 bits",
+    "packedQuestWordCountStorage": "SaveFileHeader.DeltaCount low 16 bits",
+    "hashCoverage": "existing SaveFileHeader.HashHeader64"
+  },
+  "savePaging": {
+    "nativeWriteChunkBytesBefore": 1048576,
+    "nativeWriteChunkBytesAfter": 65536,
+    "pageReductionFactor": 16
+  },
+  "streamingAssetsTextAudit": {
+    "runtimeStreamingAssetsTextLoadersInTargets": 0,
+    "editorOnlyCsvProbesKept": true,
+    "monolithRuntimeRoute": "H8AppliedLoreRuntime via static_data.h8bin"
+  },
+  "shinobu329": {
+    "worldReset": false,
+    "sceneReload": false,
+    "saveBufferRewrite": [
+      "SaveData.playerStats position",
+      "SaveData.playerStats rotation",
+      "SaveData.playerStats velocity",
+      "SaveData.playerKinematicState"
+    ]
+  },
+  "terminalOs": {
+    "perFrameRegistryPolling": false,
+    "cachedSaveManagerHotSwap": true,
+    "managedCollectionsAllocatedInHotPath": 0,
+    "globalQualityWeightContinuous": true,
+    "shaderGlobals": [
+      "_HectonTerminalDialogueChoiceColor",
+      "_HectonTerminalDialogueChoiceBlend",
+      "_HectonTerminalDialogueChoiceFlags"
+    ]
+  },
+  "staticChecks": {
+    "gitDiffCheck": "passed except CRLF normalization warnings",
+    "targetJsonUtilityHits": 0,
+    "targetBinaryFormatterHits": 0,
+    "targetRuntimeStreamingAssetsHits": 0,
+    "rawDeltaCountValidationHits": 0
+  },
+  "microseconds": {
+    "slotPreviewQuestPayloadParseAvoidedEstimateUs": 50,
+    "slotPreviewQuestPayloadParseAvoidedUpperEstimateUs": 200,
+    "safeAupSaveBufferRewriteEstimateUs": 5,
+    "terminalUnchangedFrameEstimateUs": 10,
+    "writeBurstGranularityReductionFactor": 16
+  }
+}

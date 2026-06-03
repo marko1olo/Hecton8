@@ -18,9 +18,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Gameplay
 {
@@ -363,8 +360,6 @@ namespace Hecton8.Gameplay
         public const int HologramInstanceCapacity = 64;
         public const int TelemetryCapacity = 300;
 
-        internal const string WireShaderPath = "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader";
-
         private const int MmfHeaderBytes = 16;
         private const int MmfFragmentRecordBytes = 16;
         private const int MmfPartialRecordBytes = 8;
@@ -396,11 +391,8 @@ namespace Hecton8.Gameplay
         [Tooltip("Fallback wireframe mesh used when a completed fragment has no MeshFilter.")]
         [SerializeField] private Mesh reconstructionMesh;
 
-        [Tooltip("Instanced wireframe material. If empty in editor, loaded from the project wire shader.")]
+        [Tooltip("Required authored instanced wireframe material. Runtime material generation is forbidden.")]
         [SerializeField] private Material reconstructionMaterial;
-
-        [Tooltip("Optional shader used to create the cold runtime reconstruction material.")]
-        [SerializeField] private Shader reconstructionShader;
 
         [Tooltip("PDA encyclopedia MMF index path. Text loads only when TryLoadLoreTextOnRead is called.")]
         [SerializeField] private string loreIndexPath;
@@ -428,7 +420,6 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<DataArchaeologyNotification> _notificationsHandle;
         private VaultGenerationHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
         private LoreMmfEncyclopedia _loreMmf;
-        private Material _runtimeMaterial;
         private Mesh _resolvedReconstructionMesh;
         private IDataVault _dataVault;
         private int _partialCount;
@@ -815,7 +806,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Mesh mesh = _resolvedReconstructionMesh != null ? _resolvedReconstructionMesh : reconstructionMesh;
-            Material material = reconstructionMaterial != null ? reconstructionMaterial : _runtimeMaterial;
+            Material material = reconstructionMaterial;
             if (mesh == null || material == null)
                 return;
 
@@ -860,11 +851,6 @@ namespace Hecton8.Gameplay
             ReleaseVaultHandles(_dataVault);
             _dataVault = null;
 
-            if (_runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
         }
 
         private void Awake()
@@ -1193,28 +1179,16 @@ namespace Hecton8.Gameplay
         private void EnsureReconstructionResources()
         {
             _resolvedReconstructionMesh = _resolvedReconstructionMesh != null ? _resolvedReconstructionMesh : reconstructionMesh;
-
-#if UNITY_EDITOR
-            if (reconstructionShader == null)
-                reconstructionShader = AssetDatabase.LoadAssetAtPath<Shader>(WireShaderPath);
-#endif
-
-            if (reconstructionMaterial == null && _runtimeMaterial == null && reconstructionShader != null)
-            {
-                _runtimeMaterial = new Material(reconstructionShader)
-                {
-                    enableInstancing = true
-                }; // COLD ALLOC: Material[1] - scanner reconstruction wire material - owner: DataArchaeologyRuntime
-            }
-
-            if (reconstructionMaterial != null)
-                reconstructionMaterial.enableInstancing = true;
+            UnityEngine.Assertions.Assert.IsNotNull(_resolvedReconstructionMesh, "Fatal: DataArchaeologyRuntime requires an authored reconstruction mesh.");
+            UnityEngine.Assertions.Assert.IsNotNull(reconstructionMaterial, "Fatal: DataArchaeologyRuntime requires an authored reconstruction material.");
+            UnityEngine.Assertions.Assert.IsTrue(reconstructionMaterial == null || reconstructionMaterial.enableInstancing, "Fatal: DataArchaeologyRuntime reconstruction material must enable GPU instancing in the asset.");
         }
 
         private bool AreReconstructionResourcesReady()
         {
             return (_resolvedReconstructionMesh != null || reconstructionMesh != null) &&
-                   (reconstructionMaterial != null || _runtimeMaterial != null);
+                   reconstructionMaterial != null &&
+                   reconstructionMaterial.enableInstancing;
         }
 
         private bool TryGetScanState(uint hash, out byte state)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -110,7 +111,7 @@ namespace Hecton.UI.MainMenu
         private readonly char[] _modalMessageBuffer = new char[256]; // COLD ALLOC: main-menu modal message staging buffer copied directly into TMP - owner: MainMenuController
         private int _loadingPercentTemplateLength;
         private float _lastUnscaledTickTime;
-        private float _panelTransitionDeltaTime;
+        private float _menuPresentationDeltaTime;
         private float _cancelInputBlockedUntil;
         private float _nextInputRoutingRetryTime;
         private float _transitionElapsed;
@@ -150,11 +151,16 @@ namespace Hecton.UI.MainMenu
         private DiegeticMenuRaycastReceiver _diegeticRaycastReceiver;
         private MenuCameraController _menuCameraController;
         private MainMenuAtmosphereController _menuAtmosphereController;
+        private ReadableMainMenuOverlay1428 _readableOverlay;
         private Canvas _diegeticCanvas;
         private RectTransform _diegeticCanvasRoot;
         private BoxCollider _diegeticPanelCollider;
         private SettingsManager _settingsManager;
         private ILocalizationTextReadModel _localization;
+        // COLD ALLOC: active scene camera search scratch - owner: MainMenuController setup.
+        private readonly List<GameObject> _cameraRootSearchBuffer = new List<GameObject>(8);
+        // COLD ALLOC: active scene camera search scratch - owner: MainMenuController setup.
+        private readonly List<Camera> _cameraSearchBuffer = new List<Camera>(4);
         private string _pendingStartSlotName = string.Empty;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
@@ -241,6 +247,22 @@ namespace Hecton.UI.MainMenu
             CacheSaveManagerCold(null);
             CacheSettingsManagerCold(null);
             _lastUnscaledTickTime = 0f;
+        }
+
+        private void Update()
+        {
+            if (!Application.isPlaying || _registeredToTickManager)
+                return;
+
+            Tick(Time.unscaledDeltaTime);
+        }
+
+        private void LateUpdate()
+        {
+            if (!Application.isPlaying || _registeredLateFrameTickManager)
+                return;
+
+            LateFrameTick();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -414,6 +436,7 @@ namespace Hecton.UI.MainMenu
             ConfigureDecorativeRaycastTargetsCold(transform);
             BindButtons();
             ConfigureDiegeticMenuRuntimeCold();
+            ConfigureReadableOverlayCold();
             RebuildVisualStyleCacheCold();
             RebuildVisualConceptCacheCold();
 
@@ -428,7 +451,7 @@ namespace Hecton.UI.MainMenu
             if (_diegeticCanvas == null)
                 TryGetComponent(out _diegeticCanvas);
 
-            mainMenuCamera = DiegeticMenuCanvasUtility.ResolveCamera(mainMenuCamera);
+            mainMenuCamera = ResolveMainMenuCameraCold(mainMenuCamera);
             if (!DiegeticMenuCanvasUtility.ApplyWorldSpaceCanvas(
                     _diegeticCanvas,
                     mainMenuCamera,
@@ -439,10 +462,18 @@ namespace Hecton.UI.MainMenu
             }
 
             if (_diegeticPanelController == null && !TryGetComponent(out _diegeticPanelController))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _diegeticPanelController = gameObject.AddComponent<DiegeticPanelController>(); // COLD ALLOC: main-menu diegetic panel projection owner.
+#endif
+            }
 
             if (_diegeticRaycastReceiver == null && !TryGetComponent(out _diegeticRaycastReceiver))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _diegeticRaycastReceiver = gameObject.AddComponent<DiegeticMenuRaycastReceiver>(); // COLD ALLOC: fixed menu button receiver.
+#endif
+            }
 
             if (_diegeticRaycastReceiver != null)
                 _diegeticRaycastReceiver.Configure(_diegeticCanvasRoot, _cachedEventSystem ?? EventSystem.current, DiegeticMenuHapticSourceHash);
@@ -463,16 +494,83 @@ namespace Hecton.UI.MainMenu
                 return;
 
             if (_menuCameraController == null && !mainMenuCamera.TryGetComponent(out _menuCameraController))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _menuCameraController = mainMenuCamera.gameObject.AddComponent<MenuCameraController>(); // COLD ALLOC: main-menu spline camera driver.
+#endif
+            }
 
             if (_menuCameraController != null)
                 _menuCameraController.Configure(mainMenuCamera);
 
             if (_menuAtmosphereController == null && !mainMenuCamera.TryGetComponent(out _menuAtmosphereController))
-                _menuAtmosphereController = mainMenuCamera.gameObject.AddComponent<MainMenuAtmosphereController>(); // COLD ALLOC: generated menu atmosphere layers.
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                _menuAtmosphereController = mainMenuCamera.gameObject.AddComponent<MainMenuAtmosphereController>(); // COLD ALLOC: authored menu atmosphere binder.
+#endif
+            }
 
             if (_menuAtmosphereController != null)
                 _menuAtmosphereController.Configure(mainMenuCamera);
+        }
+
+        private void ConfigureReadableOverlayCold()
+        {
+            if (_readableOverlay == null && !TryGetComponent(out _readableOverlay))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                _readableOverlay = gameObject.AddComponent<ReadableMainMenuOverlay1428>(); // COLD ALLOC: screen-space readability mirror for menu panels.
+#endif
+            }
+
+            if (_readableOverlay == null)
+                return;
+
+            _readableOverlay.Configure(
+                this,
+                mainMenuGroup,
+                settingsGroup,
+                saveLoadGroup,
+                loadingGroup,
+                settingsPanel);
+        }
+
+        private Camera ResolveMainMenuCameraCold(Camera preferred)
+        {
+            Camera resolved = DiegeticMenuCanvasUtility.ResolveCamera(preferred);
+            if (resolved != null)
+                return resolved;
+
+            UnityEngine.SceneManagement.Scene activeScene =
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
+                return null;
+
+            _cameraRootSearchBuffer.Clear();
+            activeScene.GetRootGameObjects(_cameraRootSearchBuffer);
+            for (int i = 0; i < _cameraRootSearchBuffer.Count; i++)
+            {
+                GameObject root = _cameraRootSearchBuffer[i];
+                if (root == null)
+                    continue;
+
+                _cameraSearchBuffer.Clear();
+                root.GetComponentsInChildren(false, _cameraSearchBuffer);
+                for (int j = 0; j < _cameraSearchBuffer.Count; j++)
+                {
+                    Camera camera = _cameraSearchBuffer[j];
+                    if (camera != null && camera.isActiveAndEnabled)
+                    {
+                        _cameraSearchBuffer.Clear();
+                        _cameraRootSearchBuffer.Clear();
+                        return camera;
+                    }
+                }
+            }
+
+            _cameraSearchBuffer.Clear();
+            _cameraRootSearchBuffer.Clear();
+            return null;
         }
 
         private static void ConfigurePanelRaycastTargetsCold(CanvasGroup group)
@@ -550,6 +648,7 @@ namespace Hecton.UI.MainMenu
 
         private void InitializePanelStates()
         {
+            ClearPanelTransitionState();
             SetPanelImmediate(mainMenuGroup, true);
             SetPanelImmediate(saveLoadGroup, false);
             SetPanelImmediate(settingsGroup, false);
@@ -579,7 +678,7 @@ namespace Hecton.UI.MainMenu
             if (!_settingsAvailable)
                 return;
 
-            SwitchPanel(mainMenuGroup, settingsGroup);
+            SwitchPanel(ResolvePanelSwitchSource(), settingsGroup);
         }
 
         private void OnQuitClicked()
@@ -644,9 +743,7 @@ namespace Hecton.UI.MainMenu
 
         private void ReturnLoadingToMainMenu()
         {
-            SetPanelImmediate(loadingGroup, false);
-            SetPanelImmediate(mainMenuGroup, true);
-            _currentPanel = mainMenuGroup;
+            SetExclusivePanelImmediate(mainMenuGroup);
             BeginCameraRouteForPanel(mainMenuGroup);
             RequestSelectionRefresh();
         }
@@ -666,6 +763,7 @@ namespace Hecton.UI.MainMenu
             btnSettings = ResolveButton(btnSettings, root, "BTN_Settings");
             btnQuit = ResolveButton(btnQuit, root, "BTN_Abort");
             btnBackFromSaveLoad = ResolveButton(btnBackFromSaveLoad, root, "BTN_Back (\"RETURN\")");
+            btnBackFromSettings = ResolveButton(btnBackFromSettings, root, "Btn_BackFromSettings");
 
             labelNewGame = ResolveButtonLabel(labelNewGame, btnNewGame);
             labelLoadGame = ResolveButtonLabel(labelLoadGame, btnLoadGame);
@@ -846,27 +944,16 @@ namespace Hecton.UI.MainMenu
             // TASK 31: Comprehensive null check for SaveManager
             if (_saveManager == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. Save/Load features unavailable.");
-#endif
-                // Display error message to user
-                int messageLength = CopyLocalizedModalMessage(
-                    LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE,
-                    "The save system is currently unavailable.\n\nPlease restart the game or contact support if this persists.");
+                if (_slotButtonAvailability != null)
+                {
+                    for (int i = 0; i < _slotButtonAvailability.Length; i++)
+                        _slotButtonAvailability[i] = false;
+                }
 
-                ModalWindow.ShowWithCustomLabels(
-                    "Save System Unavailable",
-                    _modalMessageBuffer,
-                    messageLength,
-                    _returnSaveLoadToMainMenuAction,
-                    null,
-                    "Return to Menu",
-                    null);
-
-                // Disable load game button to prevent future attempts
-                if (btnLoadGame != null)
-                    btnLoadGame.interactable = false;
-
+                SetExclusivePanelImmediate(saveLoadGroup);
+                BeginCameraRouteForPanel(saveLoadGroup);
+                RequestSelectionRefresh();
+                _readableOverlay?.ForceRefresh();
                 return;
             }
 
@@ -902,7 +989,7 @@ namespace Hecton.UI.MainMenu
 #endif
             }
 
-            SwitchPanel(mainMenuGroup, saveLoadGroup);
+            SwitchPanel(ResolvePanelSwitchSource(), saveLoadGroup);
         }
 
         private void EnsureSlotInstances()
@@ -993,6 +1080,70 @@ namespace Hecton.UI.MainMenu
         public void StartOrbitPrologue()
         {
             StartGameWithScene(string.Empty, OrbitSceneName);
+        }
+
+        public void ReadableStartNewGame()
+        {
+            StartGame(string.Empty);
+        }
+
+        public void ReadableOpenLoadPanel()
+        {
+            OpenSaveLoadMenu();
+            if (!_isSceneLoadInFlight && !_isSaveLoadBusy)
+            {
+                SetExclusivePanelImmediate(saveLoadGroup);
+                BeginCameraRouteForPanel(saveLoadGroup);
+                RequestSelectionRefresh();
+                _readableOverlay?.ForceRefresh();
+            }
+        }
+
+        public void ReadableOpenSettingsPanel()
+        {
+            if (!_settingsAvailable)
+                return;
+
+            SetExclusivePanelImmediate(settingsGroup);
+            BlockCancelInputBriefly();
+            BeginCameraRouteForPanel(settingsGroup);
+            RequestSelectionRefresh();
+            _readableOverlay?.ForceRefresh();
+        }
+
+        public void ReadableStartOrbitPrologue()
+        {
+            StartOrbitPrologue();
+        }
+
+        public void ReadableQuit()
+        {
+            OnQuitClicked();
+        }
+
+        public void ReadableBackToMainMenu()
+        {
+            if (_currentPanel == settingsGroup)
+                settingsPanel?.ReadableCancel();
+            else
+                settingsPanel?.CancelPendingChanges();
+
+            SetExclusivePanelImmediate(mainMenuGroup);
+            BlockCancelInputBriefly();
+            BeginCameraRouteForPanel(mainMenuGroup);
+            RequestSelectionRefresh();
+            _readableOverlay?.ForceRefresh();
+        }
+
+        public void ReadableLoadSlot(int slotIndex)
+        {
+            if ((uint)slotIndex >= SlotNames.Length)
+                return;
+
+            if (!TryGetReadableSaveSlotState(slotIndex, out _, out _, out bool canLoad) || !canLoad)
+                return;
+
+            StartGame(SlotNames[slotIndex]);
         }
 
         private void StartGameWithScene(string slotName, string sceneName)
@@ -1174,7 +1325,14 @@ namespace Hecton.UI.MainMenu
                     BootstrapScenePath,
                     UnityEngine.SceneManagement.LoadSceneMode.Single);
             if (operation == null)
-                UnityEngine.SceneManagement.SceneManager.LoadScene(BootstrapScenePath);
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError(
+                    "[MainMenuController] Failed to schedule async bootstrap recovery load. scenePath=" +
+                    BootstrapScenePath);
+#endif
+                return false;
+            }
 
             return true;
         }
@@ -1185,8 +1343,17 @@ namespace Hecton.UI.MainMenu
         /// </summary>
         private void SwitchPanel(CanvasGroup from, CanvasGroup to)
         {
-            if (_isTransitioning || from == null || to == null || from == to)
+            if (_isTransitioning || to == null)
                 return;
+
+            if (from == null || from == to)
+            {
+                SetExclusivePanelImmediate(to);
+                BlockCancelInputBriefly();
+                BeginCameraRouteForPanel(to);
+                RequestSelectionRefresh();
+                return;
+            }
 
             // Play panel transition sound
             if (to == mainMenuGroup)
@@ -1202,8 +1369,11 @@ namespace Hecton.UI.MainMenu
             _transitionStartAlpha = from.alpha;
             _panelTransitionState = PanelTransitionState.FadingOut;
 
+            HidePanelsExcept(from, to);
+            EnsurePanelHierarchyActive(to);
             from.interactable = false;
             from.blocksRaycasts = false;
+            to.alpha = 0f;
             to.interactable = false;
             to.blocksRaycasts = false;
             BlockCancelInputBriefly();
@@ -1235,28 +1405,29 @@ namespace Hecton.UI.MainMenu
             EnsureMenuInputRoutingReady();
             ConsumeCancelInputSignals();
             HandleCancelInput();
-            _panelTransitionDeltaTime = unscaledDeltaTime;
+            _menuPresentationDeltaTime = unscaledDeltaTime;
         }
 
         public void LateFrameTick()
         {
-            float panelTransitionDeltaTime = _panelTransitionDeltaTime;
-            _panelTransitionDeltaTime = 0f;
-            if (panelTransitionDeltaTime > 0f)
+            float menuPresentationDeltaTime = _menuPresentationDeltaTime;
+            _menuPresentationDeltaTime = 0f;
+            if (menuPresentationDeltaTime > 0f)
             {
-                UpdatePanelTransition(panelTransitionDeltaTime);
-                _menuCameraController?.Advance(panelTransitionDeltaTime);
+                UpdatePanelTransition(menuPresentationDeltaTime);
+                _menuCameraController?.Advance(menuPresentationDeltaTime);
             }
 
             DiegeticMenuCanvasUtility.SyncCameraRelativePose(_diegeticCanvasRoot, mainMenuCamera);
             SyncVisualStyleLateFrame();
             SyncVisualConceptLateFrame();
             _menuAtmosphereController?.Advance(
-                panelTransitionDeltaTime,
+                menuPresentationDeltaTime,
                 ResolveCurrentUnscaledTimeSeconds(0f),
                 ResolveMenuVisualQualityWeight(),
                 visualStyle,
                 visualConcept);
+            _readableOverlay?.SyncLateFrame();
             RefreshSelectionIfNeeded();
             _diegeticRaycastReceiver?.FlushPendingSelection();
         }
@@ -1631,6 +1802,55 @@ namespace Hecton.UI.MainMenu
             return (uint)slotIndex < (uint)SlotDisplayNames.Length ? SlotDisplayNames[slotIndex] : slotName;
         }
 
+        public bool TryGetReadableSaveSlotState(
+            int slotIndex,
+            out string title,
+            out string detail,
+            out bool canLoad)
+        {
+            title = (uint)slotIndex < (uint)SlotDisplayNames.Length
+                ? SlotDisplayNames[slotIndex]
+                : "SLOT ?";
+            detail = "EMPTY";
+            canLoad = false;
+
+            if ((uint)slotIndex >= SlotNames.Length)
+                return false;
+
+            SaveManager saveManager = _saveManager;
+            if (saveManager == null)
+            {
+                detail = "SAVE SYSTEM OFFLINE";
+                return true;
+            }
+
+            string slotName = SlotNames[slotIndex];
+            if (!saveManager.TryGetSaveSlotInfo(slotName, out SaveSlotInfo slotInfo) ||
+                slotInfo == null ||
+                !slotInfo.HasAnySaveData)
+            {
+                return true;
+            }
+
+            canLoad = true;
+            SaveMetadata metadata = slotInfo.metadata;
+            string status = slotInfo.GetStatusLabel();
+            if (metadata == null)
+            {
+                detail = string.IsNullOrEmpty(status) ? "SAVE DATA PRESENT" : status;
+                return true;
+            }
+
+            string sceneName = string.IsNullOrEmpty(metadata.sceneName) ? "UNKNOWN SCENE" : metadata.sceneName;
+            int minutes = Mathf.Max(0, Mathf.RoundToInt(metadata.totalPlayTime / 60f));
+            if (string.IsNullOrEmpty(status))
+                detail = sceneName + " / " + minutes + " MIN";
+            else
+                detail = sceneName + " / " + minutes + " MIN / " + status;
+
+            return true;
+        }
+
         private static bool IsCorruptNoBackupError(string error)
         {
             if (string.IsNullOrEmpty(error))
@@ -1675,6 +1895,7 @@ namespace Hecton.UI.MainMenu
             _transitionToPanel.alpha = 1f;
             _transitionToPanel.interactable = true;
             _transitionToPanel.blocksRaycasts = true;
+            HidePanelsExcept(_transitionToPanel, null);
             _panelTransitionState = PanelTransitionState.None;
             _currentPanel = _transitionToPanel;
             _transitionFromPanel = null;
@@ -2172,6 +2393,70 @@ namespace Hecton.UI.MainMenu
             group.blocksRaycasts = visible;
             if (visible)
                 _currentPanel = group;
+        }
+
+        private void SetExclusivePanelImmediate(CanvasGroup target)
+        {
+            if (target == null)
+                return;
+
+            ClearPanelTransitionState();
+            HidePanelsExcept(target, null);
+            SetPanelImmediate(target, true);
+        }
+
+        private void ClearPanelTransitionState()
+        {
+            _transitionFromPanel = null;
+            _transitionToPanel = null;
+            _transitionElapsed = 0f;
+            _transitionStartAlpha = 0f;
+            _panelTransitionState = PanelTransitionState.None;
+            _isTransitioning = false;
+        }
+
+        private CanvasGroup ResolvePanelSwitchSource()
+        {
+            CanvasGroup current = _currentPanel;
+            if (IsPanelVisibleForSwitch(current))
+                return current;
+
+            if (IsPanelVisibleForSwitch(settingsGroup))
+                return settingsGroup;
+            if (IsPanelVisibleForSwitch(saveLoadGroup))
+                return saveLoadGroup;
+            if (IsPanelVisibleForSwitch(loadingGroup))
+                return loadingGroup;
+
+            return mainMenuGroup;
+        }
+
+        private static bool IsPanelVisibleForSwitch(CanvasGroup group)
+        {
+            return group != null &&
+                   group.gameObject.activeInHierarchy &&
+                   group.alpha > 0.001f;
+        }
+
+        private void HidePanelsExcept(CanvasGroup visible, CanvasGroup fadingFrom)
+        {
+            HidePanelIfNonTarget(mainMenuGroup, visible, fadingFrom);
+            HidePanelIfNonTarget(saveLoadGroup, visible, fadingFrom);
+            HidePanelIfNonTarget(settingsGroup, visible, fadingFrom);
+            HidePanelIfNonTarget(loadingGroup, visible, fadingFrom);
+        }
+
+        private static void HidePanelIfNonTarget(
+            CanvasGroup group,
+            CanvasGroup visible,
+            CanvasGroup fadingFrom)
+        {
+            if (group == null || group == visible || group == fadingFrom)
+                return;
+
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
         }
 
         private static void PreparePanelForCinematicSubmerge(CanvasGroup group)

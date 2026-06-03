@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -11,11 +12,13 @@ namespace Hecton8.World
     public static class HectonBrineToxicMudGrid
     {
         private const int MaxCells = 256;
+        private const int ToxicMudCellStrideBytes = 56;
         private const uint CapacityWarningHash = 0x42524743u; // BRGC
         private const uint GridContextHash = 0x42524744u; // BRGD
 
         // COLD ALLOC: ToxicMudCell[256] - fixed brine broadphase registry - owner: HectonBrineToxicMudGrid
         private static readonly ToxicMudCell[] s_cells = new ToxicMudCell[MaxCells];
+        private static readonly bool s_cellLayoutValid = ValidateCellLayoutCold();
         private static int s_count;
         private static bool s_capacityWarningIssued;
         private static bool s_hasGlobalBounds;
@@ -27,15 +30,15 @@ namespace Hecton8.World
         private static double s_maxZ;
 
         /// <summary>Number of active brine broadphase cells.</summary>
-        public static int RegisteredCellCount => s_count;
+        public static int RegisteredCellCount => s_cellLayoutValid ? s_count : 0;
 
         /// <summary>True when at least one brine broadphase cell is registered.</summary>
-        public static bool HasRegisteredCells => s_count > 0;
+        public static bool HasRegisteredCells => s_cellLayoutValid && s_count > 0;
 
         /// <summary>Copies the current global AUP broadphase bounds for cold diagnostics.</summary>
         public static bool TryGetAupBounds(out double3 min, out double3 max)
         {
-            if (!s_hasGlobalBounds)
+            if (!s_cellLayoutValid || !s_hasGlobalBounds)
             {
                 min = default;
                 max = default;
@@ -74,7 +77,7 @@ namespace Hecton8.World
             float sizeZ,
             float verticalDepthMeters)
         {
-            if (cellId <= 0)
+            if (!s_cellLayoutValid || cellId <= 0)
                 return;
 
             if (!IsFiniteRuntimePosition(runtimeCenter))
@@ -99,7 +102,7 @@ namespace Hecton8.World
             float sizeZ,
             float verticalDepthMeters)
         {
-            if (cellId <= 0)
+            if (!s_cellLayoutValid || cellId <= 0)
                 return;
 
             int existingIndex = -1;
@@ -169,7 +172,7 @@ namespace Hecton8.World
 
         public static void UnregisterCell(int cellId)
         {
-            if (cellId <= 0)
+            if (!s_cellLayoutValid || cellId <= 0)
                 return;
 
             for (int i = 0; i < s_count; i++)
@@ -189,7 +192,7 @@ namespace Hecton8.World
 
         public static bool IsRegisteredCell(int cellId)
         {
-            if (cellId <= 0)
+            if (!s_cellLayoutValid || cellId <= 0)
                 return false;
 
             for (int i = 0; i < s_count; i++)
@@ -203,7 +206,7 @@ namespace Hecton8.World
 
         public static bool ContainsAupSubmergedCell(int cellId, in AbsoluteUniversePosition aup)
         {
-            if (cellId <= 0 || s_count <= 0 || !IsFiniteAup(in aup))
+            if (!s_cellLayoutValid || cellId <= 0 || s_count <= 0 || !IsFiniteAup(in aup))
                 return false;
 
             return ContainsAupSubmergedCell(cellId, aup.ToAbsoluteDouble3());
@@ -215,7 +218,7 @@ namespace Hecton8.World
             float queryRadiusMeters,
             float verticalHalfExtentMeters)
         {
-            if (cellId <= 0 || s_count <= 0 || !IsFiniteAup(in aup))
+            if (!s_cellLayoutValid || cellId <= 0 || s_count <= 0 || !IsFiniteAup(in aup))
                 return false;
 
             return OverlapsAupSubmergedCell(
@@ -227,7 +230,7 @@ namespace Hecton8.World
 
         public static bool ContainsRuntimeXZ(Vector3 runtimePosition)
         {
-            if (s_count <= 0)
+            if (!s_cellLayoutValid || s_count <= 0)
                 return false;
 
             if (!IsFiniteRuntimePosition(runtimePosition))
@@ -241,7 +244,7 @@ namespace Hecton8.World
 
         public static bool ContainsRuntimeSubmergedPosition(Vector3 runtimePosition)
         {
-            if (s_count <= 0)
+            if (!s_cellLayoutValid || s_count <= 0)
                 return false;
 
             if (!IsFiniteRuntimePosition(runtimePosition))
@@ -255,7 +258,7 @@ namespace Hecton8.World
 
         public static bool ContainsAupSubmergedPosition(in AbsoluteUniversePosition aup)
         {
-            if (s_count <= 0)
+            if (!s_cellLayoutValid || s_count <= 0)
                 return false;
 
             if (!IsFiniteAup(in aup))
@@ -266,7 +269,7 @@ namespace Hecton8.World
 
         public static bool ContainsAupXZ(in AbsoluteUniversePosition aup)
         {
-            if (s_count <= 0)
+            if (!s_cellLayoutValid || s_count <= 0)
                 return false;
 
             if (!IsFiniteAup(in aup))
@@ -277,7 +280,7 @@ namespace Hecton8.World
 
         public static bool OverlapsAupXZ(in AbsoluteUniversePosition aup, float queryRadiusMeters)
         {
-            if (s_count <= 0)
+            if (!s_cellLayoutValid || s_count <= 0)
                 return false;
 
             if (!IsFiniteAup(in aup))
@@ -291,7 +294,7 @@ namespace Hecton8.World
             float queryRadiusMeters,
             float verticalHalfExtentMeters)
         {
-            if (s_count <= 0)
+            if (!s_cellLayoutValid || s_count <= 0)
                 return false;
 
             if (!IsFiniteAup(in aup))
@@ -305,7 +308,7 @@ namespace Hecton8.World
 
         public static bool ContainsAupXZ(float3 aup)
         {
-            if (!math.all(math.isfinite(aup)))
+            if (!s_cellLayoutValid || !math.all(math.isfinite(aup)))
                 return false;
 
             return ContainsAupXZ(new double3(aup.x, aup.y, aup.z));
@@ -313,7 +316,7 @@ namespace Hecton8.World
 
         public static bool ContainsAupSubmergedPosition(float3 aup)
         {
-            if (!math.all(math.isfinite(aup)))
+            if (!s_cellLayoutValid || !math.all(math.isfinite(aup)))
                 return false;
 
             return ContainsAupSubmergedPosition(new double3(aup.x, aup.y, aup.z));
@@ -530,7 +533,7 @@ namespace Hecton8.World
 
         private static bool TryResolveCell(int cellId, out ToxicMudCell cell)
         {
-            if (cellId <= 0)
+            if (!s_cellLayoutValid || cellId <= 0)
             {
                 cell = default;
                 return false;
@@ -587,6 +590,12 @@ namespace Hecton8.World
                    verticalDepthMeters > 0f;
         }
 
+        private static bool ValidateCellLayoutCold()
+        {
+            int stride = UnsafeUtility.SizeOf<ToxicMudCell>();
+            return stride == ToxicMudCellStrideBytes && (stride & 7) == 0;
+        }
+
         private static void RebuildGlobalBounds()
         {
             if (s_count <= 0)
@@ -632,7 +641,7 @@ namespace Hecton8.World
             s_maxZ = 0d;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 56)]
+        [StructLayout(LayoutKind.Explicit, Size = ToxicMudCellStrideBytes)]
         private struct ToxicMudCell
         {
             [FieldOffset(0)]

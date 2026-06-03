@@ -42,7 +42,7 @@ namespace Hecton8.Animation.FaunaProcedural
         [SerializeField, Range(ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity)]
         private int _boneCapacity = ProceduralBoneBlenderConstants.DefaultBoneCapacity;
 
-        [SerializeField] private bool _seedEmergencyMockRig = true;
+        [SerializeField] private bool _seedEmergencyMockRig;
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<ProceduralBoneRigDTO> _rigsHandle;
@@ -243,7 +243,7 @@ namespace Hecton8.Animation.FaunaProcedural
             RefreshColdDependencies();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
-            if (_seedEmergencyMockRig)
+            if (ShouldSeedEmergencyMockRig())
                 GenerateEmergencyMockRigs();
         }
 
@@ -256,7 +256,7 @@ namespace Hecton8.Animation.FaunaProcedural
             RefreshColdDependencies();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
-            if (_seedEmergencyMockRig)
+            if (ShouldSeedEmergencyMockRig())
                 GenerateEmergencyMockRigs();
             TryRegister();
         }
@@ -450,12 +450,15 @@ namespace Hecton8.Animation.FaunaProcedural
             BindDataVaultForLifecycle(currentVault, previousVault);
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
-            if (_seedEmergencyMockRig)
+            if (ShouldSeedEmergencyMockRig())
                 GenerateEmergencyMockRigs();
         }
 
         public bool GenerateEmergencyMockRigs()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return false;
+#endif
             IDataVault vault = _dataVault;
             if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
@@ -582,6 +585,15 @@ namespace Hecton8.Animation.FaunaProcedural
             _gpuShaderConstantsDirty = true;
             _gpuBufferDataValid = false;
             return true;
+        }
+
+        private bool ShouldSeedEmergencyMockRig()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return _seedEmergencyMockRig;
+#else
+            return false;
+#endif
         }
 
         private void RefreshColdDependencies()

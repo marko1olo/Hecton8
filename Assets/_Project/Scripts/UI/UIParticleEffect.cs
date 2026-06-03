@@ -1,24 +1,36 @@
 using UnityEngine;
+using UnityEngine.Serialization;
+using Unity.Mathematics;
 using Hecton8.Core;
 
 namespace Hecton8.UI
 {
     /// <summary>
-    /// UI particle effect for button clicks and interactions.
-    /// Cheap instrument feedback cue for pressured UI state.
-    /// Spawns particle burst on button click with pooling.
-    /// Zero-GC: ObjectPoolManager, IPoolable, cached ParticleSystem.
+    /// UI particle feedback cue backed only by ObjectPoolManager.
+    /// No runtime GameObject creation, component creation, or material cloning.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Particle Effect")]
     public sealed class UIParticleEffect : MonoBehaviour, IPoolable, IGlobalRegistryHotSwapListener
     {
+        private const float CompactParticleDensity = 0.35f;
+        private const int PrefabControllerScanStackCapacity = 64;
+        // COLD ALLOC: ParticleSystem.Burst[0] - clears authored emission bursts for manual pooled UI emission - owner: UIParticleEffect
+        private static readonly ParticleSystem.Burst[] s_noAuthoredBursts = System.Array.Empty<ParticleSystem.Burst>();
+        // COLD ALLOC: Transform[64] - fixed prefab-subtree validation stack for recursive effect graph rejection - owner: UIParticleEffect
+        private static readonly Transform[] s_prefabControllerScanStack = new Transform[PrefabControllerScanStackCapacity];
+
         // ----------------------------------------------------------
         // INSPECTOR
         // ----------------------------------------------------------
 
         [Header("=== PARTICLE PREFAB ===")]
-        [SerializeField] private GameObject particlePrefab;
+        [SerializeField] private ObjectPoolManager _uiEffectPool;
+        [FormerlySerializedAs("particlePrefab")]
+        [SerializeField] private GameObject _authoredParticlePrefab;
+
+        [Header("=== CANVAS ATLAS ===")]
+        [SerializeField] private Material _sharedCanvasAtlasMaterial;
 
         [Header("=== SETTINGS ===")]
         [SerializeField] private int particleCount = 10;
@@ -31,13 +43,12 @@ namespace Hecton8.UI
         // ----------------------------------------------------------
 
         private ParticleSystem _particleSystem;
-        private ParticleSystem.MainModule _mainModule;
-        private ParticleSystem.EmissionModule _emissionModule;
-        private bool _initialized;
+        private ParticleSystemRenderer _particleRenderer;
         private GameObject _particleInstance;
-        private bool _particleInstanceOwnedByPool;
+        private Transform _particleInstanceTransform;
         private IObjectPoolService _cachedObjectPool;
         private IObjectPoolService _particlePoolOwner;
+        private int _resolvedParticleCount;
         private bool _hotSwapListenerRegistered;
 
         // ----------------------------------------------------------
@@ -47,33 +58,25 @@ namespace Hecton8.UI
         private void Awake()
         {
             CacheRegistryServicesCold();
-            Initialize();
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            SpawnEffectInstance();
         }
 
         private void OnDisable()
         {
+            DespawnEffectInstance();
             TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            DespawnEffectInstance();
             TryUnregisterHotSwapListener();
-            if (!_particleInstanceOwnedByPool || _particleInstance == null)
-                return;
-
-            IObjectPoolService pool = _particlePoolOwner;
-            if (pool != null && _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
-                pool.Despawn(_particleInstance);
-
-            _particleInstance = null;
-            _particlePoolOwner = null;
-            _particleInstanceOwnedByPool = false;
         }
 
         // ----------------------------------------------------------
@@ -82,14 +85,15 @@ namespace Hecton8.UI
 
         public void OnSpawn()
         {
-            if (!_initialized)
-                Initialize();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            SpawnEffectInstance();
         }
 
         public void OnDespawn()
         {
-            if (_particleSystem != null)
-                _particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            DespawnEffectInstance();
+            TryUnregisterHotSwapListener();
         }
 
         // ----------------------------------------------------------
@@ -101,11 +105,24 @@ namespace Hecton8.UI
         /// </summary>
         public void Play(Vector3 worldPosition)
         {
-            if (_particleSystem == null)
+            if (_particleSystem == null || _particleInstance == null || _particleInstanceTransform == null)
                 return;
 
-            transform.position = worldPosition;
-            _particleSystem.Play();
+            int emitCount = ResolveQualityScaledParticleCount();
+            if (emitCount <= 0)
+                return;
+
+            if (emitCount != _resolvedParticleCount)
+            {
+                _resolvedParticleCount = emitCount;
+                ParticleSystem.MainModule main = _particleSystem.main;
+                main.maxParticles = emitCount;
+            }
+
+            _particleInstanceTransform.position = worldPosition;
+            _particleSystem.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            _particleSystem.Play(false);
+            _particleSystem.Emit(emitCount);
         }
 
         /// <summary>
@@ -116,51 +133,198 @@ namespace Hecton8.UI
             if (rectTransform == null)
                 return;
 
-            Vector3 worldPosition = rectTransform.position;
-            Play(worldPosition);
+            Play(rectTransform.position);
         }
 
         // ----------------------------------------------------------
         // PRIVATE
         // ----------------------------------------------------------
 
-        private void Initialize()
+        private bool SpawnEffectInstance()
         {
-            if (_initialized)
-                return;
+            if (_particleInstance != null && _particleSystem != null)
+                return true;
 
-            // Create particle system if prefab provided
-            if (particlePrefab != null)
+            if (_particleInstance != null)
+                DespawnEffectInstance();
+
+            if (_authoredParticlePrefab == null)
+                return false;
+
+            if (AuthoredPrefabContainsEffectController())
+                return false;
+
+            IObjectPoolService pool = ResolvePool();
+            if (pool == null)
+                return false;
+
+            if (!pool.HasPool(_authoredParticlePrefab) || pool.GetAvailableCount(_authoredParticlePrefab) <= 0)
+                return false;
+
+            GameObject instance = pool.Spawn(_authoredParticlePrefab, transform.position, transform.rotation, false);
+            if (instance == null)
+                return false;
+
+            if (!pool.CanDespawnWithoutDestroy(instance))
             {
-                IObjectPoolService pool = _cachedObjectPool;
-                if (pool != null)
-                {
-                    _particleInstance = pool.Spawn(particlePrefab, transform.position, transform.rotation);
-                    if (_particleInstance != null)
-                    {
-                        _particleInstance.transform.SetParent(transform, false);
-                        _particleInstance.TryGetComponent(out _particleSystem);
-                        _particleInstanceOwnedByPool = _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
-                        _particlePoolOwner = _particleInstanceOwnedByPool ? pool : null;
-                    }
-                }
+                pool.Despawn(instance);
+                return false;
             }
 
-            // Create default particle system if none exists
+            _particleInstance = instance;
+            _particleInstanceTransform = instance.transform;
+            _particlePoolOwner = pool;
+            CacheParticleComponents(instance, pool);
+
+            if (PrefabContainsNestedEffectController(instance, pool))
+            {
+                DespawnEffectInstance();
+                return false;
+            }
+
             if (_particleSystem == null)
             {
-                GameObject particleObj = new GameObject("Particles");
-                particleObj.transform.SetParent(transform, false);
-                _particleSystem = particleObj.AddComponent<ParticleSystem>();
-                _particleInstance = particleObj;
-                _particleInstanceOwnedByPool = false;
-                _particlePoolOwner = null;
-                ConfigureDefaultParticleSystem();
+                DespawnEffectInstance();
+                return false;
             }
 
-            _mainModule = _particleSystem.main;
-            _emissionModule = _particleSystem.emission;
-            _initialized = true;
+            ApplyParticleSettings();
+            if (!EnforceSharedCanvasAtlas())
+            {
+                DespawnEffectInstance();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void DespawnEffectInstance()
+        {
+            GameObject instance = _particleInstance;
+            IObjectPoolService pool = _particlePoolOwner;
+
+            if (_particleSystem != null)
+                _particleSystem.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            _particleInstance = null;
+            _particleInstanceTransform = null;
+            _particlePoolOwner = null;
+            _particleSystem = null;
+            _particleRenderer = null;
+
+            if (instance == null || pool == null || !pool.CanDespawnWithoutDestroy(instance))
+                return;
+
+            pool.Despawn(instance);
+        }
+
+        private void CacheParticleComponents(GameObject instance, IObjectPoolService pool)
+        {
+            _particleSystem = null;
+            _particleRenderer = null;
+
+            pool.TryGetPooledComponent(instance, out _particleSystem);
+            pool.TryGetPooledComponent(instance, out _particleRenderer);
+        }
+
+        private bool PrefabContainsNestedEffectController(GameObject instance, IObjectPoolService pool)
+        {
+            if (pool.TryGetPooledComponent(instance, out UIParticleEffect nestedEffect))
+                return nestedEffect != null && !ReferenceEquals(nestedEffect, this);
+
+            return false;
+        }
+
+        private bool AuthoredPrefabContainsEffectController()
+        {
+            if (_authoredParticlePrefab == null)
+                return false;
+
+            Transform root = _authoredParticlePrefab.transform;
+            int stackCount = 1;
+            s_prefabControllerScanStack[0] = root;
+
+            while (stackCount > 0)
+            {
+                Transform current = s_prefabControllerScanStack[--stackCount];
+                if (current == null)
+                    continue;
+
+                if (current.TryGetComponent(out UIParticleEffect _))
+                {
+                    ClearPrefabControllerScanStack();
+                    return true;
+                }
+
+                int childCount = current.childCount;
+                if (stackCount + childCount > PrefabControllerScanStackCapacity)
+                {
+                    ClearPrefabControllerScanStack();
+                    return true;
+                }
+
+                for (int i = 0; i < childCount; i++)
+                    s_prefabControllerScanStack[stackCount++] = current.GetChild(i);
+            }
+
+            ClearPrefabControllerScanStack();
+            return false;
+        }
+
+        private static void ClearPrefabControllerScanStack()
+        {
+            for (int i = 0; i < PrefabControllerScanStackCapacity; i++)
+                s_prefabControllerScanStack[i] = null;
+        }
+
+        private void ApplyParticleSettings()
+        {
+            _resolvedParticleCount = ResolveQualityScaledParticleCount();
+            ParticleSystem.MainModule mainModule = _particleSystem.main;
+            mainModule.startLifetime = particleLifetime;
+            mainModule.startSpeed = particleSpeed;
+            mainModule.startColor = particleColor;
+            mainModule.maxParticles = _resolvedParticleCount;
+            mainModule.loop = false;
+            mainModule.playOnAwake = false;
+
+            ParticleSystem.EmissionModule emissionModule = _particleSystem.emission;
+            emissionModule.rateOverTime = 0f;
+            emissionModule.SetBursts(s_noAuthoredBursts, 0);
+        }
+
+        private static float SmoothQuality01(float quality)
+        {
+            float q = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            return q * q * (3f - 2f * q);
+        }
+
+        private int ResolveQualityScaledParticleCount()
+        {
+            int authoredCount = Mathf.Max(0, particleCount);
+            if (authoredCount == 0)
+                return 0;
+
+            float quality01 = SmoothQuality01(HomeostasisBrain.GlobalQualityWeight);
+            float scaledCount = authoredCount * math.lerp(CompactParticleDensity, 1f, quality01);
+            return math.clamp((int)math.round(scaledCount), 1, authoredCount);
+        }
+
+        private bool EnforceSharedCanvasAtlas()
+        {
+            if (_sharedCanvasAtlasMaterial == null)
+                return false;
+
+            if (_particleRenderer == null)
+                return false;
+
+            _particleRenderer.sharedMaterial = _sharedCanvasAtlasMaterial;
+            return _particleRenderer.sharedMaterial == _sharedCanvasAtlasMaterial;
+        }
+
+        private IObjectPoolService ResolvePool()
+        {
+            return _uiEffectPool != null ? _uiEffectPool : _cachedObjectPool;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -168,8 +332,15 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
-                _cachedObjectPool = currentService as IObjectPoolService;
+            if (serviceSlot != GlobalRegistryServiceSlot.ObjectPool)
+                return;
+
+            if (ReferenceEquals(previousService, _particlePoolOwner))
+                DespawnEffectInstance();
+
+            _cachedObjectPool = currentService as IObjectPoolService;
+            if (isActiveAndEnabled)
+                SpawnEffectInstance();
         }
 
         private void CacheRegistryServicesCold()
@@ -192,36 +363,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
-        }
-
-        private void ConfigureDefaultParticleSystem()
-        {
-            if (_particleSystem == null)
-                return;
-
-            ParticleSystem.MainModule main = _particleSystem.main;
-            main.startLifetime = particleLifetime;
-            main.startSpeed = particleSpeed;
-            main.startColor = particleColor;
-            main.maxParticles = particleCount;
-            main.loop = false;
-            main.playOnAwake = false;
-
-            ParticleSystem.EmissionModule emission = _particleSystem.emission;
-            emission.rateOverTime = 0f;
-            ParticleSystem.Burst burst = new ParticleSystem.Burst(0f, particleCount);
-            emission.SetBurst(0, burst);
-
-            ParticleSystem.ShapeModule shape = _particleSystem.shape;
-            shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = 50f;
-
-            _particleSystem.TryGetComponent(out ParticleSystemRenderer renderer);
-            if (renderer != null)
-            {
-                renderer.renderMode = ParticleSystemRenderMode.Billboard;
-                renderer.sortingOrder = 100;
-            }
         }
     }
 }

@@ -1,0 +1,303 @@
+#pragma kernel GenerateWreckageBurnAlbedo
+#pragma kernel GenerateWreckageBurnMrao
+
+RWTexture2D<float4> _WreckageOutput;
+Texture2D<float4> _WreckageCurvatureMap;
+SamplerState sampler_WreckageCurvatureMap;
+
+float4 _WreckageTextureSize; // x width, y height, z curvature bound, w role
+uint _WreckageSeed;
+float4 _WreckageBlastParams; // center x, center y, radius, halo width
+float4 _WreckageLayerParams; // soot, scrape, paint survival, GlobalQualityWeight
+float4 _WreckagePatternParams; // streak length, base period, fracture gain, halo gain
+
+static const float3 kPaint = float3(0.032, 0.047, 0.043);
+static const float3 kPrimer = float3(0.205, 0.072, 0.045);
+static const float3 kBareSteel = float3(0.515, 0.495, 0.445);
+static const float3 kBrightScrape = float3(0.730, 0.705, 0.610);
+static const float3 kSootBlack = float3(0.007, 0.006, 0.005);
+static const float3 kAshGrey = float3(0.168, 0.158, 0.138);
+static const float3 kHeatStraw = float3(0.910, 0.545, 0.150);
+static const float3 kHeatViolet = float3(0.410, 0.120, 0.560);
+static const float3 kHeatBlue = float3(0.055, 0.165, 0.550);
+
+uint WrapInt(int value, uint period)
+{
+    int p = max(1, (int)period);
+    int wrapped = value % p;
+    return (uint)(wrapped < 0 ? wrapped + p : wrapped);
+}
+
+uint HashMix(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return value;
+}
+
+float Hash01(uint2 cell)
+{
+    uint h = HashMix(cell.x * 0x9e3779b9u ^ cell.y * 0x85ebca6bu ^ _WreckageSeed);
+    return (float)(h & 0x00ffffffu) * (1.0 / 16777215.0);
+}
+
+float PeriodicValueNoise(float2 p, uint period)
+{
+    int2 cell = (int2)floor(p);
+    float2 f = frac(p);
+    uint2 c00 = uint2(WrapInt(cell.x, period), WrapInt(cell.y, period));
+    uint2 c10 = uint2(WrapInt(cell.x + 1, period), c00.y);
+    uint2 c01 = uint2(c00.x, WrapInt(cell.y + 1, period));
+    uint2 c11 = uint2(c10.x, c01.y);
+    float n00 = Hash01(c00);
+    float n10 = Hash01(c10);
+    float n01 = Hash01(c01);
+    float n11 = Hash01(c11);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(n00, n10, u.x), lerp(n01, n11, u.x), u.y);
+}
+
+float PeriodicFbm(float2 uv, uint basePeriod)
+{
+    float sum = 0.0;
+    float norm = 0.0;
+    float amp = 0.54;
+    [unroll]
+    for (int i = 0; i < 5; i++)
+    {
+        uint period = max(8u, basePeriod << i);
+        sum += PeriodicValueNoise(uv * (float)period, period) * amp;
+        norm += amp;
+        amp *= 0.52;
+    }
+
+    return norm > 0.0 ? sum / norm : 0.0;
+}
+
+float PeriodicWorleyCrack(float2 uv, uint period)
+{
+    float2 p = uv * (float)period;
+    int2 cell = (int2)floor(p);
+    float nearest = 8.0;
+    float secondNearest = 8.0;
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            uint2 wrapped = uint2(WrapInt(cell.x + x, period), WrapInt(cell.y + y, period));
+            float2 jitter = float2(Hash01(wrapped), Hash01(wrapped + uint2(19u, 47u)));
+            float2 candidate = float2(cell.x + x, cell.y + y) + jitter;
+            float distanceSq = dot(candidate - p, candidate - p);
+            if (distanceSq < nearest)
+            {
+                secondNearest = nearest;
+                nearest = distanceSq;
+            }
+            else if (distanceSq < secondNearest)
+            {
+                secondNearest = distanceSq;
+            }
+        }
+    }
+
+    float ridge = abs(sqrt(secondNearest) - sqrt(nearest));
+    return 1.0 - smoothstep(0.030, 0.155, ridge);
+}
+
+float JointMask(float2 uv)
+{
+    float2 panel = abs(frac(uv * 8.0) - 0.5);
+    float seam = min(panel.x, panel.y);
+    return 1.0 - smoothstep(0.010, 0.043, seam);
+}
+
+float RivetMask(float2 uv)
+{
+    float2 grid = frac(uv * 19.0) - 0.5;
+    float rivet = 1.0 - smoothstep(0.055, 0.105, length(grid));
+    float keep = step(0.42, PeriodicValueNoise(floor(uv * 19.0), 19u));
+    return rivet * keep;
+}
+
+float FallbackCurvature(float2 uv)
+{
+    float joint = JointMask(uv);
+    float rivet = RivetMask(uv);
+    float chip = pow(PeriodicFbm(uv * 2.0 + 0.171, 64u), 4.0);
+    return saturate(max(joint * 0.82, rivet * 0.76) + chip * 0.24);
+}
+
+float SampleCurvature(float2 uv)
+{
+    if (_WreckageTextureSize.z > 0.5)
+        return saturate(_WreckageCurvatureMap.SampleLevel(sampler_WreckageCurvatureMap, uv, 0.0).r);
+
+    return FallbackCurvature(uv);
+}
+
+float WrappedDistance(float2 uv, float2 center)
+{
+    float2 delta = abs(frac(uv) - frac(center));
+    delta = min(delta, 1.0 - delta);
+    return length(delta);
+}
+
+float ScratchBand(float2 uv, float angleBias, float density, float noise)
+{
+    float2 wrappedUv = frac(uv);
+    float freqX = floor(max(8.0, density) + 0.5);
+    float freqY = floor(max(1.0, density * saturate(0.18 + abs(angleBias) * 0.42)) + 0.5);
+    float diagonal = wrappedUv.x * freqX + wrappedUv.y * freqY;
+    float counter = wrappedUv.x * max(1.0, floor(freqY * 0.50 + 0.5)) - wrappedUv.y * max(1.0, floor(freqX * 0.08 + 0.5));
+    float stripe = lerp(diagonal, counter, saturate(abs(angleBias))) + noise * 0.115;
+    float band = abs(frac(stripe) - 0.5);
+    return 1.0 - smoothstep(0.012, 0.045, band);
+}
+
+float DownwardSootStreak(float2 uv, uint basePeriod, float length01, float blast, float curvature)
+{
+    float streak = 0.0;
+    float length = lerp(0.06, 0.48, saturate(length01));
+    [unroll]
+    for (int i = 0; i < 16; i++)
+    {
+        float t = (float)i * (1.0 / 15.0);
+        float2 sampleUv = frac(uv - float2((t - 0.5) * 0.035, t * length));
+        float sourceNoise = PeriodicFbm(sampleUv + 0.612, basePeriod);
+        float source = saturate(JointMask(sampleUv) * 0.50 + RivetMask(sampleUv) * 0.35 + sourceNoise * 0.18 + blast * 0.38 + curvature * 0.24);
+        float taper = 1.0 - t;
+        float wobble = 0.70 + 0.30 * PeriodicValueNoise(sampleUv * (float)basePeriod + t * 7.0, basePeriod);
+        streak = max(streak, source * taper * wobble);
+    }
+
+    return saturate(streak);
+}
+
+float3 HeatTemperColor(float phase)
+{
+    float straw = 1.0 - smoothstep(0.20, 0.58, phase);
+    float violet = 1.0 - abs(phase - 0.54) / 0.31;
+    float blue = smoothstep(0.52, 0.94, phase);
+    float3 color = kHeatStraw * saturate(straw) + kHeatViolet * saturate(violet) + kHeatBlue * saturate(blue);
+    return saturate(color);
+}
+
+struct BurnState
+{
+    float curvature;
+    float blast;
+    float halo;
+    float carbon;
+    float sootDeep;
+    float ash;
+    float scrape;
+    float fracture;
+    float paint;
+    float primer;
+    float bareSteel;
+    float heatPhase;
+    float cavity;
+};
+
+BurnState EvaluateBurnState(float2 uv)
+{
+    float q = saturate(_WreckageLayerParams.w);
+    uint basePeriod = (uint)max(16.0, _WreckagePatternParams.y);
+    float curvature = SampleCurvature(uv);
+    float coarse = PeriodicFbm(uv + 0.137, basePeriod);
+    float fine = PeriodicFbm(uv * 2.0 + 0.431, basePeriod * 2u);
+    float cellular = PeriodicWorleyCrack(uv + 0.071, max(12u, (uint)(28.0 + q * 64.0)));
+
+    float dist = WrappedDistance(uv, _WreckageBlastParams.xy);
+    float raggedRadius = _WreckageBlastParams.z + (coarse - 0.5) * lerp(0.035, 0.085, q);
+    float blast = 1.0 - smoothstep(raggedRadius * 0.35, raggedRadius, dist);
+    float ringDistance = abs(dist - raggedRadius);
+    float halo = (1.0 - smoothstep(_WreckageBlastParams.w, _WreckageBlastParams.w * 2.75, ringDistance)) * _WreckagePatternParams.w;
+    halo *= 1.0 - blast * 0.48;
+    float downwardStreak = DownwardSootStreak(uv, basePeriod, _WreckagePatternParams.x, blast, curvature);
+
+    float scratchDensity = lerp(46.0, 148.0, q);
+    float scratchA = ScratchBand(uv, 0.34, scratchDensity, fine);
+    float scratchB = ScratchBand(uv.yx + 0.19, -0.22, scratchDensity * 0.73, coarse);
+    float gouge = max(scratchA, scratchB) * smoothstep(0.49, 0.90, fine + cellular * 0.25);
+    float fracture = saturate(cellular * _WreckagePatternParams.z * (0.35 + blast * 0.44 + curvature * 0.36));
+    float scrape = saturate(max(gouge, fracture * 0.72) * _WreckageLayerParams.y * (0.22 + blast * 0.48 + halo * 0.46 + curvature * 0.34));
+
+    float sootSource = saturate(blast * 0.86 + curvature * 0.30 + fracture * 0.24 + downwardStreak * 0.36 + coarse * 0.12);
+    float carbon = saturate(_WreckageLayerParams.x * sootSource - scrape * 0.18);
+    float sootDeep = saturate(carbon * (0.76 + fine * 0.36));
+    float ash = saturate(carbon * smoothstep(0.54, 0.96, fine + curvature * 0.25 + downwardStreak * 0.18) * (0.55 + 0.25 * q));
+    float paint = saturate(_WreckageLayerParams.z + (1.0 - blast) * 0.23 - carbon * 0.84 - scrape * 0.34 - halo * 0.12);
+    float primer = saturate((1.0 - paint) * (1.0 - carbon * 0.76) * (0.21 + curvature * 0.45) * (1.0 - scrape * 0.38));
+    float bareSteel = saturate((scrape * 0.78 + halo * 0.42 + curvature * 0.32 + fracture * 0.20) * (1.0 - carbon * 0.95) * (1.0 - paint * 0.70));
+    float heatPhase = saturate(ringDistance / max(0.001, _WreckageBlastParams.w * 2.75) + fine * 0.28);
+    float cavity = saturate(curvature * 0.72 + fracture * 0.34 + carbon * 0.22);
+
+    BurnState state;
+    state.curvature = curvature;
+    state.blast = blast;
+    state.halo = saturate(halo * (1.0 - carbon * 0.70));
+    state.carbon = carbon;
+    state.sootDeep = sootDeep;
+    state.ash = ash;
+    state.scrape = scrape;
+    state.fracture = fracture;
+    state.paint = paint;
+    state.primer = primer;
+    state.bareSteel = bareSteel;
+    state.heatPhase = heatPhase;
+    state.cavity = cavity;
+    return state;
+}
+
+[numthreads(8, 8, 1)]
+void GenerateWreckageBurnAlbedo(uint3 id : SV_DispatchThreadID)
+{
+    uint width = (uint)_WreckageTextureSize.x;
+    uint height = (uint)_WreckageTextureSize.y;
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    BurnState s = EvaluateBurnState(uv);
+    uint basePeriod = (uint)max(16.0, _WreckagePatternParams.y);
+    float grain = PeriodicFbm(uv * 4.0 + 0.271, basePeriod * 4u);
+    float3 heatColor = HeatTemperColor(s.heatPhase);
+
+    float3 color = lerp(kBareSteel, kPaint, s.paint);
+    color = lerp(color, kPrimer, s.primer);
+    color = lerp(color, kBrightScrape, s.scrape * 0.72 + s.bareSteel * 0.24);
+    color = lerp(color, heatColor, s.halo);
+    color = lerp(color, kAshGrey, s.ash * 0.42);
+    color = lerp(color, kSootBlack, s.sootDeep * 0.88);
+    color *= lerp(0.78, 1.19, grain);
+    color *= 1.0 - s.cavity * 0.10;
+
+    _WreckageOutput[id.xy] = float4(saturate(color), 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateWreckageBurnMrao(uint3 id : SV_DispatchThreadID)
+{
+    uint width = (uint)_WreckageTextureSize.x;
+    uint height = (uint)_WreckageTextureSize.y;
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    BurnState s = EvaluateBurnState(uv);
+    uint basePeriod = (uint)max(16.0, _WreckagePatternParams.y);
+    float fine = PeriodicFbm(uv * 3.0 + 0.713, basePeriod * 4u);
+
+    float metallic = saturate(s.bareSteel * 0.94 + s.halo * 0.68 - s.carbon * 0.96 - s.paint * 0.32);
+    float roughness = saturate(0.38 + s.carbon * 0.48 + s.ash * 0.25 + s.scrape * 0.15 + s.fracture * 0.10 - s.halo * 0.18 + (fine - 0.5) * 0.12);
+    float ao = saturate(1.0 - s.cavity * 0.31 - s.carbon * 0.18 - s.fracture * 0.14 - s.sootDeep * 0.10);
+    float carbonization = saturate(s.carbon);
+
+    _WreckageOutput[id.xy] = float4(metallic, roughness, ao, carbonization);
+}

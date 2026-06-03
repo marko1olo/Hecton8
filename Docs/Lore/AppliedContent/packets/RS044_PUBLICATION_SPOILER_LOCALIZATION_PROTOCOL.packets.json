@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P216_PUBLIC_SITE_ARTICLE_TIER_RULES",
+      "release_set_id": "RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL",
+      "article_id": "publication.public_site_article_tier_rules",
+      "title_key": "applied_lore.public_site_article_tier_rules.title",
+      "unlock": {
+        "primary": "unlock.public_site_article_tier_rules",
+        "poi_tags": [
+          "poi.public_article_tier_card",
+          "poi.site_spoiler_gate",
+          "poi.pr_copy_lock"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "ru_RU": {
+          "title": "Правила public site article tiers",
+          "scanner": "Public copy может называть pressure, route cost и old lies; Atlas-basin payload truth должна быть gated.",
+          "field_note": "Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Продавай рану. Не продавай вскрытие до того, как игрок его заслужил.",
+          "in_game_wiki": "Правила public site article tiers отделяют marketing/wiki copy от spoiler-gated campaign evidence.",
+          "external_site": "Правила public site article tiers задают границы публикации HECTON-8 для сайта и external wiki articles."
+        },
+        "ja_JP": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft JP localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft JP localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft JP localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft JP localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft JP localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft JP localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "zh_CN": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft CN localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft CN localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft CN localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft CN localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft CN localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft CN localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "fr_FR": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft FR localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft FR localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft FR localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft FR localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft FR localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft FR localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "es_ES": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft ES localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft ES localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft ES localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft ES localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft ES localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft ES localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "de_DE": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft DE localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft DE localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft DE localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft DE localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft DE localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft DE localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "pl_PL": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft PL localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft PL localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft PL localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft PL localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft PL localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft PL localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "uk_UA": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft UA localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft UA localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft UA localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft UA localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft UA localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft UA localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "ar_SA": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft AR localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft AR localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft AR localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft AR localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft AR localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft AR localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "id_ID": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft ID localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft ID localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft ID localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft ID localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft ID localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft ID localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "ko_KR": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft KO localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft KO localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft KO localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft KO localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft KO localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft KO localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "he_IL": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft HE localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft HE localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft HE localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft HE localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft HE localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft HE localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "pt_BR": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft PT localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft PT localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft PT localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft PT localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft PT localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft PT localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        },
+        "nl_NL": {
+          "title": "Public Site Article Tier Rules",
+          "scanner": "Draft NL localization pending native pass. Public copy can name pressure, route cost and old lies; it must gate Atlas-basin payload truth.",
+          "field_note": "Draft NL localization pending native pass. Article tiers: public setting, early systems, mid-depth evidence, spoiler-gated endings, internal-only implementation.",
+          "terminal": "Draft NL localization pending native pass. SITE TIERS: T0 public premise, T1 early tools/routes, T2 corporate evidence, T3 Atlas-basin consequences, T4 internal-only table/runtime notes.",
+          "audio": "Draft NL localization pending native pass. Market the wound. Do not sell the autopsy before the player earns it.",
+          "in_game_wiki": "Draft NL localization pending native pass. Public Site Article Tier Rules separate marketing/wiki copy from spoiler-gated campaign evidence.",
+          "external_site": "Draft NL localization pending native pass. Public Site Article Tier Rules defines HECTON-8 publication boundaries for website and external wiki articles."
+        }
+      }
+    },
+    {
+      "packet_id": "P217_IN_GAME_WIKI_UNLOCK_TIER_RULES",
+      "release_set_id": "RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL",
+      "article_id": "publication.in_game_wiki_unlock_tier_rules",
+      "title_key": "applied_lore.in_game_wiki_unlock_tier_rules.title",
+      "unlock": {
+        "primary": "unlock.in_game_wiki_unlock_tier_rules",
+        "poi_tags": [
+          "poi.codex_unlock_tier_card",
+          "poi.packet_unlock_gate",
+          "poi.dossier_context_strip"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.p63_shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "The PDA should explain only what the player has physically earned.",
+          "field_note": "Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "The codex is a receipt, not a teacher.",
+          "in_game_wiki": "In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Правила in-game wiki unlock tiers",
+          "scanner": "PDA должен объяснять только то, что игрок физически заработал.",
+          "field_note": "Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Не раскрывать route truth до найденного объекта.",
+          "audio": "Codex это receipt, а не teacher.",
+          "in_game_wiki": "Правила in-game wiki unlock tiers держат PDA привязанным к исследованию и evidence.",
+          "external_site": "Правила in-game wiki unlock tiers описывают evidence-first codex policy HECTON-8."
+        },
+        "ja_JP": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft JP localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft JP localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft JP localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft JP localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft JP localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft JP localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "zh_CN": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft CN localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft CN localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft CN localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft CN localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft CN localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft CN localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "fr_FR": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft FR localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft FR localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft FR localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft FR localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft FR localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft FR localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "es_ES": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft ES localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft ES localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft ES localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft ES localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft ES localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft ES localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "de_DE": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft DE localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft DE localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft DE localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft DE localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft DE localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft DE localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "pl_PL": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft PL localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft PL localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft PL localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft PL localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft PL localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft PL localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "uk_UA": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft UA localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft UA localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft UA localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft UA localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft UA localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft UA localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "ar_SA": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft AR localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft AR localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft AR localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft AR localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft AR localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft AR localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "id_ID": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft ID localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft ID localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft ID localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft ID localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft ID localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft ID localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "ko_KR": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft KO localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft KO localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft KO localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft KO localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft KO localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft KO localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "he_IL": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft HE localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft HE localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft HE localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft HE localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft HE localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft HE localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "pt_BR": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft PT localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft PT localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft PT localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft PT localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft PT localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft PT localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        },
+        "nl_NL": {
+          "title": "In-Game Wiki Unlock Tier Rules",
+          "scanner": "Draft NL localization pending native pass. The PDA should explain only what the player has physically earned.",
+          "field_note": "Draft NL localization pending native pass. Unlock tiers: scan hint, field note, terminal proof, route-card synthesis, ending record.",
+          "terminal": "Draft NL localization pending native pass. PDA TIERS: hint -> fragment -> proof -> synthesis -> ending record. Do not reveal route truth before the object is found.",
+          "audio": "Draft NL localization pending native pass. The codex is a receipt, not a teacher.",
+          "in_game_wiki": "Draft NL localization pending native pass. In-Game Wiki Unlock Tier Rules keep the PDA tied to exploration and evidence.",
+          "external_site": "Draft NL localization pending native pass. In-Game Wiki Unlock Tier Rules describes the evidence-first codex policy for HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P218_AUDIO_TRANSCRIPT_CENSOR_RULES",
+      "release_set_id": "RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL",
+      "article_id": "publication.audio_transcript_censor_rules",
+      "title_key": "applied_lore.audio_transcript_censor_rules.title",
+      "unlock": {
+        "primary": "unlock.audio_transcript_censor_rules",
+        "poi_tags": [
+          "poi.audio_censor_strip",
+          "poi.subtitle_damage_band",
+          "poi.accessibility_transcript_gate"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.relay_spine"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Правила audio transcript censor",
+          "scanner": "Damaged audio может скрывать truth, но subtitles все равно должны служить игроку.",
+          "field_note": "Diegetic censor marks скрывают missing route facts; critical accessibility text нельзя прятать за стилем.",
+          "terminal": "TRANSCRIPT RULE: damaged words могут маскировать names, payloads или timestamps. Core warning, objective и route-critical text остаются читаемыми.",
+          "audio": "Static может скрыть имя. Он не может скрыть тревогу.",
+          "in_game_wiki": "Правила audio transcript censor балансируют noir redaction, accessibility и localization.",
+          "external_site": "Правила audio transcript censor задают readable damaged-audio policy для HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft JP localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft JP localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft JP localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft JP localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft JP localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft JP localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft CN localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft CN localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft CN localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft CN localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft CN localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft CN localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft FR localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft FR localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft FR localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft FR localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft FR localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft FR localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "es_ES": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft ES localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft ES localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft ES localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft ES localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft ES localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft ES localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "de_DE": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft DE localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft DE localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft DE localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft DE localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft DE localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft DE localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft PL localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft PL localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft PL localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft PL localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft PL localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft PL localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft UA localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft UA localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft UA localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft UA localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft UA localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft UA localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft AR localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft AR localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft AR localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft AR localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft AR localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft AR localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "id_ID": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft ID localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft ID localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft ID localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft ID localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft ID localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft ID localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft KO localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft KO localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft KO localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft KO localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft KO localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft KO localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "he_IL": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft HE localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft HE localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft HE localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft HE localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft HE localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft HE localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft PT localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft PT localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft PT localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft PT localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft PT localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft PT localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Audio Transcript Censor Rules",
+          "scanner": "Draft NL localization pending native pass. Damaged audio can hide truth, but subtitles must still serve the player.",
+          "field_note": "Draft NL localization pending native pass. Use diegetic censor marks for missing route facts; never hide critical accessibility text behind style.",
+          "terminal": "Draft NL localization pending native pass. TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.",
+          "audio": "Draft NL localization pending native pass. Static may hide the name. It cannot hide the alarm.",
+          "in_game_wiki": "Draft NL localization pending native pass. Audio Transcript Censor Rules balance noir redaction with accessibility and localization.",
+          "external_site": "Draft NL localization pending native pass. Audio Transcript Censor Rules defines readable damaged-audio policy for HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P219_ART_BRIEF_RELEASE_GATE_RULES",
+      "release_set_id": "RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL",
+      "article_id": "publication.art_brief_release_gate_rules",
+      "title_key": "applied_lore.art_brief_release_gate_rules.title",
+      "unlock": {
+        "primary": "unlock.art_brief_release_gate_rules",
+        "poi_tags": [
+          "poi.art_release_gate_card",
+          "poi.image_brief_lock",
+          "poi.spoiler_crop_note"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.external_publication"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Pretty is not a proof artifact.",
+          "in_game_wiki": "Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Правила art brief release gate",
+          "scanner": "Изображение release-ready только если показывает evidence object, route, tool или pressure state.",
+          "field_note": "Каждый art brief требует spoiler tier, primary evidence object, low/mid/high/ultra note и crop-safe text boundary.",
+          "terminal": "ART GATE: без декоративного generic sci-fi. Image показывает route, tool, ledger, pressure state, creature evidence или public-safe moon/ship context.",
+          "audio": "Pretty не proof artifact.",
+          "in_game_wiki": "Правила art brief release gate держат wiki/site imagery привязанными к HECTON-8 evidence taste.",
+          "external_site": "Правила art brief release gate задают publication-safe image requirements для HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft JP localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft JP localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft JP localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft JP localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft JP localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft JP localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft CN localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft CN localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft CN localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft CN localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft CN localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft CN localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft FR localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft FR localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft FR localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft FR localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft FR localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft FR localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "es_ES": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft ES localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft ES localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft ES localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft ES localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft ES localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft ES localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "de_DE": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft DE localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft DE localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft DE localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft DE localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft DE localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft DE localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft PL localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft PL localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft PL localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft PL localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft PL localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft PL localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft UA localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft UA localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft UA localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft UA localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft UA localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft UA localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft AR localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft AR localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft AR localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft AR localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft AR localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft AR localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "id_ID": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft ID localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft ID localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft ID localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft ID localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft ID localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft ID localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft KO localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft KO localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft KO localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft KO localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft KO localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft KO localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "he_IL": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft HE localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft HE localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft HE localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft HE localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft HE localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft HE localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft PT localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft PT localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft PT localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft PT localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft PT localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft PT localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Art Brief Release Gate Rules",
+          "scanner": "Draft NL localization pending native pass. An image is release-ready only if it shows an evidence object, route, tool or pressure state.",
+          "field_note": "Draft NL localization pending native pass. Every art brief needs spoiler tier, primary evidence object, low/mid/high/ultra presentation note and crop-safe text boundary.",
+          "terminal": "Draft NL localization pending native pass. ART GATE: no decorative generic sci-fi. Image must expose route, tool, ledger, pressure state, creature evidence or public-safe moon/ship context.",
+          "audio": "Draft NL localization pending native pass. Pretty is not a proof artifact.",
+          "in_game_wiki": "Draft NL localization pending native pass. Art Brief Release Gate Rules keep wiki/site imagery tied to HECTON-8 evidence taste.",
+          "external_site": "Draft NL localization pending native pass. Art Brief Release Gate Rules defines publication-safe image requirements for HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P220_NATIVE_LANGUAGE_BACKLOG_RULES",
+      "release_set_id": "RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL",
+      "article_id": "publication.native_language_backlog_rules",
+      "title_key": "applied_lore.native_language_backlog_rules.title",
+      "unlock": {
+        "primary": "unlock.native_language_backlog_rules",
+        "poi_tags": [
+          "poi.native_language_backlog",
+          "poi.locale_review_stamp",
+          "poi.rtl_proof_card"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.localization"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "ru_RU": {
+          "title": "Правила native language backlog",
+          "scanner": "Draft rows это source coverage. Native review это release gate.",
+          "field_note": "Отслеживать locale, owner, script direction, font atlas proof, subtitle proof и page publication status.",
+          "terminal": "LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Coverage не quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Правила native language backlog превращают multilingual ambition в production gate.",
+          "external_site": "Правила native language backlog задают localization backlog HECTON-8 для сайта, wiki и in-game text."
+        },
+        "ja_JP": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft JP localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft JP localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft JP localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft JP localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft JP localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft JP localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "zh_CN": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft CN localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft CN localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft CN localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft CN localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft CN localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft CN localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "fr_FR": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft FR localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft FR localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft FR localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft FR localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft FR localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft FR localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "es_ES": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft ES localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft ES localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft ES localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft ES localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft ES localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft ES localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "de_DE": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft DE localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft DE localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft DE localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft DE localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft DE localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft DE localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "pl_PL": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft PL localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft PL localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft PL localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft PL localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft PL localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft PL localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "uk_UA": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft UA localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft UA localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft UA localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft UA localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft UA localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft UA localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "ar_SA": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft AR localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft AR localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft AR localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft AR localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft AR localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft AR localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "id_ID": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft ID localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft ID localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft ID localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft ID localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft ID localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft ID localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "ko_KR": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft KO localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft KO localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft KO localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft KO localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft KO localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft KO localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "he_IL": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft HE localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft HE localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft HE localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft HE localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft HE localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft HE localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "pt_BR": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft PT localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft PT localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft PT localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft PT localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft PT localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft PT localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        },
+        "nl_NL": {
+          "title": "Native Language Backlog Rules",
+          "scanner": "Draft NL localization pending native pass. Draft rows are source coverage. Native review is the release gate.",
+          "field_note": "Draft NL localization pending native pass. Track locale, owner, script direction, font atlas proof, subtitle proof and page publication status.",
+          "terminal": "Draft NL localization pending native pass. LANGUAGE BACKLOG: locale + native reviewer + RTL/font proof + subtitle pass + string-pool bake + publication status. Runtime never translates live.",
+          "audio": "Draft NL localization pending native pass. Coverage is not quality. Bake it, read it, prove it.",
+          "in_game_wiki": "Draft NL localization pending native pass. Native Language Backlog Rules turn multilingual ambition into a production gate.",
+          "external_site": "Draft NL localization pending native pass. Native Language Backlog Rules defines the HECTON-8 localization backlog for website, wiki and in-game text."
+        }
+      }
+    }
+  ]
+}

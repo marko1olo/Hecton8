@@ -4,17 +4,19 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AI.Sensory
 {
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct EchoTap
     {
         [FieldOffset(0)] public AbsoluteUniversePosition SourceAup;
@@ -28,7 +30,11 @@ namespace Hecton8.AI.Sensory
         [FieldOffset(120)] public byte Flags;
         [FieldOffset(121)] public byte QualityWeightByte;
         [FieldOffset(122)] private ushort _pad0;
-        [FieldOffset(124)] private uint _pad1;
+        [FieldOffset(124)] public float EchoAmplitude;
+        [FieldOffset(128)] public float EchoFrequency;
+        [FieldOffset(132)] public uint IsGhostBlip;
+        [FieldOffset(136)] public float LifetimeSeconds;
+        [FieldOffset(140)] private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 144)]
@@ -118,7 +124,8 @@ namespace Hecton8.AI.Sensory
 
                 float volume = math.saturate(tap.Volume01);
                 float transmission = math.saturate(tap.Transmission01);
-                float intensity = math.saturate(volume * math.max(0.05f, transmission));
+                float truthMask = math.select(1f, 0f, tap.IsGhostBlip != 0u);
+                float intensity = math.saturate(volume * math.max(0.05f, transmission) * truthMask);
                 if (intensity <= 0.0001f)
                     continue;
 
@@ -175,12 +182,132 @@ namespace Hecton8.AI.Sensory
         }
     }
 
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateAcousticPingsJob : IJob
+    {
+        [NoAlias] public NativeArray<EchoTap> Taps;
+        public AbsoluteUniversePosition PlayerAup;
+        public float3 PlayerForward;
+        public float3 FlashlightForward;
+        public float FlashlightConeCos;
+        public float FlashlightActive01;
+        public float StressLevel01;
+        public float CurrentFrequency;
+        public float PredatorFrequency;
+        public float CurrentTime;
+        public float GlobalQualityWeight;
+        public int StartIndex;
+        public int Capacity;
+        public int Frame;
+        public uint Seed;
+        public byte QualityWeightByte;
+
+        public void Execute()
+        {
+            if (!Taps.IsCreated)
+                return;
+
+            int capacity = math.min(math.max(0, Capacity), Taps.Length);
+            int start = math.clamp(StartIndex, 0, capacity);
+            for (int i = start; i < capacity; i++)
+                Taps[i] = default;
+
+            if (!PlayerAup.IsFinite())
+                return;
+
+            int available = capacity - start;
+            if (available <= 0)
+                return;
+
+            float quality = math.saturate(math.select(0f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            int qualityBudget = math.clamp((int)math.round(math.lerp(3f, 25f, quality)), 3, 25);
+            int ghostCount = math.min(available, qualityBudget);
+
+            float stress01 = math.saturate(math.select(0f, StressLevel01, math.isfinite(StressLevel01)));
+            float stressMultiplier = math.saturate((stress01 - 0.75f) * 4f);
+            float currentFrequency = math.clamp(
+                math.select(-999f, CurrentFrequency, math.isfinite(CurrentFrequency)),
+                -999f,
+                12f);
+            float predatorFrequency = math.clamp(
+                math.select(AcousticEchoLocationRuntime.DefaultGhostPredatorFrequency, PredatorFrequency, math.isfinite(PredatorFrequency)),
+                0.1f,
+                12f);
+            float currentTime = math.max(0f, math.select(0f, CurrentTime, math.isfinite(CurrentTime)));
+            float tunedMask = math.step(math.abs(predatorFrequency - currentFrequency), 0.05f);
+            float frequencyMultiplier = 1f - tunedMask;
+
+            float3 forward = SafeNormalize(
+                new float3(PlayerForward.x, 0f, PlayerForward.z),
+                new float3(0f, 0f, 1f));
+            float3 rear = -forward;
+            float3 right = new float3(forward.z, 0f, -forward.x);
+            float3 flashlightForward = SafeNormalize(FlashlightForward, forward);
+            float flashlightActive = math.saturate(math.select(0f, FlashlightActive01, math.isfinite(FlashlightActive01)));
+            float flashlightConeCos = math.clamp(math.select(1.1f, FlashlightConeCos, math.isfinite(FlashlightConeCos)), -1f, 1.1f);
+
+            for (int i = 0; i < ghostCount; i++)
+            {
+                uint state = Seed ^ ((uint)i * 747796405u) ^ (uint)math.max(0, Frame);
+                float lateral01 = NextRandom01(ref state);
+                float distance01 = NextRandom01(ref state);
+                float vertical01 = NextRandom01(ref state);
+                float angle = (lateral01 - 0.5f) * AcousticEchoLocationRuntime.Pi;
+                float sin = AcousticEchoLocationRuntime.SinPolynomial7(angle);
+                float cos = AcousticEchoLocationRuntime.SinPolynomial7(angle + AcousticEchoLocationRuntime.HalfPi);
+                float3 direction = SafeNormalize(
+                    rear * math.abs(cos) + right * sin + new float3(0f, (vertical01 - 0.5f) * 0.18f, 0f),
+                    rear);
+                float distance = math.lerp(14f, 78f, distance01);
+                float dot = math.dot(flashlightForward, direction);
+                float illuminatedMask = math.step(flashlightConeCos, dot) * flashlightActive;
+                float approachPulse = 0.7f + 0.3f * AcousticEchoLocationRuntime.SinPolynomial7(currentTime * 7.0f + i * 1.6180339f);
+                float amplitude = math.saturate(stressMultiplier * frequencyMultiplier * (1f - illuminatedMask) * approachPulse);
+                AbsoluteUniversePosition blipAup = AbsoluteUniversePosition.OffsetMeters(in PlayerAup, (double3)(direction * distance));
+
+                EchoTap tap = default;
+                tap.SourceAup = blipAup;
+                tap.PortalAup = blipAup;
+                tap.Volume01 = amplitude;
+                tap.Transmission01 = 1f;
+                tap.DelaySeconds = 0f;
+                tap.LastHeardTime = currentTime;
+                tap.SourceId = AcousticEchoLocationRuntime.GhostBlipSourceHash ^ (uint)i;
+                tap.Sequence = ((uint)math.max(0, Frame) << 16) ^ (Seed + (uint)i + 1u);
+                tap.Flags = AcousticEchoLocationRuntime.FlagNoisemakerCandidate;
+                tap.QualityWeightByte = QualityWeightByte;
+                tap.EchoAmplitude = amplitude;
+                tap.EchoFrequency = predatorFrequency;
+                tap.IsGhostBlip = 1u;
+                tap.LifetimeSeconds = math.lerp(0.75f, 2.25f, stressMultiplier);
+                Taps[start + i] = tap;
+            }
+        }
+
+        private static float NextRandom01(ref uint state)
+        {
+            state = state * 1664525u + 1013904223u;
+            return (state >> 8) * (1f / 16777215f);
+        }
+
+        private static float3 SafeNormalize(float3 value, float3 fallback)
+        {
+            float lenSq = math.dot(value, value);
+            float valid = math.select(0f, 1f, math.isfinite(lenSq) & (lenSq > 0.000001f));
+            float invLen = math.rsqrt(math.max(0.000001f, lenSq));
+            return math.select(fallback, value * invLen, valid > 0f);
+        }
+
+    }
+
     public static class AcousticEchoLocationRuntime
     {
-        private const float Pi = 3.14159265358979323846f;
-        private const float TwoPi = 6.28318530717958647692f;
-        private const float HalfPi = 1.57079632679489661923f;
-        private const float InvTwoPi = 0.15915494309189533577f;
+        public const float Pi = 3.14159265358979323846f;
+        public const float TwoPi = 6.28318530717958647692f;
+        public const float HalfPi = 1.57079632679489661923f;
+        public const float InvTwoPi = 0.15915494309189533577f;
+        public const float DefaultGhostPredatorFrequency = 4.75f;
+        public const uint GhostBlipSourceHash = 0x47484F53u;
 
         public const byte FlagActiveTrail = 1 << 0;
         public const byte FlagPortalBreadcrumb = 1 << 1;
@@ -198,28 +325,44 @@ namespace Hecton8.AI.Sensory
 
         private const float MovementVelocityToVolume = 0.025f;
         private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
-        private static readonly ulong TrackingMutationGuardMask =
-            AcousticMutationGuardBit(BufferID.AcousticEchoFrameTaps) |
-            AcousticMutationGuardBit(BufferID.AcousticEchoPendingTaps) |
-            AcousticMutationGuardBit(BufferID.AcousticEchoTrailState) |
-            AcousticMutationGuardBit(BufferID.AcousticEchoBlackBox);
-        private static readonly ulong PendingTapMutationGuardMask =
-            AcousticMutationGuardBit(BufferID.AcousticEchoPendingTaps);
-        private static readonly ulong BlackBoxMutationGuardMask =
-            AcousticMutationGuardBit(BufferID.AcousticEchoBlackBox);
+        private const int GhostHapticCooldownFrames = 24;
+        private const int TuningHapticCooldownFrames = 30;
+        private const int ExternalHandleRefreshCooldownFrames = 30;
+        private const int MutationGuardBitMask = 31;
+        private const ulong AcousticFrameTapGuardBit = 1UL << (((int)BufferID.AcousticEchoFrameTaps) & MutationGuardBitMask);
+        private const ulong AcousticPendingTapGuardBit = 1UL << (((int)BufferID.AcousticEchoPendingTaps) & MutationGuardBitMask);
+        private const ulong AcousticTrailStateGuardBit = 1UL << (((int)BufferID.AcousticEchoTrailState) & MutationGuardBitMask);
+        private const ulong AcousticBlackBoxGuardBit = 1UL << (((int)BufferID.AcousticEchoBlackBox) & MutationGuardBitMask);
+        private const ulong TrackingMutationGuardMask =
+            AcousticFrameTapGuardBit |
+            AcousticPendingTapGuardBit |
+            AcousticTrailStateGuardBit |
+            AcousticBlackBoxGuardBit;
+        private const ulong PendingTapMutationGuardMask = AcousticPendingTapGuardBit;
+        private const ulong BlackBoxMutationGuardMask = AcousticBlackBoxGuardBit;
 
         private static readonly AcousticEchoHotSwapBridge s_hotSwapBridge = new AcousticEchoHotSwapBridge(); // COLD ALLOC: AcousticEchoHotSwapBridge[1] - static acoustic echo DataVault rebind listener - owner: AcousticEchoLocationRuntime
         private static IDataVault _dataVault;
+        private static IDataVault _pendingDataVaultRebind;
         private static VaultGenerationHandle<EchoTap> _frameTapsHandle;
         private static VaultGenerationHandle<EchoTap> _pendingTapsHandle;
         private static VaultGenerationHandle<AcousticEchoTrailState> _jobResultHandle;
         private static VaultGenerationHandle<AcousticEchoBlackBoxEntry> _blackBoxHandle;
+        private static VaultGenerationHandle<DecryptionPuzzleDTO> _decryptionPuzzleHandle;
+        private static VaultGenerationHandle<DecryptionKnobInputDTO> _decryptionKnobInputHandle;
         private static JobHandle _trackingHandle;
         private static AcousticEchoTrailState _trailState;
+        private static IPlayerRuntimeContext _playerContext;
         private static int _trackingScheduled;
+        private static int _pendingDataVaultRebindValid;
         private static int _initialized;
         private static int _lastRefreshFrame = int.MinValue;
         private static int _lastBlackBoxFrame = int.MinValue;
+        private static int _lastGhostHapticFrame = int.MinValue;
+        private static int _lastTuningHapticFrame = int.MinValue;
+        private static int _lastExternalHandleRefreshFrame = int.MinValue;
+        private static int _lastPlayerStressSignalSequence;
+        private static int _lastPlayerStressSignalSeenFrame = int.MinValue;
         private static int _blackBoxCursor;
         private static int _blackBoxDumped;
         private static int _initializationAttempted;
@@ -228,11 +371,53 @@ namespace Hecton8.AI.Sensory
         private static AbsoluteUniversePosition _pendingProducerFaultAup;
         private static IDataVault _trackingMutationGuardVault;
         private static ulong _trackingMutationGuardMask;
+
+        private struct GhostBlipContext
+        {
+            public AbsoluteUniversePosition PlayerAup;
+            public float3 PlayerForward;
+            public float3 FlashlightForward;
+            public float FlashlightConeCos;
+            public float FlashlightActive01;
+            public float Stress01;
+            public float CurrentFrequency;
+            public float PredatorFrequency;
+            public float TunedMask01;
+            public float StressMultiplier01;
+        }
         private static int _hotSwapRegistered;
         private static uint _sequence;
         private static byte _cachedQualityWeightByte;
 
         public static uint AcousticHuntsTriggered => _trailState.AcousticHuntsTriggered;
+
+        public static bool TryRunStaticSelfAudit(out uint failureMask)
+        {
+            failureMask = 0u;
+            if (UnsafeUtility.SizeOf<EchoTap>() != 144)
+                failureMask |= 1u << 0;
+            if ((UnsafeUtility.SizeOf<EchoTap>() & 15) != 0)
+                failureMask |= 1u << 1;
+            if (UnsafeUtility.SizeOf<AcousticEchoTrailState>() != 128)
+                failureMask |= 1u << 2;
+            if ((UnsafeUtility.SizeOf<AcousticEchoTrailState>() & 7) != 0)
+                failureMask |= 1u << 3;
+            if (UnsafeUtility.SizeOf<AcousticEchoHuntResult>() != 144)
+                failureMask |= 1u << 4;
+            if ((UnsafeUtility.SizeOf<AcousticEchoHuntResult>() & 7) != 0)
+                failureMask |= 1u << 5;
+            if (UnsafeUtility.SizeOf<AcousticEchoBlackBoxEntry>() != 80)
+                failureMask |= 1u << 6;
+            if ((UnsafeUtility.SizeOf<AcousticEchoBlackBoxEntry>() & 7) != 0)
+                failureMask |= 1u << 7;
+            if (UnsafeUtility.SizeOf<DecryptionPuzzleDTO>() != 32)
+                failureMask |= 1u << 8;
+            if (UnsafeUtility.SizeOf<DecryptionKnobInputDTO>() != 64)
+                failureMask |= 1u << 9;
+            if (UnsafeUtility.SizeOf<HapticPulseSignal>() != 16)
+                failureMask |= 1u << 10;
+            return failureMask == 0u;
+        }
 
         public static void EnsureInitialized()
         {
@@ -244,7 +429,9 @@ namespace Hecton8.AI.Sensory
                 return;
 
             _initializationAttempted = 1;
+            SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
             _cachedQualityWeightByte = ResolveQualityWeightByte();
+            EnsureBootstrapPlayerContext();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 _initialized = 1;
         }
@@ -252,26 +439,39 @@ namespace Hecton8.AI.Sensory
         public static void Dispose()
         {
             TryUnregisterHotSwapListener();
-            if (_initialized == 0)
-                return;
 
             if (_trackingScheduled != 0)
             {
-                DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
-                _trackingScheduled = 0;
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
+                }
+                finally
+                {
+                    _trackingScheduled = 0;
+                    ReleaseTrackingMutationGuard();
+                }
             }
 
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _dataVault = null;
+            _pendingDataVaultRebind = null;
+            _playerContext = null;
             _trailState = default;
             _lastRefreshFrame = int.MinValue;
             _lastBlackBoxFrame = int.MinValue;
+            _lastGhostHapticFrame = int.MinValue;
+            _lastTuningHapticFrame = int.MinValue;
+            _lastExternalHandleRefreshFrame = int.MinValue;
+            _lastPlayerStressSignalSequence = 0;
+            _lastPlayerStressSignalSeenFrame = int.MinValue;
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
             _initializationAttempted = 0;
             _queuedEchoTapCount = 0;
             _pendingProducerFault = 0;
+            _pendingDataVaultRebindValid = 0;
             _pendingProducerFaultAup = default;
             _sequence = 0u;
             _initialized = 0;
@@ -366,15 +566,26 @@ namespace Hecton8.AI.Sensory
         {
             if (ReferenceEquals(_dataVault, nextVault))
             {
+                if (_trackingScheduled != 0)
+                    return;
+
                 if (_initializationAttempted != 0 && OpenOrAcquireVaultBuffersForOwnerRoute())
                     _initialized = 1;
                 return;
             }
 
-            CompleteTrackingFenceForVaultRelease();
+            if (_trackingScheduled != 0)
+            {
+                _pendingDataVaultRebind = nextVault;
+                _pendingDataVaultRebindValid = 1;
+                return;
+            }
+
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _dataVault = nextVault;
+            _pendingDataVaultRebind = null;
+            _pendingDataVaultRebindValid = 0;
             _trailState = default;
             _lastRefreshFrame = int.MinValue;
             _lastBlackBoxFrame = int.MinValue;
@@ -388,6 +599,30 @@ namespace Hecton8.AI.Sensory
 
             if (_initializationAttempted != 0 && _dataVault != null && OpenOrAcquireVaultBuffersForOwnerRoute())
                 _initialized = 1;
+        }
+
+        private static void ApplyPendingDataVaultRebindIfIdle()
+        {
+            if (_pendingDataVaultRebindValid == 0 || _trackingScheduled != 0)
+                return;
+
+            IDataVault pendingVault = _pendingDataVaultRebind;
+            _pendingDataVaultRebind = null;
+            _pendingDataVaultRebindValid = 0;
+            RebindDataVaultForLifecycle(pendingVault);
+        }
+
+        private static void EnsureBootstrapPlayerContext()
+        {
+            if (_playerContext != null)
+                return;
+
+            RebindPlayerContextForLifecycle(GlobalRegistry.Player);
+        }
+
+        private static void RebindPlayerContextForLifecycle(IPlayerRuntimeContext nextContext)
+        {
+            _playerContext = nextContext;
         }
 
         private static void TryRegisterHotSwapListener()
@@ -416,6 +651,8 @@ namespace Hecton8.AI.Sensory
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
                     RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
+                else if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                    RebindPlayerContextForLifecycle(currentService as IPlayerRuntimeContext);
             }
         }
 
@@ -425,22 +662,8 @@ namespace Hecton8.AI.Sensory
             _pendingTapsHandle = default;
             _jobResultHandle = default;
             _blackBoxHandle = default;
-        }
-
-        private static void CompleteTrackingFenceForVaultRelease()
-        {
-            if (_trackingScheduled == 0)
-                return;
-
-            try
-            {
-                DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
-            }
-            finally
-            {
-                _trackingScheduled = 0;
-                ReleaseTrackingMutationGuard();
-            }
+            _decryptionPuzzleHandle = default;
+            _decryptionKnobInputHandle = default;
         }
 
         private static bool TryAcquireTrackingMutationGuard()
@@ -490,11 +713,6 @@ namespace Hecton8.AI.Sensory
         private static void ReleaseAcousticMutationGuard(IDataVault vault, ulong mask)
         {
             vault?.ReleaseMutationGuard(mask);
-        }
-
-        private static ulong AcousticMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 31);
         }
 
         private static bool TryResolveVaultBuffer<T>(
@@ -580,6 +798,37 @@ namespace Hecton8.AI.Sensory
                    handle.Generation != 0u;
         }
 
+        private static bool IsExternalUiVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
+        }
+
+        private static void RefreshExternalReadHandles(IDataVault vault, int frame)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return;
+
+            bool hasPuzzleHandle = IsExternalUiVaultHandle(in _decryptionPuzzleHandle, BufferID.TerminalDecryptionPuzzles);
+            bool hasKnobHandle = IsExternalUiVaultHandle(in _decryptionKnobInputHandle, BufferID.TerminalDecryptionKnobInput);
+            if (hasPuzzleHandle && hasKnobHandle)
+                return;
+
+            if (_lastExternalHandleRefreshFrame != int.MinValue &&
+                frame >= _lastExternalHandleRefreshFrame &&
+                frame - _lastExternalHandleRefreshFrame < ExternalHandleRefreshCooldownFrames)
+            {
+                return;
+            }
+
+            _lastExternalHandleRefreshFrame = frame;
+            if (!hasPuzzleHandle)
+                vault.TryGetGenerationHandle(BufferID.TerminalDecryptionPuzzles, out _decryptionPuzzleHandle);
+            if (!hasKnobHandle)
+                vault.TryGetGenerationHandle(BufferID.TerminalDecryptionKnobInput, out _decryptionKnobInputHandle);
+        }
+
         private static bool TryResolveFrameViewsNoAcquire(
             out NativeArray<EchoTap> frameTaps,
             out NativeArray<AcousticEchoTrailState> jobResult)
@@ -600,7 +849,9 @@ namespace Hecton8.AI.Sensory
             if (TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox))
                 return true;
 
-            CompleteTrackingFenceForVaultRelease();
+            if (_trackingScheduled != 0)
+                return false;
+
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             if (!OpenOrAcquireVaultBuffersForOwnerRoute())
@@ -793,6 +1044,176 @@ namespace Hecton8.AI.Sensory
             return any;
         }
 
+        private static bool TryBuildGhostBlipContext(int frame, out GhostBlipContext context)
+        {
+            context = default;
+            if (!SignalBus<PlayerStressSignal>.TryGetLatest(out PlayerStressSignal stress, out int stressSequence) ||
+                !math.isfinite(stress.Stress01))
+            {
+                return false;
+            }
+
+            if (stressSequence != _lastPlayerStressSignalSequence || frame < _lastPlayerStressSignalSeenFrame)
+            {
+                _lastPlayerStressSignalSequence = stressSequence;
+                _lastPlayerStressSignalSeenFrame = frame;
+            }
+            else if (_lastPlayerStressSignalSeenFrame != int.MinValue &&
+                     frame - _lastPlayerStressSignalSeenFrame > 8)
+            {
+                return false;
+            }
+
+            float stress01 = math.saturate(stress.Stress01);
+            float stressMultiplier = math.saturate((stress01 - 0.75f) * 4f);
+            if (stressMultiplier <= 0.0001f)
+                return false;
+
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext == null ||
+                !playerContext.IsInitialized ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) ||
+                !pose.Aup.IsFinite())
+            {
+                return false;
+            }
+
+            ResolveDecryptionFrequencies(frame, out float currentFrequency, out float predatorFrequency, out float tunedMask);
+            ResolveFlashlightContext(playerContext, pose.Forward, out float3 flashlightForward, out float flashlightConeCos, out float flashlightActive);
+
+            context.PlayerAup = pose.Aup;
+            context.PlayerForward = SanitizeDirection(pose.Forward, new float3(0f, 0f, 1f));
+            context.FlashlightForward = flashlightForward;
+            context.FlashlightConeCos = flashlightConeCos;
+            context.FlashlightActive01 = flashlightActive;
+            context.Stress01 = stress01;
+            context.CurrentFrequency = currentFrequency;
+            context.PredatorFrequency = predatorFrequency;
+            context.TunedMask01 = tunedMask;
+            context.StressMultiplier01 = stressMultiplier;
+            return true;
+        }
+
+        private static void ResolveFlashlightContext(
+            IPlayerRuntimeContext playerContext,
+            float3 poseForward,
+            out float3 flashlightForward,
+            out float flashlightConeCos,
+            out float flashlightActive)
+        {
+            flashlightForward = SanitizeDirection(poseForward, new float3(0f, 0f, 1f));
+            flashlightConeCos = 1.1f;
+            flashlightActive = 0f;
+
+            Hecton8.Gameplay.PlayerFlashlight flashlight = playerContext.Flashlight;
+            if (flashlight == null || !flashlight.IsBeamPresentationActive)
+                return;
+
+            if (playerContext.TryGetLookRuntimeState(out PlayerLookState lookState) &&
+                math.all(math.isfinite(lookState.AimForward)) &&
+                math.lengthsq(lookState.AimForward) > 0.000001f)
+            {
+                flashlightForward = SanitizeDirection(lookState.AimForward, flashlightForward);
+            }
+
+            float spotAngle = math.clamp(
+                math.select(42f, flashlight.PresentationSpotAngle, math.isfinite(flashlight.PresentationSpotAngle)),
+                1f,
+                179f);
+            flashlightConeCos = math.cos(math.radians(spotAngle * 0.5f));
+            flashlightActive = 1f;
+        }
+
+        private static void ResolveDecryptionFrequencies(int frame, out float currentFrequency, out float predatorFrequency, out float tunedMask)
+        {
+            currentFrequency = -999f;
+            predatorFrequency = DefaultGhostPredatorFrequency;
+            tunedMask = 0f;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return;
+
+            RefreshExternalReadHandles(vault, frame);
+            if (vault.IsCompactionFenceActive)
+                return;
+
+            bool resolvedPuzzleFrequency = false;
+            if (IsExternalUiVaultHandle(in _decryptionPuzzleHandle, BufferID.TerminalDecryptionPuzzles) &&
+                vault.TryReadOnlyHandle(in _decryptionPuzzleHandle, out NativeArray<DecryptionPuzzleDTO>.ReadOnly puzzles) &&
+                puzzles.IsCreated &&
+                puzzles.Length > 0)
+            {
+                DecryptionPuzzleDTO puzzle = puzzles[0];
+                currentFrequency = math.clamp(
+                    math.select(currentFrequency, puzzle.PlayerFrequency, math.isfinite(puzzle.PlayerFrequency)),
+                    -999f,
+                    12f);
+                predatorFrequency = math.clamp(
+                    math.select(predatorFrequency, puzzle.TargetFrequency, math.isfinite(puzzle.TargetFrequency)),
+                    0.1f,
+                    12f);
+                resolvedPuzzleFrequency = math.isfinite(puzzle.PlayerFrequency);
+            }
+
+            if (IsExternalUiVaultHandle(in _decryptionKnobInputHandle, BufferID.TerminalDecryptionKnobInput) &&
+                vault.TryReadOnlyHandle(in _decryptionKnobInputHandle, out NativeArray<DecryptionKnobInputDTO>.ReadOnly inputs) &&
+                inputs.IsCreated &&
+                inputs.Length > 0)
+            {
+                DecryptionKnobInputDTO input = inputs[0];
+                float frequencyDelta = math.select(0f, input.FrequencyDelta, math.isfinite(input.FrequencyDelta));
+                float inputActive = math.select(0f, 1f, (input.Flags != 0u) | (math.abs(frequencyDelta) > 0.0001f));
+                float knobPreviewFrequency = math.clamp(3.25f + frequencyDelta, 0.1f, 12f);
+                currentFrequency = math.select(currentFrequency, knobPreviewFrequency, !resolvedPuzzleFrequency && inputActive > 0f);
+            }
+
+            tunedMask = math.step(math.abs(predatorFrequency - currentFrequency), 0.05f);
+        }
+
+        private static float3 SanitizeDirection(float3 direction, float3 fallback)
+        {
+            float lengthSq = math.dot(direction, direction);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return fallback;
+
+            return direction * math.rsqrt(lengthSq);
+        }
+
+        private static void PublishGhostHaptics(int frame, in GhostBlipContext context)
+        {
+            float unsuppressedAmplitude = math.saturate(context.StressMultiplier01 * (1f - context.TunedMask01));
+            if (unsuppressedAmplitude > 0.65f &&
+                (_lastGhostHapticFrame == int.MinValue ||
+                 frame - _lastGhostHapticFrame >= GhostHapticCooldownFrames))
+            {
+                HapticPulseSignal pulse = new HapticPulseSignal
+                {
+                    LowFrequencyMotor01 = 0.15f,
+                    HighFrequencyMotor01 = math.saturate(unsuppressedAmplitude),
+                    DurationSeconds = 0.075f,
+                    PriorityFlags = HapticPulseSignal.PriorityTool
+                };
+                if (SignalBus<HapticPulseSignal>.TryPush(in pulse))
+                    _lastGhostHapticFrame = frame;
+            }
+
+            if (context.TunedMask01 > 0.5f &&
+                (_lastTuningHapticFrame == int.MinValue ||
+                 frame - _lastTuningHapticFrame >= TuningHapticCooldownFrames))
+            {
+                HapticPulseSignal pulse = new HapticPulseSignal
+                {
+                    LowFrequencyMotor01 = 0.42f,
+                    HighFrequencyMotor01 = 0.08f,
+                    DurationSeconds = 0.18f,
+                    PriorityFlags = HapticPulseSignal.PriorityTool
+                };
+                if (SignalBus<HapticPulseSignal>.TryPush(in pulse))
+                    _lastTuningHapticFrame = frame;
+            }
+        }
+
         private static void RefreshForFrame(int frame, float currentTime)
         {
             if (_lastRefreshFrame == frame)
@@ -842,6 +1263,10 @@ namespace Hecton8.AI.Sensory
                 }
             }
 
+            ApplyPendingDataVaultRebindIfIdle();
+            if (_initialized == 0)
+                return;
+
             if (!TryAcquireTrackingMutationGuard())
                 return;
 
@@ -858,6 +1283,34 @@ namespace Hecton8.AI.Sensory
                 int tapCount = DrainEchoTapQueue(frameTaps, frame, currentTime);
                 tapCount = AppendMovementSignals(frameTaps, tapCount, frame, currentTime);
                 tapCount = AppendAcousticPingSignals(frameTaps, tapCount, frame, currentTime);
+                JobHandle dependency = default;
+                int trackingTapCount = tapCount;
+                if (tapCount < MaxEchoTapsPerFrame &&
+                    tapCount < frameTaps.Length &&
+                    TryBuildGhostBlipContext(frame, out GhostBlipContext ghostContext))
+                {
+                    PublishGhostHaptics(frame, in ghostContext);
+                    dependency = new GenerateAcousticPingsJob
+                    {
+                        Taps = frameTaps,
+                        PlayerAup = ghostContext.PlayerAup,
+                        PlayerForward = ghostContext.PlayerForward,
+                        FlashlightForward = ghostContext.FlashlightForward,
+                        FlashlightConeCos = ghostContext.FlashlightConeCos,
+                        FlashlightActive01 = ghostContext.FlashlightActive01,
+                        StressLevel01 = ghostContext.Stress01,
+                        CurrentFrequency = ghostContext.CurrentFrequency,
+                        PredatorFrequency = ghostContext.PredatorFrequency,
+                        CurrentTime = currentTime,
+                        GlobalQualityWeight = DecodeQualityWeightByte(_cachedQualityWeightByte),
+                        StartIndex = tapCount,
+                        Capacity = math.min(MaxEchoTapsPerFrame, frameTaps.Length),
+                        Frame = frame,
+                        Seed = NextSequence(frame),
+                        QualityWeightByte = _cachedQualityWeightByte
+                    }.Schedule();
+                    trackingTapCount = math.min(MaxEchoTapsPerFrame, frameTaps.Length);
+                }
 
                 jobResult[0] = _trailState;
                 _trackingHandle = new EchoTrackingJob
@@ -866,9 +1319,9 @@ namespace Hecton8.AI.Sensory
                     Result = jobResult,
                     Previous = _trailState,
                     CurrentTime = currentTime,
-                    TapCount = tapCount,
+                    TapCount = trackingTapCount,
                     SilenceTimeoutSeconds = SilenceTimeoutSeconds
-                }.Schedule();
+                }.Schedule(dependency);
                 _trackingScheduled = 1;
                 scheduled = true;
                 _lastRefreshFrame = frame;
@@ -1085,7 +1538,7 @@ namespace Hecton8.AI.Sensory
             return t * t * (3f - 2f * t);
         }
 
-        private static float SinPolynomial7(float angle)
+        internal static float SinPolynomial7(float angle)
         {
             float x = angle - TwoPi * math.floor((angle + Pi) * InvTwoPi);
             x = math.select(x, Pi - x, x > HalfPi);

@@ -403,7 +403,6 @@ namespace Hecton8.Gameplay
         private const int TargetCapacity = 4096;
         private const int TargetMask = TargetCapacity - 1;
         private const int ModuleTraversalCapacity = TargetCapacity;
-        private const int ParentComponentResolveDepth = 32;
         private const byte SlotEmpty = 0;
         private const byte SlotOccupied = 1;
         private const byte SlotDeleted = 2;
@@ -488,11 +487,7 @@ namespace Hecton8.Gameplay
                     return true;
             }
 
-            if (!TryResolveParentComponent(collider.transform, out module))
-                return false;
-
-            RegisterModule(module, collider);
-            return true;
+            return false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -563,22 +558,6 @@ namespace Hecton8.Gameplay
             Transform transform = s_moduleTraversalStack[stackCount];
             s_moduleTraversalStack[stackCount] = null;
             return transform;
-        }
-
-        private static bool TryResolveParentComponent<T>(Transform start, out T component)
-            where T : Component
-        {
-            Transform current = start;
-            for (int depth = 0; current != null && depth < ParentComponentResolveDepth; depth++)
-            {
-                if (current.TryGetComponent(out component))
-                    return true;
-
-                current = current.parent;
-            }
-
-            component = null;
-            return false;
         }
 
         private static void RegisterModule(BaseModule module, Collider collider)

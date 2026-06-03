@@ -12,23 +12,39 @@ namespace Hecton8.Visor
     {
         private const float SurvivalScaleThreshold = 0.6001f;
 
+        private static readonly ResolutionScalerHotSwapListener s_hotSwapListener = new ResolutionScalerHotSwapListener();
         private static IResolutionScalerService s_cachedScaler;
+        private static bool s_hotSwapRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             s_cachedScaler = null;
+            s_hotSwapRegistered = false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void PrimeBeforeSceneLoad()
+        {
+            PrimeCold();
+        }
+
+        internal static void PrimeCold()
+        {
+            if (!Application.isPlaying)
+            {
+                s_cachedScaler = null;
+                return;
+            }
+
+            s_cachedScaler = GlobalRegistry.ResolutionScaler;
+            if (!s_hotSwapRegistered)
+                s_hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapListener);
         }
 
         internal static float ResolveSurvivalPressure01()
         {
             IResolutionScalerService scaler = s_cachedScaler;
-            if (scaler == null)
-            {
-                scaler = GlobalRegistry.ResolutionScaler;
-                s_cachedScaler = scaler;
-            }
-
             if (scaler == null)
                 return 0f;
 
@@ -59,6 +75,18 @@ namespace Hecton8.Visor
         internal static void Invalidate()
         {
             s_cachedScaler = null;
+        }
+
+        private sealed class ResolutionScalerHotSwapListener : IGlobalRegistryHotSwapListener
+        {
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                if (serviceSlot == GlobalRegistryServiceSlot.ResolutionScalerService)
+                    s_cachedScaler = currentService as IResolutionScalerService;
+            }
         }
     }
 }

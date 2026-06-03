@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI.Perception;
@@ -726,7 +727,7 @@ namespace Hecton8.AI
         private const BufferID MesofaunaCsvScratchBufferId = BufferID.ShinobuMesofaunaCsvScratch;
         private const string ApexCortexBehaviorCsvName = "ai_behavior_overrides.csv";
         private const string MesofaunaSpeciesProfilesCsvName = "mesofauna_species_profiles.csv";
-        private const string AgentBlackBoxDumpFileName = "Dump_13AI.bin";
+        private const string AgentBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
 
         private unsafe struct VaultArray<T> where T : struct
         {
@@ -878,6 +879,7 @@ namespace Hecton8.AI
         private static IDataVault _dataVault;
         private static long _evaluationScheduleTimestamp;
         private static bool _evaluationScheduled;
+        private static bool _swarmAnalysisJobScheduled;
         private static bool _predatorEvaluationJobScheduled;
         private static bool _mesofaunaEvaluationJobScheduled;
         private static int _activeSlotCount;
@@ -892,6 +894,28 @@ namespace Hecton8.AI
         private static int _activeAlphaLeviathanTelemetryCount;
         private static int _totalBlindPredators;
         private static int _lastTelemetryBlindPredatorCount = -1;
+
+        internal static void InjectDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return;
+
+            JobHandle releaseDependency = _evaluationScheduled
+                ? JobHandle.CombineDependencies(_scheduledSwarmHandle, _scheduledEvaluationHandle)
+                : _scheduledSwarmHandle;
+            DispatcherJobFence.TryComplete(ref releaseDependency, forceComplete: true);
+            _scheduledSwarmHandle = default;
+            _scheduledEvaluationHandle = default;
+            _evaluationScheduled = false;
+            _swarmAnalysisJobScheduled = false;
+            _predatorEvaluationJobScheduled = false;
+            _acousticSdfEvaluationJobScheduled = false;
+            _mesofaunaEvaluationJobScheduled = false;
+            _steeringEvaluationJobScheduled = false;
+            _steeringScheduledJobMask = 0u;
+            ReleaseCoreCognitionVaultHandles();
+            _dataVault = dataVault;
+        }
         private static int _mesofaunaTelemetryCursor;
         private static int _mesofaunaLastActiveCount;
         private static int _mesofaunaLastHuntCount;
@@ -918,15 +942,11 @@ namespace Hecton8.AI
         internal static int Register()
         {
             EnsureInitialized();
-            if (!_cores.IsCreated ||
-                !_slotUsed.IsCreated ||
-                !_activeSlots.IsCreated ||
-                !_evaluationDueFlags.IsCreated ||
-                !_nextEvaluationTimes.IsCreated ||
-                !_evaluationIntervals.IsCreated)
+            int slotCapacity = ResolveWritableSlotCapacity();
+            if (slotCapacity <= 0 || !_activeSlots.IsCreated)
                 return -1;
 
-            for (int i = 0; i < Capacity; i++)
+            for (int i = 0; i < slotCapacity; i++)
             {
                 if (_slotUsed[i] != 0)
                     continue;
@@ -1021,11 +1041,11 @@ namespace Hecton8.AI
 
         private static void ClearRetinalSlot(int slot)
         {
-            if (_retinalExposure.IsCreated)
+            if (_retinalExposure.IsCreated && (uint)slot < (uint)_retinalExposure.Length)
                 _retinalExposure[slot] = 0f;
-            if (_blindnessState.IsCreated)
+            if (_blindnessState.IsCreated && (uint)slot < (uint)_blindnessState.Length)
                 _blindnessState[slot] = 0;
-            if (_lastPublishedBlindnessState.IsCreated)
+            if (_lastPublishedBlindnessState.IsCreated && (uint)slot < (uint)_lastPublishedBlindnessState.Length)
                 _lastPublishedBlindnessState[slot] = 0;
         }
 
@@ -1037,7 +1057,10 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated ||
                 !_evaluationDueFlags.IsCreated ||
                 !_nextEvaluationTimes.IsCreated ||
-                !_evaluationIntervals.IsCreated)
+                !_evaluationIntervals.IsCreated ||
+                (uint)slot >= (uint)_evaluationDueFlags.Length ||
+                (uint)slot >= (uint)_nextEvaluationTimes.Length ||
+                (uint)slot >= (uint)_evaluationIntervals.Length)
             {
                 return;
             }
@@ -1060,7 +1083,7 @@ namespace Hecton8.AI
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
 
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 if (_activeSlots[i] != slot)
                     continue;
@@ -1077,6 +1100,7 @@ namespace Hecton8.AI
             if (!IsValidSlot(slot))
                 return;
 
+            spawnAnchor = SanitizeFiniteOrZero(spawnAnchor);
             CognitionCore core = default;
             core.Position = spawnAnchor;
             core.QuantizedDrives = PackDriveChannels(0.45f, 0f, 0f, 0f);
@@ -1128,6 +1152,7 @@ namespace Hecton8.AI
             if (!IsValidSlot(slot))
                 return;
 
+            spawnAnchor = SanitizeFiniteOrZero(spawnAnchor);
             CognitionControl control = _controls[slot];
             control.SpawnAnchor = spawnAnchor;
             control.WanderTarget = spawnAnchor;
@@ -1142,7 +1167,7 @@ namespace Hecton8.AI
 
             CognitionControl control = _controls[slot];
             control.OverrideStateFlags = (uint)stateMask;
-            control.OverrideUntilTime = currentTime + 4f;
+            control.OverrideUntilTime = SanitizeNonNegative(currentTime) + 4f;
             _controls[slot] = control;
         }
 
@@ -1153,8 +1178,8 @@ namespace Hecton8.AI
 
             CognitionControl control = _controls[slot];
             control.OverrideStateFlags = (uint)PredatorUtilityState.Fleeing;
-            control.OverrideThreatPosition = threatPosition;
-            control.OverrideUntilTime = currentTime + math.max(0.1f, duration);
+            control.OverrideThreatPosition = SanitizeFiniteOrZero(threatPosition);
+            control.OverrideUntilTime = SanitizeNonNegative(currentTime) + math.max(0.1f, SanitizeNonNegative(duration));
             control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
             _controls[slot] = control;
         }
@@ -1183,13 +1208,13 @@ namespace Hecton8.AI
                 if (signal.TargetHash == 0u && signal.TargetId == 0)
                     continue;
 
-                for (int i = 0; i < _activeSlotCount; i++)
+                for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
                 {
                     int slot = _activeSlots[i];
                     if ((uint)slot >= (uint)_inputs.Length || (uint)slot >= (uint)_mesofaunaStates.Length)
                         continue;
 
-                    CognitionInput input = _inputs[slot];
+                    CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                     if (!IsMesofaunaPredator(in input))
                         continue;
 
@@ -1222,10 +1247,10 @@ namespace Hecton8.AI
                     if (CombatDamageSignalCodec.TryToRuntimePoint(in signal, out float3 runtimeThreat) &&
                         MathGuard.IsFinite(runtimeThreat))
                     {
-                        control.OverrideThreatPosition = runtimeThreat;
+                        control.OverrideThreatPosition = SanitizeFiniteOrZero(runtimeThreat);
                         control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
                     }
-                    control.OverrideUntilTime = input.CurrentTime + 2.5f;
+                    control.OverrideUntilTime = SanitizeNonNegative(input.CurrentTime) + 2.5f;
                     _controls[slot] = control;
                 }
             }
@@ -1265,7 +1290,7 @@ namespace Hecton8.AI
                     continue;
 
                 uint playerHash = signal.PlayerHash != 0u ? signal.PlayerHash : 0x504C5952u;
-                for (int i = 0; i < _activeSlotCount; i++)
+                for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
                 {
                     int slot = _activeSlots[i];
                     if ((uint)slot >= (uint)_inputs.Length ||
@@ -1275,7 +1300,7 @@ namespace Hecton8.AI
                         continue;
                     }
 
-                    CognitionInput input = _inputs[slot];
+                    CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                     if (!IsMesofaunaPredator(in input))
                         continue;
 
@@ -1289,7 +1314,7 @@ namespace Hecton8.AI
                     state.CurrentState = MesofaunaBehaviorConstants.StateIdle;
                     state.TargetHashID = 0u;
                     state.StateTimerTicks = 0;
-                    state.AggressionScalar = math.min(state.AggressionScalar, 0.12f);
+                    state.AggressionScalar = math.min(Sanitize01(state.AggressionScalar), 0.12f);
                     state.Velocity = float3.zero;
                     _mesofaunaStates[slot] = state;
 
@@ -1328,18 +1353,19 @@ namespace Hecton8.AI
                 return;
 
             CognitionControl control = _controls[slot];
-            control.SatedUntilTime = currentTime + math.max(0.1f, duration);
+            control.SatedUntilTime = SanitizeNonNegative(currentTime) + math.max(0.1f, SanitizeNonNegative(duration));
             _controls[slot] = control;
         }
 
         internal static void ReduceFatigue(int slot, float amount)
         {
-            if (!IsValidSlot(slot) || amount <= 0f)
+            float safeAmount = SanitizeNonNegative(amount);
+            if (!IsValidSlot(slot) || safeAmount <= 0f)
                 return;
 
             CognitionCore core = _cores[slot];
             float fatigue = UnpackSingleDrive(core.QuantizedFatigue);
-            fatigue = math.clamp(fatigue - amount, 0f, 1f);
+            fatigue = math.clamp(fatigue - safeAmount, 0f, 1f);
             core.QuantizedFatigue = PackSingleDrive(fatigue);
             _cores[slot] = core;
         }
@@ -1360,7 +1386,7 @@ namespace Hecton8.AI
 
             CognitionCore core = _cores[slot];
             UnpackDriveChannels(core.QuantizedDrives, out _, out float aggression, out float fear, out float threatLevel);
-            core.QuantizedDrives = PackDriveChannels(math.saturate(hunger01), aggression, fear, threatLevel);
+            core.QuantizedDrives = PackDriveChannels(Sanitize01(hunger01), aggression, fear, threatLevel);
             _cores[slot] = core;
         }
 
@@ -1370,7 +1396,7 @@ namespace Hecton8.AI
                 return;
 
             CognitionControl control = _controls[slot];
-            control.NextAttackAllowedTime = currentTime + math.max(MinimumAttackCooldown, cooldownSeconds);
+            control.NextAttackAllowedTime = SanitizeNonNegative(currentTime) + math.max(MinimumAttackCooldown, SanitizeNonNegative(cooldownSeconds));
             _controls[slot] = control;
         }
 
@@ -1382,10 +1408,14 @@ namespace Hecton8.AI
             CognitionCore core = _cores[slot];
             int slotIndex = core.MemoryHead & (MemorySlotsPerCreature - 1);
             int memoryIndex = (slot * MemorySlotsPerCreature) + slotIndex;
+            float3 safeWorldPosition = SanitizeFiniteOrZero(worldPosition);
+            float safeTimeStamp = SanitizeNonNegative(timeStamp);
+            float safeIntensity = SanitizeNonNegative(intensity);
+
             CognitionMemoryEntry entry = default;
-            entry.WorldPosition = worldPosition;
-            entry.Timestamp = timeStamp;
-            entry.Intensity = math.max(0f, intensity);
+            entry.WorldPosition = safeWorldPosition;
+            entry.Timestamp = safeTimeStamp;
+            entry.Intensity = safeIntensity;
             entry.StimulusType = (int)stimulusType;
             _memoryBank[memoryIndex] = entry;
             core.MemoryHead = (core.MemoryHead + 1) & (MemorySlotsPerCreature - 1);
@@ -1394,18 +1424,18 @@ namespace Hecton8.AI
             {
                 int acousticSlotIndex = core.AcousticMemoryHead;
                 int acousticMemoryIndex = (slot * AcousticMemorySlotsPerCreature) + acousticSlotIndex;
-                int3 acousticBucket = ResolveAcousticBucketCoordinates(worldPosition, AcousticBucketCellSize);
+                int3 acousticBucket = ResolveAcousticBucketCoordinates(safeWorldPosition, AcousticBucketCellSize);
 
                 AcousticMemoryEntry acousticEntry = default;
-                acousticEntry.WorldPosition = worldPosition;
-                acousticEntry.Timestamp = timeStamp;
-                acousticEntry.Intensity = math.max(0f, intensity);
+                acousticEntry.WorldPosition = safeWorldPosition;
+                acousticEntry.Timestamp = safeTimeStamp;
+                acousticEntry.Intensity = safeIntensity;
                 acousticEntry.BucketCoord = acousticBucket;
                 acousticEntry.BucketHash = HashAcousticBucket(acousticBucket);
                 _acousticMemoryBank[acousticMemoryIndex] = acousticEntry;
                 NativeArray<float4> acousticMemoryFloat4Bank = ResolveAcousticMemoryFloat4Bank();
                 if (acousticMemoryFloat4Bank.IsCreated && acousticMemoryIndex < acousticMemoryFloat4Bank.Length)
-                    acousticMemoryFloat4Bank[acousticMemoryIndex] = new float4(worldPosition, timeStamp);
+                    acousticMemoryFloat4Bank[acousticMemoryIndex] = new float4(safeWorldPosition, safeTimeStamp);
 
                 int nextAcousticHead = acousticSlotIndex + 1;
                 core.AcousticMemoryHead = math.select(nextAcousticHead, 0, nextAcousticHead >= AcousticMemorySlotsPerCreature);
@@ -1419,7 +1449,7 @@ namespace Hecton8.AI
             if (!IsValidSlot(slot))
                 return;
 
-            _inputs[slot] = input;
+            _inputs[slot] = SanitizeCognitionInput(in input);
         }
 
         internal static CognitionOutput GetOutput(int slot, float3 fallbackForward)
@@ -1481,18 +1511,21 @@ namespace Hecton8.AI
                 return;
 
             float chainMs = (float)((Stopwatch.GetTimestamp() - _evaluationScheduleTimestamp) * _StopwatchMillisecondsPerTick);
-            int reportedJobCount = 1 + (_predatorEvaluationJobScheduled ? 1 : 0) + (_acousticSdfEvaluationJobScheduled ? 3 : 0) + (_mesofaunaEvaluationJobScheduled ? 1 : 0);
-            if (_steeringEvaluationJobScheduled)
-                reportedJobCount += LeviathanSteeringScheduledJobCount;
+            chainMs = math.max(0f, SanitizeFiniteOrZero(chainMs));
+            uint steeringScheduledJobMask = _steeringScheduledJobMask;
+            int reportedJobCount = (_swarmAnalysisJobScheduled ? 1 : 0) + (_predatorEvaluationJobScheduled ? 1 : 0) + (_acousticSdfEvaluationJobScheduled ? 3 : 0) + (_mesofaunaEvaluationJobScheduled ? 1 : 0);
+            reportedJobCount += CountLeviathanSteeringScheduledJobs(steeringScheduledJobMask);
             float perJobMs = chainMs / math.max(1, reportedJobCount);
-            _mesofaunaLastChainMicroseconds = chainMs * 1000f;
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<SwarmAnalysisJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            float chainMicroseconds = SanitizeTelemetryMicroseconds(chainMs * 1000f);
+            _mesofaunaLastChainMicroseconds = chainMicroseconds;
+            if (_swarmAnalysisJobScheduled)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<SwarmAnalysisJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             if (_predatorEvaluationJobScheduled)
                 JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PredatorCognitionJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             if (_mesofaunaEvaluationJobScheduled)
                 JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<MesofaunaBehaviorJob>(JobAdmissionLane.Lane3_AI, perJobMs);
-            if (_steeringEvaluationJobScheduled)
-                ReportLeviathanSteeringJobsCompleted(perJobMs);
+            if (steeringScheduledJobMask != 0u)
+                ReportLeviathanSteeringJobsCompleted(perJobMs, steeringScheduledJobMask);
             _scheduledSwarmHandle = default;
             _evaluationScheduled = false;
             _lastEvaluatedFrame = _lastScheduledFrame;
@@ -1502,15 +1535,17 @@ namespace Hecton8.AI
                 UpdateAlphaLeviathanPostEvaluationTelemetry(_lastEvaluatedFrame);
             }
             if (_acousticSdfEvaluationJobScheduled)
-                FinalizeAcousticSdfTelemetry(_lastEvaluatedFrame, chainMs * 1000f);
+                FinalizeAcousticSdfTelemetry(_lastEvaluatedFrame, chainMicroseconds);
             if (_mesofaunaEvaluationJobScheduled)
                 UpdateMesofaunaPostEvaluationTelemetry(_lastEvaluatedFrame);
             if (_steeringEvaluationJobScheduled)
-                FinalizeLeviathanSteeringTelemetry(_lastEvaluatedFrame, chainMs * 1000f);
+                FinalizeLeviathanSteeringTelemetry(_lastEvaluatedFrame, chainMicroseconds);
+            _swarmAnalysisJobScheduled = false;
             _predatorEvaluationJobScheduled = false;
             _acousticSdfEvaluationJobScheduled = false;
             _mesofaunaEvaluationJobScheduled = false;
             _steeringEvaluationJobScheduled = false;
+            _steeringScheduledJobMask = 0u;
         }
 
         internal static unsafe void ScheduleFrameEvaluation(int frameId)
@@ -1526,6 +1561,7 @@ namespace Hecton8.AI
             _predatorEvaluationJobScheduled = false;
             _acousticSdfEvaluationJobScheduled = false;
             _mesofaunaEvaluationJobScheduled = false;
+            _swarmAnalysisJobScheduled = false;
             RefreshThreatVoxelSnapshot(frameId);
             PrepareAcousticSdfSignals(frameId);
             bool hasDueEvaluations = PrepareEvaluationDueFlags();
@@ -1536,6 +1572,16 @@ namespace Hecton8.AI
 
             if (!hasDueEvaluations)
             {
+                _scheduledEvaluationHandle = ScheduleLeviathanSteering(frameId, default);
+                if (_steeringScheduledJobMask != 0u)
+                {
+                    _scheduledSwarmHandle = default;
+                    _evaluationScheduled = true;
+                    _evaluationScheduleTimestamp = Stopwatch.GetTimestamp();
+                    _lastScheduledFrame = frameId;
+                    return;
+                }
+
                 _lastScheduledFrame = frameId;
                 _lastEvaluatedFrame = frameId;
                 return;
@@ -1598,9 +1644,10 @@ namespace Hecton8.AI
                     _lastScheduledFrame = frameId;
                 else
                     MarkAcousticSdfPendingRetry(frameId);
-                return;
-            }
+                    return;
+                }
 
+            _swarmAnalysisJobScheduled = true;
             JobHandle predatorDependency = hasAcousticSdfWork
                 ? ScheduleAcousticSdfIntegration(frameId, _scheduledSwarmHandle)
                 : _scheduledSwarmHandle;
@@ -1765,6 +1812,13 @@ namespace Hecton8.AI
                 ? JobHandle.CombineDependencies(_scheduledSwarmHandle, _scheduledEvaluationHandle)
                 : _scheduledSwarmHandle;
             DispatcherJobFence.TryComplete(ref releaseDependency, forceComplete: true);
+            _evaluationScheduled = false;
+            _swarmAnalysisJobScheduled = false;
+            _predatorEvaluationJobScheduled = false;
+            _acousticSdfEvaluationJobScheduled = false;
+            _mesofaunaEvaluationJobScheduled = false;
+            _steeringEvaluationJobScheduled = false;
+            _steeringScheduledJobMask = 0u;
             ReleaseVaultHandle(ref _cores);
             ReleaseVaultHandle(ref _controls);
             ReleaseVaultHandle(ref _inputs);
@@ -2016,8 +2070,6 @@ namespace Hecton8.AI
         {
             if (_cores.IsCreated)
             {
-                if (_dataVault == null)
-                    _dataVault = GlobalRegistry.DataVault;
                 EnsureLeviathanSteeringVaultState();
                 return;
             }
@@ -2098,10 +2150,9 @@ namespace Hecton8.AI
                 return true;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsAllocationLocked)
                 return false;
-            _dataVault = vault;
 
             _cores = GetVaultArray<CognitionCore>(
                 BufferID.PredatorCognitionCores,
@@ -2848,7 +2899,7 @@ namespace Hecton8.AI
                 if ((uint)slot >= (uint)hashNext.Length)
                     continue;
 
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 if ((input.Flags & (int)CognitionInputFlags.Active) == 0)
                     continue;
 
@@ -2874,7 +2925,7 @@ namespace Hecton8.AI
                 if ((uint)slot >= (uint)hashNext.Length)
                     continue;
 
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 if ((input.Flags & (int)CognitionInputFlags.Active) == 0)
                     continue;
 
@@ -3044,7 +3095,7 @@ namespace Hecton8.AI
                 math.max(0, maxCount),
                 math.min(origins.Length, math.min(desiredVelocities.Length, math.min(targetVectors.Length, math.min(states.Length, targetHashes.Length)))));
             int count = 0;
-            for (int i = 0; i < _activeSlotCount && count < capacity; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length && count < capacity; i++)
             {
                 int slot = _activeSlots[i];
                 if ((uint)slot >= (uint)_inputs.Length ||
@@ -3054,7 +3105,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 bool midPredator = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
                                    (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
                                    (input.Flags & (int)CognitionInputFlags.IsApexPredator) == 0 &&
@@ -3065,18 +3116,22 @@ namespace Hecton8.AI
                 MesofaunaStateDTO state = _mesofaunaStates[slot];
                 MesofaunaVisualSyncDTO visual = _mesofaunaVisualSync[slot];
                 Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(state.AUP_Position);
-                origins[count] = origin;
-                desiredVelocities[count] = new Vector3(visual.DesiredVelocity.x, visual.DesiredVelocity.y, visual.DesiredVelocity.z);
+                float3 origin3 = SanitizeFiniteOrZero(new float3(origin.x, origin.y, origin.z));
+                float3 desiredVelocity = SanitizeFiniteOrZero(visual.DesiredVelocity);
+                origins[count] = ToUnityVector3(origin3);
+                desiredVelocities[count] = ToUnityVector3(desiredVelocity);
                 if ((visual.TargetFlags & MesofaunaBehaviorConstants.VisualTargetFlagValid) != 0 && math.all(math.isfinite(visual.TargetAup)))
                 {
-                    targetVectors[count] = HectonFloatingOrigin.ToRuntimePosition(visual.TargetAup) - origin;
+                    Vector3 targetRuntime = HectonFloatingOrigin.ToRuntimePosition(visual.TargetAup);
+                    float3 targetRuntime3 = SanitizeFiniteOrZero(new float3(targetRuntime.x, targetRuntime.y, targetRuntime.z));
+                    targetVectors[count] = ToUnityVector3(targetRuntime3 - origin3);
                 }
                 else
                 {
                     float3 targetVector = (input.Flags & (int)CognitionInputFlags.HasPreyTarget) != 0 && MathGuard.IsFinite(input.PreyPosition)
                         ? input.PreyPosition - input.Position
-                        : visual.DesiredVelocity;
-                    targetVectors[count] = new Vector3(targetVector.x, targetVector.y, targetVector.z);
+                        : desiredVelocity;
+                    targetVectors[count] = ToUnityVector3(targetVector);
                 }
 
                 states[count] = state.CurrentState;
@@ -3119,30 +3174,39 @@ namespace Hecton8.AI
                 math.max(0, maxCount),
                 math.min(origins.Length, math.min(targets.Length, math.min(wallRepulsions.Length, math.min(desiredVelocities.Length, acousticMemory.Length)))));
             int count = 0;
-            for (int i = 0; i < _activeSlotCount && count < capacity; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length && count < capacity; i++)
             {
                 int slot = _activeSlots[i];
-                if ((uint)slot >= (uint)Capacity)
+                if ((uint)slot >= (uint)_inputs.Length ||
+                    (uint)slot >= (uint)_outputs.Length ||
+                    (uint)slot >= (uint)_cores.Length)
                     continue;
 
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 if ((input.Flags & (int)CognitionInputFlags.PredatorRole) == 0)
                     continue;
 
                 CognitionCore core = _cores[slot];
                 PackedCognitionOutput output = _outputs[slot];
+                float3 corePosition = SanitizeFiniteOrZero(core.Position);
+                float3 desiredDirection = ResolveDominantAxis(
+                    SanitizeFiniteOrZero(output.DesiredDirection),
+                    new float3(0f, 0f, 1f));
                 float3 target = (input.Flags & (int)CognitionInputFlags.HasPackTarget) != 0
                     ? input.PackTargetPosition
                     : (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0
                         ? input.PlayerPosition
-                        : input.Position + (output.DesiredDirection * 8f);
+                        : input.Position + (desiredDirection * 8f);
+                target = SanitizeFiniteOrZero(target);
 
-                origins[count] = new Vector3(core.Position.x, core.Position.y, core.Position.z);
-                targets[count] = new Vector3(target.x, target.y, target.z);
-                float3 wall = _swarmAvoidances.IsCreated ? _swarmAvoidances[slot] : float3.zero;
-                wallRepulsions[count] = new Vector3(wall.x, wall.y, wall.z);
-                desiredVelocities[count] = new Vector3(output.DesiredDirection.x, output.DesiredDirection.y, output.DesiredDirection.z);
-                acousticMemory[count] = ResolveLatestAcousticDebugPosition(slot, core.Position);
+                origins[count] = ToUnityVector3(corePosition);
+                targets[count] = ToUnityVector3(target);
+                float3 wall = _swarmAvoidances.IsCreated && (uint)slot < (uint)_swarmAvoidances.Length
+                    ? SanitizeFiniteOrZero(_swarmAvoidances[slot])
+                    : float3.zero;
+                wallRepulsions[count] = ToUnityVector3(wall);
+                desiredVelocities[count] = ToUnityVector3(desiredDirection);
+                acousticMemory[count] = ResolveLatestAcousticDebugPosition(slot, corePosition);
                 count++;
             }
 
@@ -3151,24 +3215,34 @@ namespace Hecton8.AI
 
         private static Vector3 ResolveLatestAcousticDebugPosition(int slot, float3 fallback)
         {
+            fallback = SanitizeFiniteOrZero(fallback);
             NativeArray<float4> acousticMemoryFloat4Bank = ResolveAcousticMemoryFloat4Bank();
             if (!acousticMemoryFloat4Bank.IsCreated || slot < 0 || slot >= Capacity)
-                return new Vector3(fallback.x, fallback.y, fallback.z);
+                return ToUnityVector3(fallback);
 
             int startIndex = slot * AcousticMemorySlotsPerCreature;
+            if (startIndex < 0 || startIndex > acousticMemoryFloat4Bank.Length - AcousticMemorySlotsPerCreature)
+                return ToUnityVector3(fallback);
+
             float bestTime = float.NegativeInfinity;
             float3 bestPosition = fallback;
             for (int i = 0; i < AcousticMemorySlotsPerCreature; i++)
             {
                 float4 packed = acousticMemoryFloat4Bank[startIndex + i];
-                if (packed.w <= bestTime)
+                if (!float.IsFinite(packed.w) || packed.w <= bestTime)
                     continue;
 
                 bestTime = packed.w;
-                bestPosition = packed.xyz;
+                bestPosition = SanitizeFiniteOrZero(packed.xyz);
             }
 
-            return new Vector3(bestPosition.x, bestPosition.y, bestPosition.z);
+            return ToUnityVector3(bestPosition);
+        }
+
+        private static Vector3 ToUnityVector3(float3 value)
+        {
+            float3 safe = SanitizeFiniteOrZero(value);
+            return new Vector3(safe.x, safe.y, safe.z);
         }
 
         private static void GenerateMockCognitionProfiles()
@@ -3963,10 +4037,10 @@ namespace Hecton8.AI
                 RetinalLowTierEvaluationIntervalSeconds,
                 PredatorUtilityEvaluationIntervalSeconds,
                 retinalCadenceQualityWeight);
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 bool isActive = (input.Flags & (int)CognitionInputFlags.Active) != 0;
                 if (!isActive)
                 {
@@ -3974,7 +4048,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                float currentTime = math.max(0f, input.CurrentTime);
+                float currentTime = SanitizeNonNegative(input.CurrentTime);
                 bool predatorRole = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
                 bool alphaLeviathan = predatorRole && (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0;
                 float interval = predatorRole
@@ -3983,8 +4057,9 @@ namespace Hecton8.AI
                         AlphaLeviathanSlowTickIntervalSeconds,
                         alphaLeviathan)
                     : ResolveEvaluationInterval(input.ImportanceScore);
-                float previousInterval = math.max(_evaluationIntervals[slot], CenterEvaluationIntervalSeconds);
-                float scheduledTime = _nextEvaluationTimes[slot];
+                interval = math.max(CenterEvaluationIntervalSeconds, SanitizeNonNegative(interval));
+                float previousInterval = math.max(SanitizeNonNegative(_evaluationIntervals[slot]), CenterEvaluationIntervalSeconds);
+                float scheduledTime = SanitizeNonNegative(_nextEvaluationTimes[slot]);
                 bool firstPredatorSchedule = predatorRole && scheduledTime <= DdaEpsilon;
                 float staggerStep = math.select(PredatorUtilityEvaluationStaggerStepSeconds, AlphaLeviathanEvaluationStaggerStepSeconds, alphaLeviathan);
                 float staggerOffset = (slot & 31) * staggerStep;
@@ -4127,6 +4202,20 @@ namespace Hecton8.AI
             return direction * math.rsqrt(math.max(lengthSq, MathSafetyEpsilon));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            bool valid = math.isfinite(lengthSq) & (lengthSq > DdaEpsilon);
+            return math.select(0f, lengthSq * math.rsqrt(math.max(lengthSq, MathSafetyEpsilon)), valid);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double FastLengthFromSq(double lengthSq)
+        {
+            bool valid = math.isfinite(lengthSq) & (lengthSq > (double)DdaEpsilon);
+            return math.select(0d, lengthSq * math.rsqrt(math.max(lengthSq, (double)MathSafetyEpsilon)), valid);
+        }
+
         private static float ComputeLightPriority(in LightSourceData light)
         {
             return math.max(0f, light.Intensity) * math.max(0f, light.RangeSq);
@@ -4182,8 +4271,8 @@ namespace Hecton8.AI
             if (index < 0 || index > lastIndex)
                 return;
 
-            _retinalLightSources[index] = index == lastIndex ? default : _retinalLightSources[lastIndex];
-            _retinalLightSources[lastIndex] = default;
+            _retinalLightSources[index] = index == lastIndex ? new LightSourceData() : _retinalLightSources[lastIndex];
+            _retinalLightSources[lastIndex] = new LightSourceData();
             _retinalLightCount = lastIndex;
         }
 
@@ -4202,7 +4291,7 @@ namespace Hecton8.AI
             double3 telemetryOriginOffset = _activeSlotCount > 0 ? _inputs[_activeSlots[0]].FloatingOriginOffset : double3.zero;
             uint hottestSource = 0u;
             bool foundFault = false;
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
                 float exposure = _retinalExposure[slot];
@@ -4297,11 +4386,9 @@ namespace Hecton8.AI
             double3 floatingOriginOffset = double3.zero;
             if (_inputs.IsCreated && slot >= 0 && slot < _inputs.Length)
             {
-                CognitionInput input = _inputs[slot];
-                if (MathGuard.IsFinite(input.Position))
-                    runtimePosition = input.Position;
-                if (math.all(math.isfinite(input.FloatingOriginOffset)))
-                    floatingOriginOffset = input.FloatingOriginOffset;
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
+                runtimePosition = input.Position;
+                floatingOriginOffset = input.FloatingOriginOffset;
             }
 
             if (!MathGuard.IsFinite(runtimePosition))
@@ -4321,8 +4408,7 @@ namespace Hecton8.AI
 
             try
             {
-                string dumpPath = "Docs/AgentLogs/" + AgentBlackBoxDumpFileName;
-                _retinalFaultDumped = TryWriteRetinalBlackBoxFile(dumpPath, frameId);
+                _retinalFaultDumped = TryWriteRetinalBlackBoxFile(AgentBlackBoxDumpRelativePath, frameId);
                 if (!_retinalFaultDumped)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
@@ -4414,10 +4500,10 @@ namespace Hecton8.AI
             byte lastPhase = AlphaLeviathanPhase.Hidden;
             uint lastStateHash = 0u;
             bool foundFault = false;
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 bool isAlpha = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
                                (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
                                (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0;
@@ -4427,6 +4513,11 @@ namespace Hecton8.AI
                 activeAlphaCount++;
                 CognitionCore core = _cores[slot];
                 PackedCognitionOutput output = _outputs[slot];
+                float3 rawCorePosition = core.Position;
+                float3 corePosition = SanitizeFiniteOrZero(rawCorePosition);
+                float3 desiredDirection = ResolveAlphaTelemetryDirection(
+                    output.DesiredDirection,
+                    new float3(0f, 0f, 1f));
                 byte phase = _stalkingPhases[slot];
                 byte flags = 0;
                 bool apexSmoothSteering = (input.Flags & (int)CognitionInputFlags.ApexSmoothSteering) != 0;
@@ -4436,14 +4527,14 @@ namespace Hecton8.AI
                 if ((output.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u)
                     flags |= AlphaLeviathanTelemetryFlags.RoarEmitted;
 
-                float3 playerPosition = hasPlayerTarget ? input.PlayerPosition : core.Position;
+                float3 playerPosition = hasPlayerTarget ? input.PlayerPosition : corePosition;
                 if (!hasPlayerTarget)
                 {
                     flags |= AlphaLeviathanTelemetryNoPlayerTarget;
                 }
                 else
                 {
-                    float3 awayFromPlayer = ResolveAlphaTelemetryDirection(core.Position - playerPosition, new float3(0f, 0f, 1f));
+                    float3 awayFromPlayer = ResolveAlphaTelemetryDirection(corePosition - playerPosition, new float3(0f, 0f, 1f));
                     float3 playerForward = ResolveAlphaTelemetryDirection(input.PlayerForward, -awayFromPlayer);
                     if (math.dot(playerForward, awayFromPlayer) >= AlphaPlayerGazeDotThreshold)
                         flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
@@ -4451,13 +4542,13 @@ namespace Hecton8.AI
                         flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
                 }
 
-                float distanceSq = hasPlayerTarget ? math.lengthsq(playerPosition - core.Position) : 0f;
+                float distanceSq = hasPlayerTarget ? math.lengthsq(playerPosition - corePosition) : 0f;
                 float distanceMeters = distanceSq > DdaEpsilon ? distanceSq * math.rsqrt(math.max(distanceSq, MathSafetyEpsilon)) : 0f;
                 float fogRingDistance = math.max(
                     AlphaFalseChargeVeerDistanceMeters + 5f,
                     math.max(input.FogEndDistanceMeters, AlphaFogFallbackEndMeters) - AlphaFogSilhouetteOffsetMeters);
 
-                bool invalid = !MathGuard.IsFinite(core.Position) ||
+                bool invalid = !MathGuard.IsFinite(rawCorePosition) ||
                                !MathGuard.IsFinite(playerPosition) ||
                                !MathGuard.IsFinite(output.DesiredDirection) ||
                                !float.IsFinite(distanceMeters) ||
@@ -4483,9 +4574,9 @@ namespace Hecton8.AI
                 entry.Flags = flags;
                 entry.DistanceToPlayerMeters = distanceMeters;
                 entry.FogRingDistanceMeters = fogRingDistance;
-                entry.Position = invalid ? float3.zero : core.Position;
+                entry.Position = invalid ? float3.zero : corePosition;
                 entry.PlayerPosition = playerPosition;
-                entry.DesiredDirection = invalid ? float3.zero : output.DesiredDirection;
+                entry.DesiredDirection = invalid ? float3.zero : desiredDirection;
                 entry.StateHash = stateHash;
                 int telemetryFrame = (frameId < 0 ? 0 : frameId) % RetinalTelemetryCapacity;
                 int telemetrySlot = math.min(activeAlphaCount - 1, AlphaLeviathanTelemetrySlotCapacity - 1);
@@ -4593,8 +4684,7 @@ namespace Hecton8.AI
 
             try
             {
-                string dumpPath = "Docs/AgentLogs/" + AgentBlackBoxDumpFileName;
-                _alphaLeviathanFaultDumped = TryWriteAlphaLeviathanBlackBoxFile(dumpPath, frameId);
+                _alphaLeviathanFaultDumped = TryWriteAlphaLeviathanBlackBoxFile(AgentBlackBoxDumpRelativePath, frameId);
                 if (!_alphaLeviathanFaultDumped)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
@@ -4701,7 +4791,7 @@ namespace Hecton8.AI
             double3 probeAup = double3.zero;
             bool foundFault = false;
             bool overBudget = false;
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
                 if ((uint)slot >= (uint)_inputs.Length ||
@@ -4711,7 +4801,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                CognitionInput input = _inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
                 bool midPredator = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
                                    (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
                                    (input.Flags & (int)CognitionInputFlags.IsApexPredator) == 0 &&
@@ -4747,17 +4837,18 @@ namespace Hecton8.AI
             }
 
             MesofaunaTelemetryEntry entry = default;
+            float safeChainMicroseconds = SanitizeTelemetryMicroseconds(_mesofaunaLastChainMicroseconds);
             entry.Frame = unchecked((uint)math.max(0, frameId));
             entry.ActivePredators = (ushort)math.min(activePredators, ushort.MaxValue);
             entry.HuntingPredators = (ushort)math.min(huntPredators, ushort.MaxValue);
             entry.AvgSpatialHashQueryMicroseconds = activePredators > 0
-                ? math.max(0.01f, _mesofaunaLastChainMicroseconds / math.max(1, activePredators) * 0.18f)
+                ? math.max(0.01f, safeChainMicroseconds / math.max(1, activePredators) * 0.18f)
                 : 0f;
             entry.FsmMicroseconds = activePredators > 0
-                ? math.max(0.01f, _mesofaunaLastChainMicroseconds / math.max(1, activePredators) * 0.32f)
+                ? math.max(0.01f, safeChainMicroseconds / math.max(1, activePredators) * 0.32f)
                 : 0f;
-            overBudget = _mesofaunaLastChainMicroseconds > 1000f;
-            entry.GlobalQualityWeight = _mesofaunaLastQualityWeight;
+            overBudget = safeChainMicroseconds > 1000f;
+            entry.GlobalQualityWeight = Sanitize01(_mesofaunaLastQualityWeight);
             entry.SliceModulo = (byte)math.clamp(_mesofaunaLastSliceModulo, 1, byte.MaxValue);
             byte telemetryFlags = 0;
             if (foundFault)
@@ -4805,8 +4896,7 @@ namespace Hecton8.AI
 
             try
             {
-                string dumpPath = "Docs/AgentLogs/" + AgentBlackBoxDumpFileName;
-                _mesofaunaFaultDumped = TryWriteMesofaunaBlackBoxFile(dumpPath, frameId);
+                _mesofaunaFaultDumped = TryWriteMesofaunaBlackBoxFile(AgentBlackBoxDumpRelativePath, frameId);
                 if (!_mesofaunaFaultDumped)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
@@ -5066,13 +5156,14 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated || !_cores.IsCreated || !_inputs.IsCreated || !_outputs.IsCreated)
                 return;
 
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
                 if (slot < 0 || slot >= Capacity)
                     continue;
 
-                bool predatorRole = (_inputs[slot].Flags & (int)CognitionInputFlags.PredatorRole) != 0;
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
+                bool predatorRole = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
                 int chosenState = _chosenStates.IsCreated ? _chosenStates[slot] : 0;
                 bool fleeing = predatorRole
                     ? chosenState == (int)PredatorUtilityState.Fleeing
@@ -5081,11 +5172,14 @@ namespace Hecton8.AI
                     continue;
 
                 UnpackDriveChannels(_cores[slot].QuantizedDrives, out _, out _, out float fear, out _);
+                fear = Sanitize01(fear);
                 if (fear < FearPheromoneInjectionThreshold)
                     continue;
 
-                float3 position = _cores[slot].Position;
-                ChemicalInfluenceGrid.QueueFearPheromone(new Vector3(position.x, position.y, position.z), fear);
+                float3 rawPosition = _cores[slot].Position;
+                float3 position = math.select(input.Position, rawPosition, MathGuard.IsFinite(rawPosition));
+                position = SanitizeFiniteOrZero(position);
+                ChemicalInfluenceGrid.QueueFearPheromone(ToUnityVector3(position), fear);
             }
         }
 
@@ -5101,7 +5195,7 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated)
                 return false;
 
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 if (_activeSlots[i] == slot)
                     return true;
@@ -5112,11 +5206,54 @@ namespace Hecton8.AI
 
         private static bool IsValidSlot(int slot)
         {
-            return _cores.IsCreated &&
-                   slot >= 0 &&
-                   slot < Capacity &&
-                   _slotUsed.IsCreated &&
+            int slotCapacity = ResolveWritableSlotCapacity();
+            return slot >= 0 &&
+                   slot < slotCapacity &&
                    _slotUsed[slot] != 0;
+        }
+
+        private static int ResolveWritableSlotCapacity()
+        {
+            if (!_cores.IsCreated ||
+                !_controls.IsCreated ||
+                !_inputs.IsCreated ||
+                !_outputs.IsCreated ||
+                !_slotUsed.IsCreated ||
+                !_evaluationDueFlags.IsCreated ||
+                !_nextEvaluationTimes.IsCreated ||
+                !_evaluationIntervals.IsCreated ||
+                !_chosenStates.IsCreated ||
+                !_stalkingPhases.IsCreated ||
+                !_stalkingPhaseStartTimes.IsCreated ||
+                !_predatorPackTargets.IsCreated ||
+                !_predatorPackWeights.IsCreated ||
+                !_predatorPackBaitPositions.IsCreated ||
+                !_predatorPackSharedPlayerPositions.IsCreated ||
+                !_predatorPackTargetAups.IsCreated ||
+                !_predatorPackRoles.IsCreated)
+            {
+                return 0;
+            }
+
+            int capacity = Capacity;
+            capacity = math.min(capacity, _cores.Length);
+            capacity = math.min(capacity, _controls.Length);
+            capacity = math.min(capacity, _inputs.Length);
+            capacity = math.min(capacity, _outputs.Length);
+            capacity = math.min(capacity, _slotUsed.Length);
+            capacity = math.min(capacity, _evaluationDueFlags.Length);
+            capacity = math.min(capacity, _nextEvaluationTimes.Length);
+            capacity = math.min(capacity, _evaluationIntervals.Length);
+            capacity = math.min(capacity, _chosenStates.Length);
+            capacity = math.min(capacity, _stalkingPhases.Length);
+            capacity = math.min(capacity, _stalkingPhaseStartTimes.Length);
+            capacity = math.min(capacity, _predatorPackTargets.Length);
+            capacity = math.min(capacity, _predatorPackWeights.Length);
+            capacity = math.min(capacity, _predatorPackBaitPositions.Length);
+            capacity = math.min(capacity, _predatorPackSharedPlayerPositions.Length);
+            capacity = math.min(capacity, _predatorPackTargetAups.Length);
+            capacity = math.min(capacity, _predatorPackRoles.Length);
+            return math.max(0, capacity);
         }
 
         private static void ClearMemoryEntries(int slot)
@@ -5248,10 +5385,14 @@ namespace Hecton8.AI
                 return float3.zero;
 
             float3 boundsMin = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
-            for (int i = 0; i < _activeSlotCount; i++)
+            for (int i = 0; i < _activeSlotCount && i < _activeSlots.Length; i++)
             {
                 int slot = _activeSlots[i];
-                boundsMin = math.min(boundsMin, _inputs[slot].Position);
+                if ((uint)slot >= (uint)_inputs.Length)
+                    continue;
+
+                CognitionInput input = SanitizeCognitionInput(_inputs[slot]);
+                boundsMin = math.min(boundsMin, input.Position);
             }
 
             return boundsMin.x == float.MaxValue ? float3.zero : boundsMin;
@@ -5259,9 +5400,11 @@ namespace Hecton8.AI
 
         private static int3 ResolveSpatialBucketCoordinates(float3 worldPosition, float3 boundsMin, float bucketCellSize)
         {
-            float safeCellSize = math.max(bucketCellSize, 0.001f);
+            float safeCellSize = math.max(0.001f, SanitizeFiniteOrZero(bucketCellSize));
             float invCellSize = math.rcp(safeCellSize);
-            float3 localPosition = math.max(worldPosition - boundsMin, float3.zero);
+            float3 safeWorldPosition = SanitizeFiniteOrZero(worldPosition);
+            float3 safeBoundsMin = SanitizeFiniteOrZero(boundsMin);
+            float3 localPosition = math.max(safeWorldPosition - safeBoundsMin, float3.zero);
             return new int3(
                 (int)math.floor(localPosition.x * invCellSize),
                 (int)math.floor(localPosition.y * invCellSize),
@@ -5270,12 +5413,13 @@ namespace Hecton8.AI
 
         private static int3 ResolveAcousticBucketCoordinates(float3 worldPosition, float bucketCellSize)
         {
-            float safeCellSize = math.max(bucketCellSize, 0.001f);
+            float safeCellSize = math.max(0.001f, SanitizeFiniteOrZero(bucketCellSize));
             float invCellSize = math.rcp(safeCellSize);
+            float3 safeWorldPosition = SanitizeFiniteOrZero(worldPosition);
             int3 rawBucket = new int3(
-                (int)math.floor(worldPosition.x * invCellSize),
-                (int)math.floor(worldPosition.y * invCellSize),
-                (int)math.floor(worldPosition.z * invCellSize));
+                (int)math.floor(safeWorldPosition.x * invCellSize),
+                (int)math.floor(safeWorldPosition.y * invCellSize),
+                (int)math.floor(safeWorldPosition.z * invCellSize));
             return rawBucket + new int3(
                 AcousticBucketOriginBiasCells,
                 AcousticBucketOriginBiasCells,
@@ -5377,12 +5521,110 @@ namespace Hecton8.AI
 
         private static uint QuantizeToLane(float value)
         {
-            return (uint)math.clamp((int)math.round(math.saturate(value) * QuantizedByteScale), 0, 255);
+            return (uint)math.clamp((int)math.round(Sanitize01(value) * QuantizedByteScale), 0, 255);
         }
 
         private static float DequantizeLane(uint lane)
         {
             return math.saturate(lane * QuantizedByteInvScale);
+        }
+
+        private static float SanitizeFiniteOrZero(float value)
+        {
+            return math.select(0f, value, math.isfinite(value));
+        }
+
+        private static float3 SanitizeFiniteOrZero(float3 value)
+        {
+            return math.select(float3.zero, value, math.isfinite(value));
+        }
+
+        private static float4 SanitizeFiniteOrZero(float4 value)
+        {
+            return math.select(float4.zero, value, math.isfinite(value));
+        }
+
+        private static double3 SanitizeFiniteOrZero(double3 value)
+        {
+            return math.select(double3.zero, value, math.isfinite(value));
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.max(0f, SanitizeFiniteOrZero(value));
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.saturate(SanitizeFiniteOrZero(value));
+        }
+
+        private static AbsoluteUniversePositionBlit128 SanitizeAupBlit(in AbsoluteUniversePositionBlit128 value)
+        {
+            AbsoluteUniversePositionBlit128 sanitized = value;
+            sanitized.Local = SanitizeFiniteOrZero(sanitized.Local);
+            return sanitized;
+        }
+
+        private static CognitionInput SanitizeCognitionInput(in CognitionInput input)
+        {
+            CognitionInput sanitized = input;
+            sanitized.FloatingOriginOffset = SanitizeFiniteOrZero(sanitized.FloatingOriginOffset);
+            sanitized.PlayerTargetAup = SanitizeAupBlit(in sanitized.PlayerTargetAup);
+            sanitized.PackTargetAup = SanitizeAupBlit(in sanitized.PackTargetAup);
+            sanitized.Position = SanitizeFiniteOrZero(sanitized.Position);
+            sanitized.Velocity = SanitizeFiniteOrZero(sanitized.Velocity);
+            sanitized.Forward = SanitizeFiniteOrZero(sanitized.Forward);
+            sanitized.PlayerPosition = SanitizeFiniteOrZero(sanitized.PlayerPosition);
+            sanitized.PlayerVelocity = SanitizeFiniteOrZero(sanitized.PlayerVelocity);
+            sanitized.PlayerForward = SanitizeFiniteOrZero(sanitized.PlayerForward);
+            sanitized.ThreatPosition = SanitizeFiniteOrZero(sanitized.ThreatPosition);
+            sanitized.RivalApexPosition = SanitizeFiniteOrZero(sanitized.RivalApexPosition);
+            sanitized.PreyPosition = SanitizeFiniteOrZero(sanitized.PreyPosition);
+            sanitized.ScavengePosition = SanitizeFiniteOrZero(sanitized.ScavengePosition);
+            sanitized.PackTargetPosition = SanitizeFiniteOrZero(sanitized.PackTargetPosition);
+            sanitized.PackTargetVelocity = SanitizeFiniteOrZero(sanitized.PackTargetVelocity);
+            sanitized.FlockCenter = SanitizeFiniteOrZero(sanitized.FlockCenter);
+            sanitized.FlockDirection = SanitizeFiniteOrZero(sanitized.FlockDirection);
+            sanitized.FlockAvoidance = SanitizeFiniteOrZero(sanitized.FlockAvoidance);
+            sanitized.ScatterDirection = SanitizeFiniteOrZero(sanitized.ScatterDirection);
+            sanitized.DistanceToPlayerSqr = SanitizeNonNegative(sanitized.DistanceToPlayerSqr);
+            sanitized.AttackRange = SanitizeNonNegative(sanitized.AttackRange);
+            sanitized.HealthNormalized = Sanitize01(sanitized.HealthNormalized);
+            sanitized.FearPressure01 = Sanitize01(sanitized.FearPressure01);
+            sanitized.FleeHealthThreshold = Sanitize01(sanitized.FleeHealthThreshold);
+            sanitized.DeltaTime = SanitizeNonNegative(sanitized.DeltaTime);
+            sanitized.MetabolicDeltaTime = SanitizeNonNegative(sanitized.MetabolicDeltaTime);
+            sanitized.CurrentTime = SanitizeNonNegative(sanitized.CurrentTime);
+            sanitized.AcousticPingStrength01 = Sanitize01(sanitized.AcousticPingStrength01);
+            sanitized.AcousticTransmission01 = Sanitize01(sanitized.AcousticTransmission01);
+            sanitized.ChemicalSignal01 = Sanitize01(sanitized.ChemicalSignal01);
+            sanitized.ChemicalSensitivity = SanitizeNonNegative(sanitized.ChemicalSensitivity);
+            sanitized.PlayerLightExposure01 = Sanitize01(sanitized.PlayerLightExposure01);
+            sanitized.LightFrenzySpeedMultiplier = math.max(1f, SanitizeFiniteOrZero(sanitized.LightFrenzySpeedMultiplier));
+            sanitized.LightReactionFearBoost01 = Sanitize01(sanitized.LightReactionFearBoost01);
+            sanitized.RetinalLightPosition = SanitizeFiniteOrZero(sanitized.RetinalLightPosition);
+            sanitized.RetinalExposure01 = Sanitize01(sanitized.RetinalExposure01);
+            sanitized.HungerWeight = math.max(0.1f, SanitizeFiniteOrZero(sanitized.HungerWeight));
+            sanitized.ThreatWeight = math.max(0.1f, SanitizeFiniteOrZero(sanitized.ThreatWeight));
+            sanitized.FearWeight = math.max(0.1f, SanitizeFiniteOrZero(sanitized.FearWeight));
+            sanitized.CuriosityWeight = math.max(0.1f, SanitizeFiniteOrZero(sanitized.CuriosityWeight));
+            sanitized.AggressionWeight = Sanitize01(sanitized.AggressionWeight);
+            sanitized.EscapeDistance = SanitizeNonNegative(sanitized.EscapeDistance);
+            sanitized.EscapeSafeDistance = SanitizeNonNegative(sanitized.EscapeSafeDistance);
+            sanitized.WanderRadius = SanitizeNonNegative(sanitized.WanderRadius);
+            sanitized.PatrolRadius = SanitizeNonNegative(sanitized.PatrolRadius);
+            sanitized.ApexTerritoryRadius = SanitizeNonNegative(sanitized.ApexTerritoryRadius);
+            sanitized.ApexAggressionMultiplier = SanitizeNonNegative(sanitized.ApexAggressionMultiplier);
+            sanitized.PackCoordinationRadius = SanitizeNonNegative(sanitized.PackCoordinationRadius);
+            sanitized.PackFlankDistance = SanitizeNonNegative(sanitized.PackFlankDistance);
+            sanitized.PackCommitDistance = SanitizeNonNegative(sanitized.PackCommitDistance);
+            sanitized.FogEndDistanceMeters = SanitizeNonNegative(sanitized.FogEndDistanceMeters);
+            sanitized.BaseMaxSpeedMetersPerSecond = SanitizeNonNegative(sanitized.BaseMaxSpeedMetersPerSecond);
+            sanitized.ImportanceScore = Sanitize01(sanitized.ImportanceScore);
+            sanitized.FlockCount = math.max(0, sanitized.FlockCount);
+            sanitized.RetinalBlindState = sanitized.RetinalBlindState != 0 ? 1 : 0;
+            return sanitized;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -5431,7 +5673,8 @@ namespace Hecton8.AI
             public void Execute(int index)
             {
                 int slot = ActiveSlots[index];
-                CognitionInput input = Inputs[slot];
+                CognitionInput rawInput = Inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(in rawInput);
                 if ((input.Flags & (int)CognitionInputFlags.Active) == 0)
                 {
                     AmbientThreats[slot] = 0f;
@@ -5467,9 +5710,9 @@ namespace Hecton8.AI
                 bool canClaimBoid = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
                 bool selfHasPlayerTarget = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
                 bool selfHasPackTarget = (input.Flags & (int)CognitionInputFlags.HasPackTarget) != 0;
-                float packCoordinationRadius = math.max(0f, input.PackCoordinationRadius);
+                float packCoordinationRadius = SanitizeNonNegative(input.PackCoordinationRadius);
                 float packCoordinationRadiusSq = packCoordinationRadius * packCoordinationRadius;
-                float packFlankDistance = math.max(0f, input.PackFlankDistance);
+                float packFlankDistance = SanitizeNonNegative(input.PackFlankDistance);
                 bool canCoordinatePack = canClaimBoid &&
                                          packCoordinationRadius > DdaEpsilon &&
                                          packFlankDistance > DdaEpsilon;
@@ -5722,7 +5965,7 @@ namespace Hecton8.AI
                     (positionAup.GridY * cellSize) + positionAup.Local.y,
                     (positionAup.GridZ * cellSize) + positionAup.Local.z);
                 double3 runtimePosition = absolutePosition - floatingOriginOffset;
-                return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
+                return SanitizeFiniteOrZero(new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z));
             }
         }
 
@@ -5879,7 +6122,8 @@ namespace Hecton8.AI
             public void Execute(int index)
             {
                 int slot = ActiveSlots[index];
-                CognitionInput input = Inputs[slot];
+                CognitionInput rawInput = Inputs[slot];
+                CognitionInput input = SanitizeCognitionInput(in rawInput);
                 float3 fallbackForward = ResolveDominantAxis(input.Forward, new float3(0f, 0f, 1f));
                 if ((input.Flags & (int)CognitionInputFlags.Active) == 0)
                 {
@@ -5898,56 +6142,57 @@ namespace Hecton8.AI
 
                 if (TryReadSpeciesTuning(input.SpeciesId, out SpeciesCognitionTuning tuning))
                 {
-                    input.HungerWeight = tuning.HungerWeight;
-                    input.FearWeight = tuning.FearWeight;
-                    input.CuriosityWeight = tuning.CuriosityWeight;
+                    input.HungerWeight = math.max(0.1f, SanitizeFiniteOrZero(tuning.HungerWeight));
+                    input.FearWeight = math.max(0.1f, SanitizeFiniteOrZero(tuning.FearWeight));
+                    input.CuriosityWeight = math.max(0.1f, SanitizeFiniteOrZero(tuning.CuriosityWeight));
                     input.LightReactionMode = (int)tuning.LightReactionMode;
-                    input.LightFrenzySpeedMultiplier = tuning.LightFrenzySpeedMultiplier;
-                    input.LightReactionFearBoost01 = tuning.LightReactionFearBoost01;
+                    input.LightFrenzySpeedMultiplier = math.max(1f, SanitizeFiniteOrZero(tuning.LightFrenzySpeedMultiplier));
+                    input.LightReactionFearBoost01 = Sanitize01(tuning.LightReactionFearBoost01);
                 }
                 else if ((input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0 &&
                          ApexCortexTuning.IsCreated &&
                          ApexCortexTuning.Length > 0)
                 {
                     float4 apex = ApexCortexTuning[0];
-                    input.HungerWeight = math.max(0.1f, apex.x);
-                    input.FearWeight = math.max(0.1f, apex.y);
-                    input.CuriosityWeight = math.max(0.1f, apex.w);
+                    input.HungerWeight = math.max(0.1f, SanitizeFiniteOrZero(apex.x));
+                    input.FearWeight = math.max(0.1f, SanitizeFiniteOrZero(apex.y));
+                    input.CuriosityWeight = math.max(0.1f, SanitizeFiniteOrZero(apex.w));
                     input.LightReactionMode = (int)FaunaLightReactionMode.Aversion;
-                    input.LightReactionFearBoost01 = math.saturate(apex.z);
+                    input.LightReactionFearBoost01 = Sanitize01(apex.z);
                 }
 
                 CognitionCore core = Cores[slot];
                 CognitionControl control = Controls[slot];
                 CognitionInput resolvedInput = input;
-                resolvedInput.FlockCenter = SwarmCenters[slot];
-                resolvedInput.FlockDirection = SwarmDirections[slot];
-                resolvedInput.FlockAvoidance = SwarmAvoidances[slot];
-                resolvedInput.FlockCount = math.max(input.FlockCount, SwarmCounts[slot]);
-                resolvedInput.ClaimedBoidIndex = ClaimedBoidIndices[slot];
+                resolvedInput.FlockCenter = SanitizeFiniteOrZero(SwarmCenters[slot]);
+                resolvedInput.FlockDirection = SanitizeFiniteOrZero(SwarmDirections[slot]);
+                resolvedInput.FlockAvoidance = SanitizeFiniteOrZero(SwarmAvoidances[slot]);
+                resolvedInput.FlockCount = math.max(input.FlockCount, math.max(0, SwarmCounts[slot]));
+                int claimedBoidIndex = ClaimedBoidIndices[slot];
+                resolvedInput.ClaimedBoidIndex = claimedBoidIndex >= 0 ? claimedBoidIndex : UnclaimedBoidSlot;
                 if (resolvedInput.ClaimedBoidIndex >= 0)
-                    resolvedInput.PreyPosition = ClaimedBoidPositions[slot];
+                    resolvedInput.PreyPosition = SanitizeFiniteOrZero(ClaimedBoidPositions[slot]);
 
-                core.Position = input.Position;
-                core.Velocity = input.Velocity;
+                core.Position = resolvedInput.Position;
+                core.Velocity = resolvedInput.Velocity;
                 core.SpeciesId = input.SpeciesId;
                 core.ClaimedBoidIndex = UnclaimedBoidSlot;
 
                 UnpackDriveChannels(core.QuantizedDrives, out float hunger, out float aggression, out float fear, out float threatLevel);
                 float fatigue = UnpackSingleDrive(core.QuantizedFatigue);
-                float dt = math.max(0f, input.DeltaTime);
-                float metabolicDt = math.max(0f, input.MetabolicDeltaTime);
+                float dt = resolvedInput.DeltaTime;
+                float metabolicDt = resolvedInput.MetabolicDeltaTime;
                 hunger = math.clamp(hunger + (HungerRate * metabolicDt), 0f, 1f);
                 fatigue = math.clamp(fatigue + (FatigueRate * metabolicDt), 0f, 1f);
-                aggression = math.clamp(input.AggressionWeight, 0f, 1f);
-                float ambientThreat = AmbientThreats[slot];
+                aggression = resolvedInput.AggressionWeight;
+                float ambientThreat = Sanitize01(AmbientThreats[slot]);
                 fear = math.clamp((fear * FastExpNegPade13(-FearDecayLogK * dt)) + (ambientThreat * dt), 0f, 1f);
                 threatLevel = math.clamp(math.max(threatLevel * FastExpNegPade13(-ThreatDecayLogK * dt), ambientThreat), 0f, 1f);
 
-                if ((input.Flags & (int)CognitionInputFlags.HasScatterDirection) != 0)
+                if ((resolvedInput.Flags & (int)CognitionInputFlags.HasScatterDirection) != 0)
                 {
-                    control.ScatterDirection = ResolveDominantAxis(input.ScatterDirection, fallbackForward);
-                    control.ScatterUntilTime = input.CurrentTime + ScatterDurationSeconds;
+                    control.ScatterDirection = ResolveDominantAxis(resolvedInput.ScatterDirection, fallbackForward);
+                    control.ScatterUntilTime = resolvedInput.CurrentTime + ScatterDurationSeconds;
                 }
 
                 bool isPredator = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
@@ -5958,7 +6203,7 @@ namespace Hecton8.AI
                     resolvedInput.RetinalLightPosition = retinalLight.LightPosition;
                     resolvedInput.RetinalExposure01 = retinalLight.Exposure01;
                     resolvedInput.RetinalBlindState = retinalLight.BlindState;
-                    resolvedInput.PlayerLightExposure01 = math.max(resolvedInput.PlayerLightExposure01, retinalLight.Exposure01);
+                    resolvedInput.PlayerLightExposure01 = math.max(Sanitize01(resolvedInput.PlayerLightExposure01), retinalLight.Exposure01);
                     resolvedInput.Flags = retinalLight.BlindState != 0
                         ? resolvedInput.Flags | (int)CognitionInputFlags.RetinalBlind
                         : resolvedInput.Flags & ~(int)CognitionInputFlags.RetinalBlind;
@@ -5999,10 +6244,10 @@ namespace Hecton8.AI
                 bool preyVisible = (hasPreyTarget || resolvedInput.ClaimedBoidIndex >= 0) && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.PreyPosition, resolvedInput.ImportanceScore);
                 bool scavengeVisible = hasScavengeTarget && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.ScavengePosition, resolvedInput.ImportanceScore);
                 if (playerVisible)
-                    control.LastVisualContactTime = input.CurrentTime;
+                    control.LastVisualContactTime = resolvedInput.CurrentTime;
 
-                TryResolveChemicalGradient(resolvedInput.Position, input.CurrentTime, out _, out float fearPheromoneSignal, out _);
-                float rawFear = math.saturate((1f - math.saturate(input.HealthNormalized)) + input.FearPressure01);
+                TryResolveChemicalGradient(resolvedInput.Position, resolvedInput.CurrentTime, out _, out float fearPheromoneSignal, out _);
+                float rawFear = Sanitize01((1f - resolvedInput.HealthNormalized) + resolvedInput.FearPressure01);
                 fear = math.max(fear, math.max(rawFear, fearPheromoneSignal * FearPheromoneContagionShare));
 
                 PackedCognitionOutput output = isPredator
@@ -6092,9 +6337,12 @@ namespace Hecton8.AI
                 if (!RetinalExposure.IsCreated || !BlindnessState.IsCreated)
                     return result;
 
-                float exposure = math.saturate(RetinalExposure[slot]);
+                float exposure = Sanitize01(RetinalExposure[slot]);
                 byte blindState = BlindnessState[slot];
-                float dt = math.clamp(math.max(input.DeltaTime, input.MetabolicDeltaTime), CenterEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds);
+                float dt = math.clamp(
+                    math.max(SanitizeNonNegative(input.DeltaTime), SanitizeNonNegative(input.MetabolicDeltaTime)),
+                    CenterEvaluationIntervalSeconds,
+                    RetinalLowTierEvaluationIntervalSeconds);
                 if (!RetinalLightSources.IsCreated || RetinalLightCount <= 0)
                 {
                     exposure = DecayRetinalExposure(exposure, dt);
@@ -6180,7 +6428,7 @@ namespace Hecton8.AI
 
             private static float DecayRetinalExposure(float exposure, float dt)
             {
-                return math.saturate(exposure * FastExpNegPade13(RetinalExposureDecayPerSecond * math.max(0f, dt)));
+                return Sanitize01(exposure) * FastExpNegPade13(RetinalExposureDecayPerSecond * SanitizeNonNegative(dt));
             }
 
             private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, double3 floatingOriginOffset)
@@ -6191,7 +6439,7 @@ namespace Hecton8.AI
                     (positionAup.GridY * cellSize) + positionAup.Local.y,
                     (positionAup.GridZ * cellSize) + positionAup.Local.z);
                 double3 runtimePosition = absolutePosition - floatingOriginOffset;
-                return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
+                return SanitizeFiniteOrZero(new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z));
             }
 
             private PackedCognitionOutput EvaluatePredator(
@@ -6214,6 +6462,13 @@ namespace Hecton8.AI
                 ref float fear,
                 ref float threatLevel)
             {
+                float playerLightExposure01 = Sanitize01(input.PlayerLightExposure01);
+                float lightReactionFearBoost01 = math.max(0.1f, Sanitize01(input.LightReactionFearBoost01));
+                float health01 = Sanitize01(input.HealthNormalized);
+                float apexAggressionMultiplier = SanitizeNonNegative(input.ApexAggressionMultiplier);
+                float packFlankDistance = SanitizeNonNegative(input.PackFlankDistance);
+                float acousticPingStrength01 = Sanitize01(input.AcousticPingStrength01);
+                float acousticTransmission01 = Sanitize01(input.AcousticTransmission01);
                 bool hasClaimedBoid = input.ClaimedBoidIndex >= 0;
                 float3 resolvedPreyPosition = hasClaimedBoid ? ClaimedBoidPositions[slot] : input.PreyPosition;
                 bool resolvedPreyVisible = preyVisible;
@@ -6230,14 +6485,14 @@ namespace Hecton8.AI
                     ? ResolvePredictedPlayerIntercept(input)
                     : predictedPackTargetPosition;
                 float directAcousticScore = hasPlayerTarget
-                    ? ComputeAcousticScore(input.Position, input.PlayerPosition, input.AcousticPingStrength01, input.AcousticTransmission01)
+                    ? ComputeAcousticScore(input.Position, input.PlayerPosition, acousticPingStrength01, acousticTransmission01)
                     : 0f;
                 float3 acousticSightDelta = input.PlayerPosition - input.Position;
                 bool acousticSight = hasPlayerTarget &&
-                                      input.AcousticPingStrength01 > PredatorAcousticSightNoiseThreshold01 &&
+                                      acousticPingStrength01 > PredatorAcousticSightNoiseThreshold01 &&
                                       math.lengthsq(acousticSightDelta) < PredatorAcousticSightRangeSqr;
                 if (acousticSight)
-                    directAcousticScore = math.max(directAcousticScore, input.AcousticPingStrength01);
+                    directAcousticScore = math.max(directAcousticScore, acousticPingStrength01);
 
                 bool playerSeen = playerVisible || acousticSight;
                 float packFlankWeight = PredatorPackWeights[slot];
@@ -6246,14 +6501,14 @@ namespace Hecton8.AI
                 PredatorPackRole packRole = (PredatorPackRole)PredatorPackRoles[slot];
                 if (hasSpeciesSharedTarget &&
                     packRole == PredatorPackRole.None &&
-                    input.PackFlankDistance > DdaEpsilon)
+                    packFlankDistance > DdaEpsilon)
                 {
                     float3 targetForward = ResolveDominantAxis(input.PlayerForward, fallbackForward);
                     float3 packRight = ResolveDominantAxis(
                         math.cross(new float3(0f, 1f, 0f), targetForward),
                         math.cross(new float3(0f, 0f, 1f), targetForward));
                     float sideSign = (slot & 1) == 0 ? 1f : -1f;
-                    packFlankTarget = sharedPackPlayerPosition + (packRight * input.PackFlankDistance * sideSign);
+                    packFlankTarget = sharedPackPlayerPosition + (packRight * packFlankDistance * sideSign);
                     packBaitPosition = sharedPackPlayerPosition;
                     packFlankWeight = math.max(packFlankWeight, 0.65f);
                     packRole = PredatorPackRole.Flanker;
@@ -6274,7 +6529,7 @@ namespace Hecton8.AI
                 if (retinalFrenzyActive)
                 {
                     aggression = 1f;
-                    threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                    threatLevel = math.max(threatLevel, playerLightExposure01);
                 }
 
                 if (lightAversionActive)
@@ -6282,8 +6537,8 @@ namespace Hecton8.AI
                     control.OverrideThreatPosition = retinalBlindActive ? input.RetinalLightPosition : input.PlayerPosition;
                     control.OverrideUntilTime = math.max(control.OverrideUntilTime, input.CurrentTime + RetinalBlindHoldSeconds);
                     control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition | (int)CognitionControlFlags.RetinalFlinch;
-                    fear = math.max(fear, input.PlayerLightExposure01 * math.max(input.LightReactionFearBoost01, 0.1f));
-                    threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                    fear = math.max(fear, playerLightExposure01 * lightReactionFearBoost01);
+                    threatLevel = math.max(threatLevel, playerLightExposure01);
                 }
                 else
                 {
@@ -6321,7 +6576,7 @@ namespace Hecton8.AI
                 {
                     targetPosition = predictedPlayerPosition;
                     hasTarget = true;
-                    threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                    threatLevel = math.max(threatLevel, playerLightExposure01);
                 }
                 else if (isApexPredator && rivalApexVisible)
                 {
@@ -6478,7 +6733,7 @@ namespace Hecton8.AI
                 threatLevel = math.clamp(threatLevel, 0f, 1f);
                 fear = math.max(fear, ScoreThreat(threatRaw) * 0.35f);
                 if (isApexPredator && hasApexRivalTarget)
-                    threatLevel = math.max(threatLevel, math.saturate(input.ApexAggressionMultiplier * 0.55f));
+                    threatLevel = math.max(threatLevel, Sanitize01(apexAggressionMultiplier * 0.55f));
 
                 float hungerScore = ScoreHunger(hunger) * math.max(0.1f, input.HungerWeight);
                 float fatigueScore = ScoreFatigue(fatigue);
@@ -6490,7 +6745,7 @@ namespace Hecton8.AI
                 float acousticUtility = ScoreThreat(acousticScore) * curiosityWeight;
                 float chemicalUtility = ScoreThreat(chemicalScore) * math.max(0.1f, input.HungerWeight) * curiosityWeight;
                 float baseSiegeUtility = ScoreThreat(baseSiegeScore) * math.select(0f, 1f, hasBaseSiegeTarget);
-                float lightFrenzyUtility = ScoreThreat(input.PlayerLightExposure01) *
+                float lightFrenzyUtility = ScoreThreat(playerLightExposure01) *
                                            math.select(0f, math.max(1f, input.LightFrenzySpeedMultiplier), lightFrenzyActive);
                 float targetDistanceSq = math.lengthsq(targetPosition - input.Position);
                 float attackRangeSq = math.max(input.AttackRange * input.AttackRange, 1f);
@@ -6546,19 +6801,19 @@ namespace Hecton8.AI
                     ? EvaluateFleeUtility(
                         fearScore,
                         threatScore,
-                        1f - math.saturate(input.HealthNormalized))
+                        1f - health01)
                     : 0f;
-                fleeingScore += math.select(0f, OverrideScoreBias * math.max(0.35f, input.PlayerLightExposure01), canFlee && lightAversionActive);
+                fleeingScore += math.select(0f, OverrideScoreBias * math.max(0.35f, playerLightExposure01), canFlee && lightAversionActive);
                 float fleeHealthThreshold = math.clamp(
                     input.FleeHealthThreshold > 0f ? input.FleeHealthThreshold : PassiveLowHealthThreshold,
                     0.05f,
                     1f);
                 if (isApexPredator && hasApexRivalTarget)
                 {
-                    float rivalAggressionScale = math.max(1f, input.ApexAggressionMultiplier);
+                    float rivalAggressionScale = math.max(1f, apexAggressionMultiplier);
                     stalkingScore *= rivalAggressionScale;
                     attackingScore *= math.lerp(1f, rivalAggressionScale, 0.85f);
-                    if (input.HealthNormalized <= fleeHealthThreshold)
+                    if (health01 <= fleeHealthThreshold)
                     {
                         control.OverrideThreatPosition = input.RivalApexPosition;
                         control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
@@ -6638,43 +6893,39 @@ namespace Hecton8.AI
                 if (isHunting && !wasHunting)
                     output.OutputFlags |= (uint)CognitionOutputFlags.EmitThreatPulse;
 
-                switch (stateMask)
-                {
-                    case PredatorUtilityState.Prowling:
-                        output.ForceMultiplier = 1.05f;
-                        output.SpeedMultiplier = satedActive ? 0.6f : 0.95f;
-                        output.TurnMultiplier = satedActive ? 0.5f : 0.9f;
-                        break;
-                    case PredatorUtilityState.Stalking:
-                        output.ForceMultiplier = 1.35f;
-                        output.SpeedMultiplier = 1.15f;
-                        output.TurnMultiplier = 1.1f;
-                        break;
-                    case PredatorUtilityState.Attacking:
-                        output.ForceMultiplier = 2.15f;
-                        output.SpeedMultiplier = math.max(1.15f, aggression);
-                        output.TurnMultiplier = 1.2f;
-                        bool canStrikeLiveTarget = (playerSeen || lightFrenzyActive || resolvedPreyVisible || scavengeVisible || rivalApexVisible) &&
-                                                   targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange);
-                        float siegeStrikeRange = math.max(1f, input.AttackRange + BaseSiegeRammerStandoffMeters);
-                        bool canStrikeBaseTarget = hasBaseSiegeTarget &&
-                                                   baseSiegeRole == BaseSiegeRole.Rammer &&
-                                                   targetDistanceSq <= siegeStrikeRange * siegeStrikeRange;
-                        bool canStrike = (canStrikeLiveTarget || canStrikeBaseTarget) &&
-                                         input.CurrentTime >= control.NextAttackAllowedTime;
-                        if (packRole == PredatorPackRole.Flanker && flankingManeuverDetected)
-                            canStrike &= playerFacingBait;
+                bool stateProwling = stateMask == PredatorUtilityState.Prowling;
+                bool stateStalking = stateMask == PredatorUtilityState.Stalking;
+                bool stateAttacking = stateMask == PredatorUtilityState.Attacking;
+                bool stateFleeing = stateMask == PredatorUtilityState.Fleeing;
+                output.ForceMultiplier = math.select(output.ForceMultiplier, 1.05f, stateProwling);
+                output.SpeedMultiplier = math.select(output.SpeedMultiplier, math.select(0.95f, 0.6f, satedActive), stateProwling);
+                output.TurnMultiplier = math.select(output.TurnMultiplier, math.select(0.9f, 0.5f, satedActive), stateProwling);
+                output.ForceMultiplier = math.select(output.ForceMultiplier, 1.35f, stateStalking);
+                output.SpeedMultiplier = math.select(output.SpeedMultiplier, 1.15f, stateStalking);
+                output.TurnMultiplier = math.select(output.TurnMultiplier, 1.1f, stateStalking);
+                output.ForceMultiplier = math.select(output.ForceMultiplier, 2.15f, stateAttacking);
+                output.SpeedMultiplier = math.select(output.SpeedMultiplier, math.max(1.15f, aggression), stateAttacking);
+                output.TurnMultiplier = math.select(output.TurnMultiplier, 1.2f, stateAttacking);
+                output.ForceMultiplier = math.select(output.ForceMultiplier, 2.4f, stateFleeing);
+                output.SpeedMultiplier = math.select(output.SpeedMultiplier, math.max(1.2f, input.FearWeight), stateFleeing);
+                output.TurnMultiplier = math.select(output.TurnMultiplier, 1.15f, stateFleeing);
 
-                        output.OutputFlags |= canStrike
-                            ? (uint)CognitionOutputFlags.ShouldAttack
-                            : 0u;
-                        break;
-                    case PredatorUtilityState.Fleeing:
-                        output.ForceMultiplier = 2.4f;
-                        output.SpeedMultiplier = math.max(1.2f, input.FearWeight);
-                        output.TurnMultiplier = 1.15f;
-                        break;
-                }
+                bool canStrikeLiveTarget = stateAttacking &&
+                                           (playerSeen || lightFrenzyActive || resolvedPreyVisible || scavengeVisible || rivalApexVisible) &&
+                                           targetDistanceSq <= attackRangeSq;
+                float siegeStrikeRange = math.max(1f, input.AttackRange + BaseSiegeRammerStandoffMeters);
+                bool canStrikeBaseTarget = stateAttacking &&
+                                           hasBaseSiegeTarget &&
+                                           baseSiegeRole == BaseSiegeRole.Rammer &&
+                                           targetDistanceSq <= siegeStrikeRange * siegeStrikeRange;
+                bool canStrike = (canStrikeLiveTarget || canStrikeBaseTarget) &&
+                                 input.CurrentTime >= control.NextAttackAllowedTime;
+                if (packRole == PredatorPackRole.Flanker && flankingManeuverDetected)
+                    canStrike &= playerFacingBait;
+
+                output.OutputFlags |= canStrike
+                    ? (uint)CognitionOutputFlags.ShouldAttack
+                    : 0u;
 
                 if (lightFrenzyActive && (stateMask == PredatorUtilityState.Stalking || stateMask == PredatorUtilityState.Attacking))
                 {
@@ -6696,37 +6947,30 @@ namespace Hecton8.AI
                 if (alphaOverrideActive)
                 {
                     output.OutputFlags &= ~((uint)CognitionOutputFlags.ShouldAttack | (uint)CognitionOutputFlags.EmitThreatPulse);
-                    switch (alphaDirective.Phase)
-                    {
-                        case AlphaLeviathanPhase.FalseCharge:
-                            output.LegacyState = (int)FaunaBrain.AIState.Feint;
-                            output.ForceMultiplier = math.max(output.ForceMultiplier, 2.85f);
-                            output.SpeedMultiplier = math.max(
-                                output.SpeedMultiplier,
-                                AlphaFalseChargeSpeedMetersPerSecond * math.rcp(math.max(0.1f, input.BaseMaxSpeedMetersPerSecond)));
-                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.35f);
-                            if (alphaDirective.FalseChargeStarted != 0)
-                                output.OutputFlags |= (uint)CognitionOutputFlags.EmitThreatPulse;
-                            break;
-                        case AlphaLeviathanPhase.Hidden:
-                            output.LegacyState = (int)FaunaBrain.AIState.Retreat;
-                            output.ForceMultiplier = math.max(output.ForceMultiplier, 2.2f);
-                            output.SpeedMultiplier = math.max(output.SpeedMultiplier, 1.35f);
-                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.2f);
-                            break;
-                        case AlphaLeviathanPhase.VeerOff:
-                            output.LegacyState = (int)FaunaBrain.AIState.Feint;
-                            output.ForceMultiplier = math.max(output.ForceMultiplier, 2.4f);
-                            output.SpeedMultiplier = math.max(output.SpeedMultiplier, 1.6f);
-                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.35f);
-                            break;
-                        default:
-                            output.LegacyState = (int)FaunaBrain.AIState.Stalk;
-                            output.ForceMultiplier = math.max(output.ForceMultiplier, 1.35f);
-                            output.SpeedMultiplier = math.max(output.SpeedMultiplier, 1.05f);
-                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.1f);
-                            break;
-                    }
+                    bool alphaFalseCharge = alphaDirective.Phase == AlphaLeviathanPhase.FalseCharge;
+                    bool alphaHidden = alphaDirective.Phase == AlphaLeviathanPhase.Hidden;
+                    bool alphaVeerOff = alphaDirective.Phase == AlphaLeviathanPhase.VeerOff;
+                    bool alphaDefault = !(alphaFalseCharge || alphaHidden || alphaVeerOff);
+                    output.LegacyState = math.select(output.LegacyState, (int)FaunaBrain.AIState.Stalk, alphaDefault);
+                    output.LegacyState = math.select(output.LegacyState, (int)FaunaBrain.AIState.Feint, alphaFalseCharge || alphaVeerOff);
+                    output.LegacyState = math.select(output.LegacyState, (int)FaunaBrain.AIState.Retreat, alphaHidden);
+                    output.ForceMultiplier = math.max(output.ForceMultiplier, math.select(0f, 2.85f, alphaFalseCharge));
+                    output.SpeedMultiplier = math.max(
+                        output.SpeedMultiplier,
+                        math.select(0f, AlphaFalseChargeSpeedMetersPerSecond * math.rcp(math.max(0.1f, input.BaseMaxSpeedMetersPerSecond)), alphaFalseCharge));
+                    output.TurnMultiplier = math.max(output.TurnMultiplier, math.select(0f, 1.35f, alphaFalseCharge));
+                    output.ForceMultiplier = math.max(output.ForceMultiplier, math.select(0f, 2.2f, alphaHidden));
+                    output.SpeedMultiplier = math.max(output.SpeedMultiplier, math.select(0f, 1.35f, alphaHidden));
+                    output.TurnMultiplier = math.max(output.TurnMultiplier, math.select(0f, 1.2f, alphaHidden));
+                    output.ForceMultiplier = math.max(output.ForceMultiplier, math.select(0f, 2.4f, alphaVeerOff));
+                    output.SpeedMultiplier = math.max(output.SpeedMultiplier, math.select(0f, 1.6f, alphaVeerOff));
+                    output.TurnMultiplier = math.max(output.TurnMultiplier, math.select(0f, 1.35f, alphaVeerOff));
+                    output.ForceMultiplier = math.max(output.ForceMultiplier, math.select(0f, 1.35f, alphaDefault));
+                    output.SpeedMultiplier = math.max(output.SpeedMultiplier, math.select(0f, 1.05f, alphaDefault));
+                    output.TurnMultiplier = math.max(output.TurnMultiplier, math.select(0f, 1.1f, alphaDefault));
+                    output.OutputFlags |= alphaFalseCharge && alphaDirective.FalseChargeStarted != 0
+                        ? (uint)CognitionOutputFlags.EmitThreatPulse
+                        : 0u;
                 }
 
                 if (packRole == PredatorPackRole.Bait)
@@ -6784,8 +7028,9 @@ namespace Hecton8.AI
                 if (priorPhase > AlphaLeviathanPhase.VeerOff)
                     priorPhase = AlphaLeviathanPhase.Hidden;
 
-                float startTime = StalkingPhaseStartTimes[slot];
-                float phaseAge = startTime > DdaEpsilon ? math.max(0f, input.CurrentTime - startTime) : 0f;
+                float startTime = SanitizeNonNegative(StalkingPhaseStartTimes[slot]);
+                float currentTime = SanitizeNonNegative(input.CurrentTime);
+                float phaseAge = startTime > DdaEpsilon ? SanitizeNonNegative(currentTime - startTime) : 0f;
                 byte phase = priorPhase;
                 if (playerGazeBreak || retinalBreak)
                 {
@@ -6820,7 +7065,7 @@ namespace Hecton8.AI
 
                 bool phaseChanged = phase != priorPhase || startTime <= DdaEpsilon;
                 if (phaseChanged)
-                    StalkingPhaseStartTimes[slot] = input.CurrentTime;
+                    StalkingPhaseStartTimes[slot] = currentTime;
                 StalkingPhases[slot] = phase;
 
                 byte flags = 0;
@@ -6833,44 +7078,39 @@ namespace Hecton8.AI
                 directive.Phase = phase;
                 directive.FalseChargeStarted = (byte)(phaseChanged && phase == AlphaLeviathanPhase.FalseCharge ? 1 : 0);
                 directive.StateMask = PredatorUtilityState.Stalking;
-                switch (phase)
+                if (phase == AlphaLeviathanPhase.Hidden)
                 {
-                    case AlphaLeviathanPhase.Hidden:
-                    {
-                        float3 diveDirection = ResolveAlphaDiveDirection(
-                            in input,
-                            awayFromPlayer,
-                            fallbackForward,
-                            useApexSmoothSteering,
-                            ref flags);
-                        directive.TargetPosition = input.Position + (diveDirection * AlphaDiveDepthMeters);
-                        directive.StateMask = PredatorUtilityState.Fleeing;
-                        break;
-                    }
-                    case AlphaLeviathanPhase.FalseCharge:
-                        directive.TargetPosition = predictedPlayerPosition;
-                        directive.StateMask = PredatorUtilityState.Attacking;
-                        break;
-                    case AlphaLeviathanPhase.VeerOff:
-                    {
-                        float3 veerDirection = ResolveAlphaVeerDirection(awayFromPlayer, fallbackForward);
-                        directive.TargetPosition = input.Position + (veerDirection * AlphaVeerDistanceMeters);
-                        directive.StateMask = PredatorUtilityState.Fleeing;
-                        break;
-                    }
-                    default:
-                    {
-                        float3 circleDirection = ResolveAlphaCircleDirection(
-                            slot,
-                            in input,
-                            playerPosition,
-                            awayFromPlayer,
-                            directive.RingDistanceMeters,
-                            useApexSmoothSteering);
-                        directive.TargetPosition = input.Position + (circleDirection * math.max(8f, directive.RingDistanceMeters * 0.25f));
-                        directive.StateMask = PredatorUtilityState.Stalking;
-                        break;
-                    }
+                    float3 diveDirection = ResolveAlphaDiveDirection(
+                        in input,
+                        awayFromPlayer,
+                        fallbackForward,
+                        useApexSmoothSteering,
+                        ref flags);
+                    directive.TargetPosition = input.Position + (diveDirection * AlphaDiveDepthMeters);
+                    directive.StateMask = PredatorUtilityState.Fleeing;
+                }
+                else if (phase == AlphaLeviathanPhase.FalseCharge)
+                {
+                    directive.TargetPosition = predictedPlayerPosition;
+                    directive.StateMask = PredatorUtilityState.Attacking;
+                }
+                else if (phase == AlphaLeviathanPhase.VeerOff)
+                {
+                    float3 veerDirection = ResolveAlphaVeerDirection(awayFromPlayer, fallbackForward);
+                    directive.TargetPosition = input.Position + (veerDirection * AlphaVeerDistanceMeters);
+                    directive.StateMask = PredatorUtilityState.Fleeing;
+                }
+                else
+                {
+                    float3 circleDirection = ResolveAlphaCircleDirection(
+                        slot,
+                        in input,
+                        playerPosition,
+                        awayFromPlayer,
+                        directive.RingDistanceMeters,
+                        useApexSmoothSteering);
+                    directive.TargetPosition = input.Position + (circleDirection * math.max(8f, directive.RingDistanceMeters * 0.25f));
+                    directive.StateMask = PredatorUtilityState.Stalking;
                 }
 
                 directive.Flags = flags;
@@ -6950,7 +7190,12 @@ namespace Hecton8.AI
                 ref float fear,
                 ref float threatLevel)
             {
-                float escapeSafeDistance = math.max(input.EscapeSafeDistance, 1f);
+                float playerLightExposure01 = Sanitize01(input.PlayerLightExposure01);
+                float lightReactionFearBoost01 = math.max(0.1f, Sanitize01(input.LightReactionFearBoost01));
+                float health01 = Sanitize01(input.HealthNormalized);
+                float acousticPingStrength01 = Sanitize01(input.AcousticPingStrength01);
+                float acousticTransmission01 = Sanitize01(input.AcousticTransmission01);
+                float escapeSafeDistance = math.max(SanitizeNonNegative(input.EscapeSafeDistance), 1f);
                 float escapeSafeDistanceSq = escapeSafeDistance * escapeSafeDistance;
                 float playerDistanceSq = math.lengthsq(input.PlayerPosition - input.Position);
                 float playerThreat = hasPlayerTarget
@@ -6961,12 +7206,12 @@ namespace Hecton8.AI
                 {
                     control.OverrideThreatPosition = input.PlayerPosition;
                     control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
-                    playerThreat = math.max(playerThreat, input.PlayerLightExposure01);
-                    fear = math.max(fear, input.PlayerLightExposure01 * math.max(input.LightReactionFearBoost01, 0.1f));
+                    playerThreat = math.max(playerThreat, playerLightExposure01);
+                    fear = math.max(fear, playerLightExposure01 * lightReactionFearBoost01);
                 }
 
                 float directAcousticScore = hasPlayerTarget
-                    ? ComputeAcousticScore(input.Position, input.PlayerPosition, input.AcousticPingStrength01, input.AcousticTransmission01)
+                    ? ComputeAcousticScore(input.Position, input.PlayerPosition, acousticPingStrength01, acousticTransmission01)
                     : 0f;
                 bool hasAcousticMemory = TryResolveStrongestAcousticMemory(slot, input.Position, input.CurrentTime, out float3 acousticMemoryPosition, out float acousticMemoryScore);
                 float acousticScore = math.max(directAcousticScore, acousticMemoryScore);
@@ -6990,13 +7235,13 @@ namespace Hecton8.AI
                     input.FleeHealthThreshold > 0f ? input.FleeHealthThreshold : PassiveLowHealthThreshold,
                     0.05f,
                     1f);
-                bool lowHealth = input.HealthNormalized <= fleeHealthThreshold;
-                float patrolRadius = math.max(input.PatrolRadius, 1f);
+                bool lowHealth = health01 <= fleeHealthThreshold;
+                float patrolRadius = math.max(SanitizeNonNegative(input.PatrolRadius), 1f);
                 float patrolRadiusSq = patrolRadius * patrolRadius;
                 float homeDistanceSq = math.lengthsq(input.Position - control.SpawnAnchor);
                 bool homeOutOfBounds = useHomeTerritory &&
-                                       input.PatrolRadius > 0f &&
-                                       homeDistanceSq > patrolRadiusSq;
+                    patrolRadius > 0f &&
+                    homeDistanceSq > patrolRadiusSq;
                 bool shouldEscape = retreatForced ||
                                     (canFlee && lightAversionActive) ||
                                     (canFlee && hasPlayerTarget && (input.DistanceToPlayerSqr <= input.EscapeDistance * input.EscapeDistance || lowHealth || threatLevel >= 0.35f)) ||
@@ -7005,7 +7250,7 @@ namespace Hecton8.AI
                 float fatigueScore = ScoreFatigue(fatigue);
                 float curiosityWeight = math.max(0.1f, input.CuriosityWeight);
                 float escapeScore = ScoreFear(math.max(fear, threatLevel)) * math.max(0.1f, input.FearWeight) * math.select(0f, 1f, shouldEscape);
-                float homeDistance01 = useHomeTerritory && input.PatrolRadius > 0f
+                float homeDistance01 = useHomeTerritory && patrolRadius > 0f
                     ? math.saturate(homeDistanceSq * math.rcp(math.max(patrolRadiusSq, MathSafetyEpsilon)))
                     : 0f;
                 float returnScore = ScoreThreat(homeDistance01) * math.select(0f, 1f, homeOutOfBounds && !shouldEscape && !satedActive);
@@ -7380,7 +7625,7 @@ namespace Hecton8.AI
 
             private float ComputeAcousticScore(float3 selfPosition, float3 sourcePosition, float sourceStrength01, float transmission01)
             {
-                float strength = math.saturate(sourceStrength01) * math.saturate(math.max(transmission01, 0f));
+                float strength = Sanitize01(sourceStrength01) * SanitizeNonNegative(transmission01);
                 if (strength <= 0f)
                     return 0f;
 
@@ -7608,9 +7853,11 @@ namespace Hecton8.AI
 
             private static int3 ResolveSpatialBucketCoordinates(float3 worldPosition, float3 boundsMin, float bucketCellSize)
             {
-                float safeCellSize = math.max(bucketCellSize, 0.001f);
+                float safeCellSize = math.max(0.001f, SanitizeFiniteOrZero(bucketCellSize));
                 float invCellSize = math.rcp(safeCellSize);
-                float3 localPosition = math.max(worldPosition - boundsMin, float3.zero);
+                float3 safeWorldPosition = SanitizeFiniteOrZero(worldPosition);
+                float3 safeBoundsMin = SanitizeFiniteOrZero(boundsMin);
+                float3 localPosition = math.max(safeWorldPosition - safeBoundsMin, float3.zero);
                 return new int3(
                     (int)math.floor(localPosition.x * invCellSize),
                     (int)math.floor(localPosition.y * invCellSize),
@@ -7619,13 +7866,15 @@ namespace Hecton8.AI
 
             private static float ResolveThreatBlend(float deltaTime)
             {
-                float safeDeltaTime = math.min(math.max(0f, deltaTime), MaxThreatSmoothingDeltaTime);
+                float safeDeltaTime = math.min(
+                    math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime))),
+                    MaxThreatSmoothingDeltaTime);
                 return math.saturate(1f - FastExpNegPade13(ThreatSmoothingK * safeDeltaTime));
             }
 
             private static float FastExpNegPade13(float positiveX)
             {
-                float x = math.max(0f, positiveX);
+                float x = SanitizeNonNegative(positiveX);
                 float x2 = x * x;
                 float numerator = math.max(0f, 1f - 0.25f * x);
                 float denominator = 1f + 0.75f * x + 0.25f * x2 + 0.0416666679f * x2 * x;
@@ -7634,12 +7883,13 @@ namespace Hecton8.AI
 
             private static int3 ResolveAcousticBucketCoordinates(float3 worldPosition, float bucketCellSize)
             {
-                float safeCellSize = math.max(bucketCellSize, 0.001f);
+                float safeCellSize = math.max(0.001f, SanitizeFiniteOrZero(bucketCellSize));
                 float invCellSize = math.rcp(safeCellSize);
+                float3 safeWorldPosition = SanitizeFiniteOrZero(worldPosition);
                 int3 rawBucket = new int3(
-                    (int)math.floor(worldPosition.x * invCellSize),
-                    (int)math.floor(worldPosition.y * invCellSize),
-                    (int)math.floor(worldPosition.z * invCellSize));
+                    (int)math.floor(safeWorldPosition.x * invCellSize),
+                    (int)math.floor(safeWorldPosition.y * invCellSize),
+                    (int)math.floor(safeWorldPosition.z * invCellSize));
                 return rawBucket + new int3(
                     AcousticBucketOriginBiasCells,
                     AcousticBucketOriginBiasCells,
@@ -7695,25 +7945,14 @@ namespace Hecton8.AI
 
             private static float3 ResolveOctantDirectionXZ(int octant)
             {
-                switch (octant & 7)
-                {
-                    case 0:
-                        return new float3(1f, 0f, 0f);
-                    case 1:
-                        return new float3(0.70710678f, 0f, 0.70710678f);
-                    case 2:
-                        return new float3(0f, 0f, 1f);
-                    case 3:
-                        return new float3(-0.70710678f, 0f, 0.70710678f);
-                    case 4:
-                        return new float3(-1f, 0f, 0f);
-                    case 5:
-                        return new float3(-0.70710678f, 0f, -0.70710678f);
-                    case 6:
-                        return new float3(0f, 0f, -1f);
-                    default:
-                        return new float3(0.70710678f, 0f, -0.70710678f);
-                }
+                int index = octant & 7;
+                bool diagonal = (index & 1) != 0;
+                float axis = math.select(1f, 0.70710678f, diagonal);
+                float x = math.select(0f, axis, index == 0 || index == 1 || index == 7);
+                x = math.select(x, -axis, index == 3 || index == 4 || index == 5);
+                float z = math.select(0f, axis, index == 1 || index == 2 || index == 3);
+                z = math.select(z, -axis, index == 5 || index == 6 || index == 7);
+                return new float3(x, 0f, z);
             }
 
             private static float ComputeThreatVisual(float3 selfPosition, float3 targetPosition, float3 fallbackForward, float range)
@@ -8080,41 +8319,31 @@ namespace Hecton8.AI
                     return 0u;
 
                 uint packedState = (uint)FaunaWorldStateFlags.Active;
-                switch (legacyState)
-                {
-                    case FaunaBrain.AIState.Investigate:
-                    case FaunaBrain.AIState.Threaten:
-                    case FaunaBrain.AIState.Stalk:
-                    case FaunaBrain.AIState.Loom:
-                    case FaunaBrain.AIState.Feint:
-                    case FaunaBrain.AIState.Aggressive:
-                        packedState |= (uint)FaunaWorldStateFlags.Hunting;
-                        break;
-
-                    case FaunaBrain.AIState.Escape:
-                    case FaunaBrain.AIState.Return:
-                    case FaunaBrain.AIState.ApexForcedRetreat:
-                    case FaunaBrain.AIState.Retreat:
-                        packedState |= (uint)FaunaWorldStateFlags.Fleeing;
-                        break;
-                }
+                bool hunting =
+                    legacyState == FaunaBrain.AIState.Investigate ||
+                    legacyState == FaunaBrain.AIState.Threaten ||
+                    legacyState == FaunaBrain.AIState.Stalk ||
+                    legacyState == FaunaBrain.AIState.Loom ||
+                    legacyState == FaunaBrain.AIState.Feint ||
+                    legacyState == FaunaBrain.AIState.Aggressive;
+                bool fleeing =
+                    legacyState == FaunaBrain.AIState.Escape ||
+                    legacyState == FaunaBrain.AIState.Return ||
+                    legacyState == FaunaBrain.AIState.ApexForcedRetreat ||
+                    legacyState == FaunaBrain.AIState.Retreat;
+                packedState |= math.select(0u, (uint)FaunaWorldStateFlags.Hunting, hunting);
+                packedState |= math.select(0u, (uint)FaunaWorldStateFlags.Fleeing, fleeing);
 
                 return packedState;
             }
 
             private static FaunaBrain.AIState MapPredatorState(PredatorUtilityState stateMask)
             {
-                switch (stateMask)
-                {
-                    case PredatorUtilityState.Stalking:
-                        return FaunaBrain.AIState.Stalk;
-                    case PredatorUtilityState.Attacking:
-                        return FaunaBrain.AIState.Aggressive;
-                    case PredatorUtilityState.Fleeing:
-                        return FaunaBrain.AIState.Retreat;
-                    default:
-                        return FaunaBrain.AIState.Wander;
-                }
+                FaunaBrain.AIState mapped = FaunaBrain.AIState.Wander;
+                mapped = stateMask == PredatorUtilityState.Stalking ? FaunaBrain.AIState.Stalk : mapped;
+                mapped = stateMask == PredatorUtilityState.Attacking ? FaunaBrain.AIState.Aggressive : mapped;
+                mapped = stateMask == PredatorUtilityState.Fleeing ? FaunaBrain.AIState.Retreat : mapped;
+                return mapped;
             }
 
             private static PackedCognitionOutput BuildDefaultPackedOutput(float3 fallbackForward)

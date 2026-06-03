@@ -740,14 +740,14 @@ namespace Hecton8.UI
         [Tooltip("HectonSurvivalSystem dlya battery drain. Optsionalno.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
-        [Tooltip("Shader forwarded into runtime-created PDA spectrum/map tabs for GPU sonar point-cloud rendering.")]
-        [SerializeField] private Shader pdaSonarPointCloudShader;
+        [Tooltip("Authored material forwarded into runtime-created PDA spectrum/map tabs for GPU sonar point-cloud rendering.")]
+        [SerializeField] private Material pdaSonarPointCloudMaterial;
 
         [Tooltip("Compute shader forwarded into runtime-created PDA spectrum/map tabs for GPU sonar point-cloud rendering.")]
         [SerializeField] private ComputeShader pdaSonarMapCompute;
 
-        [Tooltip("Hologram volume shader forwarded into runtime-created PDA spectrum/map tabs.")]
-        [SerializeField] private Shader pdaHologramMapShader;
+        [Tooltip("Authored hologram volume material forwarded into runtime-created PDA spectrum/map tabs.")]
+        [SerializeField] private Material pdaHologramMapMaterial;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
@@ -1049,7 +1049,10 @@ namespace Hecton8.UI
             if (spectrum == null || !spectrum.TryGetComponent(out PDASpectrumTab spectrumTab))
                 return;
 
-            spectrumTab.ConfigureMapRuntimeAssets(pdaSonarPointCloudShader, pdaSonarMapCompute, pdaHologramMapShader);
+            spectrumTab.ConfigureMapRuntimeAssets(
+                pdaSonarPointCloudMaterial,
+                pdaSonarMapCompute,
+                pdaHologramMapMaterial);
         }
 
         private void ResolveControlsRebindUIReference()

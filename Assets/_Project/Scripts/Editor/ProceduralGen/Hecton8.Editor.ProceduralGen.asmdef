@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Editor.ProceduralGen",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Project.Editor",
         "Unity.Collections",
         "Unity.Mathematics",
         "Unity.Burst"

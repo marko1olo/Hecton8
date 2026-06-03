@@ -406,12 +406,14 @@ namespace Hecton8.Gameplay
         private const int VaultBallastForcePacketsFlag = 1 << 8;
         private const int VaultBallastTelemetryFlag = 1 << 9;
         private const int VaultBallastTuningFlag = 1 << 10;
+        private const int VaultVesselTelemetryFlag = 1 << 11;
         private static readonly ulong BallastSolverMutationGuardMask =
             BallastMutationGuardBit(SubmarineBallastBufferIds.Tanks) |
             BallastMutationGuardBit(SubmarineBallastBufferIds.Commands) |
             BallastMutationGuardBit(SubmarineBallastBufferIds.FluidSamples) |
             BallastMutationGuardBit(SubmarineBallastBufferIds.ForcePackets) |
-            BallastMutationGuardBit(SubmarineBallastBufferIds.TelemetryRing);
+            BallastMutationGuardBit(SubmarineBallastBufferIds.TelemetryRing) |
+            BallastMutationGuardBit(SubmarineBallastBufferIds.VesselTelemetry);
         private static readonly ulong FloodRoomInputMutationGuardMask =
             BallastMutationGuardBit(BufferID.RoomWaterLevels) |
             BallastMutationGuardBit(BufferID.RoomVolumes) |
@@ -597,6 +599,7 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<SubmarineBallastTelemetryEntry> _ballastTelemetryHandle;
         private VaultGenerationHandle<SubmarineBallastTuningDTO> _ballastTuningHandle;
         private VaultGenerationHandle<SubmarineBallastProfileDTO> _ballastProfilesHandle;
+        private VaultGenerationHandle<VesselTelemetryEntry> _vesselTelemetryHandle;
         private VaultGenerationHandle<SubmarineGyroCounterDTO> _shinobu332GyroCounterHandle;
         private VaultGenerationHandle<float> _roomWaterLevelsHandle;
         private VaultGenerationHandle<float> _roomVolumesHandle;
@@ -1059,6 +1062,28 @@ namespace Hecton8.Gameplay
             EnsureBallastFluidSamplesCold(out _);
             EnsureBallastForcePacketsCold(out _);
             EnsureBallastTelemetryCold(out _);
+            bool seedVesselTelemetry = (_vaultNativeStateMask & VaultVesselTelemetryFlag) == 0;
+            if (EnsureVesselTelemetryCold(out _) &&
+                seedVesselTelemetry &&
+                TryAcquireVaultWrite(
+                    in _vesselTelemetryHandle,
+                    SubmarineBallastBufferIds.VesselTelemetry,
+                    1,
+                    out NativeArray<VesselTelemetryEntry> vesselTelemetry))
+            {
+                try
+                {
+                    vesselTelemetry[0] = new VesselTelemetryEntry
+                    {
+                        CurrentBallastRatio = 1f - math.saturate(neutralBallastFill01)
+                    };
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _vesselTelemetryHandle);
+                }
+            }
+
             bool seedTuning = (_vaultNativeStateMask & VaultBallastTuningFlag) == 0;
             if (EnsureBallastTuningCold(out NativeArray<SubmarineBallastTuningDTO> tuning) && seedTuning && tuning.Length > 0)
                 WriteBallastTuning(ResolveTankVolumeLiters());
@@ -1088,6 +1113,7 @@ namespace Hecton8.Gameplay
             _ballastTelemetryHandle = default;
             _ballastTuningHandle = default;
             _ballastProfilesHandle = default;
+            _vesselTelemetryHandle = default;
             _shinobu332GyroCounterHandle = default;
             _roomWaterLevelsHandle = default;
             _roomVolumesHandle = default;
@@ -1523,6 +1549,7 @@ namespace Hecton8.Gameplay
 
         private void PrepareBallastCommands(in VehicleCommandSignal command, float fixedDeltaTime)
         {
+            float vesselBallastRatio = ReadVesselBallastRatioOrNeutral();
             if (_ballastSolverJobPending ||
                 !TryAcquireVaultWrite(
                     in _ballastTanksHandle,
@@ -1551,9 +1578,12 @@ namespace Hecton8.Gameplay
             {
                 float neutral = math.saturate(neutralBallastFill01);
                 float pitch = math.clamp(command.Pitch, -1f, 1f);
-                float totalBias = math.clamp(command.BallastDelta, -maxCommandBallastBias01, maxCommandBallastBias01);
+                float vesselTargetFill01 = 1f - vesselBallastRatio;
+                float vesselBias = math.clamp(vesselTargetFill01 - neutral, -maxCommandBallastBias01, maxCommandBallastBias01);
+                float totalBias = math.clamp(command.BallastDelta + vesselBias, -maxCommandBallastBias01, maxCommandBallastBias01);
                 float pitchBias = pitch * math.max(0f, maxCommandBallastBias01);
-                emergencyBlow = (((VehicleCommandSignalFlags)command.Flags) & VehicleCommandSignalFlags.BallastBlow) != 0;
+                emergencyBlow = (((VehicleCommandSignalFlags)command.Flags) & VehicleCommandSignalFlags.BallastBlow) != 0 ||
+                                vesselBallastRatio >= 0.985f;
 
                 targetFront = emergencyBlow ? 0f : math.saturate(neutral + totalBias + pitchBias);
                 targetAft = emergencyBlow ? 0f : math.saturate(neutral + totalBias - pitchBias);
@@ -1761,7 +1791,8 @@ namespace Hecton8.Gameplay
                     out NativeArray<BallastTankCommandDTO> commands,
                     out NativeArray<SubmarineBallastFluidSampleDTO> samples,
                     out NativeArray<SubmarineBallastForcePacketDTO> forcePackets,
-                    out NativeArray<SubmarineBallastTelemetryEntry> telemetry))
+                    out NativeArray<SubmarineBallastTelemetryEntry> telemetry,
+                    out NativeArray<VesselTelemetryEntry> vesselTelemetry))
             {
                 return;
             }
@@ -1794,6 +1825,7 @@ namespace Hecton8.Gameplay
                 {
                     Tanks = tanks,
                     FluidSamples = samples,
+                    VesselTelemetry = vesselTelemetry,
                     ForcePackets = forcePackets,
                     TelemetryRing = telemetry,
                     TankCount = TankCount,
@@ -3298,6 +3330,17 @@ namespace Hecton8.Gameplay
                 out buffer);
         }
 
+        private bool EnsureVesselTelemetryCold(out NativeArray<VesselTelemetryEntry> buffer)
+        {
+            return EnsureVaultBufferCold(
+                ref _vesselTelemetryHandle,
+                SubmarineBallastBufferIds.VesselTelemetry,
+                1,
+                VaultVesselTelemetryFlag,
+                NativeArrayOptions.ClearMemory,
+                out buffer);
+        }
+
         private bool EnsureBallastProfilesCold(out NativeArray<SubmarineBallastProfileDTO> buffer)
         {
             return EnsureVaultBufferCold(
@@ -3316,6 +3359,91 @@ namespace Hecton8.Gameplay
                 BufferID.SubmarineBallastFill01,
                 TankCount,
                 out buffer);
+        }
+
+        public bool TrySubmitSomaticBallastLever(float leverAngleDegrees, uint sourceHash)
+        {
+            float safeAngle = math.isfinite(leverAngleDegrees) ? math.clamp(leverAngleDegrees, 0f, 90f) : 0f;
+            float ballastRatio = math.saturate(safeAngle * (1f / 90f));
+            return TryWriteVesselBallastRatio(ballastRatio, sourceHash);
+        }
+
+        public bool TryRecordVesselMaintenanceAction(uint panelBitIndex, uint sourceHash)
+        {
+            if (panelBitIndex >= 64u)
+                return false;
+
+            ulong panelMask = 1UL << (int)panelBitIndex;
+            return TryWriteVesselMaintenanceAction(panelMask, sourceHash);
+        }
+
+        private bool TryWriteVesselBallastRatio(float ballastRatio, uint sourceHash)
+        {
+            float safeRatio = math.saturate(math.select(1f - math.saturate(neutralBallastFill01), ballastRatio, math.isfinite(ballastRatio)));
+            if (!TryAcquireVaultWrite(
+                    in _vesselTelemetryHandle,
+                    SubmarineBallastBufferIds.VesselTelemetry,
+                    1,
+                    out NativeArray<VesselTelemetryEntry> vesselTelemetry))
+            {
+                return false;
+            }
+
+            try
+            {
+                VesselTelemetryEntry entry = vesselTelemetry[0];
+                entry.CurrentBallastRatio = safeRatio;
+                entry.LastBallastSourceHash = sourceHash;
+                vesselTelemetry[0] = entry;
+                return true;
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _vesselTelemetryHandle);
+            }
+        }
+
+        private bool TryWriteVesselMaintenanceAction(ulong panelMask, uint sourceHash)
+        {
+            if (!TryAcquireVaultWrite(
+                    in _vesselTelemetryHandle,
+                    SubmarineBallastBufferIds.VesselTelemetry,
+                    1,
+                    out NativeArray<VesselTelemetryEntry> vesselTelemetry))
+            {
+                return false;
+            }
+
+            try
+            {
+                VesselTelemetryEntry entry = vesselTelemetry[0];
+                bool newPanel = (entry.HullCleanlinessMask & panelMask) == 0UL;
+                if (newPanel && entry.TotalCareActionsCount < uint.MaxValue)
+                    entry.TotalCareActionsCount++;
+                entry.HullCleanlinessMask |= panelMask;
+                entry.LastCareSourceHash = sourceHash;
+                vesselTelemetry[0] = entry;
+                return true;
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _vesselTelemetryHandle);
+            }
+        }
+
+        private float ReadVesselBallastRatioOrNeutral()
+        {
+            if (!TryReadOnlyVaultBuffer(
+                    in _vesselTelemetryHandle,
+                    SubmarineBallastBufferIds.VesselTelemetry,
+                    1,
+                    out NativeArray<VesselTelemetryEntry>.ReadOnly vesselTelemetry))
+            {
+                return 1f - math.saturate(neutralBallastFill01);
+            }
+
+            VesselTelemetryEntry entry = vesselTelemetry[0];
+            return math.saturate(math.select(1f - math.saturate(neutralBallastFill01), entry.CurrentBallastRatio, math.isfinite(entry.CurrentBallastRatio)));
         }
 
         private bool TryResolvePidOutputLocked(out NativeArray<PidJobOutput> buffer)
@@ -3419,13 +3547,15 @@ namespace Hecton8.Gameplay
             out NativeArray<BallastTankCommandDTO> commands,
             out NativeArray<SubmarineBallastFluidSampleDTO> samples,
             out NativeArray<SubmarineBallastForcePacketDTO> forcePackets,
-            out NativeArray<SubmarineBallastTelemetryEntry> telemetry)
+            out NativeArray<SubmarineBallastTelemetryEntry> telemetry,
+            out NativeArray<VesselTelemetryEntry> vesselTelemetry)
         {
             tanks = default;
             commands = default;
             samples = default;
             forcePackets = default;
             telemetry = default;
+            vesselTelemetry = default;
 
             IDataVault vault = ResolveDataVault();
             if (vault == null)
@@ -3469,6 +3599,17 @@ namespace Hecton8.Gameplay
                         out telemetry))
                     return false;
 
+                if (!TryResolveVehiclesPhysicsVaultBuffer(
+                        vault,
+                        ref _vesselTelemetryHandle,
+                        SubmarineBallastBufferIds.VesselTelemetry,
+                        1,
+                        out vesselTelemetry))
+                {
+                    RecordVaultFault(SubmarineBallastBufferIds.VesselTelemetry, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
+                    return false;
+                }
+
                 _ballastSolverGuardVault = vault;
                 _ballastSolverVaultLocksHeld = true;
                 success = true;
@@ -3486,6 +3627,7 @@ namespace Hecton8.Gameplay
                     samples = default;
                     forcePackets = default;
                     telemetry = default;
+                    vesselTelemetry = default;
                 }
             }
         }
@@ -4042,6 +4184,7 @@ namespace Hecton8.Gameplay
             ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastTelemetryHandle, SubmarineBallastBufferIds.TelemetryRing);
             ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastTuningHandle, SubmarineBallastBufferIds.Tuning);
             ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastProfilesHandle, SubmarineBallastBufferIds.Profiles);
+            ReleaseVehiclesPhysicsVaultHandle(vault, ref _vesselTelemetryHandle, SubmarineBallastBufferIds.VesselTelemetry);
         }
 
         private static void ReleaseVehiclesPhysicsVaultHandle<T>(

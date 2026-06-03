@@ -8,7 +8,7 @@ Date: 2026-05-11
 
 [BROKEN] A five-pillar "Pentarchy" model is no longer sufficient for HECTON-8 architecture.
 
-Local authority file `Docs/Actual Domains of Project.txt` defines 9 echelons and 85 domains. Any current document that claims a complete five-pillar architecture is stale unless it maps the missing enforcement pillars explicitly.
+`Docs/PROJECT_ATLAS.md` carries the active 9-echelons / 85-domains index. Any current document that claims a complete five-pillar architecture is stale unless it maps the missing enforcement pillars explicitly.
 
 ## Missing Pillars
 
@@ -22,9 +22,9 @@ The five-pillar model usually covers world, simulation, rendering, gameplay, and
 
 ## Law
 
-[RULE] Use the 9-echelons / 85-domains authority map for domain ownership.
+[RULE] Use `Docs/PROJECT_ATLAS.md` for the 9-echelons / 85-domains ownership index.
 
-[RULE] If "Pentarchy" appears in new docs, it must be labeled as a legacy shorthand and must link to the 9-echelons authority map.
+[RULE] If "Pentarchy" appears in new docs, it must be labeled as a legacy shorthand and must link to the 9-echelons index.
 
 [FORBID] Treating any five-pillar summary as architectural coverage for compile gates, ownership decisions, or cross-domain edits.
 

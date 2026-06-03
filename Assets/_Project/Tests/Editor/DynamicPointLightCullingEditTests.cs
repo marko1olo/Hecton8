@@ -201,6 +201,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DynamicLightVaultAccessBacksOffDuringCompactionFence()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs");
+            string source = File.ReadAllText(path);
+
+            string acquire = ExtractMethodBlock(source, "private VaultGenerationHandle<T> AcquireBuffer<T>(");
+            string openExisting = ExtractMethodBlock(source, "private bool TryOpenExistingDynamicPointLightBuffer<T>(");
+            string resolve = ExtractMethodBlock(source, "private bool TryResolveDynamicPointLightBuffer<T>(");
+
+            Assert.That(acquire, Does.Contain("vault.IsCompactionFenceActive"));
+            Assert.That(openExisting, Does.Contain("vault.IsCompactionFenceActive"));
+            Assert.That(resolve, Does.Contain("vault.IsCompactionFenceActive"));
+        }
+
+        [Test]
         public void MockLightManifestCommitsScalarCapacityAfterSeedLockRelease()
         {
             string path = Path.Combine(

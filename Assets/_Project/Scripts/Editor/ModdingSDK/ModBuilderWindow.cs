@@ -566,7 +566,7 @@ namespace Hecton8.Editor.ModdingSDK
 
             try
             {
-                AssemblyName assemblyName = AssemblyName.GetAssemblyName(path);
+                global::System.Reflection.AssemblyName assemblyName = global::System.Reflection.AssemblyName.GetAssemblyName(path);
                 if (assemblyName != null && IsReservedManagedAssemblyName(assemblyName.Name))
                 {
                     validationError = $"Managed assembly identity is reserved for engine-owned assemblies: {assemblyName.Name}";

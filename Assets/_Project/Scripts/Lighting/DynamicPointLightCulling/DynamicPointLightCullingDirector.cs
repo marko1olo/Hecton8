@@ -771,7 +771,7 @@ namespace Hecton8.Lighting
             bool allowAllocation) where T : struct
         {
             IDataVault vault = _vault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return default;
 
             if (TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
@@ -814,6 +814,7 @@ namespace Hecton8.Lighting
             buffer = default;
             IDataVault vault = _vault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !HasDynamicPointLightHandle(in handle, bufferId) ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
@@ -834,7 +835,7 @@ namespace Hecton8.Lighting
         {
             buffer = default;
             IDataVault vault = _vault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             if (HasDynamicPointLightHandle(in handle, bufferId) &&

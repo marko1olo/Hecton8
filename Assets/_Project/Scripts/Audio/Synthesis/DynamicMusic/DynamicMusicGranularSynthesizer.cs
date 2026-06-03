@@ -215,6 +215,9 @@ namespace Hecton8.Audio.Synthesis
         private const uint FlagAudioUnderrun = 1u << 2;
         private const uint FlagCsvApplied = 1u << 3;
         private const uint FlagProceduralOnly = 1u << 4;
+        private const float InvHash24Max = 0.0000000596046483281042f;
+        private const float InvStopwatchMicrosScale = 1000000f;
+        private const float InvSqrtEpsilon = 0.000000000001f;
         private const SystemID VaultOwner = SystemID.AudioDynamicSynth;
         private const ulong GuardVoices = 1UL << ((int)BufferID.AudioDynamicSynthVoices & 31);
         private const ulong GuardScalar = 1UL << ((int)BufferID.AudioDynamicSynthScalar & 31);
@@ -1319,7 +1322,7 @@ namespace Hecton8.Audio.Synthesis
             DynamicMusicSynthScalarDTO scalar = default;
             scalar.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
             scalar.DepthMeters = math.max(0f, _mockDepthMeters);
-            scalar.Depth01 = math.saturate(scalar.DepthMeters / math.max(0.0001f, tuning.DepthMaxMeters));
+            scalar.Depth01 = math.saturate(scalar.DepthMeters * math.rcp(math.max(0.0001f, tuning.DepthMaxMeters)));
             scalar.TensionIndex = math.saturate(_mockTensionBias01);
             scalar.LpfCutoffHz = math.max(tuning.LpfMinHz, 22000f - scalar.DepthMeters * tuning.LpfDepthHzPerMeter);
             scalar.ActiveVoices = 16;
@@ -1395,7 +1398,7 @@ namespace Hecton8.Audio.Synthesis
                     uint hash = Hash32((uint)i ^ tuning.SeedBase);
                     SynthVoiceDTO voice = default;
                     voice.CurrentPhase = HashToUnit(hash);
-                    voice.PhaseIncrement = tuning.BasePitchHz / sampleRate;
+                    voice.PhaseIncrement = tuning.BasePitchHz * math.rcp(sampleRate);
                     voice.EnvelopeState = 1f;
                     voice.SoundHash = hash == 0u ? 1u : hash;
                     voice.TargetPitch = tuning.BasePitchHz;
@@ -1430,7 +1433,7 @@ namespace Hecton8.Audio.Synthesis
 
                 for (int i = 0; i < grainBank.Length; i++)
                 {
-                    float phase = i / math.max(1f, (float)grainBank.Length);
+                    float phase = i * math.rcp(math.max(1f, (float)grainBank.Length));
                     float scrape = MathLodApproximation.ApproxSinBhaskara(phase * math.PI * 2f) * 0.55f;
                     scrape += MathLodApproximation.ApproxSinBhaskara(phase * math.PI * 9.7f + 0.8f) * 0.22f;
                     scrape += MathLodApproximation.ApproxSinBhaskara(phase * math.PI * 37.1f + 1.7f) * 0.08f;
@@ -1691,7 +1694,7 @@ namespace Hecton8.Audio.Synthesis
                 float decaySeconds = views.Tuning.IsCreated && views.Tuning.Length > 0
                     ? math.max(0.0001f, views.Tuning[0].StingerDecaySeconds)
                     : DefaultStingerDecaySeconds;
-                _pendingStingerImpulse = math.saturate(_pendingStingerImpulse * MathLodApproximation.ApproxExpNegPade33Wide40(MaximumDeltaSeconds / decaySeconds));
+                _pendingStingerImpulse = math.saturate(_pendingStingerImpulse * MathLodApproximation.ApproxExpNegPade33Wide40(MaximumDeltaSeconds * math.rcp(decaySeconds)));
             }
             finally
             {
@@ -2096,7 +2099,7 @@ namespace Hecton8.Audio.Synthesis
             if (!hasDigit)
                 return false;
 
-            value = sign * (integer + fraction / math.max(1f, divisor));
+            value = sign * (integer + fraction * math.rcp(math.max(1f, divisor)));
             return math.isfinite(value);
         }
 
@@ -2145,7 +2148,7 @@ namespace Hecton8.Audio.Synthesis
         private static float ResolveElapsedMicroseconds(long startTicks)
         {
             long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
-            return elapsedTicks * (1000000f / math.max(1f, (float)Stopwatch.Frequency));
+            return elapsedTicks * InvStopwatchMicrosScale * math.rcp(math.max(1f, (float)Stopwatch.Frequency));
         }
 
         private static string ResolveRepoRootPath()
@@ -2179,7 +2182,7 @@ namespace Hecton8.Audio.Synthesis
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float HashToUnit(uint hash)
         {
-            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
+            return (hash & 0x00FFFFFFu) * InvHash24Max;
         }
 
         private static void MemClearArray<T>(NativeArray<T> array)
@@ -2222,7 +2225,7 @@ namespace Hecton8.Audio.Synthesis
                 float tension = HasExternalScalars != 0
                     ? math.saturate(math.max(ExternalTension01, DamageImpulse01 * 0.85f))
                     : math.saturate(math.max(ExternalTension01, fallbackTension));
-                float depth01 = math.saturate(depthMeters / math.max(0.0001f, tuning.DepthMaxMeters));
+                float depth01 = math.saturate(depthMeters * math.rcp(math.max(0.0001f, tuning.DepthMaxMeters)));
                 float cutoff = math.max(tuning.LpfMinHz, 22000f - depthMeters * tuning.LpfDepthHzPerMeter);
 
                 scalar.Frame = FrameIndex;
@@ -2253,7 +2256,7 @@ namespace Hecton8.Audio.Synthesis
                 ref DynamicMusicSynthScalarDTO scalar = ref UnsafeUtility.AsRef<DynamicMusicSynthScalarDTO>(Scalar);
                 ref readonly DynamicMusicSynthTuningDTO tuning = ref UnsafeUtility.AsRef<DynamicMusicSynthTuningDTO>(Tuning);
                 float qualityDenominator = math.max(0.0001f, tuning.QualityMax - tuning.QualityMin);
-                float q = math.saturate((scalar.GlobalQualityWeight - tuning.QualityMin) / qualityDenominator);
+                float q = math.saturate((scalar.GlobalQualityWeight - tuning.QualityMin) * math.rcp(qualityDenominator));
                 float qSmooth = Smooth01(q);
                 int activeVoices = math.clamp((int)math.lerp(16f, 128f, qSmooth), 1, math.max(1, VoiceCapacityValue));
                 float tension = math.saturate(scalar.TensionIndex * tuning.TensionMultiplier);
@@ -2280,10 +2283,10 @@ namespace Hecton8.Audio.Synthesis
                     float detuneUp = MathLodApproximation.ApproxExpPositivePade33Reduced(detuneExponent);
                     float detuneDown = MathLodApproximation.ApproxExpNegPade33Reduced(-detuneExponent);
                     float detune = math.select(detuneUp, detuneDown, detuneExponent < 0f);
-                    float densityPush = math.lerp(0.75f, 1.5f, math.saturate(density / 128f));
+                    float densityPush = math.lerp(0.75f, 1.5f, math.saturate(density * 0.0078125f));
                     float targetPitch = tuning.BasePitchHz * pitchBend * detune * densityPush;
                     float activeMask = i < activeVoices ? 1f : 0f;
-                    voice.PhaseIncrement = math.clamp(targetPitch / safeSampleRate, 0.000001f, 0.25f);
+                    voice.PhaseIncrement = math.clamp(targetPitch * math.rcp(safeSampleRate), 0.000001f, 0.25f);
                     voice.TargetPitch = targetPitch;
                     voice.TargetVolume = activeMask * baseVolume * normalization * (0.82f + HashToUnit(Hash32(hash ^ 0xA53A9D1Du)) * 0.36f);
                     voice.EnvelopeState = math.saturate(math.max(voice.EnvelopeState, activeMask));
@@ -2378,8 +2381,8 @@ namespace Hecton8.Audio.Synthesis
 
                 scalar.Frame = FrameIndex;
                 scalar.OutputPeak = totalPeak;
-                scalar.OutputRms = math.sqrt(totalEnergy / math.max(1f, (float)OutputSampleCount));
-                scalar.StingerImpulse = math.saturate(stinger * MathLodApproximation.ApproxExpNegPade33Wide40(frameCount / math.max(1f, tuning.StingerDecaySeconds * safeSampleRate)));
+                scalar.OutputRms = FastSqrtNonNegative(totalEnergy * math.rcp(math.max(1f, (float)OutputSampleCount)));
+                scalar.StingerImpulse = math.saturate(stinger * MathLodApproximation.ApproxExpNegPade33Wide40(frameCount * math.rcp(math.max(1f, tuning.StingerDecaySeconds * safeSampleRate))));
                 if (!math.isfinite(scalar.OutputPeak) || !math.isfinite(scalar.OutputRms))
                     scalar.Flags |= FlagNonFinite;
             }
@@ -2387,18 +2390,27 @@ namespace Hecton8.Audio.Synthesis
             private static void ComputeLowPassCoefficients(ref DynamicMusicBiquadStateDTO biquad, float cutoffHz, int sampleRate)
             {
                 float safeRate = math.max(8000f, sampleRate);
-                float normalized = math.clamp(cutoffHz / math.max(0.0001f, safeRate), 0.0001f, 0.45f);
+                float normalized = math.clamp(cutoffHz * math.rcp(math.max(0.0001f, safeRate)), 0.0001f, 0.45f);
                 float k = MathLodApproximation.ApproxTanClamped(math.PI * normalized, 16f);
-                float q = 0.70710678f;
-                float norm = 1f / math.max(0.0001f, 1f + k / q + k * k);
+                float invQ = 1.41421356237f;
+                float norm = math.rcp(math.max(0.0001f, 1f + k * invQ + k * k));
                 float a0 = k * k * norm;
                 biquad.A0 = a0;
                 biquad.A1 = 2f * a0;
                 biquad.A2 = a0;
                 biquad.B1 = 2f * (k * k - 1f) * norm;
-                biquad.B2 = (1f - k / q + k * k) * norm;
+                biquad.B2 = (1f - k * invQ + k * k) * norm;
                 biquad.LastCutoffHz = cutoffHz;
                 biquad.LastSampleRate = safeRate;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float FastSqrtNonNegative(float value)
+            {
+                if (!math.isfinite(value) || value <= 0f)
+                    return 0f;
+
+                return value * math.rsqrt(math.max(value, InvSqrtEpsilon));
             }
 
             private static float ApplyLowPass(

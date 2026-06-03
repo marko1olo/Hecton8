@@ -1,30 +1,37 @@
 ---
 packet_id: P060_FIRST_HOUR_SPINE
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.first_hour_spine
+unlock_id: unlock.first_first_hour_spine
+poi_tags: poi.shallow_pump_annex;poi.first_safe_module
+biome_tags: biome.photic_shelf;biome.crash_shelf
 locale: ja_JP
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # First Hour Spine
 
-Draft JP localization pending native pass. First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
+First Hour Spine is the early-game dramaturgy guide for HECTON-8. It ensures the player begins with tangible engineering tasks and visual wonder before the colony crime and Atlas maintenance ecology appear.
 
 ## Scanner
 
-Draft JP localization pending native pass. Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
+Contract, damaged drop, air, bright shallows, safe pump room, sanitized lie, then the first repair scar that uses life as gasket.
 
 ## Terminal
 
-Draft JP localization pending native pass. SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
+SHALLOW ANNEX: manual pump restart valid. Deep Reach incident packet cached. Atlas repair growth detected around cable, tool fragment and biological residue.
 
 ## Audio
 
-Draft JP localization pending native pass. The first safe room is not clean. It is only holding its breath better than you are.
+The first safe room is not clean. It is only holding its breath better than you are.
 
 ## Field Note
 
-Draft JP localization pending native pass. The opening must be beautiful before it becomes accusing.
+The opening must be beautiful before it becomes accusing.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/ja_JP. -->

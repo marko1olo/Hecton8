@@ -1,10 +1,17 @@
 ---
 packet_id: P056_EX_DEEP_REACH_MARAUDER
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.ex_deep_reach_marauder
+unlock_id: unlock.first_ex_deep_reach_recognition
+poi_tags: poi.old_credential_lock;poi.drop_capsule_console
+biome_tags: biome.crash_shelf;biome.shallow_wreck
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Ex-Deep-Reach Marauder

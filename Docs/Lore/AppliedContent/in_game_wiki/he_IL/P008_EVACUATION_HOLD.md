@@ -1,10 +1,17 @@
 ---
 packet_id: P008_EVACUATION_HOLD
+release_set_id: RS002_DEEPENING_DESCENT
 article_id: colony.evacuation_hold
+unlock_id: unlock.first_evacuation_hold_record
+poi_tags: poi.evac_gate;poi.medical_route_lock
+biome_tags: biome.deep_abyss;biome.drowned_colony
 locale: he_IL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # עיכוב פינוי

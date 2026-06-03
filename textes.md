@@ -6,7 +6,7 @@ Use this file before writing advertising copy, social posts, profile bios, store
 
 This is not a lore bible and not a campaign document. This is the rule set for making the text sound like a real developer instead of a content machine.
 
-Route note: game-world text, missions, logs, and evidence use `narrative.md`. Public marketing text, store copy, social posts, creator outreach, community replies, captions, and profile text use this file. If public copy references visuals, performance, platforms, demo state, Steam status, mechanics, or release scope, `quality.md` evidence rules also apply.
+Route note: game-world text, missions, logs, and evidence use `narrative.md`. In-world articles, encyclopedia pages, survivor diaries, technical notes, scanner/codex entries, and AppliedContent prose use `writing.md`. Public marketing text, store copy, social posts, creator outreach, community replies, captions, and profile text use this file. If public copy references visuals, performance, platforms, demo state, Steam status, mechanics, or release scope, `quality.md` evidence rules also apply.
 
 ## 1. Prime Rule
 

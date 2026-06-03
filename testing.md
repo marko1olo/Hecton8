@@ -102,7 +102,7 @@ Reject:
 - platform claims without player/device artifact;
 - compile claims while current console/build logs disagree;
 - static search presented as integration proof;
-- reports missing status/rationale/log updates.
+- reports missing required status/rationale/log updates only when an explicit active agent ID or logging mode exists.
 
 ## Acceptance Sentence
 

@@ -4,6 +4,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Owner: 3D_MODEL_GENERATION_STANDARDS_DIRECTOR
 Scope: offline Editor-time mesh, UV, material, texture, LOD, prefab, and collision generation.
 
+## 0. Prime 3D Product Law
+
+Generated assets must look authored. HECTON-8 rejects procedural-looking props, rocks, fauna, flora, terrain pieces, and modules that merely satisfy a mesh count or socket contract.
+
+The product bar is: believable silhouette, material identity, UV discipline, LOD chain, collision proxy, texture response, scale witnesses, and proof renders. Offline generation is allowed because it can be controlled, inspected, rejected, and improved. It is not permission to ship cheap noise, primitive shapes, flat materials, or placeholder prefabs.
+
 ## 0. Foundational Law: Offline Permanence
 
 **All mesh generation, texture synthesis, UV unwrapping, tangent construction, normal baking, atlas packing, collider fitting, LOD decimation, and prefab assembly MUST occur only in Unity Editor tooling or external offline DCC/bake tools.**
@@ -293,6 +299,7 @@ Generated assets must read as Deep Sea Noir and NASA-punk:
 - Heavy pressure-rated machinery, thickened shells, industrial seams, corrosion, welds, rubber gaskets, oxidized bolts, worn paint, and service panels.
 - Abyssal biological mass with roots, scars, translucent membranes, glow masks, cavity darkness, parasites, broken edges, and water-shaped asymmetry.
 - Geology that looks stratified, fractured, mineral-stained, pressure-eroded, and cold, not smooth procedural noise.
+- Surface and photic-zone assets must read as wet, sunlit or sky-lit, materially rich, scenic, and beautiful: exposed rock has waterline erosion and mineral breakup, shallow flora/coral has pigment and growth logic, and coastline props/terrain are not abyss leftovers with brightness raised.
 
 Clean sterile sci-fi, low-poly toy silhouettes, flat procedural colors, perfect spheres, perfect cylinders, unchipped cubes, and untextured ribbons are rejected.
 

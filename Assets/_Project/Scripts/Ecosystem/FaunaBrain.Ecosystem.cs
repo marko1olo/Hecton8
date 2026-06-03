@@ -46,6 +46,9 @@ namespace Hecton8.AI
         private float _infectionSeverity;
         private float _diseaseSeverity;
         private int _infectionHazardSourceId;
+        private Color _authoredFaunaColor = Color.white;
+        private Color _authoredFaunaBaseColor = Color.white;
+        private Color _authoredFaunaEmissionColor = Color.black;
         private string _lootProfileId = string.Empty;
 
         /// <summary>Returns true when this fauna instance currently carries the infection overlay.</summary>
@@ -261,6 +264,7 @@ namespace Hecton8.AI
             _steeringEngine.turnSpeed = Mathf.Max(0.1f, _baseTurnSpeed * moveMultiplier);
             _steeringEngine.swimForce = Mathf.Max(_steeringEngine.moveSpeed, _baseBurstSpeed * moveMultiplier);
 
+            QueueCurrentFaunaPresentationShaderState();
             QueueEcosystemInfectionVisualFlush();
         }
 
@@ -320,8 +324,9 @@ namespace Hecton8.AI
                 return;
 
             _pendingInfectionVisualsDirty = false;
-            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
-            if (runtimeMaterialCount <= 0)
+            Renderer targetRenderer = _renderer;
+            MaterialPropertyBlock block = ResolveFaunaPresentationPropertyBlock();
+            if (targetRenderer == null || block == null)
                 return;
 
             float resolvedSeverity01 = _isInfected ? math.saturate(_infectionSeverity) : 0f;
@@ -335,33 +340,15 @@ namespace Hecton8.AI
             _lastAppliedInfectionShaderSeverity01 = resolvedSeverity01;
             Color infectedColor = Color.Lerp(Color.white, FaunaInfectionTint, resolvedSeverity01);
             Color infectedEmission = Color.Lerp(Color.black, FaunaInfectionEmission, resolvedSeverity01);
-            int originalMaterialCount = _faunaPresentationOriginalMaterials.Count;
-            for (int i = 0; i < runtimeMaterialCount; i++)
-            {
-                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
-                if (runtimeMaterial == null)
-                    continue;
+            Color color = _isInfected ? infectedColor : _authoredFaunaColor;
+            Color baseColor = _isInfected ? infectedColor : _authoredFaunaBaseColor;
+            Color emissionColor = _isInfected ? infectedEmission : _authoredFaunaEmissionColor;
 
-                Material originalMaterial = i < originalMaterialCount ? _faunaPresentationOriginalMaterials[i] : null;
-                ushort propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
-                if ((propertyMask & FaunaPresentationColorMask) != 0)
-                {
-                    Color color = _isInfected ? infectedColor : ResolveOriginalMaterialColor(originalMaterial, _ColorId, Color.white);
-                    runtimeMaterial.SetVector(_ColorId, ColorToVector(color));
-                }
-
-                if ((propertyMask & FaunaPresentationBaseColorMask) != 0)
-                {
-                    Color color = _isInfected ? infectedColor : ResolveOriginalMaterialColor(originalMaterial, _BaseColorId, Color.white);
-                    runtimeMaterial.SetVector(_BaseColorId, ColorToVector(color));
-                }
-
-                if ((propertyMask & FaunaPresentationEmissionColorMask) != 0)
-                {
-                    Color color = _isInfected ? infectedEmission : ResolveOriginalMaterialColor(originalMaterial, _EmissionColorId, Color.black);
-                    runtimeMaterial.SetVector(_EmissionColorId, ColorToVector(color));
-                }
-            }
+            targetRenderer.GetPropertyBlock(block);
+            block.SetVector(_ColorId, ColorToVector(color));
+            block.SetVector(_BaseColorId, ColorToVector(baseColor));
+            block.SetVector(_EmissionColorId, ColorToVector(emissionColor));
+            targetRenderer.SetPropertyBlock(block);
         }
 
         private static Color ResolveOriginalMaterialColor(Material originalMaterial, int shaderId, Color fallback)
@@ -394,6 +381,7 @@ namespace Hecton8.AI
                 return;
 
             HectonHazardManager.Unregister(_infectionHazardSourceId);
+            _infectionHazardSourceId = 0;
         }
 
         private void UpdatePredatorThreatPulse()

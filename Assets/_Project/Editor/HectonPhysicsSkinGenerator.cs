@@ -7,9 +7,15 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
+using Hecton8.Editor.ColliderOptimization1716;
 
 public class HectonPhysicsSkinGenerator : EditorWindow
 {
+    private const int MaxProxyTriangles1716 = ColliderOptimizerEngine1716.ProxyMeshTriangleLimit;
+    private const string LegacyPhysicsSkinRootName = "PHYSICS_SKIN";
+    private const string ConvexProxyRootName1716 = "COL_ConvexProxy_1716";
+    private const string CompoundProxyRootName1716 = "COL_CompoundProxy_1716";
+
     // ═══════════════════════════════════════════════════════════════════
     // UI STATE
     // ═══════════════════════════════════════════════════════════════════
@@ -171,7 +177,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             alignment = TextAnchor.MiddleCenter
         };
         EditorGUILayout.LabelField("⛏ HECTON PHYSICS SKIN GENERATOR", style);
-        EditorGUILayout.LabelField("Non-convex shell collider from baked meshes",
+        EditorGUILayout.LabelField("1716-compatible convex proxy from baked meshes",
             EditorStyles.centeredGreyMiniLabel);
     }
 
@@ -248,7 +254,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
 
         if (autoGridFromBounds)
         {
-            targetTriCount = EditorGUILayout.IntSlider("Target Triangles", targetTriCount, 50, 500);
+            targetTriCount = EditorGUILayout.IntSlider("Target Triangles", targetTriCount, 50, MaxProxyTriangles1716);
             EditorGUILayout.LabelField(
                 $"   (will calculate grid size automatically)",
                 EditorStyles.miniLabel);
@@ -295,8 +301,8 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         {
             chunkSize = EditorGUILayout.Slider("Chunk Size (m)", chunkSize, 10f, 200f);
             EditorGUILayout.HelpBox(
-                "Splits collider into spatial chunks. Use for 50m+ objects to avoid PhysX issues.",
-                MessageType.Info);
+                "Disabled by 1716: chunked non-convex MeshColliders are not a runtime-safe proxy route.",
+                MessageType.Warning);
 
             if (sourceBoundsSize != Vector3.zero)
             {
@@ -335,11 +341,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         if (sourceTriCount > 0 && generatedTriCount > 0)
         {
             float ratio = (float)generatedTriCount / sourceTriCount * 100f;
-            string quality;
-            if (generatedTriCount <= 200) quality = "✓ EXCELLENT";
-            else if (generatedTriCount <= 500) quality = "~ OK";
-            else quality = "⚠ TOO MANY — increase grid";
-
+            string quality = generatedTriCount <= MaxProxyTriangles1716 ? "OK" : "REJECTED - increase grid";
             EditorGUILayout.LabelField($"Reduction:   {ratio:F2}% of original  [{quality}]");
             EditorGUILayout.LabelField($"Gen Time:    {lastGenerateTime:F3}s");
 
@@ -466,8 +468,11 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             return;
         }
 
+        if (!ValidateProxyTriangleBudget(result.tris.Count / 3, target.name))
+            return;
+
         // Build mesh
-        Mesh resultMesh = BuildMesh(result, $"Skin_{target.name}_{gridPrecision:F1}");
+        Mesh resultMesh = BuildMesh(result, $"COL_Skin_{target.name}_{gridPrecision:F1}");
 
         // Save asset
         string assetPath = SaveMeshAsset(resultMesh, target.name, gridPrecision);
@@ -476,7 +481,8 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         resultMesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
 
         // Create/update child
-        ApplyToScene(target, resultMesh);
+        if (!ApplyToScene(target, resultMesh))
+            return;
 
         // Stats
         generatedTriCount = result.tris.Count / 3;
@@ -497,6 +503,12 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     // ═══════════════════════════════════════════════════════════════════
     private void GenerateChunked()
     {
+        if (enableChunking)
+        {
+            SetStatus("Chunked non-convex MeshCollider generation is disabled by 1716. Use compound primitives for huge bases.", MessageType.Error);
+            return;
+        }
+
         double startTime = EditorApplication.timeSinceStartup;
 
         MeshFilter mf = ValidateTarget(targetObject);
@@ -523,7 +535,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         RemoveExisting(targetObject);
 
         // Parent container
-        GameObject container = new GameObject("PHYSICS_SKIN");
+        GameObject container = new GameObject(CompoundProxyRootName1716);
         Undo.RegisterCreatedObjectUndo(container, "Create Physics Skin Container");
         container.transform.SetParent(targetObject.transform, false);
         container.transform.localPosition = Vector3.zero;
@@ -595,19 +607,17 @@ public class HectonPhysicsSkinGenerator : EditorWindow
                     chunkMesh = AssetDatabase.LoadAssetAtPath<Mesh>(chunkPath);
 
                     // Create child
-                    GameObject chunkObj = new GameObject($"chunk_{cx}_{cy}_{cz}");
+                    GameObject chunkObj = new GameObject($"COL_chunk_{cx}_{cy}_{cz}");
                     Undo.RegisterCreatedObjectUndo(chunkObj, "Create Chunk");
                     chunkObj.transform.SetParent(container.transform, false);
                     chunkObj.transform.localPosition = Vector3.zero;
                     chunkObj.transform.localRotation = Quaternion.identity;
                     chunkObj.transform.localScale = Vector3.one;
 
-                    MeshCollider mc = chunkObj.AddComponent<MeshCollider>();
-                    mc.convex = false;
-                    mc.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation
-                                     | MeshColliderCookingOptions.EnableMeshCleaning
-                                     | MeshColliderCookingOptions.WeldColocatedVertices;
-                    mc.sharedMesh = chunkMesh;
+                    BoxCollider box = chunkObj.AddComponent<BoxCollider>();
+                    Bounds chunkMeshBounds = chunkMesh.bounds;
+                    box.center = chunkMeshBounds.center;
+                    box.size = ClampBoxSize(chunkMeshBounds.size);
 
                     totalGenTris += result.tris.Count / 3;
                     totalGenVerts += result.verts.Count;
@@ -660,9 +670,17 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         generatedTriCount = result.tris.Count / 3;
         generatedVertCount = result.verts.Count;
 
+        if (generatedTriCount > MaxProxyTriangles1716)
+        {
+            previewMesh = null;
+            SetStatus($"Preview rejected: {generatedTriCount} tris exceeds 1716 proxy cap {MaxProxyTriangles1716}.", MessageType.Warning);
+            SceneView.RepaintAll();
+            return;
+        }
+
         if (result.tris.Count >= 3)
         {
-            previewMesh = BuildMesh(result, "preview_temp");
+            previewMesh = BuildMesh(result, "COL_preview_temp");
             previewTarget = targetObject;
             SetStatus($"Preview: {generatedTriCount} tris. Not saved yet.", MessageType.Info);
         }
@@ -1047,7 +1065,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         EnsureFolderExists(folderPath);
 
         string safeName = SanitizeName(objectName);
-        string assetName = $"Skin_{safeName}_{precision:F1}.asset";
+        string assetName = $"COL_Skin_{safeName}_{precision:F1}.asset";
         string assetPath = $"{folderPath}/{assetName}";
 
         Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
@@ -1063,23 +1081,35 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         return assetPath;
     }
 
-    private void ApplyToScene(GameObject target, Mesh resultMesh)
+    private bool ApplyToScene(GameObject target, Mesh resultMesh)
     {
+        if (!ColliderOptimizerEngine1716.ValidateProxyMesh(resultMesh, out string proxyFailure))
+        {
+            SetStatus("1716 proxy rejected: " + proxyFailure, MessageType.Error);
+            return false;
+        }
+
         Undo.SetCurrentGroupName("Generate Physics Skin");
         int undoGroup = Undo.GetCurrentGroup();
 
         // Find or create
-        Transform existing = target.transform.Find("PHYSICS_SKIN");
+        Transform existing = target.transform.Find(ConvexProxyRootName1716);
+        if (existing == null)
+            existing = target.transform.Find(LegacyPhysicsSkinRootName);
+        if (existing == null)
+            existing = target.transform.Find(CompoundProxyRootName1716);
+
         GameObject skinObj;
 
         if (existing != null)
         {
             skinObj = existing.gameObject;
             Undo.RecordObject(skinObj, "Update Physics Skin");
+            skinObj.name = ConvexProxyRootName1716;
         }
         else
         {
-            skinObj = new GameObject("PHYSICS_SKIN");
+            skinObj = new GameObject(ConvexProxyRootName1716);
             Undo.RegisterCreatedObjectUndo(skinObj, "Create Physics Skin");
             skinObj.transform.SetParent(target.transform, false);
         }
@@ -1089,6 +1119,9 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         skinObj.transform.localRotation = Quaternion.identity;
         skinObj.transform.localScale = Vector3.one;
 
+        ClearGeneratedProxyChildren(skinObj.transform);
+        StripTargetVisualMeshCollider(target);
+
         // MeshCollider
         skinObj.TryGetComponent(out MeshCollider mc);
         if (mc == null)
@@ -1097,7 +1130,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             Undo.RecordObject(mc, "Update MeshCollider");
 
         mc.sharedMesh = null; // force refresh
-        mc.convex = false;
+        mc.convex = true;
         mc.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation
                           | MeshColliderCookingOptions.EnableMeshCleaning
                           | MeshColliderCookingOptions.WeldColocatedVertices;
@@ -1114,6 +1147,15 @@ public class HectonPhysicsSkinGenerator : EditorWindow
 
         Undo.CollapseUndoOperations(undoGroup);
         EditorUtility.SetDirty(skinObj);
+
+        if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(target, out string failure))
+        {
+            Debug.LogError("[HectonSkin] 1716 topology validation failed: " + failure, target);
+            SetStatus("1716 validation failed: " + failure, MessageType.Error);
+            return false;
+        }
+
+        return true;
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1191,30 +1233,74 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         return (int)global::System.Math.Min(indexCount / 3L, int.MaxValue);
     }
 
+    private bool ValidateProxyTriangleBudget(int triangleCount, string sourceName)
+    {
+        if (triangleCount <= MaxProxyTriangles1716)
+            return true;
+
+        SetStatus(sourceName + " rejected: " + triangleCount + " tris exceeds 1716 proxy cap " + MaxProxyTriangles1716 + ".", MessageType.Error);
+        return false;
+    }
+
+    private static void StripTargetVisualMeshCollider(GameObject target)
+    {
+        if (target == null ||
+            !target.TryGetComponent(out MeshFilter meshFilter) ||
+            meshFilter.sharedMesh == null ||
+            !target.TryGetComponent(out MeshCollider meshCollider) ||
+            meshCollider.sharedMesh != meshFilter.sharedMesh)
+        {
+            return;
+        }
+
+        Undo.DestroyObjectImmediate(meshCollider);
+    }
+
+    private static void ClearGeneratedProxyChildren(Transform root)
+    {
+        if (root == null)
+            return;
+
+        for (int i = root.childCount - 1; i >= 0; i--)
+            Undo.DestroyObjectImmediate(root.GetChild(i).gameObject);
+    }
+
+    private static Vector3 ClampBoxSize(Vector3 size)
+    {
+        return new Vector3(
+            Mathf.Max(0.025f, Mathf.Abs(size.x)),
+            Mathf.Max(0.025f, Mathf.Abs(size.y)),
+            Mathf.Max(0.025f, Mathf.Abs(size.z)));
+    }
+
     private void RemoveExisting(GameObject target)
     {
         if (target == null) return;
 
-        // Remove all PHYSICS_SKIN children (including chunked containers)
+        // Remove legacy and 1716-generated proxy roots.
         _oldPhysicsSkinChildren.Clear();
         Transform root = target.transform;
         int childCount = root.childCount;
         for (int i = 0; i < childCount; i++)
         {
             Transform child = root.GetChild(i);
-            if (child.name == "PHYSICS_SKIN")
+            if (child.name == LegacyPhysicsSkinRootName ||
+                child.name == ConvexProxyRootName1716 ||
+                child.name == CompoundProxyRootName1716)
+            {
                 _oldPhysicsSkinChildren.Add(child);
+            }
         }
 
         if (_oldPhysicsSkinChildren.Count > 0)
         {
             for (int i = 0; i < _oldPhysicsSkinChildren.Count; i++)
                 Undo.DestroyObjectImmediate(_oldPhysicsSkinChildren[i].gameObject);
-            SetStatus($"Removed {_oldPhysicsSkinChildren.Count} PHYSICS_SKIN object(s).", MessageType.Warning);
+            SetStatus($"Removed {_oldPhysicsSkinChildren.Count} physics proxy object(s).", MessageType.Warning);
         }
         else
         {
-            SetStatus("No PHYSICS_SKIN found.", MessageType.Warning);
+            SetStatus("No physics proxy root found.", MessageType.Warning);
         }
 
         previewMesh = null;

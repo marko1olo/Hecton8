@@ -283,6 +283,7 @@ namespace Hecton8.Construction
         private const float EmergencySpeedMultiplier = 3f;
         private const float DockingStartDistanceMeters = 2f;
         private const float DockingStartDistanceSq = DockingStartDistanceMeters * DockingStartDistanceMeters;
+        private const float LengthEpsilonSq = 0.00000001f;
         private const float DockingStartForwardMeters = 10f;
         private const float DockingAirlockForwardMeters = 20f;
         private const float DockingArrivalSpeedMetersPerSecond = 0.5f;
@@ -363,7 +364,7 @@ namespace Hecton8.Construction
         public int PhantomFlowEnabled;
         public float FlowDragCoefficient;
         public float CrossCurrentVisualSlipWeight;
-        public MockSDFGrid SdfGrid;
+        public DroneSdfGrid SdfGrid;
         public int FrameIndex;
         public int SteeringTickModulo;
         public float SdfRepulsionStrength;
@@ -463,7 +464,8 @@ namespace Hecton8.Construction
             float maxSpeed = math.max(0.1f, drone.MaxSpeed * (emergency ? EmergencySpeedMultiplier : 1f));
             float3 desiredVelocity = direction * maxSpeed;
             float3 flowVelocity = ResolveFlowVelocity(drone.Position);
-            float flowStress01 = math.saturate(math.length(flowVelocity) / math.max(0.1f, maxSpeed));
+            float flowSpeedSq = math.select(0f, math.lengthsq(flowVelocity), math.all(math.isfinite(flowVelocity)));
+            float flowStress01 = math.saturate(FastLengthFromSq(flowSpeedSq) * math.rcp(math.max(0.1f, maxSpeed)));
             if (flowStress01 > 0.0001f)
                 drone.BatteryPercent = math.max(0f, drone.BatteryPercent - (drone.BatteryDrainPerSecond * flowStress01 * 0.15f * DeltaTime));
 
@@ -1220,6 +1222,12 @@ namespace Hecton8.Construction
             }
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.max(0f, lengthSq);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, LengthEpsilonSq));
         }
 
         private static bool IsFinite(float3 value)

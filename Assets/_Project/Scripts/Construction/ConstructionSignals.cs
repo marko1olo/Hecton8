@@ -10,6 +10,7 @@ namespace Hecton8.Construction
     {
         public const int PreviewStrideBytes = 128;
         public const int FloraExclusionStrideBytes = 128;
+        public const int ExtractorCapacityReachedStrideBytes = 32;
     }
 
     /// <summary>
@@ -138,5 +139,25 @@ namespace Hecton8.Construction
         [FieldOffset(125)] private byte _pad51;
         [FieldOffset(126)] private byte _pad52;
         [FieldOffset(127)] private byte _pad53;
+    }
+
+    /// <summary>
+    /// Autonomous extractor capacity failure packet. Size: 32 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = ConstructionSignalLayout.ExtractorCapacityReachedStrideBytes)]
+    public struct ExtractorCapacityReachedSignal : ISignal
+    {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 4;
+        public const int LowTierFrameSignals = 2;
+        public const uint LaneHash = 0x58435052u; // XCPR
+
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public int Capacity;
+        [FieldOffset(8)] public int ActiveCount;
+        [FieldOffset(12)] public int ModuleInstanceId;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public uint ContextHash;
+        [FieldOffset(24)] private ulong _pad0;
     }
 }

@@ -16,10 +16,10 @@ Total runtime suspects: 275. Full raw list: `../_scans/04_runtime_architecture_d
 ## Unity scene lookup (10)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Bridge\H8PrefabRegistry.cs:471:                prefab.GetComponentsInChildren(true, s_RendererScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\PlayerSensoryManager.cs:353:                        _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\PlayerRuntimeContextService.cs:1063:                _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1169:                root.GetComponentsInChildren(false, _cameraSearchBuffer);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:180:                root.GetComponentsInChildren(true, s_cameraScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\PlayerRuntimeContextService.cs:1099:                _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\PlayerSensoryManager.cs:353:                        _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1169:                root.GetComponentsInChildren(false, _cameraSearchBuffer);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:251:                if (!existingChild.TryGetComponent<T>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1821:            Camera camera = cameraObject.GetComponent<Camera>();
 - [ ] CLASSIFY: Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1837:            Light key = keyLight.GetComponent<Light>();
@@ -32,60 +32,59 @@ Total runtime suspects: 275. Full raw list: `../_scans/04_runtime_architecture_d
 
 ## Job fence / sync wait (3)
 
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3737:            ownerHandle.Complete();
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:279:            handle.Complete();
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:290:            handle.Complete();
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3733:            ownerHandle.Complete();
 
 ## Native allocation or persistent lifetime (81)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\BurstCallback.cs:83:            _events = new NativeQueue<int>(Allocator.Persistent);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\BurstCallback.cs:87:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\ConnectionSplineBatchRenderer.cs:974:            array = new NativeArray<SplineDescriptor>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\ConnectionSplineBatchRenderer.cs:989:            array = new NativeArray<FlexiblePipeInstanceGpuData>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\BurstCallback.cs:83:            _events = new NativeQueue<int>(Allocator.Persistent);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\BurstCallback.cs:87:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Data\StaticDataStore.cs:133:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Data\StaticDataStore.cs:408:                H8Memory.FreeRaw(_ownedFallbackPointer, Allocator.Persistent, SystemID.CoreDataVault);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:175:                    Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:378:            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:749:                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:762:                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:773:                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\DodReplayRecorder.cs:974:            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:115:                payload = new NativeArray<byte>(byteCount, allocator, options);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:314:            _buffer = new NativeArray<T>(capacity, allocator, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:315:            _publishedTickets = new NativeArray<long>(capacity, allocator, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:316:            _cursor = new NativeArray<MpscSignalRingCursorState>(1, allocator, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalRegistry.cs:7542:                _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalRegistry.cs:7549:                _nextFrameServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\UIStateStore.cs:156:            _states = new NativeArray<UIStateData>(StateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[StateCount] - headless UI simulation state - owner: UIStateStore
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\UIStateStore.cs:157:            _valueSlots = new NativeArray<UIValueSlot>(ValueSlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIValueSlot>[ValueSlotCount] - headless numeric UI value bridge - owner: UIStateStore
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\UIStateStore.cs:158:            _historyStates = new NativeArray<UIStateData>(UIStateHistoryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[UIStateHistoryFrames] - PDA UI rollback snapshot ring - owner: UIStateStore
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\UIStateStore.cs:159:            _pdaLogEventHashes = new NativeArray<uint>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[MaxPdaLogEvents] - PDA event-sourced log history - owner: UIStateStore
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\UIStateStore.cs:160:            _pdaLogEventTimestamps = new NativeArray<float>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[MaxPdaLogEvents] - PDA event-sourced log timestamps - owner: UIStateStore
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\FrameTimeWatchdog.cs:274:            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\DodReplayRecorder.cs:974:            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:749:                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:762:                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:773:                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:274:                    _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:882:            _pendingStorageReservationCommitResolved = new NativeQueue<StorageReservationCommitResolvedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Signals\SignalStormConcurrencyFuzzer1311.cs:71:                    Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:615:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:634:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\FrameTimeWatchdog.cs:274:            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:175:                    Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:378:            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\NativeRingBuffer.cs:34:            _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1429:                        ? Allocator.Persistent
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1969:                    return Allocator.Persistent;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\JobFenceManager.cs:26:            Handles = new NativeArray<JobHandle>(Capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalRegistry.cs:7542:                _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\GlobalRegistry.cs:7549:                _nextFrameServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Signals\SignalStormConcurrencyFuzzer1311.cs:71:                    Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:714:                _buffers = new UnsafeHashMap<int, IntPtr>(safeCapacity, Allocator.Persistent);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:715:                _metadata = new UnsafeHashMap<int, VaultBufferMeta>(safeCapacity, Allocator.Persistent);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:716:                _metadataGenerationByBufferId = new UnsafeHashMap<int, uint>(safeCapacity, Allocator.Persistent);
 - Additional lines omitted here: 51. Use the raw scan file for full classification.
 
 ## Runtime debug logging (178)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapStatus.cs:338:            Debug.LogError(SafeHaltMessage);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:133:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:156:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:400:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:407:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:414:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:421:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:428:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:435:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentAssetHashMap.cs:358:            Hecton8.Core.H8Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:166:                Hecton8.Core.H8Debug.Log("[H8DataBaker] Static data bake complete. Records=" + result.RecordCount.ToString(CultureInfo.InvariantCulture));
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:170:                Hecton8.Core.H8Debug.LogError("[H8DataBaker] " + result.Message);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:1339:                Hecton8.Core.H8Debug.LogError("[H8DataHotReload] " + result.Message);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:436:                Hecton8.Core.H8Debug.LogError(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:869:                    Hecton8.Core.H8Debug.LogWarning(SlowJobCompleteWarningMessage);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:21:            Debug.Log(message);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:33:            Debug.Log(message, context);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:44:            Debug.LogWarning(message);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:56:            Debug.LogWarning(message, context);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:67:            Debug.LogError(message);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:79:            Debug.LogError(message, context);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:90:            Debug.LogException(exception);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Core\H8Debug.cs:102:            Debug.LogException(exception, context);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:584:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:591:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:598:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle.");
@@ -102,6 +101,7 @@ Total runtime suspects: 275. Full raw list: `../_scans/04_runtime_architecture_d
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2245:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2252:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Rejected async load tracking.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2259:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Pending-load vault unavailable.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2266:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Pending-load ledger full.");
 - Additional lines omitted here: 148. Use the raw scan file for full classification.
 
 ## Hot Unity phase method (1)
@@ -111,3 +111,4 @@ Total runtime suspects: 275. Full raw list: `../_scans/04_runtime_architecture_d
 ## Uncategorized Static Risk Pattern (1)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1974:            text.text = textValue;
+

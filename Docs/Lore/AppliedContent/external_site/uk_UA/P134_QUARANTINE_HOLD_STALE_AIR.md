@@ -1,30 +1,37 @@
 ---
 packet_id: P134_QUARANTINE_HOLD_STALE_AIR
+release_set_id: RS027_FALSE_EXIT_RETURN_PRESSURE
 article_id: endings.quarantine_hold_stale_air
+unlock_id: unlock.quarantine_hold_stale_air
+poi_tags: poi.quarantine_hold_notice;poi.orbital_air_counter
+biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: uk_UA
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Quarantine Hold Stale Air
 
-Draft UA localization pending native pass. Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
+Quarantine Hold Stale Air turns escape into suspended agency rather than death or victory.
 
 ## Scanner
 
-Draft UA localization pending native pass. You are alive, sealed, and still not free.
+You are alive, sealed, and still not free.
 
 ## Terminal
 
-Draft UA localization pending native pass. QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
+QUARANTINE HOLD: contractor recovered. Air ration active. Sample custody unresolved. External testimony delayed pending contamination review and claimant challenge.
 
 ## Audio
 
-Draft UA localization pending native pass. The hatch opens only to another closed hatch.
+The hatch opens only to another closed hatch.
 
 ## Field Note
 
-Draft UA localization pending native pass. This is the bureaucratic version of drowning.
+This is the bureaucratic version of drowning.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/uk_UA. -->

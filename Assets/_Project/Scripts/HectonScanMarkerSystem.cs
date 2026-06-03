@@ -7,47 +7,18 @@ using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IScanEventListener, IGlobalRegistryHotSwapListener
     {
-        private const string MarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int MaxMarkers = 64;
         private const float FadeDurationSeconds = 1f;
         private const float ProjectionPaddingMeters = 0.05f;
         private const float DegreesToHalfRadians = 0.00872664626f;
-
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
-        private static readonly int FlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         // COLD ALLOC: List<VisorHUDController>[2] — HUD camera resolve scratch — owner: HectonScanMarkerSystem
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
-        // COLD ALLOC: Vector3[4] - shared scanner marker quad vertices - owner: HectonScanMarkerSystem
-        private static readonly Vector3[] s_markerQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        };
-
-        // COLD ALLOC: Vector2[4] - shared scanner marker quad UVs - owner: HectonScanMarkerSystem
-        private static readonly Vector2[] s_markerQuadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(1f, 1f),
-            new Vector2(0f, 1f)
-        };
-
-        // COLD ALLOC: int[6] - shared scanner marker quad indices - owner: HectonScanMarkerSystem
-        private static readonly int[] s_markerQuadTriangles = { 0, 2, 1, 0, 3, 2 };
-
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ActiveMarker
         {
@@ -65,15 +36,13 @@ namespace Hecton8.Gameplay
         [SerializeField] private Camera hudCamera;
 
         [Header("── Appearance ───────────────────────────────")]
-        [SerializeField] private Shader markerShader;
-        [SerializeField] private Color markerColor = new Color(0f, 0.9f, 1f, 0.9f);
+        [SerializeField] private Mesh markerMesh;
+        [SerializeField] private Material markerMaterial;
         [SerializeField, Min(4f)] private float markerBaseSizePixels = 24f;
         [SerializeField, Min(2f)] private float markerMinSizePixels = 8f;
         [SerializeField, Min(4f)] private float markerMaxSizePixels = 40f;
         [SerializeField, Min(0.5f)] private float markerLifetime = 5f;
         [SerializeField, Min(0f)] private float edgeMarginPixels = 40f;
-        [SerializeField, Min(0f)] private float flickerFrequency = 25f;
-        [SerializeField, Range(0f, 0.4f)] private float flickerIntensity = 0.15f;
 
         private ActiveMarker[] _markers;
         private ulong _activeMarkerMask;
@@ -85,9 +54,6 @@ namespace Hecton8.Gameplay
         private Mesh _runtimeMarkerMesh;
         // COLD ALLOC: Matrix4x4[64] — instanced marker draw mirror — owner: HectonScanMarkerSystem
         private readonly Matrix4x4[] _markerMatrixMirror = new Matrix4x4[MaxMarkers];
-        private Color _appliedMarkerColor;
-        private float _appliedFlickerFrequency;
-        private float _appliedFlickerIntensity;
         private float _cachedProjectionDistance = -1f;
         private float _cachedFieldOfView = -1f;
         private float _cachedEdgeMarginPixels = -1f;
@@ -96,16 +62,21 @@ namespace Hecton8.Gameplay
         private float _cachedSafeHalfHeight = 0.5f;
         private int _cachedPixelWidth = -1;
         private int _cachedPixelHeight = -1;
-        private bool _markerMaterialDirty = true;
         private bool _registered;
         private bool _lateFrameRegistered;
         private bool _registeredHotSwapListener;
         private bool _dispatcherAvailable;
+        private bool _markerResourcesConfigured;
 
-        public void Initialize(Shader shaderOverride)
+        public void Initialize(Mesh meshOverride, Material materialOverride)
         {
-            if (shaderOverride != null)
-                markerShader = shaderOverride;
+            if (meshOverride != null)
+                markerMesh = meshOverride;
+            if (materialOverride != null)
+                markerMaterial = materialOverride;
+
+            _markerResourcesConfigured = true;
+            EnsureRuntimeResources();
         }
 
         private void Awake()
@@ -144,18 +115,8 @@ namespace Hecton8.Gameplay
             UnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
 
-            if (_runtimeMarkerMaterial != null)
-            {
-                Destroy(_runtimeMarkerMaterial);
-                _runtimeMarkerMaterial = null;
-            }
-
-            if (_runtimeMarkerMesh != null)
-            {
-                Destroy(_runtimeMarkerMesh);
-                _runtimeMarkerMesh = null;
-            }
-
+            _runtimeMarkerMaterial = null;
+            _runtimeMarkerMesh = null;
             _cachedPlayerContext = null;
             _cachedPlayerMovement = null;
         }
@@ -281,8 +242,6 @@ namespace Hecton8.Gameplay
             if (visibleCount <= 0)
                 return;
 
-            ApplyMarkerMaterialIfNeeded();
-
             UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeMarkerMesh,
                 0,
@@ -365,7 +324,9 @@ namespace Hecton8.Gameplay
                 double sizePixelsDouble = (double)markerBaseSizePixels * math.rcp(math.max(distanceMeters * 0.1d, 0.5d));
                 float sizePixels = (float)math.clamp(sizePixelsDouble, markerMinSizePixels, markerMaxSizePixels);
                 if (marker.timer < FadeDurationSeconds)
+                {
                     sizePixels *= math.saturate(marker.timer * math.rcp(FadeDurationSeconds));
+                }
 
                 float markerScale = math.max(0.0001f, sizePixels * worldPerPixel);
                 Matrix4x4 matrix = Matrix4x4.TRS(markerWorldPosition, cameraTransform.rotation, new Vector3(markerScale, markerScale, markerScale));
@@ -461,26 +422,30 @@ namespace Hecton8.Gameplay
 
         private void EnsureRuntimeResources()
         {
-            if (_runtimeMarkerMesh == null)
-                _runtimeMarkerMesh = CreateMarkerQuadMesh();
-
-            if (_runtimeMarkerMaterial != null)
-                return;
-
-#if UNITY_EDITOR
-            if (markerShader == null)
-                markerShader = AssetDatabase.LoadAssetAtPath<Shader>(MarkerShaderPath);
-#endif
-
-            if (markerShader == null)
-                return;
-
-            _runtimeMarkerMaterial = new Material(markerShader)
+            bool authoredMeshValid = markerMesh != null && markerMesh.subMeshCount > 0 && markerMesh.GetIndexCount(0) > 0u;
+            bool authoredMaterialValid = markerMaterial != null &&
+                                         markerMaterial.shader != null &&
+                                         markerMaterial.enableInstancing;
+            bool shouldReportInvalidResources = _markerResourcesConfigured || markerMesh != null || markerMaterial != null;
+            if (!authoredMeshValid || !authoredMaterialValid)
             {
-                enableInstancing = true,
-                hideFlags = HideFlags.DontSave
-            };
-            _markerMaterialDirty = true;
+                if (shouldReportInvalidResources)
+                {
+                    UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: HectonScanMarkerSystem requires an authored indexed marker mesh.");
+                    UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: HectonScanMarkerSystem requires an authored GPU-instanced marker material.");
+                }
+
+                _runtimeMarkerMesh = null;
+                _runtimeMarkerMaterial = null;
+                return;
+            }
+
+            if (!ReferenceEquals(_runtimeMarkerMesh, markerMesh))
+                _runtimeMarkerMesh = markerMesh;
+
+            if (!ReferenceEquals(_runtimeMarkerMaterial, markerMaterial))
+                _runtimeMarkerMaterial = markerMaterial;
+
         }
 
         private bool AreRuntimeResourcesReady()
@@ -553,44 +518,6 @@ namespace Hecton8.Gameplay
             _registeredHotSwapListener = false;
         }
 
-        private static Mesh CreateMarkerQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "ScannerMarkerQuad"
-            };
-
-            mesh.SetVertices(s_markerQuadVertices);
-            mesh.SetUVs(0, s_markerQuadUvs);
-            mesh.SetTriangles(s_markerQuadTriangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(false);
-            return mesh;
-        }
-
-        private void ApplyMarkerMaterialIfNeeded()
-        {
-            if (_runtimeMarkerMaterial == null)
-                return;
-
-            if (!_markerMaterialDirty &&
-                SameColor(_appliedMarkerColor, markerColor) &&
-                math.abs(_appliedFlickerFrequency - flickerFrequency) <= 0.0001f &&
-                math.abs(_appliedFlickerIntensity - flickerIntensity) <= 0.0001f)
-            {
-                return;
-            }
-
-            _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
-            _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
-            _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
-            _appliedMarkerColor = markerColor;
-            _appliedFlickerFrequency = flickerFrequency;
-            _appliedFlickerIntensity = flickerIntensity;
-            _markerMaterialDirty = false;
-        }
-
         private bool TryResolvePlayerAup(Vector3 fallbackRuntimePosition, out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
@@ -629,14 +556,6 @@ namespace Hecton8.Gameplay
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return aup.IsFinite();
-        }
-
-        private static bool SameColor(Color a, Color b)
-        {
-            return math.abs(a.r - b.r) <= 0.0001f &&
-                   math.abs(a.g - b.g) <= 0.0001f &&
-                   math.abs(a.b - b.b) <= 0.0001f &&
-                   math.abs(a.a - b.a) <= 0.0001f;
         }
 
         private static double EstimateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)

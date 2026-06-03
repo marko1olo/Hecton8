@@ -19,7 +19,6 @@ if str(TOOLS_ROOT) not in sys.path:
 import NetJitterSim as net_jitter  # noqa: E402
 
 DOC = ROOT / "Docs" / "ARCHITECTURE" / "COOP_MERKLE_STATE_DELTA_PROTOCOL.md"
-DOMAINS = ROOT / "Docs" / "Actual Domains of Project.txt"
 ATLAS = ROOT / "Docs" / "PROJECT_ATLAS.md"
 JITTER_REPORT = ROOT / "Docs" / "AgentLogs" / "NetJitterSim_NET_SYNC_MERKLE_ARCHITECT.json"
 
@@ -209,9 +208,9 @@ def verify_packet_fits() -> None:
 
 
 def parse_domain_labels() -> list[str]:
-    text = read_text(DOMAINS)
+    text = read_text(ATLAS)
     by_id: dict[int, str] = {}
-    pattern = re.compile(r"(?<!\d)([1-9]\d?)\.\s+(.+?)(?=(?:\s+[1-9]\d?\.\s)|\r?\n|$)", re.S)
+    pattern = re.compile(r"^\|\s*([1-9]\d?)\s*\|[^|]*\|\s*`([^`]+)`\s*\|", re.M)
     for match in pattern.finditer(text):
         domain_id = int(match.group(1))
         if not (1 <= domain_id <= EXPECTED_DOMAIN_COUNT):
@@ -222,7 +221,7 @@ def parse_domain_labels() -> list[str]:
 
     missing = [i for i in range(1, EXPECTED_DOMAIN_COUNT + 1) if i not in by_id]
     if missing:
-        fail(f"domain map missing ids: {missing}")
+        fail(f"PROJECT_ATLAS.md domain map missing ids: {missing}")
 
     return [by_id[i] for i in range(1, EXPECTED_DOMAIN_COUNT + 1)]
 

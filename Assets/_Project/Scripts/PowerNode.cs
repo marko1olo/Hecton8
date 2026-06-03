@@ -52,7 +52,7 @@ using UnityEngine;
 namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
-    public sealed class PowerNode : MonoBehaviour, IPoolable, IPowerComponent, IContinuousPowerComponent
+    public sealed class PowerNode : MonoBehaviour, IPoolable, IPowerComponent, IContinuousPowerComponent, IPowerActivationTarget
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -96,6 +96,7 @@ namespace Hecton8.Power
 
         /// <summary>Prioritet iz BuildableData.</summary>
         private int _basePowerPriority;
+        private float _runtimeActivation01 = 1f;
 
         /// <summary>Tekuschee sostoyanie pitaniya.</summary>
         private bool _hasPower = true;
@@ -140,6 +141,7 @@ namespace Hecton8.Power
 
         internal bool IsRuptured => _isRuptured;
         internal bool IsShortCircuited => _isShortCircuited;
+        internal bool IsRuntimePowerConductive => _runtimeActivation01 > 0.0001f;
 
         /// <summary>
         /// Ustanavlivaet ssylku na set.
@@ -187,7 +189,7 @@ namespace Hecton8.Power
         ///   • Solnechnaya panel: +200 (generatsiya)
         ///   • Reaktor: +500 (generatsiya)
         /// </summary>
-        public float PowerRating => _basePowerRating;
+        public float PowerRating => _basePowerRating * _runtimeActivation01;
 
         /// <summary>Prioritet otklyucheniya bazovogo potrebleniya.</summary>
         public int PowerPriority => _basePowerPriority;
@@ -216,6 +218,25 @@ namespace Hecton8.Power
         {
             _voltage01 = math.saturate(math.isfinite(voltage01) ? voltage01 : 0f);
             _hasPower = _voltage01 >= 0.2f;
+        }
+
+        public bool SetRuntimeActivation01(float activation01)
+        {
+            bool wasConductive = IsRuntimePowerConductive;
+            float sanitized = math.saturate(math.select(1f, activation01, math.isfinite(activation01)));
+            if (math.abs(_runtimeActivation01 - sanitized) <= 0.0001f)
+                return false;
+
+            _runtimeActivation01 = sanitized;
+            bool isConductive = IsRuntimePowerConductive;
+            if (wasConductive != isConductive)
+            {
+                _topologyRevision++;
+                InvalidateRuntimePowerConnectionsForSnap();
+            }
+
+            _grid?.MarkDirty();
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -285,6 +306,7 @@ namespace Hecton8.Power
             _components.Clear();
             _grid = null;
             _hasPower = true;
+            _runtimeActivation01 = 1f;
             _graphScratchIndex = -1;
             _graphScratchVersion = 0;
             _isRuptured = false;

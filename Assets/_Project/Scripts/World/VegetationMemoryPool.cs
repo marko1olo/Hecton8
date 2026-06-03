@@ -158,7 +158,10 @@ namespace Hecton8.World
             public VaultGenerationHandle<byte> EcosystemThreatGridCompressedHandle;
             public VaultGenerationHandle<byte> EcosystemThreatVoxelHandle;
             public VaultGenerationHandle<byte> EcosystemThreatEchoHandle;
+            public VaultGenerationHandle<ThreatPropagationStagingPoint> ThreatPropagationStagingHandle;
+            public VaultGenerationHandle<FlowFieldStagingPoint> FlowFieldStagingHandle;
             public VaultGenerationHandle<float2> EcosystemFlowFieldHandle;
+            public VaultGenerationHandle<ThermalGridStagingPoint> ThermalGridStagingHandle;
             public VaultGenerationHandle<float> AbyssalThermalGridHandle;
             public VaultGenerationHandle<float3> AbyssalFlowVolumeHandle;
             public VaultGenerationHandle<float> CanopyHeightGridHandle;
@@ -172,6 +175,7 @@ namespace Hecton8.World
             public VaultGenerationHandle<float> AbyssalNavConduitStrengthsHandle;
             public VaultGenerationHandle<byte> AbyssalNavNodeTypesHandle;
             public VaultGenerationHandle<Vector3> AbyssalPathSnapshotHandle;
+            public VaultGenerationHandle<AbyssalPathStagingPoint> AbyssalPathStagingHandle;
             public VaultGenerationHandle<PredatorFearNodeSnapshot> PredatorFearNodesSnapshotHandle;
             public VaultGenerationHandle<HLODData> HlodRegistrySnapshotHandle;
             public VaultGenerationHandle<HLODData> VisibleHlodSnapshotHandle;
@@ -187,7 +191,10 @@ namespace Hecton8.World
                                      EcosystemThreatGridCompressedHandle.BufferID != 0u ||
                                      EcosystemThreatVoxelHandle.BufferID != 0u ||
                                      EcosystemThreatEchoHandle.BufferID != 0u ||
-                                      EcosystemFlowFieldHandle.BufferID != 0u ||
+                                     ThreatPropagationStagingHandle.BufferID != 0u ||
+                                     FlowFieldStagingHandle.BufferID != 0u ||
+                                     EcosystemFlowFieldHandle.BufferID != 0u ||
+                                     ThermalGridStagingHandle.BufferID != 0u ||
                                       AbyssalThermalGridHandle.BufferID != 0u ||
                                       AbyssalFlowVolumeHandle.BufferID != 0u ||
                                       CanopyHeightGridHandle.BufferID != 0u ||
@@ -200,7 +207,8 @@ namespace Hecton8.World
                                       AbyssalNavConduitStrengthsHandle.BufferID != 0u ||
                                       AbyssalNavNodeTypesHandle.BufferID != 0u ||
                                       AbyssalPathSnapshotHandle.BufferID != 0u ||
-                                     PredatorFearNodesSnapshotHandle.BufferID != 0u ||
+                                      AbyssalPathStagingHandle.BufferID != 0u ||
+                                      PredatorFearNodesSnapshotHandle.BufferID != 0u ||
                                      HlodRegistrySnapshotHandle.BufferID != 0u ||
                                      VisibleHlodSnapshotHandle.BufferID != 0u ||
                                      SurfaceDefragMovesHandle.BufferID != 0u ||
@@ -223,7 +231,10 @@ namespace Hecton8.World
                 EcosystemThreatGridCompressedHandle = default;
                 EcosystemThreatVoxelHandle = default;
                 EcosystemThreatEchoHandle = default;
+                ThreatPropagationStagingHandle = default;
+                FlowFieldStagingHandle = default;
                 EcosystemFlowFieldHandle = default;
+                ThermalGridStagingHandle = default;
                 AbyssalThermalGridHandle = default;
                 AbyssalFlowVolumeHandle = default;
                 CanopyHeightGridHandle = default;
@@ -237,6 +248,7 @@ namespace Hecton8.World
                 AbyssalNavConduitStrengthsHandle = default;
                 AbyssalNavNodeTypesHandle = default;
                 AbyssalPathSnapshotHandle = default;
+                AbyssalPathStagingHandle = default;
                 PredatorFearNodesSnapshotHandle = default;
                 HlodRegistrySnapshotHandle = default;
                 VisibleHlodSnapshotHandle = default;

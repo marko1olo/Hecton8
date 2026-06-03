@@ -1,0 +1,788 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P156_SHIFT_CREWS_NOT_HEROES",
+      "article_id": "colony_human.shift_crews_not_heroes",
+      "title_key": "applied_lore.shift_crews_not_heroes.title",
+      "unlock": {
+        "primary": "unlock.shift_crews_not_heroes",
+        "poi_tags": [
+          "poi.shift_roster_wall",
+          "poi.crew_rotation_tags",
+          "poi.work_order_nameplate"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.shallow_annex"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "The colony becomes human through schedules, not speeches.",
+          "field_note": "People are more believable as workers than as memorial statues.",
+          "terminal": "COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "They were not symbols. They were late for shift.",
+          "in_game_wiki": "HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "ru_RU": {
+          "title": "Смены, не герои",
+          "scanner": "Колония становится человеческой через расписания, не speeches.",
+          "field_note": "Люди правдоподобнее как workers, чем как memorial statues.",
+          "terminal": "COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. Shift roster can hurt more than a monologue.",
+          "audio": "Они не были symbols. Они опаздывали на смену.",
+          "in_game_wiki": "HECTON-8 должен показывать колонию как людей с работой, усталостью, привычками и малыми procedural failures. Family-revenge hook не нужен.",
+          "external_site": "Смены, не герои - правило письма для очеловечивания drowned colony."
+        },
+        "ja_JP": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft JP localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft JP localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft JP localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft JP localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft JP localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "zh_CN": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft CN localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft CN localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft CN localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft CN localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft CN localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "fr_FR": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft FR localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft FR localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft FR localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft FR localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft FR localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "es_ES": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft ES localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft ES localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft ES localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft ES localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft ES localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "de_DE": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft DE localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft DE localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft DE localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft DE localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft DE localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "pl_PL": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft PL localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft PL localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft PL localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft PL localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft PL localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "uk_UA": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft UA localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft UA localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft UA localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft UA localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft UA localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft UA localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "ar_SA": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft AR localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft AR localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft AR localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft AR localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft AR localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "id_ID": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft ID localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft ID localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft ID localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft ID localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft ID localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "ko_KR": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft KO localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft KO localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft KO localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft KO localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft KO localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "he_IL": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft HE localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft HE localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft HE localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft HE localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft HE localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "pt_BR": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft PT localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft PT localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft PT localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft PT localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft PT localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft PT localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        },
+        "nl_NL": {
+          "title": "Shift Crews Not Heroes",
+          "scanner": "Draft NL localization pending native pass. The colony becomes human through schedules, not speeches.",
+          "field_note": "Draft NL localization pending native pass. People are more believable as workers than as memorial statues.",
+          "terminal": "Draft NL localization pending native pass. COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.",
+          "audio": "Draft NL localization pending native pass. They were not symbols. They were late for shift.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.",
+          "external_site": "Draft NL localization pending native pass. Shift Crews Not Heroes is the writing rule for humanizing the drowned colony."
+        }
+      },
+      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    },
+    {
+      "packet_id": "P157_WORKER_JOB_CARDS",
+      "article_id": "colony_human.worker_job_cards",
+      "title_key": "applied_lore.worker_job_cards.title",
+      "unlock": {
+        "primary": "unlock.worker_job_cards",
+        "poi_tags": [
+          "poi.worker_job_card_stack",
+          "poi.flooded_id_clip",
+          "poi.task_certification_stamp"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Worker Job Cards",
+          "scanner": "A job card is a face the budget could read.",
+          "field_note": "Make names useful before making them tragic.",
+          "terminal": "JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Worker Job Cards turn names into evidence objects."
+        },
+        "ru_RU": {
+          "title": "Рабочие job cards",
+          "scanner": "Job card - лицо, которое бюджет мог прочитать.",
+          "field_note": "Сделай имена полезными до того, как сделать их трагичными.",
+          "terminal": "JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. Player learns people through what they were doing when the system failed.",
+          "audio": "Имя без задачи становится shrine. Задача делает его evidence.",
+          "in_game_wiki": "Рабочие job cards позволяют wiki, terminal и scanner fragments очеловечивать колонию и оставаться функциональными для gameplay routes.",
+          "external_site": "Рабочие job cards превращают имена в evidence objects."
+        },
+        "ja_JP": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft JP localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft JP localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft JP localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft JP localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft JP localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft JP localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "zh_CN": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft CN localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft CN localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft CN localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft CN localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft CN localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft CN localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "fr_FR": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft FR localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft FR localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft FR localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft FR localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft FR localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft FR localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "es_ES": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft ES localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft ES localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft ES localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft ES localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft ES localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft ES localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "de_DE": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft DE localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft DE localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft DE localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft DE localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft DE localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft DE localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "pl_PL": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft PL localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft PL localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft PL localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft PL localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft PL localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft PL localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "uk_UA": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft UA localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft UA localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft UA localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft UA localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft UA localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft UA localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "ar_SA": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft AR localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft AR localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft AR localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft AR localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft AR localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft AR localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "id_ID": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft ID localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft ID localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft ID localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft ID localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft ID localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft ID localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "ko_KR": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft KO localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft KO localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft KO localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft KO localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft KO localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft KO localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "he_IL": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft HE localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft HE localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft HE localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft HE localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft HE localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft HE localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "pt_BR": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft PT localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft PT localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft PT localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft PT localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft PT localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft PT localization pending native pass. Worker Job Cards turn names into evidence objects."
+        },
+        "nl_NL": {
+          "title": "Worker Job Cards",
+          "scanner": "Draft NL localization pending native pass. A job card is a face the budget could read.",
+          "field_note": "Draft NL localization pending native pass. Make names useful before making them tragic.",
+          "terminal": "Draft NL localization pending native pass. JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.",
+          "audio": "Draft NL localization pending native pass. A name without a task becomes a shrine. A task makes it evidence.",
+          "in_game_wiki": "Draft NL localization pending native pass. Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.",
+          "external_site": "Draft NL localization pending native pass. Worker Job Cards turn names into evidence objects."
+        }
+      },
+      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    },
+    {
+      "packet_id": "P158_LOCKER_NAME_PROTOCOL",
+      "article_id": "colony_human.locker_name_protocol",
+      "title_key": "applied_lore.locker_name_protocol.title",
+      "unlock": {
+        "primary": "unlock.locker_name_protocol",
+        "poi_tags": [
+          "poi.locker_name_strip",
+          "poi.marauder_preserved_label",
+          "poi.deep_reach_removed_payroll"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Locker Name Protocol",
+          "scanner": "A locker is personal without needing a family plot.",
+          "field_note": "The smallest human trace should survive corporate cleanup.",
+          "terminal": "LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Locker Name Protocol is personal evidence without melodrama."
+        },
+        "ru_RU": {
+          "title": "Протокол имен на lockers",
+          "scanner": "Locker личный без family plot.",
+          "field_note": "Самый малый human trace должен пережить corporate cleanup.",
+          "terminal": "LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Компания удалила employee. Ржавчина сохранила label.",
+          "in_game_wiki": "Протокол имен на lockers дает художникам и сценаристам повторяемый human evidence object across seeds.",
+          "external_site": "Протокол имен на lockers - personal evidence без melodrama."
+        },
+        "ja_JP": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft JP localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft JP localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft JP localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft JP localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft JP localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft JP localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "zh_CN": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft CN localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft CN localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft CN localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft CN localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft CN localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft CN localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "fr_FR": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft FR localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft FR localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft FR localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft FR localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft FR localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft FR localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "es_ES": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft ES localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft ES localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft ES localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft ES localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft ES localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft ES localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "de_DE": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft DE localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft DE localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft DE localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft DE localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft DE localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft DE localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "pl_PL": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft PL localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft PL localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft PL localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft PL localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft PL localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft PL localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "uk_UA": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft UA localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft UA localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft UA localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft UA localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft UA localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft UA localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "ar_SA": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft AR localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft AR localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft AR localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft AR localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft AR localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft AR localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "id_ID": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft ID localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft ID localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft ID localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft ID localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft ID localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft ID localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "ko_KR": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft KO localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft KO localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft KO localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft KO localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft KO localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft KO localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "he_IL": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft HE localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft HE localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft HE localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft HE localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft HE localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft HE localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "pt_BR": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft PT localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft PT localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft PT localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft PT localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft PT localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft PT localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        },
+        "nl_NL": {
+          "title": "Locker Name Protocol",
+          "scanner": "Draft NL localization pending native pass. A locker is personal without needing a family plot.",
+          "field_note": "Draft NL localization pending native pass. The smallest human trace should survive corporate cleanup.",
+          "terminal": "Draft NL localization pending native pass. LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.",
+          "audio": "Draft NL localization pending native pass. The company deleted the employee. The rust kept the label.",
+          "in_game_wiki": "Draft NL localization pending native pass. Locker Name Protocol gives artists and writers a repeatable human evidence object across seeds.",
+          "external_site": "Draft NL localization pending native pass. Locker Name Protocol is personal evidence without melodrama."
+        }
+      },
+      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    },
+    {
+      "packet_id": "P159_MEDICAL_TRIAGE_LEDGER",
+      "article_id": "colony_human.medical_triage_ledger",
+      "title_key": "applied_lore.medical_triage_ledger.title",
+      "unlock": {
+        "primary": "unlock.medical_triage_ledger",
+        "poi_tags": [
+          "poi.medical_triage_ledger",
+          "poi.pressure_injury_tag",
+          "poi.delayed_extraction_note"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Medical Triage Ledger",
+          "scanner": "The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Medical text should count bodies without becoming gore.",
+          "terminal": "TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "ru_RU": {
+          "title": "Медицинский triage ledger",
+          "scanner": "Медики знали, что система производит пациентов быстрее, чем их можно лечить.",
+          "field_note": "Медицинский текст должен считать bodies без gore.",
+          "terminal": "TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. Horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Самый чистый почерк - на худшей странице.",
+          "in_game_wiki": "Medical triage evidence делает колонию человеческой и связывает вину Deep Reach с procedure, не cartoon violence.",
+          "external_site": "Медицинский triage ledger - человеческая цена delayed evacuation."
+        },
+        "ja_JP": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft JP localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft JP localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft JP localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft JP localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft JP localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft JP localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "zh_CN": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft CN localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft CN localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft CN localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft CN localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft CN localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft CN localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "fr_FR": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft FR localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft FR localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft FR localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft FR localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft FR localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft FR localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "es_ES": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft ES localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft ES localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft ES localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft ES localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft ES localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft ES localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "de_DE": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft DE localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft DE localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft DE localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft DE localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft DE localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft DE localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "pl_PL": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft PL localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft PL localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft PL localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft PL localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft PL localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft PL localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "uk_UA": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft UA localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft UA localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft UA localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft UA localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft UA localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft UA localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "ar_SA": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft AR localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft AR localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft AR localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft AR localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft AR localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft AR localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "id_ID": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft ID localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft ID localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft ID localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft ID localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft ID localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft ID localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "ko_KR": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft KO localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft KO localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft KO localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft KO localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft KO localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft KO localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "he_IL": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft HE localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft HE localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft HE localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft HE localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft HE localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft HE localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "pt_BR": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft PT localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft PT localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft PT localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft PT localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft PT localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft PT localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        },
+        "nl_NL": {
+          "title": "Medical Triage Ledger",
+          "scanner": "Draft NL localization pending native pass. The medics knew the system was making patients faster than they could treat them.",
+          "field_note": "Draft NL localization pending native pass. Medical text should count bodies without becoming gore.",
+          "terminal": "Draft NL localization pending native pass. TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.",
+          "audio": "Draft NL localization pending native pass. The cleanest handwriting is on the worst page.",
+          "in_game_wiki": "Draft NL localization pending native pass. Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.",
+          "external_site": "Draft NL localization pending native pass. Medical Triage Ledger is the human cost of delayed evacuation."
+        }
+      },
+      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    },
+    {
+      "packet_id": "P160_MARAUDER_CORRECTION_LAYER",
+      "article_id": "colony_human.marauder_correction_layer",
+      "title_key": "applied_lore.marauder_correction_layer.title",
+      "unlock": {
+        "primary": "unlock.marauder_correction_layer",
+        "poi_tags": [
+          "poi.marauder_correction_note",
+          "poi.crossed_corporate_label",
+          "poi.field_translation_mark"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Marauders turn corporate language back into survival facts.",
+          "field_note": "The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "ru_RU": {
+          "title": "Слой Marauder corrections",
+          "scanner": "Marauders переводят corporate language обратно в survival facts.",
+          "field_note": "Игрок должен чувствовать, как старый язык Deep Reach переводится в body count.",
+          "terminal": "CORRECTION LAYER: company label says temporary atmospheric variance. Marauder note says CO2 eats judgment first. Correction is short because the next diver needs it under pressure.",
+          "audio": "Хорошая записка не умничает. Она сохраняет кому-то жизнь.",
+          "in_game_wiki": "Marauder corrections держат world writing коротким, полезным и злым. Они также показывают новую культуру игрока, борющуюся с языком, который его обучил.",
+          "external_site": "Слой Marauder corrections - tone bridge между Deep Reach procedure и agency игрока."
+        },
+        "ja_JP": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft JP localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft JP localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft JP localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft JP localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft JP localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft JP localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "zh_CN": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft CN localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft CN localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft CN localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft CN localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft CN localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft CN localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "fr_FR": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft FR localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft FR localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft FR localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft FR localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft FR localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft FR localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "es_ES": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft ES localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft ES localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft ES localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft ES localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft ES localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft ES localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "de_DE": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft DE localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft DE localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft DE localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft DE localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft DE localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft DE localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "pl_PL": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft PL localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft PL localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft PL localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft PL localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft PL localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft PL localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "uk_UA": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft UA localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft UA localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft UA localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft UA localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft UA localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft UA localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "ar_SA": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft AR localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft AR localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft AR localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft AR localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft AR localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft AR localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "id_ID": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft ID localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft ID localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft ID localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft ID localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft ID localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft ID localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "ko_KR": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft KO localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft KO localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft KO localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft KO localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft KO localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft KO localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "he_IL": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft HE localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft HE localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft HE localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft HE localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft HE localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft HE localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "pt_BR": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft PT localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft PT localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft PT localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft PT localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft PT localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft PT localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        },
+        "nl_NL": {
+          "title": "Marauder Correction Layer",
+          "scanner": "Draft NL localization pending native pass. Marauders turn corporate language back into survival facts.",
+          "field_note": "Draft NL localization pending native pass. The player should feel old Deep Reach language being translated into body count.",
+          "terminal": "Draft NL localization pending native pass. CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.",
+          "audio": "Draft NL localization pending native pass. A good note does not sound clever. It keeps someone alive.",
+          "in_game_wiki": "Draft NL localization pending native pass. Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.",
+          "external_site": "Draft NL localization pending native pass. Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency."
+        }
+      },
+      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    }
+  ]
+}

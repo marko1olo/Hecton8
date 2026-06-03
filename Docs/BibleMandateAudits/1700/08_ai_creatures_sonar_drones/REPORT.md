@@ -2,7 +2,7 @@
 
 Status: STATIC BIBLE/MANDATE/CODEBASE AUDIT - RUNTIME PROOF NOT RUN
 Date: 2026-06-02
-Verdict: YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED
+Verdict: YELLOW_LINE_LEVEL_STATIC_CLASSIFIED_RUNTIME_PROOF_PENDING
 
 ## Scope
 
@@ -15,7 +15,7 @@ This report compares the current root bible routes and selected mandate registry
 - OK sonar.md - 121 lines; GlobalQualityWeight, proof, acceptance, rejection.
 - OK drones.md - 96 lines; GlobalQualityWeight, proof, acceptance, rejection.
 - OK ecosystem.md - 97 lines; GlobalQualityWeight, proof, acceptance, rejection.
-- OK audio.md - 168 lines; GlobalQualityWeight, proof, acceptance, rejection.
+- OK audio.md - 184 lines; GlobalQualityWeight, proof, acceptance, rejection.
 - OK tools.md - 124 lines; GlobalQualityWeight, proof, acceptance, rejection.
 
 ## Mandates Matched
@@ -126,45 +126,37 @@ Total matching files: 185. Showing first 80. Full list: _scans/08_ai_creatures_s
 
 ## Static Risk Suspects
 
-These are suspects, not confirmed defects. Runtime suspects need code review. Editor/tool suspects are legal only if they cannot execute in gameplay/player hot paths.
+These are raw static suspects, not confirmed defects. Current manual or line-level review files are the authority for classification where present; editor/tool suspects remain legal only if they cannot execute in gameplay/player hot paths.
 
 Runtime suspects:
 Total runtime suspects: 70. Showing first 80. Full list: _scans/08_ai_creatures_sonar_drones_runtime_risks.txt.
 
-- Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:1444:            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:5047:            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\AI\Ecosystem\ShinobuSpatialGridSolver.cs:1724:            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\AI\Ecosystem\ShinobuFloraFaunaSymbiosisSolver.cs:740:            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\Fauna\FaunaPOI.cs:53:                Hecton8.Core.H8Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
+- Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:1444:            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs:5047:            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\Fauna\CreatureDamageManager.cs:229:            GetComponentsInChildren(true, _rendererScratch);
 - Assets\_Project\Scripts\Fauna\FaunaSpeciesProfile.cs:127:            Hecton8.Core.H8Debug.LogWarning(
-- Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1765:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4425:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:5063:                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:6121:                Hecton8.Core.H8Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7434:            GetComponentsInChildren(true, _logicalLodColliderScratch);
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7756:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7760:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
-- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7772:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
+- Assets\_Project\Scripts\Fauna\FaunaPOI.cs:53:                Hecton8.Core.H8Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
+- Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:2041:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4438:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:5001:                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:6059:                Hecton8.Core.H8Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7382:            GetComponentsInChildren(true, _logicalLodColliderScratch);
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7704:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7708:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+- Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7720:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
+- Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:121:                Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
+- Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:123:                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed.");
 - Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:24:            if (!runtimeRoot.TryGetComponent<FaunaGeneticsManager>(out _))
 - Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:27:            if (!runtimeRoot.TryGetComponent<EcosystemHealthDirector>(out _))
 - Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:30:            if (!runtimeRoot.TryGetComponent<MigrationDirector>(out _))
 - Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:33:            if (!runtimeRoot.TryGetComponent<EcosystemPopulationBalancer>(out _))
-- Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:121:                Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
-- Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:123:                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed.");
-- Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:162:                Hecton8.Core.H8Debug.LogException(exception);
-- Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:198:                Hecton8.Core.H8Debug.Log($"[SceneTransitionVerifier] {message}");
 - Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:217:                Hecton8.Core.H8Debug.LogException(exception);
 - Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:400:                Hecton8.Core.H8Debug.Log($"[PauseSystemVerifier] {message}");
 - Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:410:                Hecton8.Core.H8Debug.Log(isPaused ? PauseChangedPausedLog : PauseChangedUnpausedLog);
-- Assets\_Project\Scripts\Tools\WfcLaserCutRuntime.cs:623:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:360:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
-- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:367:                Hecton8.Core.H8Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
-- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:371:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
-- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:376:            Hecton8.Core.H8Debug.Log("[PerformanceMonitor] Current: " + currentFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms | samples=" + sampleCount);
-- Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs:1077:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:158:                Hecton8.Core.H8Debug.LogException(exception, this);
-- Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:520:                Hecton8.Core.H8Debug.Log($"[StateRecoveryVerifier] {message}");
+- Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:162:                Hecton8.Core.H8Debug.LogException(exception);
+- Assets\_Project\Scripts\Tools\SceneTransitionVerifier.cs:198:                Hecton8.Core.H8Debug.Log($"[SceneTransitionVerifier] {message}");
 - Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:651:            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] System '{systemName}' already registered");
 - Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:656:            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] Ignoring invalid registration '{systemName}'");
 - Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:661:            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] Ignoring registration '{systemName}' because budget capacity {MaxTrackedBudgetSystems} is full");
@@ -174,8 +166,16 @@ Total runtime suspects: 70. Showing first 80. Full list: _scans/08_ai_creatures_
 - Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:683:            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Reducing system '" + systemName +
 - Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:693:            Hecton8.Core.H8Debug.Log($"[PerformanceBudgetController] Restoring system '{systemName}' performance");
 - Assets\_Project\Scripts\Tools\PerformanceBudgetController.cs:698:            Hecton8.Core.H8Debug.Log(DescribeStatus());
-- Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:957:            NativeArray<byte> bytes = new NativeArray<byte>(
-- Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:1225:                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
+- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:360:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
+- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:367:                Hecton8.Core.H8Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
+- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:371:            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
+- Assets\_Project\Scripts\Tools\PerformanceMonitor.cs:376:            Hecton8.Core.H8Debug.Log("[PerformanceMonitor] Current: " + currentFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms | samples=" + sampleCount);
+- Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs:1077:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:158:                Hecton8.Core.H8Debug.LogException(exception, this);
+- Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:520:                Hecton8.Core.H8Debug.Log($"[StateRecoveryVerifier] {message}");
+- Assets\_Project\Scripts\Tools\WfcLaserCutRuntime.cs:623:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:1031:            NativeArray<byte> bytes = new NativeArray<byte>(
+- Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:1301:                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
 - Assets\_Project\Scripts\Audio\AdaptiveStem\AdaptiveStemAudioMixer.cs:1315:                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] Failed to dump adaptive stem telemetry.");
 - Assets\_Project\Scripts\Audio\AdaptiveStem\AdaptiveStemAudioMixer.cs:1319:                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] Failed to dump adaptive stem telemetry.");
 - Assets\_Project\Scripts\Audio\AdaptiveStem\AdaptiveStemAudioMixer.cs:1372:                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
@@ -188,57 +188,57 @@ Total runtime suspects: 70. Showing first 80. Full list: _scans/08_ai_creatures_
 - Assets\_Project\Scripts\Audio\NativeAudioFrameRingBuffer.cs:571:                H8Memory.FreeRaw(_telemetryPtr, Allocator.Persistent, VaultOwner);
 - Assets\_Project\Scripts\Audio\NativeAudioFrameRingBuffer.cs:577:                H8Memory.FreeRaw(_sharedStatePtr, Allocator.Persistent, VaultOwner);
 - Assets\_Project\Scripts\Audio\NativeAudioFrameRingBuffer.cs:583:                H8Memory.FreeRaw(_framesPtr, Allocator.Persistent, VaultOwner);
+- Assets\_Project\Scripts\Audio\ProceduralAudioEvents.cs:1267:            Hecton8.Core.H8Debug.LogException(exception);
 - Assets\_Project\Scripts\Audio\HectonMusicDirector.cs:907:                    Hecton8.Core.H8Debug.LogError("[HectonMusicDirector] Missing authored HectonMusicDirectorConfig for active scene.");
 - Assets\_Project\Scripts\Audio\HectonMusicDirector.cs:917:                Hecton8.Core.H8Debug.LogError("[HectonMusicDirector] Missing authored RuntimeDirectorPrefab on active HectonMusicDirectorConfig.");
-- Assets\_Project\Scripts\Audio\ProceduralAudioEvents.cs:1267:            Hecton8.Core.H8Debug.LogException(exception);
-- Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:306:            bool hasListener = TryGetComponent<AudioListener>(out _);
-- Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:1355:                _editorCsvScratch = (byte*)UnsafeUtility.Malloc(EditorCsvScratchBytes, 16, Allocator.Persistent);
-- Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:1367:                UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
-- Assets\_Project\Scripts\Audio\Synthesis\DynamicMusic\DynamicMusicGranularSynthesizer.cs:681:            if (!TryGetComponent<AudioListener>(out _))
 - Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:3493:            Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to stop within watchdog budget. Native audio buffers remain owned until the worker exits.");
 - Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:4514:                    Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Missing authored AudioReverbFilter. RequireComponent should install it before runtime; reverb fallback is disabled.", this);
 - Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:4561:                    Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Reverb control mixer is missing one or more exposed parameters. Falling back to AudioReverbFilter.", this);
 - Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:4582:                Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Reverb wet-mix parameter missing on AudioMixer. Decay/room parameters stay mixer-driven, wet mix falls back to the default mixer state.", this);
 - Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:8763:                    Hecton8.Core.H8Debug.LogError(
 - Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:8783:                Hecton8.Core.H8Debug.LogError(
+- Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:306:            bool hasListener = TryGetComponent<AudioListener>(out _);
+- Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:1355:                _editorCsvScratch = (byte*)UnsafeUtility.Malloc(EditorCsvScratchBytes, 16, Allocator.Persistent);
+- Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:1367:                UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
+- Assets\_Project\Scripts\Audio\Synthesis\DynamicMusic\DynamicMusicGranularSynthesizer.cs:681:            if (!TryGetComponent<AudioListener>(out _))
 
 Editor/tool/static suspects:
 Total editor/tool/static suspects: 137. Showing first 80. Full list: _scans/08_ai_creatures_sonar_drones_editor_tool_risks.txt.
 
-- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_Timer_Scanner.cs:19:                Debug.Log("AI timer optimization report written: " + path);
-- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_Timer_Scanner.cs:58:                    AddPattern(structural, "StartCoroutine", 5, ref score, patterns);
-- Assets\_Project\Scripts\AI\Cognition\Editor\AICognitionMemorySovereigntyValidator1300.cs:39:            H8Debug.Log("[1300] AI cognition memory sovereignty validator passed.");
-- Assets\_Project\Scripts\AI\Cognition\Editor\AICognitionMemorySovereigntyValidator1300.cs:369:                scheduledHandle.Complete();
-- Assets\_Project\Scripts\AI\Cognition\Editor\AICognitionMemorySovereigntyValidator1300.cs:388:                    scheduledHandle.Complete();
-- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:19:                Debug.Log("AI optimization report written: " + path);
-- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:69:                    AddPattern(structural, "StartCoroutine", 2, ref score, patterns);
-- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:74:                    AddPattern(structural, "GetComponent<", 1, ref score, patterns);
-- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:101:                    if (Contains(structural, "StartCoroutine") || Contains(structural, "IEnumerator"))
-- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:185:        private void Update()
-- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:283:            handle.Complete();
-- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:320:            handle.Complete();
-- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:504:                _statusLabel.text = status;
 - Assets\_Project\Scripts\AI\Cognition\Editor\AIAnxietyTunerWindow.cs:112:        private void Update()
 - Assets\_Project\Scripts\AI\Cognition\Editor\AIAnxietyTunerWindow.cs:216:            anxietyMockHandle.Complete();
 - Assets\_Project\Scripts\AI\Cognition\Editor\AIAnxietyTunerWindow.cs:246:            handle.Complete();
 - Assets\_Project\Scripts\AI\Cognition\Editor\AIAnxietyTunerWindow.cs:381:                _statusLabel.text = status;
-- Assets\_Project\Scripts\AI\Pathfinding\Editor\OOP_NavMesh_Scanner.cs:52:            Hecton8.Core.H8Debug.Log("[SHINOBU_304] OOP NavMesh scanner wrote " + report);
+- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_Timer_Scanner.cs:19:                Debug.Log("AI timer optimization report written: " + path);
+- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_Timer_Scanner.cs:58:                    AddPattern(structural, "StartCoroutine", 5, ref score, patterns);
+- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:185:        private void Update()
+- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:283:            handle.Complete();
+- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:320:            handle.Complete();
+- Assets\_Project\Scripts\AI\Cognition\Editor\CognitionUtilityTunerWindow.cs:504:                _statusLabel.text = status;
+- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:19:                Debug.Log("AI optimization report written: " + path);
+- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:69:                    AddPattern(structural, "StartCoroutine", 2, ref score, patterns);
+- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:74:                    AddPattern(structural, "GetComponent<", 1, ref score, patterns);
+- Assets\_Project\Scripts\AI\Cognition\Editor\OOP_FSM_Scanner.cs:101:                    if (Contains(structural, "StartCoroutine") || Contains(structural, "IEnumerator"))
+- Assets\_Project\Scripts\AI\Cognition\Editor\AICognitionMemorySovereigntyValidator1300.cs:39:            H8Debug.Log("[1300] AI cognition memory sovereignty validator passed.");
+- Assets\_Project\Scripts\AI\Cognition\Editor\AICognitionMemorySovereigntyValidator1300.cs:369:                scheduledHandle.Complete();
+- Assets\_Project\Scripts\AI\Cognition\Editor\AICognitionMemorySovereigntyValidator1300.cs:388:                    scheduledHandle.Complete();
 - Assets\_Project\Scripts\AI\Pathfinding\Editor\AbyssalPathfindingTunerWindow.cs:96:                _stateLabel.text = "DataVault unavailable";
 - Assets\_Project\Scripts\AI\Pathfinding\Editor\AbyssalPathfindingTunerWindow.cs:111:            _stateLabel.text = "Vault tuning live";
 - Assets\_Project\Scripts\AI\Pathfinding\Editor\AbyssalPathfindingTunerWindow.cs:118:                _stateLabel.text = "Voxel A* job active; tuning write deferred";
 - Assets\_Project\Scripts\AI\Pathfinding\Editor\AbyssalPathfindingTunerWindow.cs:124:                _stateLabel.text = "DataVault unavailable";
 - Assets\_Project\Scripts\AI\Pathfinding\Editor\AbyssalPathfindingTunerWindow.cs:134:                _stateLabel.text = "Vault tuning updated";
+- Assets\_Project\Scripts\AI\Pathfinding\Editor\OOP_NavMesh_Scanner.cs:52:            Hecton8.Core.H8Debug.Log("[SHINOBU_304] OOP NavMesh scanner wrote " + report);
 - Assets\_Project\Scripts\Ecosystem\Editor\BiomassDecayTunerWindow.cs:104:                    _status.text = "Carrion decay runtime has not published a ready tuning snapshot.";
 - Assets\_Project\Scripts\Ecosystem\Editor\BiomassDecayTunerWindow.cs:117:                _status.text =
-- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Destroy_Scanner.cs:37:            Debug.Log("[SHINOBU_314] OOP destroy scanner wrote " + report);
-- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Spawner_Scanner.cs:25:            @"\b(?:IEnumerator\s+\w+\s*\(|StartCoroutine\s*\()",
-- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Spawner_Scanner.cs:48:            Debug.Log("[SHINOBU_300] OOP spawner scanner wrote " + report);
 - Assets\_Project\Scripts\Ecosystem\Editor\FaunaGeneticsTunerWindow.cs:119:                    _status.text = "Fauna genetics Vault buffers are not registered.";
 - Assets\_Project\Scripts\Ecosystem\Editor\FaunaGeneticsTunerWindow.cs:134:                _status.text =
-- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Variant_Scanner.cs:58:                CountToken(lines[i], ".material", geneticLine, ref counts.MaterialPropertyCount, ref counts.GeneticMaterialPropertyCount);
 - Assets\_Project\Scripts\Ecosystem\Editor\OOP_Boid_Scanner.cs:35:            Debug.Log("[SHINOBU_307] OOP boid scanner wrote " + report);
 - Assets\_Project\Scripts\Ecosystem\Editor\MacroEcosystemTunerWindow.cs:96:            _status.text = "Vault-backed macro ecosystem tuning active.";
 - Assets\_Project\Scripts\Ecosystem\Editor\MacroEcosystemTunerWindow.cs:131:            _status.text = "Tuning written to DataVault.";
+- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Variant_Scanner.cs:58:                CountToken(lines[i], ".material", geneticLine, ref counts.MaterialPropertyCount, ref counts.GeneticMaterialPropertyCount);
+- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Spawner_Scanner.cs:25:            @"\b(?:IEnumerator\s+\w+\s*\(|StartCoroutine\s*\()",
+- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Spawner_Scanner.cs:48:            Debug.Log("[SHINOBU_300] OOP spawner scanner wrote " + report);
+- Assets\_Project\Scripts\Ecosystem\Editor\OOP_Destroy_Scanner.cs:37:            Debug.Log("[SHINOBU_314] OOP destroy scanner wrote " + report);
 - Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:163:                _status.text = "DataVault-backed tuning live.";
 - Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:176:                _status.text = "DataVault unavailable until runtime bootstrap.";
 - Assets\_Project\Scripts\Tools\Editor\LaserCutterPhysicsTunerWindow.cs:203:                _status.text = "DataVault unavailable until runtime bootstrap.";
@@ -256,22 +256,18 @@ Total editor/tool/static suspects: 137. Showing first 80. Full list: _scans/08_a
 - Assets\_Project\Scripts\Cartography\Editor\SonarMapTunerWindow.cs:205:                _statusLabel.text = "Scanner CSV rows applied: " + rows.ToString();
 - Assets\_Project\Scripts\Cartography\Editor\SonarMapTunerWindow.cs:207:                _statusLabel.text = "Scanner CSV not applied.";
 - Assets\_Project\Scripts\Cartography\Editor\SonarMapTunerWindow.cs:216:                _statusLabel.text = "RLE runs staged in Vault: " + runs.ToString();
-- Assets\_Project\Scripts\Audio\Editor\AbyssalDspTunerWindow.cs:142:                _statusLabel.text = hasRenderer
-- Assets\_Project\Scripts\Audio\Editor\AbyssalDspTunerWindow.cs:287:            return UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
-- Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:189:                    _statsLabel.text = "Material CSV missing: " + MaterialCsvAssetPath;
-- Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:196:                _statsLabel.text = "Material rows loaded: " + rows;
-- Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:204:            _statsLabel.text =
-- Assets\_Project\Scripts\Audio\Editor\AbyssalAcousticsTunerWindow.cs:241:            return UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
-- Assets\_Project\Scripts\Audio\Editor\VocalWarningStormTorture_X_011.cs:15:            Hecton8.Core.H8Debug.Log("X_011 VWS storm torture " + (result.Pass ? "PASS" : "FAIL") + ".");
+- Assets\_Project\Scripts\Audio\Editor\AudioMemorySovereigntyValidator1320.cs:27:            H8Debug.Log("[1320] Procedural audio memory sovereignty validator passed.");
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:81:                Hecton8.Core.H8Debug.LogError(LogUnstable);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:307:            Hecton8.Core.H8Debug.Log("[AudioImportDictator:0xA1D10005] Applied import policy to " +
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:590:            Hecton8.Core.H8Debug.LogError(reportText);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:629:            Hecton8.Core.H8Debug.LogError(reportText);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:710:                AudioSource[] sources = prefab.GetComponentsInChildren<AudioSource>(true);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:756:            Hecton8.Core.H8Debug.LogError(report);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:847:                    AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(true);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:867:            Hecton8.Core.H8Debug.Log("[EnvironmentAudioSourcePurgeGate:0xA1D10003] Removed " +
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:889:                AudioSource[] sources = prefab.GetComponentsInChildren<AudioSource>(true);
+- Assets\_Project\Scripts\Audio\Editor\AudioImportDictator.cs:904:            Hecton8.Core.H8Debug.LogError(report);
 - Assets\_Project\Scripts\Audio\Synthesis\Editor\VocalStateLayoutValidator.cs:25:            Hecton8.Core.H8Debug.Log("[1308] Vocal bank ABI validated: header=64, record=32, state=32, codec=64, telemetry=64, cue=64.");
-- Assets\_Project\Scripts\Audio\Editor\VocalWarningQueueTunerWindow.cs:139:                    _status.text = "No VocalWarningSystem in loaded scene.";
-- Assets\_Project\Scripts\Audio\Editor\VocalWarningQueueTunerWindow.cs:177:                _status.text = _statusBuilder.ToString();
-- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:121:                _status.text = "voice_baker.py missing.";
-- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:156:            _status.text = "voice_baker.py running.";
-- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:181:                    _status.text = code == 0 ? stdout.Trim() : stderr.Trim();
-- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:188:                _stateLabel.text = string.Concat(
-- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:200:                _stateLabel.text = "Phrase 00000000 | speed 0.00 | volume 0.00 | q 0.00";
-- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:230:            Hecton8.Core.H8Debug.Log("[1308] Digital Voice Forge ABI validation passed.");
 - Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:40:            H8Debug.Log("[1307] Acoustic portal memory sovereignty validator passed.");
 - Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:125:                nodes = new NativeArray<AcousticPortalNode>(
 - Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:129:                edges = new NativeArray<AcousticPortalEdge>(
@@ -284,15 +280,19 @@ Total editor/tool/static suspects: 137. Showing first 80. Full list: _scans/08_a
 - Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:157:                queries = new NativeArray<AcousticPathQuery>(
 - Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:175:                loadHandle.Complete();
 - Assets\_Project\Scripts\Audio\Editor\AcousticPortalMemorySovereigntyValidator.cs:218:                    pathHandle.Complete();
-- Assets\_Project\Scripts\Audio\Editor\VocalWarningAlarmBitmaskAudit_1629.cs:95:            Hecton8.Core.H8Debug.Log("[1629] VWS alarm bitmask audit PASS.");
+- Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:58:                Hecton8.Core.H8Debug.Log(report);
+- Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:60:                Hecton8.Core.H8Debug.LogError(report);
+- Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:574:                AssertNotContains(vocalTick, "Debug.Log", "Vocal warning Tick has no debug log allocation path", builder, ref failureCount);
+- Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:575:                AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
+- Assets\_Project\Scripts\Audio\Synthesis\Editor\DigitalVoiceForgeWindow.cs:121:                _status.text = "voice_baker.py missing.";
 
 ## Exists / Missing / Required Proof
 
 - Exists: bible routes exist and static implementation evidence was found.
-- Partial: runtime static risk suspects need manual code review.
+- Partial: all 70 runtime static suspect lines have method-level classification in `LINE_LEVEL_CLASSIFICATION.md`; runtime/profiler/player proof is still missing.
 - Editor/tool: static suspects exist but may be legal if editor-only or cold-path.
 - Required proof: AI state/cadence proof, pathfinding proof, sensory truth proof, sonar confidence/staleness proof, black-box last-300-frame ring for critical AI.
 
 ## Next Audit Action
 
-Classify each runtime suspect as cold-path/legal or runtime violation. Fix runtime violations before profiler proof.
+Use `LINE_LEVEL_CLASSIFICATION.md`, then collect fauna/material, ecosystem boot, sonar/SDF, drone, audio bridge, AI black-box, profiler, player-build, and device proof before any green/release claim.

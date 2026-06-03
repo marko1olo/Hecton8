@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS079_REPLAY_CONTRACT_SEED_FAMILIES",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P391_QUIET_SALVAGE_CONTRACT_SEED",
+    "P392_STORM_WINDOW_RUSH_CONTRACT_SEED",
+    "P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED",
+    "P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED",
+    "P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS079_REPLAY_CONTRACT_SEED_FAMILIES.packets.json"
+  ]
+}

@@ -65,7 +65,7 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
 
             struct Attributes
             {
-                float3 positionOS : POSITION;
+                uint vertexId : SV_VertexID;
                 uint instanceId : SV_InstanceID;
             };
 
@@ -126,6 +126,14 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
                 return FoveatedRemapLinearToNonUniform(saturate(uv));
             }
 
+            float2 ResolveProceduralQuadOffset(uint vertexId)
+            {
+                float id = (float)(vertexId % 6u);
+                float positiveX = saturate(step(1.5, id) - step(2.5, id) + step(3.5, id));
+                float positiveY = saturate(step(0.5, id) - step(2.5, id) + step(3.5, id) - step(4.5, id));
+                return float2(positiveX, positiveY) * 2.0 - 1.0;
+            }
+
             Varyings vert(Attributes input)
             {
                 float4 pointData = _SonarPoints[input.instanceId];
@@ -139,7 +147,8 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
                 float3 cameraRight = SafeNormalize(float3(UNITY_MATRIX_I_V._m00, UNITY_MATRIX_I_V._m10, UNITY_MATRIX_I_V._m20), float3(1.0f, 0.0f, 0.0f));
                 float3 cameraUp = SafeNormalize(float3(UNITY_MATRIX_I_V._m01, UNITY_MATRIX_I_V._m11, UNITY_MATRIX_I_V._m21), float3(0.0f, 1.0f, 0.0f));
                 float quadScale = max(_PointSize, 0.25f) * 0.0015f * lerp(1.0f, 1.65f, predator ? 1.0f : 0.0f);
-                float3 worldPosition = worldCenter + (cameraRight * input.positionOS.x + cameraUp * input.positionOS.y) * quadScale;
+                float2 quadOffset = ResolveProceduralQuadOffset(input.vertexId);
+                float3 worldPosition = worldCenter + (cameraRight * quadOffset.x + cameraUp * quadOffset.y) * quadScale;
 
                 float localDistance = max(max(abs(localCenter.x), abs(localCenter.y)), abs(localCenter.z));
                 float activeRadius01 = saturate(_ActiveSonarRadius * rcp(max(_ActiveSonarMaxRange, 0.001f)));

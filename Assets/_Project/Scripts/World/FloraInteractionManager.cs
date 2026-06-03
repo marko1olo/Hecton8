@@ -1347,7 +1347,7 @@ namespace Hecton8.World
 
         [Header("Sediment Interaction")]
         [SerializeField]
-        [Tooltip("Optional scene particle system used for sediment bursts kicked out of dense grass. If null, a hidden local system is created once.")]
+        [Tooltip("Authored scene particle system used for sediment bursts kicked out of dense grass. Player runtime never creates this object.")]
         private ParticleSystem _sedimentBurstParticleSystem;
 
         [SerializeField, Range(1024, 65535)]
@@ -2583,15 +2583,21 @@ namespace Hecton8.World
 
         private void EnsureSedimentParticleSystem()
         {
-            if (_sedimentBurstParticleSystem != null)
+            if (_sedimentBurstParticleSystem == null)
+                _sedimentBurstParticleSystem = ComponentReferenceUtility.ResolveOwnedComponent<ParticleSystem>(transform);
+
+            if (_sedimentBurstParticleSystem == null)
                 return;
 
-            GameObject sedimentObject = new GameObject("__VegetationSedimentBursts");
-            sedimentObject.hideFlags = HideFlags.HideAndDontSave;
-            sedimentObject.transform.SetParent(transform, false);
-            _sedimentBurstParticleSystem = sedimentObject.AddComponent<ParticleSystem>();
+            ConfigureSedimentParticleSystem(_sedimentBurstParticleSystem);
+        }
 
-            ParticleSystem.MainModule main = _sedimentBurstParticleSystem.main;
+        private static void ConfigureSedimentParticleSystem(ParticleSystem particleSystem)
+        {
+            if (particleSystem == null)
+                return;
+
+            ParticleSystem.MainModule main = particleSystem.main;
             main.loop = false;
             main.playOnAwake = false;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
@@ -2602,28 +2608,50 @@ namespace Hecton8.World
             main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.58f, 0.64f, 0.56f, 0.34f));
             main.gravityModifier = new ParticleSystem.MinMaxCurve(-0.02f);
 
-            ParticleSystem.EmissionModule emission = _sedimentBurstParticleSystem.emission;
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
             emission.enabled = false;
 
-            ParticleSystem.ShapeModule shape = _sedimentBurstParticleSystem.shape;
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
             shape.enabled = false;
 
-            ParticleSystem.NoiseModule noise = _sedimentBurstParticleSystem.noise;
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
             noise.enabled = true;
             noise.strength = new ParticleSystem.MinMaxCurve(0.18f);
             noise.frequency = 0.28f;
 
-            ParticleSystem.VelocityOverLifetimeModule velocityOverLifetime = _sedimentBurstParticleSystem.velocityOverLifetime;
+            ParticleSystem.VelocityOverLifetimeModule velocityOverLifetime = particleSystem.velocityOverLifetime;
             velocityOverLifetime.enabled = true;
             velocityOverLifetime.space = ParticleSystemSimulationSpace.World;
             velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(0.06f, 0.22f);
 
-            if (_sedimentBurstParticleSystem.TryGetComponent(out ParticleSystemRenderer renderer) && renderer != null)
+            if (particleSystem.TryGetComponent(out ParticleSystemRenderer renderer) && renderer != null)
             {
                 renderer.renderMode = ParticleSystemRenderMode.Billboard;
                 renderer.alignment = ParticleSystemRenderSpace.View;
             }
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("Author Missing Sediment Particle System")]
+        private void AuthorMissingSedimentParticleSystem()
+        {
+            if (_sedimentBurstParticleSystem == null)
+                _sedimentBurstParticleSystem = ComponentReferenceUtility.ResolveOwnedComponent<ParticleSystem>(transform);
+
+            if (_sedimentBurstParticleSystem == null)
+            {
+                GameObject sedimentObject = new GameObject("__VegetationSedimentBursts");
+                Undo.RegisterCreatedObjectUndo(sedimentObject, "Author Flora Sediment Particle System");
+                sedimentObject.transform.SetParent(transform, false);
+                _sedimentBurstParticleSystem = sedimentObject.AddComponent<ParticleSystem>();
+            }
+
+            ConfigureSedimentParticleSystem(_sedimentBurstParticleSystem);
+            EditorUtility.SetDirty(this);
+            if (_sedimentBurstParticleSystem != null)
+                EditorUtility.SetDirty(_sedimentBurstParticleSystem);
+        }
+#endif
 
         private void UpdateSedimentCooldowns(float deltaTime)
         {

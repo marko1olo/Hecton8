@@ -587,8 +587,7 @@ namespace Hecton8.Gameplay
             if (questSystem == null || !questSystem.IsInitialized)
                 return false;
 
-            return questSystem.TryGetQuestIdByHash(questHash, out string questId) &&
-                   questSystem.IsActive(questId);
+            return questSystem.IsActive(questHash);
         }
 
         private void PublishPoiStateSignal(uint poiHash, int poiIndex, byte operation, byte flags = 0)

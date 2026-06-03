@@ -42,6 +42,8 @@ namespace Hecton8.Audio.Editor
         private const float DialogueVorbisQuality = 0.22f;
         private const string ReimportGuardPrefix = "AudioImportDictator.ReimportGuard.";
         private const string LogUnstable = "[AudioImportDictator:0xA1D10001] Import policy remained unstable after reimport.";
+        private static readonly List<string> s_deferredReimportPaths = new List<string>(128);
+        private static bool s_deferredReimportScheduled;
 
         /// <summary>
         /// Runs after older generic postprocessors so this dictator is the final first-party audio authority.
@@ -53,11 +55,9 @@ namespace Hecton8.Audio.Editor
 
         private void OnPreprocessAudio()
         {
-            AudioImporter importer = assetImporter as AudioImporter;
-            if (importer == null || !IsProjectAudioAsset(assetPath))
-                return;
-
-            ApplyPolicy(importer, assetPath, -1f);
+            // Audio length is unknown in preprocess. Applying the length-dependent
+            // policy here makes postprocess flip long clips back and creates
+            // endless reimport drift. Postprocess owns the convergent pass.
         }
 
         private void OnPostprocessAudio(AudioClip clip)
@@ -83,7 +83,62 @@ namespace Hecton8.Audio.Editor
             }
 
             SessionState.SetBool(guardKey, true);
-            importer.SaveAndReimport();
+            QueueDeferredReimport(assetPath);
+        }
+
+        private static void QueueDeferredReimport(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            if (!s_deferredReimportPaths.Contains(path))
+                s_deferredReimportPaths.Add(path);
+
+            if (s_deferredReimportScheduled)
+                return;
+
+            s_deferredReimportScheduled = true;
+            EditorApplication.delayCall += FlushDeferredReimports;
+        }
+
+        private static void FlushDeferredReimports()
+        {
+            s_deferredReimportScheduled = false;
+            if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+            {
+                QueueDeferredReimportTick();
+                return;
+            }
+
+            int count = s_deferredReimportPaths.Count;
+            for (int i = 0; i < count; i++)
+            {
+                string path = s_deferredReimportPaths[i];
+                string guardKey = ReimportGuardPrefix + path;
+                AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+                if (importer == null)
+                {
+                    SessionState.SetBool(guardKey, false);
+                    continue;
+                }
+
+                importer.SaveAndReimport();
+            }
+
+            if (count > 0)
+                s_deferredReimportPaths.RemoveRange(0, count);
+
+            if (s_deferredReimportPaths.Count > 0)
+                QueueDeferredReimportTick();
+        }
+
+        private static void QueueDeferredReimportTick()
+        {
+            if (s_deferredReimportScheduled)
+                return;
+
+            s_deferredReimportScheduled = true;
+            EditorApplication.delayCall += FlushDeferredReimports;
         }
 
         internal static bool ApplyPolicy(AudioImporter importer, string assetPath, float clipLengthSeconds)

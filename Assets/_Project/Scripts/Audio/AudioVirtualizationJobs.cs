@@ -422,7 +422,7 @@ namespace Hecton8.Audio.Virtualization
             uint seed = (SectorHash ^ (SimulationFrame * 747796405u) ^ ((uint)index * 2891336453u)) | 1u;
             var random = new Random(seed);
             float angle = random.NextFloat(0f, 6.2831855f);
-            float radius = math.sqrt(random.NextFloat(0f, 1f)) * math.max(1f, RadiusMeters);
+            float radius = VirtualVoiceUtility.FastLengthFromSq(random.NextFloat(0f, 1f)) * math.max(1f, RadiusMeters);
             float depth = random.NextFloat(-12f, 12f);
             AudioVirtualizationFastTrig.ApproxSinCosRadians(angle, out float sin, out float cos);
             double3 position = CenterAup + new double3(cos * radius, depth, sin * radius);
@@ -559,7 +559,7 @@ namespace Hecton8.Audio.Virtualization
             }
 
             float3 cellSize = math.max(SdfCellSizeMeters, new float3(0.001f));
-            float3 grid = (positionMeters - SdfOriginMeters) / cellSize;
+            float3 grid = (positionMeters - SdfOriginMeters) * math.rcp(cellSize);
             if (!math.all(math.isfinite(grid)) ||
                 grid.x < 0f ||
                 grid.y < 0f ||
@@ -616,7 +616,7 @@ namespace Hecton8.Audio.Virtualization
                 return 1f;
 
             float range = math.max(0.001f, VirtualVoiceUtility.SanitizeFinite(SdfDistanceScaleMeters, 1f));
-            return ((SdfVoxels[index] * 0.0039215686f) * 2f - 1f) * range;
+            return ((SdfVoxels[index] * VirtualVoiceUtility.InverseByteMax) * 2f - 1f) * range;
         }
 
         private float ResolveAbsorption(int index)

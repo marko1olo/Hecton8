@@ -565,10 +565,6 @@ namespace Hecton8.Rendering.OceanSinglePass
 #endif
 
             Shader shader = settings != null ? settings.depthFoamShader : null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Hidden/Hecton8/OceanDepthFoam");
-#endif
             RecreateMaterial(ref _depthMaterial, shader);
             CacheGraphicsCapabilitiesCold();
             _pass ??= new SinglePassOceanPass();

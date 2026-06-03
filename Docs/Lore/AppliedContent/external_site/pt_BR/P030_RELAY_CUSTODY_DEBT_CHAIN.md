@@ -1,10 +1,17 @@
 ---
 packet_id: P030_RELAY_CUSTODY_DEBT_CHAIN
+release_set_id: RS006_HUMANITY_TRANSIT_SEED_LOGISTICS
 article_id: routes.relay_custody_debt_chain
+unlock_id: unlock.first_relay_debt_chain_record
+poi_tags: poi.claim_pool_ledger;poi.relay_packet
+biome_tags: biome.crash_shelf;biome.service_canyon
 locale: pt_BR
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Cadeia de dívida relay custody

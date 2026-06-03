@@ -416,7 +416,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4be802b6ffe150647ac599638e2a1f75, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.ShellVerificationRuntimeSmokeTester
   runOnStart: 0
   suppressAutoStartWhileRuntimeProfilerActive: 1
@@ -428,8 +428,8 @@ MonoBehaviour:
   _debugRunCount: 0
   _debugLastPhase: Idle
   _debugLastPass: 0
-  _debugLastIssue:
-  _debugLastSaveSlot:
+  _debugLastIssue: 
+  _debugLastSaveSlot: 
 --- !u!4 &163915833
 Transform:
   m_ObjectHideFlags: 0
@@ -562,7 +562,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab6eaa84afd9c784ca6a618ab192b550, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.SaveSystem.SaveManager
   manualBackupGenerations: 3
   autoBackupGenerations: 2
@@ -732,7 +732,7 @@ Transform:
   m_GameObject: {fileID: 399912374}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.28, z: 0.48}
+  m_LocalPosition: {x: 0, y: -0.12, z: 0.42}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -748,15 +748,15 @@ TextMesh:
   m_GameObject: {fileID: 399912374}
   m_Text: WAITING FOR RUNTIME PHASE SYNC
   m_OffsetZ: 0
-  m_CharacterSize: 0.032
+  m_CharacterSize: 0.03
   m_LineSpacing: 1
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 72
+  m_FontSize: 68
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 0}
+  m_Font: {fileID: 12800000, guid: 84859fb2be6d3944ba592556e5c7b407, type: 3}
   m_Color:
     serializedVersion: 2
     rgba: 4283941631
@@ -785,7 +785,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f3621d5b7f7ac1c418f90ba8f1cc9d43, type: 2}
+  - {fileID: 2100000, guid: 84859fb2be6d3944ba592556e5c7b407, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1286,7 +1286,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dab45852f6983b14693ae1cb8398e1f2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Core.GameTickManager
   slowTickInterval: 0.5
   _debugTickCount: 0
@@ -1495,6 +1495,75 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 614259492}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &648457072
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 648457075}
+  - component: {fileID: 648457074}
+  - component: {fileID: 648457073}
+  m_Layer: 0
+  m_Name: '[H8_RUNTIME_PRESENTATION_OWNERS]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &648457073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 648457072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90166e249dfbce084f4fe4187d67febb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.World.FloraAmbientSway::Hecton8.World.FloraAmbientSway.FloraAmbientSwayRuntime
+  _globalAmplitudeMeters: 0.42
+  _frequency: 1.1
+  _phaseSpatialOffset: 0.85
+  _alphaClip: 0.08
+  _mockFlowSpeed: 0.18
+  _mockFlowIntensity: 0.75
+  _mockFlowEnabled: 1
+  _loadBiomeProfilesOnEnable: 1
+--- !u!114 &648457074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 648457072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cce3766e7fa862848ad70379391f521f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.VFX.Materials::Hecton8.VFX.Materials.MaterialDecayRuntime
+  rustDetailAtlas: {fileID: 2800000, guid: 2df2dc8955ef7604ab4727430f8516bc, type: 2}
+  defaultRust01: 0
+  bloodGlossBoost: 0.78
+  rustAcousticIntensity: 0.38
+--- !u!4 &648457075
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 648457072}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &683613220
 GameObject:
   m_ObjectHideFlags: 0
@@ -1783,7 +1852,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -2189,7 +2258,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 85597312d712d4343869cf21e86a96d4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Core.ObjectPoolManager
   warmupPresets: []
   _debugPoolCount: 0
@@ -3341,7 +3410,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e19acea1fbcb48409f565bd127daf73, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Input::Hecton8.Input.InputManager
   _inputActionAsset: {fileID: -944628639613478452, guid: c2c7a0e047f1b444eb3c35ea23a4cbd2, type: 3}
 --- !u!4 &1373179562
@@ -3645,7 +3714,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1469727542
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3656,7 +3725,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46be80d17c774224b9ae34d72bccf74b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.HectonSystemsDebugUI
   logLifecycleDiagnostics: 0
   targetCanvas: {fileID: 0}
@@ -4227,7 +4296,7 @@ TextMesh:
   m_FontSize: 72
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 0}
+  m_Font: {fileID: 12800000, guid: 84859fb2be6d3944ba592556e5c7b407, type: 3}
   m_Color:
     serializedVersion: 2
     rgba: 4294770651
@@ -4256,7 +4325,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 86d7741afeaf26e47aada976d8573866, type: 2}
+  - {fileID: 2100000, guid: 84859fb2be6d3944ba592556e5c7b407, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4414,7 +4483,7 @@ TextMesh:
   m_FontSize: 72
   m_FontStyle: 0
   m_RichText: 1
-  m_Font: {fileID: 0}
+  m_Font: {fileID: 12800000, guid: 84859fb2be6d3944ba592556e5c7b407, type: 3}
   m_Color:
     serializedVersion: 2
     rgba: 4294967208
@@ -4443,7 +4512,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 86d7741afeaf26e47aada976d8573866, type: 2}
+  - {fileID: 2100000, guid: 84859fb2be6d3944ba592556e5c7b407, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5050,8 +5119,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37290befeffd3d94796e62b9097c7db9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   shaderVariantCollections:
   - {fileID: 20000000, guid: b271bb14b4bd4c2b9e41e34d86af5336, type: 3}
   shaderWarmupShaders:
@@ -5509,3 +5578,4 @@ SceneRoots:
   - {fileID: 195733864}
   - {fileID: 1469727543}
   - {fileID: 1333848494}
+  - {fileID: 648457075}

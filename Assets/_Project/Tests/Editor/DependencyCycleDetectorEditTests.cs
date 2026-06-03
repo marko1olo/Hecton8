@@ -15,7 +15,7 @@ namespace Hecton8.Tests.Editor
         {
             Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>(256, StringComparer.Ordinal);
             List<string> nodes = new List<string>(256);
-            Assembly coreAssembly = typeof(GlobalRegistry).Assembly;
+            global::System.Reflection.Assembly coreAssembly = typeof(GlobalRegistry).Assembly;
             Type[] types = GetLoadableTypes(coreAssembly);
 
             for (int i = 0; i < types.Length; i++)
@@ -199,7 +199,7 @@ namespace Hecton8.Tests.Editor
             return builder.ToString();
         }
 
-        private static Type[] GetLoadableTypes(Assembly assembly)
+        private static Type[] GetLoadableTypes(global::System.Reflection.Assembly assembly)
         {
             try
             {

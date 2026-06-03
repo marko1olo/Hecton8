@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -123,6 +124,25 @@ namespace Hecton8.SaveSystem
         public int LastLoadBackupGeneration { get; private set; }
         public bool LastLoadSelfRepaired { get; private set; }
         public bool LastLoadUsedLegacyCompression { get; private set; }
+        public ushort PlayerDialogueChoiceFlags => (ushort)(Volatile.Read(ref _playerDialogueChoiceFlags) & ushort.MaxValue);
+
+        public void RecordPlayerDialogueChoiceFlag(ushort decisionMask)
+        {
+            if (decisionMask == 0)
+                return;
+
+            int mask = decisionMask;
+            int snapshot;
+            int updated;
+            do
+            {
+                snapshot = Volatile.Read(ref _playerDialogueChoiceFlags);
+                updated = snapshot | mask;
+                if (snapshot == updated)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _playerDialogueChoiceFlags, updated, snapshot) != snapshot);
+        }
 
         private const int DefaultManualBackupGenerations = 3;
         private const int DefaultAutoBackupGenerations = 2;
@@ -160,6 +180,7 @@ namespace Hecton8.SaveSystem
         private double _sessionStartTime;
         private double _totalPlayTime;
         private bool _isBusy;
+        private int _playerDialogueChoiceFlags;
         private H8BinaryWorldPager _worldPager;
         private bool _worldPagerSavingNotificationArmed;
 
@@ -4015,6 +4036,9 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
+                RecordPlayerDialogueChoiceFlag(SaveBinaryStorage.ExtractPlayerDialogueChoiceFlags(packedQuestStateSnapshot));
+                ushort playerDialogueChoiceFlagsSnapshot = PlayerDialogueChoiceFlags;
+
                 SaveMetadata metadata = new SaveMetadata
                 {
                     SlotName = slotName,
@@ -4057,6 +4081,7 @@ namespace Hecton8.SaveSystem
                     ecosystemSectorSnapshot,
                     packedQuestSaveHeader,
                     packedQuestStateSnapshot,
+                    playerDialogueChoiceFlagsSnapshot,
                     voxelDeltaSnapshot,
                     _savePayloadBuffer,
                     _compressedSaveBuffer,
@@ -4353,6 +4378,10 @@ namespace Hecton8.SaveSystem
                 HectonFloatingOrigin.EndSafeTeleportProtocol();
             }
 
+            data.playerStats.SetPosition(snappedPosition);
+            data.playerStats.SetRotation(savedRotation);
+            data.playerStats.SetVelocity(savedVelocity);
+            data.playerKinematicState = PlayerKinematicStateDTO.FromPlayerStats(in data.playerStats);
             return true;
         }
 
@@ -4554,6 +4583,7 @@ namespace Hecton8.SaveSystem
                 bool usedLegacyFormat = false;
                 ulong loadedPayloadHash64 = 0UL;
                 int loadedPayloadLength = 0;
+                ushort loadedPlayerDialogueChoiceFlags = 0;
                 bool criticalBackupPromotedForLoad = false;
                 int criticalBackupGenerationForLoad = 0;
 
@@ -4568,6 +4598,7 @@ namespace Hecton8.SaveSystem
                         out PersistentWorldDeltaRecord[] candidateWorldDeltas,
                         out EcosystemSectorSaveRecord[] candidateEcosystemSectors,
                         out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                        out ushort candidatePlayerDialogueChoiceFlags,
                         out SaveMetadata candidateMetadata,
                         out ulong candidatePayloadHash64,
                         out int candidatePayloadLength,
@@ -4591,6 +4622,7 @@ namespace Hecton8.SaveSystem
                                     out candidateWorldDeltas,
                                     out candidateEcosystemSectors,
                                     out candidateVoxelDeltaSnapshot,
+                                    out candidatePlayerDialogueChoiceFlags,
                                     out candidateMetadata,
                                     out candidatePayloadHash64,
                                     out candidatePayloadLength,
@@ -4618,6 +4650,7 @@ namespace Hecton8.SaveSystem
                         loadedMetadata = candidateMetadata;
                         loadedPayloadHash64 = candidatePayloadHash64;
                         loadedPayloadLength = candidatePayloadLength;
+                        loadedPlayerDialogueChoiceFlags = candidatePlayerDialogueChoiceFlags;
                         usedLegacyFormat = candidateUsedLegacyFormat;
                         criticalBackupPromotedForLoad = criticalBackupPromoted;
                         criticalBackupGenerationForLoad = criticalBackupPromoted ? criticalBackupGeneration : 0;
@@ -4635,6 +4668,7 @@ namespace Hecton8.SaveSystem
                             out PersistentWorldDeltaRecord[] recoveryWorldDeltas,
                             out EcosystemSectorSaveRecord[] recoveryEcosystemSectors,
                             out NativeArray<byte> recoveryVoxelDeltaSnapshot,
+                            out ushort recoveryPlayerDialogueChoiceFlags,
                             out SaveMetadata recoveryMetadata,
                             out ulong recoveryPayloadHash64,
                             out int recoveryPayloadLength,
@@ -4652,6 +4686,7 @@ namespace Hecton8.SaveSystem
                         loadedMetadata = recoveryMetadata;
                         loadedPayloadHash64 = recoveryPayloadHash64;
                         loadedPayloadLength = recoveryPayloadLength;
+                        loadedPlayerDialogueChoiceFlags = recoveryPlayerDialogueChoiceFlags;
                         usedLegacyFormat = recoveryUsedLegacyFormat;
                         criticalBackupPromotedForLoad = true;
                         criticalBackupGenerationForLoad = recoveryBackupGeneration;
@@ -4701,6 +4736,9 @@ namespace Hecton8.SaveSystem
                     ReportModPayloadLoadFailure(slotName, modPayloadLoadError);
                 }
 
+                Volatile.Write(
+                    ref _playerDialogueChoiceFlags,
+                    loadedPlayerDialogueChoiceFlags | SaveBinaryStorage.ExtractPlayerDialogueChoiceFlags(loadedQuestStateWords));
                 QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
                 
                 _registryDirty = true;
@@ -4800,7 +4838,7 @@ namespace Hecton8.SaveSystem
                     };
                     int repairBackupRetention = GetBackupRetentionCount(slotName);
                     await Awaitable.BackgroundThreadAsync();
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot, repairBackupRetention);
+                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, PlayerDialogueChoiceFlags, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot, repairBackupRetention);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -5274,6 +5312,7 @@ namespace Hecton8.SaveSystem
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
+            ushort playerDialogueChoiceFlags,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
@@ -5302,6 +5341,7 @@ namespace Hecton8.SaveSystem
                     ecosystemSectorStates,
                     packedQuestHeader,
                     packedQuestStateWords,
+                    playerDialogueChoiceFlags,
                     voxelDeltaSnapshot,
                     rawBuffer,
                     compressedBuffer,
@@ -5479,6 +5519,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadataSource = beforeInfo.Metadata;
             SaveLoadCandidate selectedCandidate = default;
             bool usedLegacyFormat = false;
+            ushort playerDialogueChoiceFlags = 0;
             string errorMessage = string.Empty;
 
             int candidateCount = 0;
@@ -5501,6 +5542,7 @@ namespace Hecton8.SaveSystem
                             out PersistentWorldDeltaRecord[] candidateWorldItems,
                             out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
                             out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                            out ushort candidatePlayerDialogueChoiceFlags,
                             out SaveMetadata candidateMetadata,
                             out _,
                             out _,
@@ -5517,6 +5559,7 @@ namespace Hecton8.SaveSystem
                             metadataSource = candidateMetadata ?? beforeInfo.Metadata;
                             selectedCandidate = candidate;
                             usedLegacyFormat = candidateUsedLegacyFormat;
+                            playerDialogueChoiceFlags = candidatePlayerDialogueChoiceFlags;
                             break;
                         }
 
@@ -5554,6 +5597,7 @@ namespace Hecton8.SaveSystem
                 metadataSource,
                 packedQuestHeader,
                 packedQuestStateWords,
+                (ushort)(playerDialogueChoiceFlags | SaveBinaryStorage.ExtractPlayerDialogueChoiceFlags(packedQuestStateWords)),
                 persistentWorldItems,
                 ecosystemSectorStates,
                 voxelDeltaSnapshot,
@@ -5644,6 +5688,7 @@ namespace Hecton8.SaveSystem
                             out _,
                             out _,
                             out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                            out ushort _,
                             out SaveMetadata _,
                             out _,
                             out _,
@@ -5744,6 +5789,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadata,
             QuestSaveHeader packedQuestHeader,
             uint[] packedQuestStateWords,
+            ushort playerDialogueChoiceFlags,
             PersistentWorldDeltaRecord[] persistentWorldItems,
             EcosystemSectorSaveRecord[] ecosystemSectorStates,
             NativeArray<byte> voxelDeltaSnapshot,
@@ -5755,6 +5801,7 @@ namespace Hecton8.SaveSystem
                 metadata,
                 packedQuestHeader,
                 packedQuestStateWords,
+                playerDialogueChoiceFlags,
                 persistentWorldItems,
                 ecosystemSectorStates,
                 voxelDeltaSnapshot,
@@ -5771,6 +5818,7 @@ namespace Hecton8.SaveSystem
             out PersistentWorldDeltaRecord[] persistentWorldItems,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out NativeArray<byte> voxelDeltaSnapshot,
+            out ushort playerDialogueChoiceFlags,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -5784,6 +5832,7 @@ namespace Hecton8.SaveSystem
             persistentWorldItems = null;
             ecosystemSectorStates = null;
             voxelDeltaSnapshot = default;
+            playerDialogueChoiceFlags = 0;
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -5808,6 +5857,7 @@ namespace Hecton8.SaveSystem
                     out persistentWorldItems,
                     out ecosystemSectorStates,
                     out voxelDeltaSnapshot,
+                    out playerDialogueChoiceFlags,
                     out metadata,
                     out payloadHash64,
                     out rawPayloadLength,
@@ -5911,6 +5961,7 @@ namespace Hecton8.SaveSystem
             out PersistentWorldDeltaRecord[] persistentWorldItems,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out NativeArray<byte> voxelDeltaSnapshot,
+            out ushort playerDialogueChoiceFlags,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -5924,6 +5975,7 @@ namespace Hecton8.SaveSystem
             persistentWorldItems = null;
             ecosystemSectorStates = null;
             voxelDeltaSnapshot = default;
+            playerDialogueChoiceFlags = 0;
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -5947,6 +5999,7 @@ namespace Hecton8.SaveSystem
                 out persistentWorldItems,
                 out ecosystemSectorStates,
                 out voxelDeltaSnapshot,
+                out playerDialogueChoiceFlags,
                 out metadata,
                 out payloadHash64,
                 out rawPayloadLength,
@@ -5963,6 +6016,7 @@ namespace Hecton8.SaveSystem
             out PersistentWorldDeltaRecord[] persistentWorldItems,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out NativeArray<byte> voxelDeltaSnapshot,
+            out ushort playerDialogueChoiceFlags,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -5975,6 +6029,7 @@ namespace Hecton8.SaveSystem
             persistentWorldItems = null;
             ecosystemSectorStates = null;
             voxelDeltaSnapshot = default;
+            playerDialogueChoiceFlags = 0;
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -6021,6 +6076,7 @@ namespace Hecton8.SaveSystem
                     out persistentWorldItems,
                     out ecosystemSectorStates,
                     out int voxelDeltaSnapshotBytes,
+                    out playerDialogueChoiceFlags,
                     out metadata,
                     out payloadHash64,
                     out rawPayloadLength,
@@ -6097,6 +6153,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadataSource,
             QuestSaveHeader packedQuestHeader,
             uint[] packedQuestStateWords,
+            ushort playerDialogueChoiceFlags,
             PersistentWorldDeltaRecord[] persistentWorldItems,
             EcosystemSectorSaveRecord[] ecosystemSectorStates,
             NativeArray<byte> voxelDeltaSnapshot,
@@ -6159,6 +6216,7 @@ namespace Hecton8.SaveSystem
                         ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
                         packedQuestHeader,
                         packedQuestStateBuffer,
+                        playerDialogueChoiceFlags,
                         voxelDeltaSnapshot,
                         rawBuffer,
                         compressedBuffer,

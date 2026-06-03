@@ -16,17 +16,17 @@ MonoBehaviour:
   selectionWeight: 1.15
   minDurationSeconds: 140
   maxDurationSeconds: 260
-  cloudDensityThreshold: 0.28
-  cloudSoftness: 0.24
+  cloudDensityThreshold: 0.2
+  cloudSoftness: 0.32
   cloudSpeedMultiplier: 1
   windDirection: {x: 1, y: 0.35}
-  skyLuminanceMultiplier: 1
+  skyLuminanceMultiplier: 1.12
   starVisibilityMultiplier: 0.9
   stormEmissionMultiplier: 1
   cloudLitColor: {r: 0.9, g: 0.93, b: 0.98, a: 1}
-  cloudShadowColor: {r: 0.5, g: 0.56, b: 0.66, a: 1}
+  cloudShadowColor: {r: 0.58, g: 0.63, b: 0.74, a: 1}
   sunsetCloudColor: {r: 1.14, g: 0.58, b: 0.28, a: 1}
-  nightCloudColor: {r: 0.07, g: 0.08, b: 0.11, a: 1}
+  nightCloudColor: {r: 0.13, g: 0.16, b: 0.22, a: 1}
   surfaceFogColor: {r: 0.72, g: 0.78, b: 0.84, a: 1}
   surfaceFogDensity: 0.0012
   surfaceAmbientColor: {r: 0.52, g: 0.55, b: 0.6, a: 1}
@@ -34,8 +34,8 @@ MonoBehaviour:
   sunDiscMultiplier: 1
   sunScatterMultiplier: 1
   oceanWindSpeedKmh: 18
-  oceanFoamStrength: 1
-  oceanFoamCoverage: 1
+  oceanFoamStrength: 1.18
+  oceanFoamCoverage: 1.12
   oceanFoamScale: 1
   precipitationIntensity: 0
   electricalActivity: 0

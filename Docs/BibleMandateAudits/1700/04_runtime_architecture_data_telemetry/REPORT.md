@@ -2,7 +2,7 @@
 
 Status: STATIC BIBLE/MANDATE/CODEBASE AUDIT - RUNTIME PROOF NOT RUN
 Date: 2026-06-02
-Verdict: YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED
+Verdict: YELLOW_LINE_LEVEL_STATIC_CLASSIFIED_RUNTIME_PROOF_PENDING
 
 ## Scope
 
@@ -44,7 +44,7 @@ This report compares the current root bible routes and selected mandate registry
 
 ## Static Evidence Found
 
-Total matching files: 387. Showing first 80. Full list: _scans/04_runtime_architecture_data_telemetry_evidence_files.txt.
+Total matching files: 388. Showing first 80. Full list: _scans/04_runtime_architecture_data_telemetry_evidence_files.txt.
 
 - Assets\_Project\Scripts\Bootstrap\BootstrapEvents.cs
 - Assets\_Project\Scripts\Bootstrap\BootstrapRegistryCycleValidator.cs
@@ -129,38 +129,31 @@ Total matching files: 387. Showing first 80. Full list: _scans/04_runtime_archit
 
 ## Static Risk Suspects
 
-These are suspects, not confirmed defects. Runtime suspects need code review. Editor/tool suspects are legal only if they cannot execute in gameplay/player hot paths.
+These are raw static suspects, not confirmed defects. Current manual or line-level review files are the authority for classification where present; editor/tool suspects remain legal only if they cannot execute in gameplay/player hot paths.
 
 Runtime suspects:
 Total runtime suspects: 275. Showing first 80. Full list: _scans/04_runtime_architecture_data_telemetry_runtime_risks.txt.
 
-- Assets\_Project\Scripts\Core\BurstCallback.cs:83:            _events = new NativeQueue<int>(Allocator.Persistent);
-- Assets\_Project\Scripts\Core\BurstCallback.cs:87:                Allocator.Persistent,
+- Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapStatus.cs:338:            Debug.LogError(SafeHaltMessage);
 - Assets\_Project\Scripts\Core\ConnectionSplineBatchRenderer.cs:974:            array = new NativeArray<SplineDescriptor>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 - Assets\_Project\Scripts\Core\ConnectionSplineBatchRenderer.cs:989:            array = new NativeArray<FlexiblePipeInstanceGpuData>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\Core\BurstCallback.cs:83:            _events = new NativeQueue<int>(Allocator.Persistent);
+- Assets\_Project\Scripts\Core\BurstCallback.cs:87:                Allocator.Persistent,
 - Assets\_Project\Scripts\Core\Bridge\H8PrefabRegistry.cs:471:                prefab.GetComponentsInChildren(true, s_RendererScratch);
 - Assets\_Project\Scripts\Core\Data\StaticDataStore.cs:133:                Allocator.Persistent,
 - Assets\_Project\Scripts\Core\Data\StaticDataStore.cs:408:                H8Memory.FreeRaw(_ownedFallbackPointer, Allocator.Persistent, SystemID.CoreDataVault);
-- Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapStatus.cs:338:            Debug.LogError(SafeHaltMessage);
-- Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:175:                    Allocator.Persistent,
-- Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:378:            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:133:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:156:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:400:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:407:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:414:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:421:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:428:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
+- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:435:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
+- Assets\_Project\Scripts\Core\Content\ContentAssetHashMap.cs:358:            Hecton8.Core.H8Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
 - Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:166:                Hecton8.Core.H8Debug.Log("[H8DataBaker] Static data bake complete. Records=" + result.RecordCount.ToString(CultureInfo.InvariantCulture));
 - Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:170:                Hecton8.Core.H8Debug.LogError("[H8DataBaker] " + result.Message);
 - Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:1339:                Hecton8.Core.H8Debug.LogError("[H8DataHotReload] " + result.Message);
-- Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:436:                Hecton8.Core.H8Debug.LogError(
-- Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:869:                    Hecton8.Core.H8Debug.LogWarning(SlowJobCompleteWarningMessage);
-- Assets\_Project\Scripts\Core\H8Debug.cs:21:            Debug.Log(message);
-- Assets\_Project\Scripts\Core\H8Debug.cs:33:            Debug.Log(message, context);
-- Assets\_Project\Scripts\Core\H8Debug.cs:44:            Debug.LogWarning(message);
-- Assets\_Project\Scripts\Core\H8Debug.cs:56:            Debug.LogWarning(message, context);
-- Assets\_Project\Scripts\Core\H8Debug.cs:67:            Debug.LogError(message);
-- Assets\_Project\Scripts\Core\H8Debug.cs:79:            Debug.LogError(message, context);
-- Assets\_Project\Scripts\Core\H8Debug.cs:90:            Debug.LogException(exception);
-- Assets\_Project\Scripts\Core\H8Debug.cs:102:            Debug.LogException(exception, context);
-- Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:749:                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
-- Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:762:                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
-- Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:773:                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
-- Assets\_Project\Scripts\Core\DodReplayRecorder.cs:974:            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
 - Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:584:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition.");
 - Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:591:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata.");
 - Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:598:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle.");
@@ -190,40 +183,41 @@ Total runtime suspects: 275. Showing first 80. Full list: _scans/04_runtime_arch
 - Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2336:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump.");
 - Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2343:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path.");
 - Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2680:            Hecton8.Core.H8Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value.");
-- Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:115:                payload = new NativeArray<byte>(byteCount, allocator, options);
-- Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:279:            handle.Complete();
-- Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:290:            handle.Complete();
-- Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:314:            _buffer = new NativeArray<T>(capacity, allocator, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:315:            _publishedTickets = new NativeArray<long>(capacity, allocator, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:316:            _cursor = new NativeArray<MpscSignalRingCursorState>(1, allocator, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:133:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:156:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:400:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:407:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:414:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:421:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:428:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
-- Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:435:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:3786:                Debug.LogError("[GlobalRegistry] Cannot register null as IBabelLocalization.");
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:5617:                Debug.LogWarning("[GlobalRegistry] Unregister mismatch for IBabelLocalization.");
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:6961:            Debug.LogError(report);
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:6975:                Debug.LogError("[GlobalRegistry] SystemDispatcher is not registered. Bootstrap must create and register it before runtime tick registration.");
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:7035:                Debug.LogError("[GlobalRegistry] Get<T>() during Registering is forbidden. requested=" + typeof(T).Name);
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:7108:                Debug.LogError("[GlobalRegistry] Ready-locked registry rejected registration: " + typeof(T).Name);
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:7196:                Debug.LogError(
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:7251:                Debug.LogError(
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:7341:                Debug.LogWarning("[GlobalRegistry] Unregister mismatch for " + typeof(T).Name + ".");
-- Assets\_Project\Scripts\Core\GlobalRegistry.cs:7366:            Debug.LogError("[FATAL LEAK PREVENTED] H8Memory reaped native allocations for " + serviceSlot + ".");
+- Assets\_Project\Scripts\Core\Determinism\LockstepStateValidator.cs:1962:            Hecton8.Core.H8Debug.LogException(ex);
+- Assets\_Project\Scripts\Core\UIStateStore.cs:156:            _states = new NativeArray<UIStateData>(StateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[StateCount] - headless UI simulation state - owner: UIStateStore
+- Assets\_Project\Scripts\Core\UIStateStore.cs:157:            _valueSlots = new NativeArray<UIValueSlot>(ValueSlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIValueSlot>[ValueSlotCount] - headless numeric UI value bridge - owner: UIStateStore
+- Assets\_Project\Scripts\Core\UIStateStore.cs:158:            _historyStates = new NativeArray<UIStateData>(UIStateHistoryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[UIStateHistoryFrames] - PDA UI rollback snapshot ring - owner: UIStateStore
+- Assets\_Project\Scripts\Core\UIStateStore.cs:159:            _pdaLogEventHashes = new NativeArray<uint>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[MaxPdaLogEvents] - PDA event-sourced log history - owner: UIStateStore
+- Assets\_Project\Scripts\Core\UIStateStore.cs:160:            _pdaLogEventTimestamps = new NativeArray<float>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[MaxPdaLogEvents] - PDA event-sourced log timestamps - owner: UIStateStore
+- Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:180:                root.GetComponentsInChildren(true, s_cameraScratch);
+- Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:273:            Hecton8.Core.H8Debug.LogWarning($"[HectonUrpTextureRequirementsGuard] {message}");
+- Assets\_Project\Scripts\Core\DodReplayRecorder.cs:974:            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
+- Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:749:                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
+- Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:762:                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
+- Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:773:                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
+- Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:274:                    _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
+- Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:882:            _pendingStorageReservationCommitResolved = new NativeQueue<StorageReservationCommitResolvedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
+- Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:968:            Hecton8.Core.H8Debug.LogError("[ThreadSafeCommandQueue] Storage reservation commit listener capacity exceeded. capacity=" +
+- Assets\_Project\Scripts\Core\HectonInputRuntime_HapticSynth.cs:606:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] Haptic synthesis ABI violation.");
+- Assets\_Project\Scripts\Core\FrameTimeWatchdog.cs:274:            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
+- Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:175:                    Allocator.Persistent,
+- Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:378:            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+- Assets\_Project\Scripts\Core\OceanKinematicsRuntimeService.cs:308:            Hecton8.Core.H8Debug.LogError("[OceanKinematicsRuntimeService] Provider capacity exceeded. capacity=" + ProviderCapacity);
+- Assets\_Project\Scripts\Core\NativeRingBuffer.cs:34:            _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
+- Assets\_Project\Scripts\Core\H8Debug.cs:21:            Debug.Log(message);
+- Assets\_Project\Scripts\Core\H8Debug.cs:33:            Debug.Log(message, context);
+- Assets\_Project\Scripts\Core\H8Debug.cs:44:            Debug.LogWarning(message);
+- Assets\_Project\Scripts\Core\H8Debug.cs:56:            Debug.LogWarning(message, context);
+- Assets\_Project\Scripts\Core\H8Debug.cs:67:            Debug.LogError(message);
+- Assets\_Project\Scripts\Core\H8Debug.cs:79:            Debug.LogError(message, context);
+- Assets\_Project\Scripts\Core\H8Debug.cs:90:            Debug.LogException(exception);
+- Assets\_Project\Scripts\Core\H8Debug.cs:102:            Debug.LogException(exception, context);
+- Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:839:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
+- Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1174:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
 
 Editor/tool/static suspects:
 Total editor/tool/static suspects: 123. Showing first 80. Full list: _scans/04_runtime_architecture_data_telemetry_editor_tool_risks.txt.
 
-- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:467:            using (NativeArray<byte> bytes = new NativeArray<byte>(_fileBytes, Allocator.TempJob))
-- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:468:            using (NativeArray<DataOffsetLengthDTO> output = new NativeArray<DataOffsetLengthDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
-- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:469:            using (NativeArray<uint> trace = new NativeArray<uint>(MaxTraceNodes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
-- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:517:            _summaryLabel.text = _formatName + " | nodes " + _nodeSnapshotCount +
-- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:521:            _traceLabel.text = "Live key hash 0x" + _lastSearchHash.ToString("X8") +
-- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:537:            _telemetryLabel.text = "Telemetry searches " + last.SearchCount +
 - Assets\_Project\Scripts\Core\Bridge\Editor\H8PrefabRegistryWindow.cs:104:                entriesLabel.text = "Entries: 0";
 - Assets\_Project\Scripts\Core\Bridge\Editor\H8PrefabRegistryWindow.cs:105:                vramLabel.text = "VRAM Estimate MB: 0";
 - Assets\_Project\Scripts\Core\Bridge\Editor\H8PrefabRegistryWindow.cs:106:                validationLabel.text = "Validation: no registry";
@@ -236,7 +230,6 @@ Total editor/tool/static suspects: 123. Showing first 80. Full list: _scans/04_r
 - Assets\_Project\Scripts\Core\Bridge\Editor\H8BridgeFacadeEditors.cs:154:                Debug.LogError("[H8Bridge] Input map sync failed. Fix duplicate action hashes or wait for DataVault allocation fences to clear.");
 - Assets\_Project\Scripts\Core\Bridge\Editor\H8BridgeContractGenerator.cs:37:                    Debug.LogError("[H8Bridge] Contract generation skipped duplicate design field hashes in " + path);
 - Assets\_Project\Scripts\Core\Bridge\Editor\H8BridgeContractGenerator.cs:64:            Debug.Log("[H8Bridge] Design facade contracts generated.");
-- Assets\_Project\Scripts\Core\Editor\OOP_Gamepad_Scanner.cs:51:            Debug.Log("[OOP_Gamepad_Scanner] Report written: " + sharedReportPath);
 - Assets\_Project\Scripts\Core\Content\Editor\ContentAuthorityBuildValidators.cs:81:            Debug.Log("[ContentAuthority] Validation passed.");
 - Assets\_Project\Scripts\Core\Content\Editor\ContentAuthorityBuildValidators.cs:788:                ContentLoreBinaryProvider[] providers = prefab.GetComponentsInChildren<ContentLoreBinaryProvider>(true);
 - Assets\_Project\Scripts\Core\Content\Editor\ContentAuthorityBuildValidators.cs:999:                ContentAuthorityRuntime[] runtimes = prefab.GetComponentsInChildren<ContentAuthorityRuntime>(true);
@@ -251,6 +244,13 @@ Total editor/tool/static suspects: 123. Showing first 80. Full list: _scans/04_r
 - Assets\_Project\Scripts\Core\Content\Editor\ContentAuthorityAssetPostprocessor.cs:147:                Debug.LogError("[ContentPhysicsProxyBaker] Bake rejected for " + root.name + ": invalid convex hull bounds.");
 - Assets\_Project\Scripts\Core\Content\Editor\ContentAuthorityAssetPostprocessor.cs:165:            MeshCollider hull = proxy.AddComponent<MeshCollider>();
 - Assets\_Project\Scripts\Core\Content\Editor\ContentAuthorityAssetPostprocessor.cs:209:            mesh.RecalculateNormals();
+- Assets\_Project\Scripts\Core\Editor\OOP_Gamepad_Scanner.cs:51:            Debug.Log("[OOP_Gamepad_Scanner] Report written: " + sharedReportPath);
+- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:467:            using (NativeArray<byte> bytes = new NativeArray<byte>(_fileBytes, Allocator.TempJob))
+- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:468:            using (NativeArray<DataOffsetLengthDTO> output = new NativeArray<DataOffsetLengthDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
+- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:469:            using (NativeArray<uint> trace = new NativeArray<uint>(MaxTraceNodes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
+- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:517:            _summaryLabel.text = _formatName + " | nodes " + _nodeSnapshotCount +
+- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:521:            _traceLabel.text = "Live key hash 0x" + _lastSearchHash.ToString("X8") +
+- Assets\_Project\Scripts\Core\Data\Editor\CacheBTreeTopologyXRayWindow.cs:537:            _telemetryLabel.text = "Telemetry searches " + last.SearchCount +
 - Assets\_Project\Scripts\Core\Diagnostics\Visuals\Editor\ArchitectEyeBlackBoxTimelineViewer.cs:157:                _pathLabel.text = $"Path: {_loadedPath}";
 - Assets\_Project\Scripts\Core\Diagnostics\Visuals\Editor\ArchitectEyeBlackBoxTimelineViewer.cs:237:                    _detailLabels[i].text = string.Empty;
 - Assets\_Project\Scripts\Core\Diagnostics\Visuals\Editor\ArchitectEyeBlackBoxTimelineViewer.cs:243:            _detailLabels[0].text = $"Frame: {frame.Frame}";
@@ -265,18 +265,14 @@ Total editor/tool/static suspects: 123. Showing first 80. Full list: _scans/04_r
 - Assets\_Project\Scripts\Core\Diagnostics\Visuals\Editor\ArchitectEyeBlackBoxTimelineViewer.cs:252:            _detailLabels[9].text = $"Kill Switch Mask: 0x{frame.KillSwitchMask:X8}";
 - Assets\_Project\Scripts\Core\Diagnostics\Visuals\Editor\ArchitectEyeBlackBoxTimelineViewer.cs:368:            Vector3 point = UnityEngine.Physics.Raycast(ray, out RaycastHit hit, 10000f)
 - Assets\_Project\Scripts\Core\Diagnostics\Visuals\Editor\ArchitectEyeBlackBoxTimelineViewer.cs:416:            Vector3 point = UnityEngine.Physics.Raycast(ray, out RaycastHit hit, 10000f)
-- Assets\_Project\Scripts\Core\Signals\Editor\SignalBusEditorTeardown1428.cs:49:                Debug.LogError("[SignalBusEditorTeardown1428] Signal lane teardown failed: " + exception.Message);
 - Assets\_Project\Scripts\Core\Memory\Editor\OOP_MemorySentryConcurrentRelocationFuzzer.cs:95:            Debug.Log("DataVault compaction fuzzer completed. Iterations=" + result.TotalOperations + " Report=" + ReportPath);
 - Assets\_Project\Scripts\Core\Memory\Editor\OOP_MemorySentryConcurrentRelocationFuzzer.cs:105:            Debug.Log("DataVault false-positive corruption probe caught expected corruption. Report=" + ReportPath);
 - Assets\_Project\Scripts\Core\Memory\Editor\OOP_MemorySentryConcurrentRelocationFuzzer.cs:166:                    Allocator.Persistent,
 - Assets\_Project\Scripts\Core\Memory\Editor\OOP_MemorySentryConcurrentRelocationFuzzer.cs:171:                    Allocator.Persistent,
 - Assets\_Project\Scripts\Core\Memory\Editor\OOP_MemorySentryConcurrentRelocationFuzzer.cs:647:                    handle.Complete();
+- Assets\_Project\Scripts\Core\Signals\Editor\SignalBusEditorTeardown1428.cs:49:                Debug.LogError("[SignalBusEditorTeardown1428] Signal lane teardown failed: " + exception.Message);
 - Assets\_Project\Scripts\Global\FutureSeams\Editor\FutureSystemSeamStaticValidator.cs:44:                Debug.Log("[H8 FutureSeams] PASS: dormant reservation records, binary writer, public API closure, survival envelope, and blackbox ring validated.");
 - Assets\_Project\Scripts\Global\FutureSeams\Editor\FutureSystemSeamStaticValidator.cs:52:            Debug.LogError("[H8 FutureSeams] FAIL: dormant future-seam contract validation rejected the current reservation set.");
-- Assets\_Project\Scripts\Optimization\Editor\RenderTextureFormatOptimizer.cs:70:                Debug.LogWarning("[FormatOptimizer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
-- Assets\_Project\Scripts\Optimization\Editor\RenderTextureResolutionAnalyzer.cs:58:                Debug.LogWarning("[ResolutionAnalyzer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
-- Assets\_Project\Scripts\Optimization\Editor\RenderTextureResolutionAnalyzer.cs:132:                Debug.LogWarning("[ResolutionAnalyzer] Cannot capture screenshot: RenderTexture is null");
-- Assets\_Project\Scripts\Optimization\Editor\RenderTextureResolutionAnalyzer.cs:177:                    Debug.Log($"[ResolutionAnalyzer] Screenshot saved: {fullPath}");
 - Assets\_Project\Scripts\Optimization\Editor\HeapSanitizerTunerWindow.cs:218:                _activeLabel.text = "Active: " + active.ToString();
 - Assets\_Project\Scripts\Optimization\Editor\HeapSanitizerTunerWindow.cs:224:                _hitsLabel.text = "Hits: " + hits.ToString();
 - Assets\_Project\Scripts\Optimization\Editor\HeapSanitizerTunerWindow.cs:230:                _missesLabel.text = "Misses: " + misses.ToString();
@@ -284,28 +280,32 @@ Total editor/tool/static suspects: 123. Showing first 80. Full list: _scans/04_r
 - Assets\_Project\Scripts\Optimization\Editor\HeapSanitizerTunerWindow.cs:291:                    _leakBanner.text = "LEAK SUSPECT  asset=0x" + hash.ToString("X8") +
 - Assets\_Project\Scripts\Optimization\Editor\HeapSanitizerTunerWindow.cs:323:                    _trackerRows[i].text = "0x" + tracker.AssetHash.ToString("X8") +
 - Assets\_Project\Scripts\Optimization\Editor\HeapSanitizerTunerWindow.cs:346:            _statusLabel.text = registered
+- Assets\_Project\Scripts\Optimization\Editor\HectonTransparentOverdrawBuildGuard.cs:50:            Debug.Log(
+- Assets\_Project\Scripts\Optimization\Editor\RenderTextureResolutionAnalyzer.cs:58:                Debug.LogWarning("[ResolutionAnalyzer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
+- Assets\_Project\Scripts\Optimization\Editor\RenderTextureResolutionAnalyzer.cs:132:                Debug.LogWarning("[ResolutionAnalyzer] Cannot capture screenshot: RenderTexture is null");
+- Assets\_Project\Scripts\Optimization\Editor\RenderTextureResolutionAnalyzer.cs:177:                    Debug.Log($"[ResolutionAnalyzer] Screenshot saved: {fullPath}");
+- Assets\_Project\Scripts\Optimization\Editor\VRAMStreamingStaticAssertions1617.cs:19:            Debug.Log("[VRAMStreamingStaticAssertions1617] Static VRAM streaming assertions passed.");
 - Assets\_Project\Scripts\Optimization\Editor\RenderTextureOptimizationWindow.cs:166:                Debug.Log($"[FormatOptimizer] Applied format optimization to {rec.RenderTexture.name}: {rec.CurrentFormat} → {rec.RecommendedFormat}");
 - Assets\_Project\Scripts\Optimization\Editor\RenderTextureOptimizationWindow.cs:254:                Debug.Log($"[ResolutionAnalyzer] Applied resolution optimization to {rec.RenderTexture.name}: {rec.CurrentWidth}x{rec.CurrentHeight} → {rec.RecommendedWidth}x{rec.RecommendedHeight}");
-- Assets\_Project\Scripts\Optimization\Editor\VRAMValidator.cs:45:            Debug.Log("[VRAMValidator] Texture budget gate passed.");
-- Assets\_Project\Scripts\Optimization\Editor\VRAMValidator.cs:52:            Debug.Log(
 - Assets\_Project\Scripts\Optimization\Editor\VRAMTextureFootprintScanner1617.cs:27:            Debug.Log(
 - Assets\_Project\Scripts\Optimization\Editor\VRAMIntegratorVerifier1617.cs:45:            Debug.Log("Agent 1617 APEX integrator verification passed.");
-- Assets\_Project\Scripts\Optimization\Editor\HectonTransparentOverdrawBuildGuard.cs:50:            Debug.Log(
-- Assets\_Project\Scripts\Optimization\Editor\VRAMStreamingStaticAssertions1617.cs:19:            Debug.Log("[VRAMStreamingStaticAssertions1617] Static VRAM streaming assertions passed.");
+- Assets\_Project\Scripts\Optimization\Editor\RenderTextureFormatOptimizer.cs:70:                Debug.LogWarning("[FormatOptimizer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
 - Assets\_Project\Scripts\Optimization\Editor\VRAMDiagnosticReport.cs:66:            Debug.Log($"[VRAMDiagnostic] Report generated: {filepath}");
+- Assets\_Project\Scripts\Optimization\Editor\VRAMValidator.cs:45:            Debug.Log("[VRAMValidator] Texture budget gate passed.");
+- Assets\_Project\Scripts\Optimization\Editor\VRAMValidator.cs:52:            Debug.Log(
+- Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:340:                .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))
+- Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:342:                .ToList();
+- Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:356:                Sections = selected.Select(s => s.Name).ToArray()
 - Tools\PresentationDecouplingAudit\Program.cs:678:            (left.EndsWith(".color", StringComparison.Ordinal) || left.EndsWith(".material", StringComparison.Ordinal) || left.EndsWith(".materials", StringComparison.Ordinal)))
-- Tools\SignalArchitectureOptimizationAuditX001\Program.cs:81:                .Where(ShouldScanFile)
-- Tools\SignalArchitectureOptimizationAuditX001\Program.cs:180:        string attributeText = string.Join(" ", structure.AttributeLists.Select(static list => list.ToString()));
-- Tools\SignalArchitectureOptimizationAuditX001\Program.cs:397:            .ToList();
-- Tools\SignalArchitectureOptimizationAuditX001\Program.cs:422:            DirectLaneCountFromSource = state.DirectFlushLanes.Select(static lane => lane.SignalName).Distinct(StringComparer.Ordinal).Count(),
+- Tools\VaultNativeAliasRoslynAudit\Program.cs:130:            string attributes = string.Join(" ", field.AttributeLists.Select(static list => list.ToString()));
 
 ## Exists / Missing / Required Proof
 
 - Exists: bible routes exist and static implementation evidence was found.
-- Partial: runtime static risk suspects need manual code review.
+- Partial: all 275 runtime static suspect lines have method-level classification in `LINE_LEVEL_CLASSIFICATION.md`; runtime/profiler/player proof is still missing.
 - Editor/tool: static suspects exist but may be legal if editor-only or cold-path.
 - Required proof: Owner phase map, route cards, SignalBus/DataVault payload layouts, profiler markers, 300-frame black-box dump, no hot registry polling scan.
 
 ## Next Audit Action
 
-Classify each runtime suspect as cold-path/legal or runtime violation. Fix runtime violations before profiler proof.
+Use `LINE_LEVEL_CLASSIFICATION.md`, close DataVault/H8Memory, debug, bootstrap, prewarm, transition, player-rebind, ContentAuthority, profiler, player-build, and device proof gates before any green/release claim.

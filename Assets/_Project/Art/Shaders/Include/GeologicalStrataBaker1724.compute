@@ -1,0 +1,236 @@
+#pragma kernel CSBakeGeology1724
+
+struct GeologyBakeParams1724
+{
+    float4 WorldOriginSeed;
+    float4 TileQuality;
+    float4 WarpFractureOreSediment;
+};
+
+StructuredBuffer<GeologyBakeParams1724> _GeologyBakeParams1724;
+RWTexture2D<float4> _GeologyAlbedoOutput;
+RWTexture2D<float4> _GeologyMraoOutput;
+int _GeologyOutputMode1724;
+
+float H8SaturateFinite1724(float value)
+{
+    return isfinite(value) ? saturate(value) : 0.0;
+}
+
+float3 H8Finite3_1724(float3 value)
+{
+    return all(isfinite(value)) ? value : float3(0.0, 0.0, 0.0);
+}
+
+float3 H8LinearToSrgbApprox_1724(float3 linearRgb)
+{
+    linearRgb = saturate(linearRgb);
+    float3 sqrtRgb = sqrt(linearRgb);
+    float3 fourthRootRgb = sqrt(sqrtRgb);
+    float3 encoded = lerp(sqrtRgb, fourthRootRgb, 0.28);
+    float3 lowLinear = linearRgb * 12.92;
+    float3 lowGate = smoothstep(float3(0.002, 0.002, 0.002), float3(0.018, 0.018, 0.018), linearRgb);
+    return saturate(lerp(lowLinear, encoded, lowGate));
+}
+
+float H8Hash31_1724(float3 cell)
+{
+    cell = frac(cell * 0.1031);
+    cell += dot(cell, cell.yzx + 33.33);
+    return frac((cell.x + cell.y) * cell.z);
+}
+
+float3 H8WrapCell_1724(float3 cell, float period)
+{
+    period = max(period, 1.0);
+    return cell - floor(cell / period) * period;
+}
+
+float H8HashPeriodic_1724(float3 cell, float period, float seed)
+{
+    return H8Hash31_1724(H8WrapCell_1724(cell, period) + seed);
+}
+
+float H8ValueNoisePeriodic_1724(float3 domain01, float period, float seed)
+{
+    period = max(floor(period), 2.0);
+    domain01 = frac(H8Finite3_1724(domain01));
+    float3 scaled = domain01 * period;
+    float3 i = floor(scaled);
+    float3 f = frac(scaled);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float n000 = H8HashPeriodic_1724(i + float3(0.0, 0.0, 0.0), period, seed);
+    float n100 = H8HashPeriodic_1724(i + float3(1.0, 0.0, 0.0), period, seed);
+    float n010 = H8HashPeriodic_1724(i + float3(0.0, 1.0, 0.0), period, seed);
+    float n110 = H8HashPeriodic_1724(i + float3(1.0, 1.0, 0.0), period, seed);
+    float n001 = H8HashPeriodic_1724(i + float3(0.0, 0.0, 1.0), period, seed);
+    float n101 = H8HashPeriodic_1724(i + float3(1.0, 0.0, 1.0), period, seed);
+    float n011 = H8HashPeriodic_1724(i + float3(0.0, 1.0, 1.0), period, seed);
+    float n111 = H8HashPeriodic_1724(i + float3(1.0, 1.0, 1.0), period, seed);
+
+    float nx00 = lerp(n000, n100, f.x);
+    float nx10 = lerp(n010, n110, f.x);
+    float nx01 = lerp(n001, n101, f.x);
+    float nx11 = lerp(n011, n111, f.x);
+    float nxy0 = lerp(nx00, nx10, f.y);
+    float nxy1 = lerp(nx01, nx11, f.y);
+    return lerp(nxy0, nxy1, f.z);
+}
+
+float H8PeriodicRidge_1724(float3 domain01, float period, float seed)
+{
+    float value = H8ValueNoisePeriodic_1724(domain01, period, seed);
+    return 1.0 - abs(value * 2.0 - 1.0);
+}
+
+float H8Pow7_1724(float value)
+{
+    value = saturate(value);
+    float value2 = value * value;
+    float value4 = value2 * value2;
+    return value4 * value2 * value;
+}
+
+float H8Pow9_1724(float value)
+{
+    value = saturate(value);
+    float value2 = value * value;
+    float value4 = value2 * value2;
+    return value4 * value4 * value;
+}
+
+float H8Pow12_1724(float value)
+{
+    value = saturate(value);
+    float value2 = value * value;
+    float value4 = value2 * value2;
+    return value4 * value4 * value4;
+}
+
+float3 H8ResolveWorldPosition_1724(float2 uv, GeologyBakeParams1724 p)
+{
+    float2 tileMeters = max(p.TileQuality.xy, float2(1.0, 1.0));
+    float seedPhase = frac(p.WorldOriginSeed.w * 0.000101);
+    return H8Finite3_1724(float3(
+        p.WorldOriginSeed.x + uv.x * tileMeters.x,
+        p.WorldOriginSeed.y + uv.y * tileMeters.y,
+        p.WorldOriginSeed.z + seedPhase * tileMeters.x));
+}
+
+float H8LayerEdge_1724(float phase, float edge)
+{
+    float d0 = abs(phase - edge);
+    float d1 = abs((phase + 1.0) - edge);
+    float d2 = abs((phase - 1.0) - edge);
+    return min(d0, min(d1, d2));
+}
+
+struct GeologySample1724
+{
+    float3 Albedo;
+    float4 Mrao;
+};
+
+GeologySample1724 H8ResolveGeologySample_1724(float2 uv)
+{
+    GeologyBakeParams1724 p = _GeologyBakeParams1724[0];
+    float quality = H8SaturateFinite1724(p.TileQuality.z);
+    float2 tileMeters = max(p.TileQuality.xy, float2(1.0, 1.0));
+    float strataMeters = max(p.TileQuality.w, 0.25);
+    float warpMeters = max(p.WarpFractureOreSediment.x, 0.0) * lerp(0.42, 1.0, quality);
+    float fractureDensity = max(p.WarpFractureOreSediment.y, 2.0);
+    float oreIntensity = H8SaturateFinite1724(p.WarpFractureOreSediment.z);
+    float sedimentStrength = H8SaturateFinite1724(p.WarpFractureOreSediment.w);
+    float grainGain = lerp(0.35, 1.0, quality);
+    float seed = max(abs(p.WorldOriginSeed.w), 1.0);
+
+    float3 world = H8ResolveWorldPosition_1724(uv, p);
+    float3 domain = frac(float3(
+        (world.x - p.WorldOriginSeed.x) / tileMeters.x,
+        (world.y - p.WorldOriginSeed.y) / tileMeters.y,
+        ((world.z - p.WorldOriginSeed.z) / max(tileMeters.x, 1.0)) + uv.x * 0.37 + uv.y * 0.19));
+
+    float warpLow = H8ValueNoisePeriodic_1724(domain + 0.137, 12.0, seed + 11.0) - 0.5;
+    float warpMid = H8ValueNoisePeriodic_1724(domain.yzx + 0.419, 24.0, seed + 23.0) - 0.5;
+    float warpHigh = H8ValueNoisePeriodic_1724(domain.zxy + 0.731, 48.0, seed + 37.0) - 0.5;
+    float warpedY = world.y + ((warpLow * 0.66) + (warpMid * 0.25) + (warpHigh * 0.09 * quality)) * warpMeters;
+    float phase = frac(warpedY / strataMeters);
+
+    float shaleBand = smoothstep(0.32, 0.39, phase) * (1.0 - smoothstep(0.55, 0.63, phase));
+    float sandstoneBand = smoothstep(0.61, 0.69, phase) * (1.0 - smoothstep(0.84, 0.92, phase));
+    float basaltBand = saturate(1.0 - max(shaleBand, sandstoneBand));
+    float edgeMask = 1.0 - smoothstep(0.015, 0.075,
+        min(min(H8LayerEdge_1724(phase, 0.34), H8LayerEdge_1724(phase, 0.61)), H8LayerEdge_1724(phase, 0.86)));
+
+    float grainA = H8ValueNoisePeriodic_1724(domain + 0.281, 64.0, seed + 41.0);
+    float grainB = H8ValueNoisePeriodic_1724(domain.yxz + 0.577, 96.0, seed + 59.0);
+    float grain = lerp(0.82, 1.12, ((grainA * 0.7) + (grainB * 0.3) - 0.5) * grainGain + 0.5);
+
+    float3 basalt = float3(0.075, 0.082, 0.088);
+    float3 shale = float3(0.205, 0.213, 0.216);
+    float3 sandstone = float3(0.365, 0.326, 0.235);
+    float3 edgeDark = float3(0.042, 0.046, 0.052);
+    float3 rock = basalt * basaltBand + shale * shaleBand + sandstone * sandstoneBand;
+    rock = lerp(rock, edgeDark, edgeMask * 0.28);
+    rock *= grain;
+
+    float fractureA = H8PeriodicRidge_1724(domain + float3(0.11, 0.47, 0.29), fractureDensity, seed + 73.0);
+    float fractureB = H8PeriodicRidge_1724(domain.yzx + float3(0.61, 0.13, 0.43), fractureDensity * 1.67, seed + 89.0);
+    float fractureC = H8PeriodicRidge_1724(domain.zxy + float3(0.29, 0.71, 0.17), fractureDensity * 2.13, seed + 101.0);
+    float fractureLine = saturate(H8Pow7_1724(fractureA) * 0.55 + H8Pow9_1724(fractureB) * 0.35 + H8Pow12_1724(fractureC) * 0.22);
+    fractureLine = smoothstep(0.42, 0.78, fractureLine);
+
+    float crystalGrowth = H8ValueNoisePeriodic_1724(domain + float3(0.73, 0.19, 0.51), fractureDensity * 3.0, seed + 127.0);
+    float oreMask = saturate(fractureLine * smoothstep(0.52, 0.92, crystalGrowth) * oreIntensity);
+    float titaniumSelector = smoothstep(0.48, 0.58, H8ValueNoisePeriodic_1724(domain.zxy + 0.351, 10.0, seed + 149.0));
+    float titaniumMask = oreMask * titaniumSelector;
+    float copperMask = oreMask * (1.0 - titaniumSelector);
+    float3 copper = float3(0.78, 0.34, 0.125);
+    float3 titanium = float3(0.72, 0.78, 0.82);
+    float3 oreColor = (copper * copperMask + titanium * titaniumMask) / max(oreMask, 0.0001);
+    rock = lerp(rock, oreColor, saturate(oreMask * 0.92));
+
+    float ledgeMask = edgeMask * (0.65 + 0.35 * sandstoneBand);
+    float sedimentNoise = H8ValueNoisePeriodic_1724(domain + float3(0.43, 0.83, 0.27), 36.0, seed + 163.0);
+    float sediment = saturate((ledgeMask * 0.72 + fractureLine * 0.18) * smoothstep(0.24, 0.82, sedimentNoise) * sedimentStrength);
+    sediment *= saturate(1.0 - oreMask * 1.18);
+    float3 sedimentTint = float3(0.46, 0.43, 0.34);
+    rock = lerp(rock, sedimentTint, sediment * 0.35);
+
+    float metallic = saturate(oreMask * 0.96);
+    float roughness = lerp(0.86, lerp(0.34, 0.24, titaniumMask), saturate(oreMask));
+    roughness = lerp(roughness, 0.93, sediment * 0.45 * (1.0 - metallic));
+    float ao = saturate(0.94 - fractureLine * 0.42 - edgeMask * 0.12);
+
+    GeologySample1724 sample;
+    sample.Albedo = saturate(rock);
+    sample.Mrao = saturate(float4(metallic, roughness, ao, sediment));
+    return sample;
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeGeology1724(uint3 id : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    if (_GeologyOutputMode1724 == 0)
+    {
+        _GeologyAlbedoOutput.GetDimensions(width, height);
+        if (id.x >= width || id.y >= height)
+            return;
+
+        float2 uv = (float2(id.xy) + 0.5) / max(float2(width, height), float2(1.0, 1.0));
+        GeologySample1724 sample = H8ResolveGeologySample_1724(uv);
+        _GeologyAlbedoOutput[id.xy] = float4(H8LinearToSrgbApprox_1724(sample.Albedo), 1.0);
+        return;
+    }
+
+    _GeologyMraoOutput.GetDimensions(width, height);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    float2 maskUv = (float2(id.xy) + 0.5) / max(float2(width, height), float2(1.0, 1.0));
+    GeologySample1724 maskSample = H8ResolveGeologySample_1724(maskUv);
+    _GeologyMraoOutput[id.xy] = maskSample.Mrao;
+}

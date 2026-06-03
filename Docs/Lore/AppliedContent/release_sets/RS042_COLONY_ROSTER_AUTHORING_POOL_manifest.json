@@ -1,0 +1,21 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS042_COLONY_ROSTER_AUTHORING_POOL",
+  "title": "Colony Roster Authoring Pool",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS042_COLONY_ROSTER_AUTHORING_POOL.packets.json"
+  ],
+  "packets": [
+    "P206_WORKER_ROSTER_SIZE_RULE",
+    "P207_PRESSURE_CREW_ARCHETYPE_TABLE",
+    "P208_ANCHOR_WORKER_NAME_SET_A",
+    "P209_ANCHOR_WORKER_NAME_SET_B",
+    "P210_SEED_ROLE_NAME_GRAMMAR"
+  ],
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  }
+}

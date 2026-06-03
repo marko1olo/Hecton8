@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using Hecton8.Lighting;
 using NUnit.Framework;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Hecton8.Tests.Editor
@@ -230,11 +232,142 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("EnsureNativeState(bool allowAllocation = true)"));
             Assert.That(source, Does.Contain("if (!allowAllocation || vault.IsAllocationLocked)"));
             Assert.That(source, Does.Contain("HasRequiredNativeBuffers()"));
+            Assert.That(source, Does.Contain("TryReadOnlyArray("));
+            Assert.That(source, Does.Contain("vault.TryAcquireWriteLock(in _tuning, MemoryOwner"));
+            Assert.That(source, Does.Contain("vault.ReleaseWriteLock(in _tuning, MemoryOwner"));
+            Assert.That(source, Does.Contain("vault.IsCompactionFenceActive"));
             Assert.That(acquireBlock, Does.Contain("return default;"));
             Assert.That(resolveBlock, Does.Contain("return default;"));
             Assert.That(source, Does.Not.Contain("Interior GI DataVault buffer acquisition failed"));
             Assert.That(source, Does.Not.Contain("Interior GI GlobalDataVault unavailable"));
             Assert.That(source, Does.Not.Contain("throw new InvalidOperationException"));
+        }
+
+        [Test]
+        public void InteriorGIDtoLayoutsAreFixedAndEightByteAligned()
+        {
+            Assert.That(InteriorGIProbeVolumeRuntime.ValidateStructLayouts(out uint failureMask), Is.True, failureMask.ToString("X8"));
+            Assert.That(UnsafeUtility.SizeOf<CustomLightProbeDTO>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.CustomLightProbeDtoSizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<InteriorGISourceDTO>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.InteriorGISourceDtoSizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<InteriorGIOcclusionCellDTO>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.InteriorGIOcclusionCellDtoSizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<InteriorGITuningDTO>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.InteriorGITuningDtoSizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<MockPowerState>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.MockPowerStateSizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<InteriorGITelemetryEntry>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.InteriorGITelemetryEntrySizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<CustomDynamicProbeLightDTO>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.CustomDynamicProbeLightDtoSizeBytes));
+            Assert.That(UnsafeUtility.SizeOf<AmbientLightingProfileDTO>(), Is.EqualTo(InteriorGIProbeVolumeRuntime.AmbientLightingProfileDtoSizeBytes));
+        }
+
+        [Test]
+        public void LightmapBakerDeletesTemporaryReflectionProbeAssetsAfterAtlasPacking()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Editor/Lighting/LightmapBakerEngine.cs");
+            string source = File.ReadAllText(path);
+            string bakeBlock = ExtractMethodBlock(source, "private static void BakeReflectionProbes(");
+            string deleteBlock = ExtractMethodBlock(source, "private static void DeleteTemporaryReflectionProbeAssets(");
+
+            Assert.That(bakeBlock, Does.Contain("CreateReflectionCubemapArrayAtlas(sceneName, bakedProbeAssets"));
+            Assert.That(bakeBlock, Does.Contain("DeleteTemporaryReflectionProbeAssets(bakedProbeAssets"));
+            Assert.That(deleteBlock, Does.Contain("AssetDatabase.DeleteAsset(assetPath)"));
+            Assert.That(source, Does.Contain("registerGeneratedAsset: false"));
+            Assert.That(source, Does.Contain("TextureImporterFormat.BC6H"));
+        }
+
+        [Test]
+        public void LightmapBakerDensifiesLightProbesAroundNavigationMarkersWithoutAiDependency()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Editor/Lighting/LightmapBakerEngine.cs");
+            string source = File.ReadAllText(path);
+            string gridBlock = ExtractMethodBlock(source, "private static void GenerateLightProbeGrid(");
+            string markerBlock = ExtractMethodBlock(source, "private static bool LooksLikeNavigationLightingMarker(");
+
+            Assert.That(gridBlock, Does.Contain("AddNavigationMarkerProbes(profile, probes, quantized, report)"));
+            Assert.That(markerBlock, Does.Contain("StringComparison.OrdinalIgnoreCase"));
+            Assert.That(markerBlock, Does.Contain("\"Waypoint\""));
+            Assert.That(markerBlock, Does.Contain("\"Spawn\""));
+            Assert.That(markerBlock, Does.Contain("\"Fauna\""));
+            Assert.That(source, Does.Not.Contain("using UnityEngine.AI"));
+            Assert.That(source, Does.Not.Contain("PathFunnelNavmeshRuntime"));
+        }
+
+        [Test]
+        public void LightmapBakerDryRunDoesNotMutateBakeSettingsOrScenes()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Editor/Lighting/LightmapBakerEngine.cs");
+            string source = File.ReadAllText(path);
+            string targetBlock = ExtractMethodBlock(source, "private void ExecuteTargetScenes(bool dryRun)");
+            string openSceneBlock = ExtractMethodBlock(source, "private void ExecuteOpenScene(");
+
+            int dryRunBranch = openSceneBlock.IndexOf("if (dryRun)", StringComparison.Ordinal);
+            int configureBranch = openSceneBlock.IndexOf("ConfigureLightmapping(sceneName, profile, report)", StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(dryRunBranch, 0);
+            Assert.GreaterOrEqual(configureBranch, 0);
+            Assert.Less(dryRunBranch, configureBranch);
+            Assert.That(targetBlock, Does.Contain("EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()"));
+            Assert.That(openSceneBlock, Does.Contain("AuditSceneLightingInputs(report);"));
+            Assert.That(openSceneBlock, Does.Contain("GenerateLightProbeGrid(profile, report, dryRun: true);"));
+        }
+
+        [Test]
+        public void LightmapBakerOnlyBakesStaticCandidatesAndAvoidsManagedTextureMirrors()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Editor/Lighting/LightmapBakerEngine.cs");
+            string source = File.ReadAllText(path);
+            string configureRenderersBlock = ExtractMethodBlock(source, "private static void ConfigureStaticRenderers(");
+            string validateUvsBlock = ExtractMethodBlock(source, "private static bool ValidateLightmapUvs(");
+            string sceneBoundsBlock = ExtractMethodBlock(source, "private static bool TryResolveStaticSceneBounds(");
+            string candidateBlock = ExtractMethodBlock(source, "private static bool IsStaticBakeCandidate(");
+            string copyBlock = ExtractMethodBlock(source, "private static void CopyAssetFileAsBytes(");
+
+            Assert.That(configureRenderersBlock, Does.Contain("IsStaticBakeCandidate(renderer)"));
+            Assert.That(validateUvsBlock, Does.Contain("IsStaticBakeCandidate(renderer)"));
+            Assert.That(sceneBoundsBlock, Does.Contain("IsStaticBakeCandidate(renderer)"));
+            Assert.That(candidateBlock, Does.Contain("gameObject.isStatic"));
+            Assert.That(candidateBlock, Does.Contain("StaticEditorFlags.ContributeGI"));
+            Assert.That(candidateBlock, Does.Not.Contain("ReflectionProbeStatic"));
+            Assert.That(copyBlock, Does.Contain("File.Copy(source, target, true);"));
+            Assert.That(copyBlock, Does.Not.Contain("File.ReadAllBytes"));
+            Assert.That(copyBlock, Does.Not.Contain("File.WriteAllBytes"));
+        }
+
+        [Test]
+        public void LightmapBakerEditorFacadeUsesUiToolkitInsteadOfOngui()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Editor/Lighting/LightmapBakerEngine.cs");
+            string source = File.ReadAllText(path);
+
+            Assert.That(source, Does.Contain("using UnityEngine.UIElements;"));
+            Assert.That(source, Does.Contain("public void CreateGUI()"));
+            Assert.That(source, Does.Contain("new Slider(\"_H8GlobalQualityWeight\", 0f, 1f)"));
+            Assert.That(source, Does.Contain("new SliderInt(\"Maximum Probe Count\", 512, 64000)"));
+            Assert.That(source, Does.Contain("CreateCommandButton(\"Bake Target Scenes\", RunBakeTargetScenes)"));
+            Assert.That(source, Does.Not.Contain("OnGUI("));
+            Assert.That(source, Does.Not.Contain("EditorGUILayout."));
+            Assert.That(source, Does.Not.Contain("GUILayout."));
+        }
+
+        [Test]
+        public void RenderSettingsLifecycleRestoreDoesNotTriggerRuntimeDynamicGi()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Core/RenderSettingsLifecycleGuard.cs");
+            string source = File.ReadAllText(path);
+            string restoreBlock = ExtractMethodBlock(source, "public void Restore()");
+
+            Assert.That(restoreBlock, Does.Contain("IGIRelaySystem giRelay"));
+            Assert.That(restoreBlock, Does.Not.Contain("DynamicGI.UpdateEnvironment"));
+            Assert.That(source, Does.Not.Contain("DynamicGI.UpdateEnvironment"));
         }
 
         [Test]
@@ -349,8 +482,13 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/Lighting/Editor/AbyssalLightingTunerWindow.cs");
             string source = File.ReadAllText(path);
+            string refreshBlock = ExtractMethodBlock(source, "private void RefreshStatus(bool force)");
 
             Assert.That(source, Does.Contain("[13KRA] Loaded-scene Unity probe group count"));
+            Assert.That(source, Does.Contain("private const double RefreshIntervalSeconds = 0.25"));
+            Assert.That(source, Does.Contain("RefreshStatus(force: true)"));
+            Assert.That(refreshBlock, Does.Contain("EditorApplication.timeSinceStartup"));
+            Assert.That(refreshBlock, Does.Contain("if (!force && now < _nextRefreshTime)"));
             Assert.That(source, Does.Not.Contain("[SHINOBU_131]"));
         }
 

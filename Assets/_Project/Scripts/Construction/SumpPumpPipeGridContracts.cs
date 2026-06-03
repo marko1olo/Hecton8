@@ -86,7 +86,6 @@ namespace Hecton8.Construction
     {
         public const uint Active = 1u << 0;
         public const uint Pump = 1u << 1;
-        public const uint Mock = 1u << 2;
         public const uint PowerStarved = 1u << 3;
         public const uint NonFinite = 1u << 31;
     }
@@ -98,7 +97,6 @@ namespace Hecton8.Construction
     {
         public const uint Active = 1u << 0;
         public const uint Sealed = 1u << 1;
-        public const uint Mock = 1u << 2;
         public const uint DownhillBoosted = 1u << 3;
         public const uint NonFinite = 1u << 31;
     }

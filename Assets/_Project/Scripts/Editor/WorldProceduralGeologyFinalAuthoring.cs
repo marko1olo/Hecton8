@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Editor.ColliderOptimization1716;
 using Hecton8.World;
 
 namespace Hecton8.EditorTools
@@ -208,9 +209,11 @@ namespace Hecton8.EditorTools
                 }
                 else
                 {
-                    MeshCollider col = root.AddComponent<MeshCollider>();
-                    col.sharedMesh = bundle.Collider;
-                    col.convex = true;
+                    GameObject colliderRoot = new GameObject("COL_CompoundProxy_1716");
+                    colliderRoot.transform.SetParent(root.transform, false);
+                    BoxCollider col = colliderRoot.AddComponent<BoxCollider>();
+                    col.size = colliderSize;
+                    col.center = new Vector3(0f, colliderSize.y * 0.5f, 0f);
                 }
 
                 // LOD chain
@@ -227,7 +230,13 @@ namespace Hecton8.EditorTools
                 lodGroup.RecalculateBounds();
 
                 // Sohranyaem prefab
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed before save: " + colliderFailure);
+
                 GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (saved != null && !ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed after save: " + colliderFailure);
+
                 return saved != null;
             }
             finally

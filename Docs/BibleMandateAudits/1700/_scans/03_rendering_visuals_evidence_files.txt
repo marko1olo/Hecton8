@@ -3,12 +3,17 @@ Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs
 Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs
 Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs
 Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs
 Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs
 Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs
 Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs
 Assets\_Project\Editor\Generators\Structures\DeepReachStationContracts.cs
 Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs
 Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs
 Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherJobs.cs
 Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs
@@ -22,6 +27,7 @@ Assets\_Project\Editor\HectonUIBuilder.cs
 Assets\_Project\Editor\HectonWaterGrid.cs
 Assets\_Project\Editor\Particle_System_Scanner.cs
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs
 Assets\_Project\Editor\PlayModePerformanceMonitor.cs
 Assets\_Project\Editor\PropwashGpuLayoutValidator.cs
 Assets\_Project\Editor\PropwashGpuTunerWindow.cs

@@ -48,7 +48,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using ConstructionMockWorldSampler = Hecton8.Construction.MockWorldSampler;
+using ConstructionTerrainSampler = Hecton8.Construction.ConstructionTerrainSampler;
 
 namespace Hecton8.Building
 {
@@ -222,7 +222,7 @@ namespace Hecton8.Building
         private StructuralBoundsDTO _lastConstructionValidationBounds;
         private ConstructionValidationSettingsDTO _lastConstructionValidationSettings;
         private ConstructionValidationResultDTO _lastConstructionValidationResult;
-        private ConstructionMockWorldSampler _lastConstructionWorldSampler;
+        private ConstructionTerrainSampler _lastConstructionWorldSampler;
         private static bool s_ConstructionSignalLanesInitialized;
         private HabitatConstructionManager _habitatConstructionManager;
         private ConstructionManager _cachedConstructionManager;
@@ -3071,7 +3071,7 @@ namespace Hecton8.Building
                     out StructuralBoundsDTO bounds,
                     out ConstructionValidationSettingsDTO settings,
                     out ConstructionSipBudgetDTO sipBudget,
-                    out ConstructionMockWorldSampler worldSampler))
+                    out ConstructionTerrainSampler worldSampler))
             {
                 _terrainSdfPlacementValid = false;
                 _terrainSdfPlacementBlockReason = "PLACEMENT NAN";
@@ -3212,7 +3212,7 @@ namespace Hecton8.Building
             out StructuralBoundsDTO bounds,
             out ConstructionValidationSettingsDTO settings,
             out ConstructionSipBudgetDTO sipBudget,
-            out ConstructionMockWorldSampler worldSampler)
+            out ConstructionTerrainSampler worldSampler)
         {
             request = default;
             bounds = default;
@@ -3256,7 +3256,7 @@ namespace Hecton8.Building
             float localBottomY = ModularBaseConstructionValidator.GridToLocal(in request, gridSize).y +
                                  template.ProxyBoundsCenter.y -
                                  template.ProxyBoundsSize.y * 0.5f;
-            worldSampler = ModularBaseConstructionValidator.CreateMockWorldSampler(
+            worldSampler = ModularBaseConstructionValidator.CreateTerrainSampler(
                 rootAup,
                 localBottomY - settings.TerrainClearanceMargin,
                 moduleHash);

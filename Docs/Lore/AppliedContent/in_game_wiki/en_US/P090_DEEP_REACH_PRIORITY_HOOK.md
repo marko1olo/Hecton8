@@ -1,10 +1,17 @@
 ---
 packet_id: P090_DEEP_REACH_PRIORITY_HOOK
+release_set_id: RS018_CARRIER_DEBT_CLAIM_AUTHORITY
 article_id: carrier.deep_reach_priority_hook
+unlock_id: unlock.first_deep_reach_priority_hook
+poi_tags: poi.priority_hook_clause;poi.deep_reach_old_certificate
+biome_tags: biome.drowned_admin;biome.carrier_link
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Deep Reach Priority Hook

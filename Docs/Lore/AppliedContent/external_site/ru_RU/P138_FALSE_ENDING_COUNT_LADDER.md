@@ -1,10 +1,17 @@
 ---
 packet_id: P138_FALSE_ENDING_COUNT_LADDER
+release_set_id: RS028_REPLAY_CONTRACT_DOSSIER_RULES
 article_id: replay.false_ending_count_ladder
+unlock_id: unlock.false_ending_count_ladder
+poi_tags: poi.ending_family_board;poi.partial_result_stamp
+biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Лестница ложных концовок

@@ -93,6 +93,7 @@ namespace Hecton8.Biolum
         [SerializeField, Range(0.5f, 30f)] protected float _rangeMultiplier = 10f;
         [SerializeField, Range(1, 100)] protected int _updateInterval = 5;
         [SerializeField, Range(2, 16)] protected int _maxLights = 8;
+        [SerializeField] private Light[] _authoredLightPool = new Light[0];
         [SerializeField, Range(0f, 1f)] protected float _lodDistanceScale = 1.0f;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -147,6 +148,7 @@ namespace Hecton8.Biolum
             _cachedTransform = transform;
             RefreshCachedAup();
             _activeLights = new Light[_maxLights]; // COLD ALLOC: Light[_maxLights] â€” pooled biolum light references â€” owner: HectonBiolumZone
+            BindAuthoredLightPool();
             PrewarmLightPool();
         }
 
@@ -270,12 +272,11 @@ namespace Hecton8.Biolum
             _debugTickInvocations++;
 #endif
             _biolumTickTime = ResolveBiolumTickTime(deltaTime);
-            RefreshCachedAup();
-            RefreshSampleCache();
             int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastUpdateFrame < _updateInterval) return;
             _lastUpdateFrame = frame;
 
+            RefreshCachedAup();
             bool skippedLod = ShouldSkipLOD();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugLastSkippedLod = skippedLod;
@@ -497,21 +498,52 @@ namespace Hecton8.Biolum
                 }
 
                 // COLD ALLOC: pooled Light GameObject slot â€” prewarmed biolum light owner â€” owner: HectonBiolumZone
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 GameObject lightObject = new GameObject("BiolumLight");
                 lightObject.transform.SetParent(_cachedTransform, false);
                 lightObject.SetActive(false);
 
                 Light light = lightObject.AddComponent<Light>();
-                light.type = LightType.Point;
-                light.shadows = LightShadows.None;
-                light.renderingLayerMask = 1;
+                ConfigurePooledLight(light);
                 _activeLights[i] = light;
+#endif
             }
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // PROTECTED HELPERS: Scaling Functions
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+        private void BindAuthoredLightPool()
+        {
+            if (_authoredLightPool == null || _authoredLightPool.Length == 0)
+                return;
+
+            int writeIndex = 0;
+            int limit = math.min(_authoredLightPool.Length, _maxLights);
+            for (int i = 0; i < limit; i++)
+            {
+                Light light = _authoredLightPool[i];
+                if (light == null)
+                    continue;
+
+                ConfigurePooledLight(light);
+                _activeLights[writeIndex++] = light;
+                if (writeIndex >= _maxLights)
+                    return;
+            }
+        }
+
+        private static void ConfigurePooledLight(Light light)
+        {
+            if (light == null)
+                return;
+
+            light.type = LightType.Point;
+            light.shadows = LightShadows.None;
+            light.renderingLayerMask = 1;
+            light.gameObject.SetActive(false);
+        }
 
         protected float ScaleIntensityByMood(float baseIntensity)
         {

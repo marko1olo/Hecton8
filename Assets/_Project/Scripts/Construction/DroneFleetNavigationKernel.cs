@@ -232,7 +232,6 @@ namespace Hecton8.Construction
             if (UnsafeUtility.SizeOf<DroneAssignmentTaskDTO>() != 64 ||
                 UnsafeUtility.SizeOf<PathWaypointDTO>() != 64 ||
                 UnsafeUtility.SizeOf<DroneAStarPersistentState>() != 64 ||
-                UnsafeUtility.SizeOf<MockDroneSDFHeader>() != 64 ||
                 UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() != 16)
             {
                 return false;
@@ -248,15 +247,6 @@ namespace Hecton8.Construction
                 OffsetOf<PathWaypointDTO>("_pad4") == 52 &&
                 OffsetOf<PathWaypointDTO>("_pad8") == 56 &&
                 OffsetOf<PathWaypointDTO>("_pad15") == 63 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.OriginAUP)) == 0 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Dimensions)) == 24 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.VoxelSizeMeters)) == 36 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.MainTunnelRadiusMeters)) == 40 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.CrossShaftRadiusMeters)) == 44 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.GridVersion)) == 48 &&
-                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Flags)) == 52 &&
-                OffsetOf<MockDroneSDFHeader>("_pad0") == 56 &&
-                OffsetOf<MockDroneSDFHeader>("_pad7") == 63 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.SearchHash)) == 0 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.OpenCount)) == 4 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.BestNode)) == 8 &&
@@ -337,52 +327,6 @@ namespace Hecton8.Construction
             return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
         }
 #endif
-    }
-
-    internal static class DroneFleetMockTasks
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GenerateMockDroneTasks(NativeArray<DroneAssignmentTaskDTO> tasks, double3 fleetAup, int requestedCount)
-        {
-            if (!tasks.IsCreated || requestedCount <= 0)
-                return 0;
-
-            int count = math.min(tasks.Length, requestedCount);
-            for (int i = 0; i < count; i++)
-            {
-                float angle = i * 2.3999631f;
-                float radius = 6f + ((i & 7) * 2.5f);
-                Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
-                float3 local = new float3(cos * radius, -1.5f + ((i % 3) * 1.5f), sin * radius);
-                tasks[i] = new DroneAssignmentTaskDTO
-                {
-                    TargetAup = fleetAup + new double3(local.x, local.y, local.z),
-                    LocalPosition = local,
-                    Priority = 1f + ((i & 3) * 0.25f),
-                    Score = 0f,
-                    CriticalityWeight = 1f + ((i % 5) * 0.2f),
-                    Radius = 1.25f,
-                    ModuleIndex = i,
-                    TaskKind = (i & 1) == 0 ? 1 : 3,
-                    Reserved0 = 0u
-                };
-            }
-
-            return count;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct GenerateMockDroneTasksJob : IJob
-    {
-        [NoAlias] public NativeArray<DroneAssignmentTaskDTO> Tasks;
-        public double3 FleetAup;
-        public int RequestedCount;
-
-        public void Execute()
-        {
-            DroneFleetMockTasks.GenerateMockDroneTasks(Tasks, FleetAup, RequestedCount);
-        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -594,6 +538,7 @@ namespace Hecton8.Construction
     {
         private const int EmptyTaskIndex = -1;
         private const float ReturnBatteryThresholdPercent = 15f;
+        private const float LengthEpsilonSq = 0.00000001f;
 
         // SAFETY JUSTIFICATION 1/3: metabolism mutates only the drone row matching Execute index.
         // SAFETY JUSTIFICATION 2/3: DTO mirrors are written at the same index as the drone source row;
@@ -622,7 +567,7 @@ namespace Hecton8.Construction
             }
 
             float safeDt = math.max(0f, DeltaTime);
-            float speed = math.sqrt(math.max(0f, math.lengthsq(drone.Velocity)));
+            float speed = FastLengthFromSq(math.lengthsq(drone.Velocity));
             float maxSpeed = math.max(0.1f, drone.MaxSpeed);
             float speed01 = math.saturate(speed * math.rcp(maxSpeed));
             float drainScale = EmergencyOverclock != 0 ? 5f : 1f;
@@ -690,6 +635,13 @@ namespace Hecton8.Construction
         private static double3 ToDouble3(float3 value)
         {
             return new double3(value.x, value.y, value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.max(0f, lengthSq);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, LengthEpsilonSq));
         }
     }
 
@@ -975,7 +927,7 @@ namespace Hecton8.Construction
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct DroneFleetMockRepairSignal : ISignal
+    public struct DroneFleetRepairServiceSignal : ISignal
     {
         [FieldOffset(0)] public int DroneId;
         [FieldOffset(4)] public int TargetModuleId;
@@ -986,7 +938,7 @@ namespace Hecton8.Construction
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct DroneFleetMockMiningSignal : ISignal
+    public struct DroneFleetMiningServiceSignal : ISignal
     {
         [FieldOffset(0)] public int DroneId;
         [FieldOffset(4)] public int TargetNodeId;
@@ -1062,46 +1014,67 @@ namespace Hecton8.Construction
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    internal struct MockSDFGrid
+    internal struct DroneSdfGrid
     {
-        [FieldOffset(0)]
-        public float3 BoundsMin;
-        [FieldOffset(12)]
-        public float RepulsionDistance;
-        [FieldOffset(16)]
-        public float3 BoundsMax;
-        [FieldOffset(28)]
-        public float SeamSpacing;
-        [FieldOffset(32)]
-        public float3 SeamNormal;
-        [FieldOffset(44)]
-        public float SeamHalfWidth;
-        [FieldOffset(48)]
-        public int Enabled;
-        [FieldOffset(52)]
-        public int Reserved0;
-        [FieldOffset(56)]
-        public float Reserved1;
-        [FieldOffset(60)]
-        public float Reserved2;
+        private const float InvEncodedByteMax = 0.0039215686274509803f;
+        private const float MinimumCellSize = 0.0001f;
 
-        public static MockSDFGrid CreateDefault()
+        [ReadOnly] public NativeArray<byte>.ReadOnly EncodedSdf;
+        public int3 Dimensions;
+        public float3 VolumeOrigin;
+        public float3 CellSize;
+        public float SdfRange;
+        public float RepulsionDistance;
+        public int Enabled;
+        public uint Version;
+
+        public static bool TryCreate(
+            NativeArray<byte>.ReadOnly encodedSdf,
+            int3 dimensions,
+            float3 volumeOrigin,
+            float3 cellSize,
+            float sdfRange,
+            float repulsionDistance,
+            int version,
+            out DroneSdfGrid grid)
         {
-            return new MockSDFGrid
+            grid = default;
+            if (!TryResolveExpectedVoxelCount(dimensions, out int expectedLength) ||
+                !encodedSdf.IsCreated ||
+                encodedSdf.Length < expectedLength ||
+                !IsFinite(volumeOrigin) ||
+                !IsFinite(cellSize) ||
+                !math.all(cellSize > new float3(MinimumCellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= MinimumCellSize)
             {
-                BoundsMin = new float3(-256f, -96f, -256f),
-                BoundsMax = new float3(256f, 96f, 256f),
-                RepulsionDistance = 2.25f,
-                SeamSpacing = 17f,
-                SeamNormal = math.normalize(new float3(1f, 0f, 1f)),
-                SeamHalfWidth = 0.18f,
+                return false;
+            }
+
+            grid = new DroneSdfGrid
+            {
+                EncodedSdf = encodedSdf,
+                Dimensions = dimensions,
+                VolumeOrigin = volumeOrigin,
+                CellSize = cellSize,
+                SdfRange = sdfRange,
+                RepulsionDistance = math.max(0.001f, FiniteOrFallback(repulsionDistance, 2.25f)),
                 Enabled = 1,
-                Reserved0 = 0,
-                Reserved1 = 0f,
-                Reserved2 = 0f
+                Version = version > 0 ? (uint)version : 1u
             };
+            return true;
         }
+
+        public bool IsValid =>
+            Enabled != 0 &&
+            EncodedSdf.IsCreated &&
+            TryResolveExpectedVoxelCount(Dimensions, out int expectedLength) &&
+            EncodedSdf.Length >= expectedLength &&
+            IsFinite(VolumeOrigin) &&
+            IsFinite(CellSize) &&
+            math.all(CellSize > new float3(MinimumCellSize)) &&
+            math.isfinite(SdfRange) &&
+            SdfRange > MinimumCellSize;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsBlocked(float3 position)
@@ -1112,25 +1085,16 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsBlockedForRadius(float3 position, float requiredRadius)
         {
-            if (Enabled == 0 || !IsFinite(position))
-                return false;
+            if (!TrySampleClearance(position, out float clearance))
+                return true;
 
-            return SampleClearance(position) < math.max(0f, requiredRadius);
+            return clearance < math.max(0f, requiredRadius);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float SampleClearance(float3 position)
         {
-            if (Enabled == 0 || !IsFinite(position))
-                return float.MaxValue;
-
-            float3 minDelta = position - BoundsMin;
-            float3 maxDelta = BoundsMax - position;
-            float boundaryClearance = math.min(
-                math.min(math.min(minDelta.x, maxDelta.x), math.min(minDelta.y, maxDelta.y)),
-                math.min(minDelta.z, maxDelta.z));
-            float seamClearance = ResolveSeamDistance(position, out _) - math.max(0f, SeamHalfWidth);
-            return math.min(boundaryClearance, seamClearance);
+            return TrySampleClearance(position, out float clearance) ? clearance : -math.max(0.001f, SdfRange);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1139,47 +1103,99 @@ namespace Hecton8.Construction
             normal = float3.zero;
             distance = float.MaxValue;
 
-            if (Enabled == 0 || !IsFinite(position))
+            if (!TrySampleClearance(position, out float clearance))
                 return false;
 
-            float3 minDelta = position - BoundsMin;
-            float3 maxDelta = BoundsMax - position;
-            TryUseCandidate(minDelta.x, new float3(1f, 0f, 0f), ref normal, ref distance);
-            TryUseCandidate(maxDelta.x, new float3(-1f, 0f, 0f), ref normal, ref distance);
-            TryUseCandidate(minDelta.y, new float3(0f, 1f, 0f), ref normal, ref distance);
-            TryUseCandidate(maxDelta.y, new float3(0f, -1f, 0f), ref normal, ref distance);
-            TryUseCandidate(minDelta.z, new float3(0f, 0f, 1f), ref normal, ref distance);
-            TryUseCandidate(maxDelta.z, new float3(0f, 0f, -1f), ref normal, ref distance);
+            float repelDistance = math.max(0.001f, RepulsionDistance);
+            if (clearance > repelDistance)
+                return false;
 
-            float seamDistance = ResolveSeamDistance(position, out float seamSign);
-            if (seamDistance < distance)
+            float step = math.max(MinimumCellSize, math.cmin(CellSize) * 0.75f);
+            float center = clearance;
+            float3 gradient = new float3(
+                SampleClearanceOr(position + new float3(step, 0f, 0f), center) - SampleClearanceOr(position - new float3(step, 0f, 0f), center),
+                SampleClearanceOr(position + new float3(0f, step, 0f), center) - SampleClearanceOr(position - new float3(0f, step, 0f), center),
+                SampleClearanceOr(position + new float3(0f, 0f, step), center) - SampleClearanceOr(position - new float3(0f, 0f, step), center));
+
+            normal = SafeNormalize(gradient, new float3(0f, 1f, 0f));
+            distance = math.max(0.04f, math.max(0f, clearance));
+            return IsFinite(normal);
+        }
+
+        private bool TrySampleClearance(float3 position, out float clearance)
+        {
+            clearance = -math.max(0.001f, SdfRange);
+            if (!IsValid || !IsFinite(position))
+                return false;
+
+            float3 sample = (position - VolumeOrigin) * math.rcp(math.max(CellSize, new float3(MinimumCellSize)));
+            float3 maxSample = new float3(Dimensions.x - 1, Dimensions.y - 1, Dimensions.z - 1);
+            if (math.any(sample < float3.zero) || math.any(sample > maxSample))
             {
-                normal = SafeNormalize(SeamNormal * seamSign, new float3(1f, 0f, 0f));
-                distance = seamDistance;
+                clearance = -math.max(0.001f, SdfRange);
+                return true;
             }
 
-            return distance <= RepulsionDistance && IsFinite(normal);
+            sample = math.clamp(sample, float3.zero, math.max(float3.zero, maxSample - new float3(0.001f)));
+            int3 p0 = new int3((int)math.floor(sample.x), (int)math.floor(sample.y), (int)math.floor(sample.z));
+            int3 p1 = new int3(
+                math.min(p0.x + 1, Dimensions.x - 1),
+                math.min(p0.y + 1, Dimensions.y - 1),
+                math.min(p0.z + 1, Dimensions.z - 1));
+            float3 t = sample - new float3(p0.x, p0.y, p0.z);
+
+            float c000 = DecodeSdf(SdfIndex(p0.x, p0.y, p0.z), SdfRange);
+            float c100 = DecodeSdf(SdfIndex(p1.x, p0.y, p0.z), SdfRange);
+            float c010 = DecodeSdf(SdfIndex(p0.x, p1.y, p0.z), SdfRange);
+            float c110 = DecodeSdf(SdfIndex(p1.x, p1.y, p0.z), SdfRange);
+            float c001 = DecodeSdf(SdfIndex(p0.x, p0.y, p1.z), SdfRange);
+            float c101 = DecodeSdf(SdfIndex(p1.x, p0.y, p1.z), SdfRange);
+            float c011 = DecodeSdf(SdfIndex(p0.x, p1.y, p1.z), SdfRange);
+            float c111 = DecodeSdf(SdfIndex(p1.x, p1.y, p1.z), SdfRange);
+
+            float cx00 = math.lerp(c000, c100, t.x);
+            float cx10 = math.lerp(c010, c110, t.x);
+            float cx01 = math.lerp(c001, c101, t.x);
+            float cx11 = math.lerp(c011, c111, t.x);
+            float cy0 = math.lerp(cx00, cx10, t.y);
+            float cy1 = math.lerp(cx01, cx11, t.y);
+            clearance = math.lerp(cy0, cy1, t.z);
+            return math.isfinite(clearance);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float ResolveSeamDistance(float3 position, out float seamSign)
+        private float SampleClearanceOr(float3 position, float fallback)
         {
-            float spacing = math.max(1f, SeamSpacing);
-            float coord = math.dot(position, SafeNormalize(SeamNormal, new float3(1f, 0f, 1f))) * math.rcp(spacing);
-            float fraction = math.frac(coord);
-            float centered = fraction - 0.5f;
-            seamSign = centered >= 0f ? 1f : -1f;
-            return math.abs(centered) * spacing;
+            return TrySampleClearance(position, out float clearance) ? clearance : fallback;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void TryUseCandidate(float candidateDistance, float3 candidateNormal, ref float3 normal, ref float distance)
+        private float DecodeSdf(int index, float sdfRange)
         {
-            if (candidateDistance >= distance)
-                return;
+            if ((uint)index >= (uint)EncodedSdf.Length)
+                return -math.max(0.001f, sdfRange);
 
-            distance = candidateDistance;
-            normal = candidateNormal;
+            return ((EncodedSdf[index] * InvEncodedByteMax) * 2f - 1f) * sdfRange;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int SdfIndex(int x, int y, int z)
+        {
+            return (z * Dimensions.y + y) * Dimensions.x + x;
+        }
+
+        private static bool TryResolveExpectedVoxelCount(int3 dimensions, out int expectedLength)
+        {
+            expectedLength = 0;
+            if (!math.all(dimensions > 1))
+                return false;
+
+            long expectedLong = (long)dimensions.x * dimensions.y * dimensions.z;
+            if (expectedLong <= 0L || expectedLong > int.MaxValue)
+                return false;
+
+            expectedLength = (int)expectedLong;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1196,109 +1212,6 @@ namespace Hecton8.Construction
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
-        }
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    internal struct MockDroneSDFHeader
-    {
-        [FieldOffset(0)] public double3 OriginAUP;
-        [FieldOffset(24)] public int3 Dimensions;
-        [FieldOffset(36)] public float VoxelSizeMeters;
-        [FieldOffset(40)] public float MainTunnelRadiusMeters;
-        [FieldOffset(44)] public float CrossShaftRadiusMeters;
-        [FieldOffset(48)] public uint GridVersion;
-        [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] private byte _pad0;
-        [FieldOffset(57)] private byte _pad1;
-        [FieldOffset(58)] private byte _pad2;
-        [FieldOffset(59)] private byte _pad3;
-        [FieldOffset(60)] private byte _pad4;
-        [FieldOffset(61)] private byte _pad5;
-        [FieldOffset(62)] private byte _pad6;
-        [FieldOffset(63)] private byte _pad7;
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct GenerateMockDroneSDFJob : IJobParallelFor
-    {
-        [NoAlias] public NativeArray<float> SdfDistances;
-        // SAFETY JUSTIFICATION 1/3: header writes are idempotent; every worker writes the same sanitized
-        // `MockDroneSDFHeader` value into row zero for isolated CI/editor fallback data.
-        // SAFETY JUSTIFICATION 2/3: the header lane is a single-row metadata buffer and does not alias the SDF
-        // distance payload lane; SDF distance writes remain one index per worker.
-        // SAFETY JUSTIFICATION 3/3: this job is a mock/fallback bootstrap generator, not the gameplay solver;
-        // the disabled restriction avoids a one-row metadata setup job and keeps initialization batched.
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MockDroneSDFHeader> Header;
-        public double3 OriginAUP;
-        public int3 Dimensions;
-        public float VoxelSizeMeters;
-        public float MainTunnelRadiusMeters;
-        public float CrossShaftRadiusMeters;
-        public uint GridVersion;
-
-        public void Execute(int index)
-        {
-            int3 dims = new int3(math.max(1, Dimensions.x), math.max(1, Dimensions.y), math.max(1, Dimensions.z));
-            int total = SafeVolume(dims);
-            if (!SdfDistances.IsCreated || (uint)index >= (uint)SdfDistances.Length || index >= total)
-                return;
-
-            float voxelSize = math.max(0.125f, FiniteOrFallback(VoxelSizeMeters, 2f));
-            int3 coord = IndexToCoord(index, dims);
-            float3 p = (new float3(coord.x, coord.y, coord.z) + 0.5f) * voxelSize;
-            float3 extents = new float3(dims.x, dims.y, dims.z) * voxelSize;
-            float t = dims.x > 1 ? (coord.x + 0.5f) * math.rcp((float)dims.x) : 0f;
-
-            float mainRadius = math.max(voxelSize, FiniteOrFallback(MainTunnelRadiusMeters, 6f));
-            float shaftRadius = math.max(voxelSize, FiniteOrFallback(CrossShaftRadiusMeters, mainRadius * 0.7f));
-            float centerY = extents.y * math.lerp(0.3f, 0.7f, TriangleWave((t * 3.0f) + 0.13f));
-            float centerZ = extents.z * math.lerp(0.35f, 0.65f, TriangleWave((t * 5.0f) + 0.37f));
-
-            float tunnelClearance = mainRadius - math.length(new float2(p.y - centerY, p.z - centerZ));
-            float shaftClearance = shaftRadius - math.length(new float2(p.x - (extents.x * 0.5f), p.z - (extents.z * 0.5f)));
-            float chamberClearance = (1.15f - math.length((p - (extents * 0.5f)) * math.rcp(math.max(voxelSize, mainRadius * 1.35f)))) * mainRadius;
-            float boundaryClearance = math.min(
-                math.min(math.min(p.x, extents.x - p.x), math.min(p.y, extents.y - p.y)),
-                math.min(p.z, extents.z - p.z));
-            SdfDistances[index] = math.min(math.max(tunnelClearance, math.max(shaftClearance, chamberClearance)), boundaryClearance);
-
-            if (index == 0 && Header.IsCreated && Header.Length > 0)
-            {
-                Header[0] = new MockDroneSDFHeader
-                {
-                    OriginAUP = OriginAUP,
-                    Dimensions = dims,
-                    VoxelSizeMeters = voxelSize,
-                    MainTunnelRadiusMeters = mainRadius,
-                    CrossShaftRadiusMeters = shaftRadius,
-                    GridVersion = GridVersion == 0u ? 1u : GridVersion,
-                    Flags = 1u
-                };
-            }
-        }
-
-        private static int3 IndexToCoord(int index, int3 dims)
-        {
-            int slice = dims.x * dims.y;
-            int z = index / slice;
-            int remainder = index - (z * slice);
-            int y = remainder / dims.x;
-            int x = remainder - (y * dims.x);
-            return new int3(x, y, z);
-        }
-
-        private static int SafeVolume(int3 dims)
-        {
-            long volume = (long)math.max(1, dims.x) * math.max(1, dims.y) * math.max(1, dims.z);
-            return (int)math.min(volume, int.MaxValue);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float TriangleWave(float value)
-        {
-            float centered = math.frac(value) - 0.5f;
-            return 1f - (math.abs(centered) * 2f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1587,6 +1500,7 @@ namespace Hecton8.Construction
         private const int StartNode = StartCoord + (StartCoord * GridSide) + (StartCoord * GridSideSq);
         private const float VerticalPenalty = 1.85f;
         private const float HugeCost = 3.402823e+38f;
+        private const float LengthEpsilonSq = 0.00000001f;
 
         [ReadOnly, NoAlias] public NativeArray<HeadlessDroneState> Drones;
         [NoAlias] public NativeArray<PathWaypointDTO> Waypoints;
@@ -1599,7 +1513,7 @@ namespace Hecton8.Construction
         [NoAlias] public NativeArray<byte> RouteNodeCounts;
         [NoAlias] public NativeArray<DroneAStarTelemetry> Telemetry;
         [NoAlias] public NativeArray<DroneAStarPersistentState> SearchStates;
-        public MockSDFGrid SdfGrid;
+        public DroneSdfGrid SdfGrid;
         public int FrameIndex;
         public int MaxSolves;
         public int RouteNodeStride;
@@ -1905,13 +1819,14 @@ namespace Hecton8.Construction
         private bool HasLineClearance(float3 start, float3 end, float cell, float requiredRadius)
         {
             float3 delta = end - start;
-            float distance = math.length(delta);
-            if (!math.isfinite(distance))
+            float distanceSq = math.lengthsq(delta);
+            if (!math.isfinite(distanceSq))
                 return false;
 
-            if (distance <= 0.01f)
+            if (distanceSq <= 0.0001f)
                 return true;
 
+            float distance = FastLengthFromSq(distanceSq);
             int samples = math.clamp((int)math.ceil(distance * math.rcp(math.max(0.25f, cell * 0.5f))), 1, 16);
             for (int i = 1; i <= samples; i++)
             {
@@ -1922,6 +1837,13 @@ namespace Hecton8.Construction
             }
 
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastLengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.max(0f, lengthSq);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, LengthEpsilonSq));
         }
 
         private float3 ResolveFirstStep(int nodeBase, int pathNode, float3 origin, float3 destination, float cell)

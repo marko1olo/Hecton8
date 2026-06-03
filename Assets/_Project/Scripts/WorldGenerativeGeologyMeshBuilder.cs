@@ -75,8 +75,8 @@ namespace Hecton8.World
         private static readonly string[] RockClusterMeshNames = BuildMeshNameCache("RockCluster", 10);
         private static readonly string[] RockShelfMeshNames = BuildMeshNameCache("RockShelf", 8);
         private static readonly string[] RockArchMeshNames = BuildMeshNameCache("RockArch", 6);
-        private static readonly string[] CaveEntranceMeshNames = BuildMeshNameCache("CaveEntrance", 5);
-        private static readonly string[] LandmarkSpireMeshNames = BuildMeshNameCache("LandmarkSpire", 5);
+        private static readonly string[] CaveEntranceMeshNames = BuildMeshNameCache("CaveEntrance", 6);
+        private static readonly string[] LandmarkSpireMeshNames = BuildMeshNameCache("LandmarkSpire", 6);
 
         // ── Public entry point ────────────────────────────────────
 

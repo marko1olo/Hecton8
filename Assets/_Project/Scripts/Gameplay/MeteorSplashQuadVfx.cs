@@ -15,23 +15,8 @@ namespace Hecton8.Gameplay
         private static readonly Matrix4x4[] s_splashMatrix = new Matrix4x4[SingleQuad];
         private static readonly Matrix4x4[] s_rippleMatrix = new Matrix4x4[SingleQuad];
         private static readonly Quaternion s_flatRippleRotation = new Quaternion(0.70710678f, 0f, 0f, 0.70710678f);
-        private static readonly Vector3[] s_quadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        }; // COLD ALLOC: Vector3[4] - shared meteor splash quad vertices - owner: MeteorSplashQuadVfx
-        private static readonly Vector2[] s_quadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(1f, 1f),
-            new Vector2(0f, 1f)
-        }; // COLD ALLOC: Vector2[4] - shared meteor splash quad UVs - owner: MeteorSplashQuadVfx
-        private static readonly int[] s_quadTriangles = { 0, 1, 2, 0, 2, 3 }; // COLD ALLOC: int[6] - shared meteor splash quad indices - owner: MeteorSplashQuadVfx
-        private static Mesh s_quadMesh;
 
+        [SerializeField] private Mesh splashQuadMesh;
         [SerializeField] private Material splashMaterial;
         [SerializeField] private Material distortionRippleMaterial;
         [SerializeField, Min(0.1f)] private float lifetimeSeconds = 1.4f;
@@ -46,11 +31,11 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private Vector3 _cachedOrigin;
         private Quaternion _cachedRotation;
+        private Mesh _cachedQuadMesh;
         private int _cachedLayer;
 
         public void OnSpawn()
         {
-            EnsureQuadMesh();
             CacheRuntimeHandles();
             _ageSeconds = 0f;
             _active = true;
@@ -68,7 +53,6 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            EnsureQuadMesh();
             CacheRuntimeHandles();
         }
 
@@ -102,7 +86,7 @@ namespace Hecton8.Gameplay
 
         private void RenderSplashVisualSync(float deltaTime)
         {
-            if (!_active || s_quadMesh == null)
+            if (!_active || _cachedQuadMesh == null)
                 return;
 
             if (_cachedTransform == null)
@@ -124,7 +108,7 @@ namespace Hecton8.Gameplay
                     1f);
                 s_splashMatrix[0] = Matrix4x4.TRS(center, rotation, scale);
                 UnityEngine.Graphics.DrawMeshInstanced(
-                    s_quadMesh,
+                    _cachedQuadMesh,
                     0,
                     splashMaterial,
                     s_splashMatrix,
@@ -141,7 +125,7 @@ namespace Hecton8.Gameplay
                 Vector3 scale = new Vector3(diameter, diameter, 1f);
                 s_rippleMatrix[0] = Matrix4x4.TRS(origin, rotation * s_flatRippleRotation, scale);
                 UnityEngine.Graphics.DrawMeshInstanced(
-                    s_quadMesh,
+                    _cachedQuadMesh,
                     0,
                     distortionRippleMaterial,
                     s_rippleMatrix,
@@ -159,6 +143,7 @@ namespace Hecton8.Gameplay
             _cachedTransform = cachedTransform;
             _cachedOrigin = cachedTransform.position;
             _cachedRotation = cachedTransform.rotation;
+            _cachedQuadMesh = splashQuadMesh;
             _cachedLayer = gameObject.layer;
         }
 
@@ -196,19 +181,5 @@ namespace Hecton8.Gameplay
             _hotSwapRegistered = false;
         }
 
-        private static void EnsureQuadMesh()
-        {
-            if (s_quadMesh != null)
-                return;
-
-            s_quadMesh = new Mesh
-            {
-                name = "__HectonMeteorSplashQuad"
-            }; // COLD ALLOC: Mesh[1] - shared two-quad meteor splash draw source - owner: MeteorSplashQuadVfx
-            s_quadMesh.SetVertices(s_quadVertices);
-            s_quadMesh.SetUVs(0, s_quadUvs);
-            s_quadMesh.SetTriangles(s_quadTriangles, 0);
-            s_quadMesh.UploadMeshData(true);
-        }
     }
 }

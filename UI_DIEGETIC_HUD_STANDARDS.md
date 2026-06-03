@@ -3,6 +3,12 @@
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: suit HUD, visor overlays, cockpit panels, terminals, scanners, construction UI, map/sonar, interaction prompts, warning displays, world-space panels, and physical UI controls.
 
+## 0. Prime Diegetic UI Law
+
+Diegetic UI is a survival instrument, not decoration. It must make the player's next physical decision clearer: breathe, turn back, scan, repair, cut, dock, route, hide, confirm, or abort.
+
+The interface may be beautiful, damaged, noisy, wet, projected, cracked, or embedded in machinery, but it must remain readable, localized, operable, zero-GC in hot paths, and truthful to its owner data. A stylish overlay that hides state, invents safety, clips localized text, or works only in screenshots is rejected.
+
 ## 1. Diegetic Carrier Law
 
 Interactive gameplay UI should be bound to a physical carrier:
@@ -189,6 +195,20 @@ Reject if:
 - UI cannot be operated by keyboard/gamepad/controller route;
 - low-tier screenshot loses critical state;
 - Frame Debugger/Profiler status is not recorded after implementation.
+
+## 13A. Proof Artifacts
+
+Diegetic UI work must provide:
+
+- physical carrier description or screenshot;
+- owner-data route and stale/fault display behavior;
+- hot-path text/formatting allocation proof when runtime UI changed;
+- update cadence table for every repeated readout;
+- compact screenshot proving oxygen/pressure/route/tool/warning/interaction readability;
+- normal/high-tier screenshot when visual material richness is claimed;
+- keyboard/gamepad/controller navigation proof for interactive panels;
+- localization expansion, RTL/CJK/fallback risk note where text appears;
+- profiler/Frame Debugger proof when render textures, panel cameras, shader effects, or runtime UI paths changed.
 
 ## 14. Acceptance Sentence
 

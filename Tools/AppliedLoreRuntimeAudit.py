@@ -52,6 +52,46 @@ CSV_HEADERS = (
     "flags",
 )
 
+PUBLICATION_INDEX_HEADERS = (
+    "surface",
+    "locale",
+    "direction",
+    "packet_id",
+    "release_set_id",
+    "article_id",
+    "unlock_id",
+    "localization_status",
+    "localization_flags",
+    "poi_tags",
+    "biome_tags",
+    "page_path",
+    "title",
+)
+PUBLICATION_CLUSTER_INDEX_HEADERS = (
+    "surface",
+    "locale",
+    "direction",
+    "cluster_id",
+    "cluster_order",
+    "cluster_packet_id",
+    "release_set_id",
+    "article_id",
+    "unlock_id",
+    "spoiler_tier",
+    "primary_surface",
+    "prereq_packet_ids",
+    "next_cluster_packet_ids",
+    "localization_status",
+    "localization_flags",
+    "poi_tags",
+    "biome_tags",
+    "page_path",
+    "title",
+    "truth_payload",
+    "player_question",
+)
+NAVIGATION_CLUSTER_GRAPH_PATH = "graphs/RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv"
+
 SURFACES = (
     ("title", 1 << 0, 24, 52),
     ("scanner", 1 << 1, 28, 56),
@@ -60,6 +100,22 @@ SURFACES = (
     ("in_game_wiki", 1 << 4, 40, 68),
     ("external_site", 1 << 5, 44, 72),
     ("field_note", 1 << 6, 48, 76),
+)
+
+PLAYER_VISIBLE_TEXT_FIELDS = (
+    "title",
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note",
+)
+
+FORBIDDEN_LOCALIZATION_MARKERS = (
+    "localization pending native pass",
+    "Draf ID menunggu native review.",
+    "NL-concept wacht op native review.",
 )
 
 FNV_OFFSET = 2166136261
@@ -517,6 +573,76 @@ def validate_locale_matrix(rows: list[CsvPacketRow]) -> None:
             fail(f"Packet {packet_id} missing locales: {', '.join(missing)}")
         if extra:
             fail(f"Packet {packet_id} has unsupported locales: {', '.join(extra)}")
+
+
+def has_forbidden_localization_marker(value: str) -> bool:
+    for marker in FORBIDDEN_LOCALIZATION_MARKERS:
+        if marker in value:
+            return True
+    return False
+
+
+def validate_no_visible_localization_markers(root: Path, rows: list[CsvPacketRow]) -> tuple[int, int]:
+    hits: list[str] = []
+    csv_fields_scanned = 0
+    pages_scanned = 0
+    for row in rows:
+        for field in PLAYER_VISIBLE_TEXT_FIELDS:
+            csv_fields_scanned += 1
+            value = row.fields.get(field, "")
+            if has_forbidden_localization_marker(value):
+                hits.append(f"csv:{row.packet_id}/{row.locale}/{field}")
+                if len(hits) >= 12:
+                    break
+        if len(hits) >= 12:
+            break
+
+    publication_base = root / "Docs" / "Lore" / "AppliedContent"
+    for folder in ("in_game_wiki", "external_site"):
+        page_root = publication_base / folder
+        if not page_root.exists():
+            continue
+
+        for path in sorted(page_root.glob("*/*.md"), key=lambda item: str(item).lower()):
+            pages_scanned += 1
+            try:
+                text = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                fail(f"AppliedLore publication page is not UTF-8: {path}")
+
+            if has_forbidden_localization_marker(text):
+                hits.append(f"page:{path.relative_to(root).as_posix()}")
+                if len(hits) >= 12:
+                    break
+
+        if len(hits) >= 12:
+            break
+
+    if hits:
+        fail("Player-visible localization draft markers leaked: " + "; ".join(hits))
+
+    return csv_fields_scanned, pages_scanned
+
+
+def localization_status_from_flags(flags: int) -> str:
+    return "draft_native_pass_pending" if (flags & 1) != 0 else "source_ready"
+
+
+def direction_for_locale(locale: str) -> str:
+    return "rtl" if locale in {"ar_SA", "he_IL"} else "ltr"
+
+
+def cluster_id_from_route_moment(route_moment: str) -> str:
+    return route_moment[6:] if route_moment.startswith("first_") else route_moment
+
+
+def format_tag_tuple(tags: tuple[str, ...]) -> str:
+    return ";".join(tags)
+
+
+def require_page_line(text: str, path: Path, expected_line: str) -> None:
+    if expected_line not in text:
+        fail(f"Publication page {path} missing frontmatter line: {expected_line}")
 
 
 def parse_generated_constants(path: Path) -> dict[str, int]:
@@ -2022,12 +2148,14 @@ def validate_evidence_graph(root: Path, rows: list[CsvPacketRow]) -> int:
     return len(seen)
 
 
-def validate_publication_pages(root: Path, rows: list[CsvPacketRow]) -> tuple[int, int, int]:
+def validate_publication_pages(root: Path, rows: list[CsvPacketRow]) -> tuple[int, int, int, int]:
     base = root / "Docs" / "Lore" / "AppliedContent"
     packet_ids = sorted({row.packet_id for row in rows})
     locales = sorted({row.locale for row in rows})
+    rows_by_key = {(row.packet_id, row.locale): row for row in rows}
     counts: list[int] = []
     index_count = 0
+    frontmatter_count = 0
 
     for folder in ("in_game_wiki", "external_site"):
         count = 0
@@ -2049,10 +2177,228 @@ def validate_publication_pages(root: Path, rows: list[CsvPacketRow]) -> tuple[in
                     fail(f"Missing publication page: {path}")
                 if path.stat().st_size <= 0:
                     fail(f"Empty publication page: {path}")
+                row = rows_by_key.get((packet_id, locale))
+                if row is None:
+                    fail(f"Publication page has no CSV row: {path}")
+
+                page_text = path.read_text(encoding="utf-8")
+                require_page_line(page_text, path, f"packet_id: {packet_id}")
+                require_page_line(page_text, path, f"release_set_id: {row.release_set_id}")
+                require_page_line(page_text, path, f"article_id: {row.article_id}")
+                require_page_line(page_text, path, f"unlock_id: {row.unlock_id}")
+                require_page_line(page_text, path, f"poi_tags: {format_tag_tuple(row.poi_tags)}")
+                require_page_line(page_text, path, f"biome_tags: {format_tag_tuple(row.biome_tags)}")
+                require_page_line(page_text, path, f"locale: {locale}")
+                require_page_line(page_text, path, f"surface: {folder}")
+                require_page_line(page_text, path, "runtime_reads_markdown: false")
+                require_page_line(page_text, path, f"direction: {direction_for_locale(locale)}")
+                require_page_line(page_text, path, f"localization_status: {localization_status_from_flags(row.flags)}")
+                require_page_line(page_text, path, f"localization_flags: {row.flags}")
+                frontmatter_count += 1
                 count += 1
         counts.append(count)
 
-    return counts[0], counts[1], index_count
+    return counts[0], counts[1], index_count, frontmatter_count
+
+
+def validate_publication_surface_index(root: Path, rows: list[CsvPacketRow]) -> int:
+    path = root / "Docs" / "Lore" / "AppliedContent" / "Publication_Surface_Index.csv"
+    if not path.exists():
+        fail(f"Missing publication surface index: {path}")
+
+    source_by_key = {(row.packet_id, row.locale): row for row in rows}
+    expected_count = len(rows) * 2
+    seen: set[tuple[str, str, str]] = set()
+    count = 0
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != PUBLICATION_INDEX_HEADERS:
+            fail(f"Publication surface index header mismatch: {path}")
+
+        for line_number, item in enumerate(reader, start=2):
+            surface = require_cell(item, "surface", line_number)
+            locale = require_cell(item, "locale", line_number)
+            packet_id = require_cell(item, "packet_id", line_number)
+            if surface not in {"in_game_wiki", "external_site"}:
+                fail(f"Publication surface index line {line_number}: unsupported surface={surface!r}")
+
+            key = (surface, locale, packet_id)
+            if key in seen:
+                fail(f"Publication surface index line {line_number}: duplicate row {key}")
+            seen.add(key)
+
+            source = source_by_key.get((packet_id, locale))
+            if source is None:
+                fail(f"Publication surface index line {line_number}: no CSV row for {packet_id}/{locale}")
+
+            if require_cell(item, "direction", line_number) != direction_for_locale(locale):
+                fail(f"Publication surface index line {line_number}: direction mismatch")
+            if require_cell(item, "release_set_id", line_number) != source.release_set_id:
+                fail(f"Publication surface index line {line_number}: release_set_id mismatch")
+            if require_cell(item, "article_id", line_number) != source.article_id:
+                fail(f"Publication surface index line {line_number}: article_id mismatch")
+            if require_cell(item, "unlock_id", line_number) != source.unlock_id:
+                fail(f"Publication surface index line {line_number}: unlock_id mismatch")
+            if require_cell(item, "localization_status", line_number) != localization_status_from_flags(source.flags):
+                fail(f"Publication surface index line {line_number}: localization_status mismatch")
+            if require_cell(item, "localization_flags", line_number) != str(source.flags):
+                fail(f"Publication surface index line {line_number}: localization_flags mismatch")
+            if item.get("poi_tags", "") != format_tag_tuple(source.poi_tags):
+                fail(f"Publication surface index line {line_number}: poi_tags mismatch")
+            if item.get("biome_tags", "") != format_tag_tuple(source.biome_tags):
+                fail(f"Publication surface index line {line_number}: biome_tags mismatch")
+
+            page_path = require_cell(item, "page_path", line_number)
+            expected_page_path = f"{surface}/{locale}/{packet_id}.md"
+            if page_path != expected_page_path:
+                fail(f"Publication surface index line {line_number}: page_path mismatch")
+            if not (root / "Docs" / "Lore" / "AppliedContent" / page_path).exists():
+                fail(f"Publication surface index line {line_number}: missing page {page_path}")
+
+            require_cell(item, "title", line_number)
+            count += 1
+
+    if count != expected_count:
+        fail(f"Publication surface index row count mismatch: expected={expected_count} actual={count}")
+    return count
+
+
+def load_navigation_cluster_graph(root: Path, expected_packet_ids: set[str]) -> list[dict[str, str]]:
+    path = root / "Docs" / "Lore" / "AppliedContent" / NAVIGATION_CLUSTER_GRAPH_PATH
+    if not path.exists():
+        fail(f"Missing navigation cluster graph: {path}")
+
+    graph_rows: list[dict[str, str]] = []
+    seen_packets: set[str] = set()
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != EVIDENCE_GRAPH_HEADERS:
+            fail(f"Navigation cluster graph header mismatch: {path}")
+
+        for line_number, row in enumerate(reader, start=2):
+            packet_id = require_cell(row, "packet_id", line_number)
+            if packet_id in seen_packets:
+                fail(f"Navigation cluster graph line {line_number}: duplicate packet_id={packet_id}")
+            seen_packets.add(packet_id)
+            if packet_id not in expected_packet_ids:
+                fail(f"Navigation cluster graph line {line_number}: unknown packet_id={packet_id}")
+            if require_cell(row, "arc_id", line_number) != "site_wiki_navigation_clusters":
+                fail(f"Navigation cluster graph line {line_number}: unexpected arc_id")
+            if require_cell(row, "primary_surface", line_number) != "external_site":
+                fail(f"Navigation cluster graph line {line_number}: primary_surface must stay external_site")
+
+            spoiler_tier = parse_int(require_cell(row, "spoiler_tier", line_number), "spoiler_tier", line_number)
+            if spoiler_tier < 0 or spoiler_tier > 3:
+                fail(f"Navigation cluster graph line {line_number}: spoiler_tier out of range")
+
+            for field in (
+                "depth_band",
+                "route_moment",
+                "evidence_type",
+                "truth_claim",
+                "player_decision",
+            ):
+                require_cell(row, field, line_number)
+
+            for ref_field in ("prereq_packet_ids", "next_packet_ids"):
+                for ref in parse_packet_refs(row.get(ref_field, "")):
+                    if ref not in expected_packet_ids:
+                        fail(f"Navigation cluster graph line {line_number}: unknown {ref_field} ref {ref!r}")
+
+            graph_rows.append({key: row.get(key, "") for key in EVIDENCE_GRAPH_HEADERS})
+
+    if len(graph_rows) != 5:
+        fail(f"Navigation cluster graph row count mismatch: expected=5 actual={len(graph_rows)}")
+    return graph_rows
+
+
+def validate_publication_cluster_index(root: Path, rows: list[CsvPacketRow]) -> int:
+    path = root / "Docs" / "Lore" / "AppliedContent" / "Publication_Cluster_Index.csv"
+    if not path.exists():
+        fail(f"Missing publication cluster index: {path}")
+
+    locales = sorted({row.locale for row in rows})
+    expected_packet_ids = {row.packet_id for row in rows}
+    graph_rows = load_navigation_cluster_graph(root, expected_packet_ids)
+    graph_by_packet = {row["packet_id"]: row for row in graph_rows}
+    source_by_key = {(row.packet_id, row.locale): row for row in rows}
+    expected_count = len(graph_rows) * len(locales) * 2
+    seen: set[tuple[str, str, str]] = set()
+    count = 0
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != PUBLICATION_CLUSTER_INDEX_HEADERS:
+            fail(f"Publication cluster index header mismatch: {path}")
+
+        for line_number, item in enumerate(reader, start=2):
+            surface = require_cell(item, "surface", line_number)
+            locale = require_cell(item, "locale", line_number)
+            packet_id = require_cell(item, "cluster_packet_id", line_number)
+            if surface not in {"in_game_wiki", "external_site"}:
+                fail(f"Publication cluster index line {line_number}: unsupported surface={surface!r}")
+
+            key = (surface, locale, packet_id)
+            if key in seen:
+                fail(f"Publication cluster index line {line_number}: duplicate row {key}")
+            seen.add(key)
+
+            graph = graph_by_packet.get(packet_id)
+            if graph is None:
+                fail(f"Publication cluster index line {line_number}: packet is not a navigation cluster={packet_id}")
+
+            source = source_by_key.get((packet_id, locale))
+            if source is None:
+                fail(f"Publication cluster index line {line_number}: no CSV row for {packet_id}/{locale}")
+
+            graph_order = graph_rows.index(graph)
+            if require_cell(item, "direction", line_number) != direction_for_locale(locale):
+                fail(f"Publication cluster index line {line_number}: direction mismatch")
+            if require_cell(item, "cluster_id", line_number) != cluster_id_from_route_moment(graph["route_moment"]):
+                fail(f"Publication cluster index line {line_number}: cluster_id mismatch")
+            if require_cell(item, "cluster_order", line_number) != str(graph_order):
+                fail(f"Publication cluster index line {line_number}: cluster_order mismatch")
+            if require_cell(item, "release_set_id", line_number) != source.release_set_id:
+                fail(f"Publication cluster index line {line_number}: release_set_id mismatch")
+            if require_cell(item, "article_id", line_number) != source.article_id:
+                fail(f"Publication cluster index line {line_number}: article_id mismatch")
+            if require_cell(item, "unlock_id", line_number) != source.unlock_id:
+                fail(f"Publication cluster index line {line_number}: unlock_id mismatch")
+            if require_cell(item, "spoiler_tier", line_number) != graph["spoiler_tier"]:
+                fail(f"Publication cluster index line {line_number}: spoiler_tier mismatch")
+            if require_cell(item, "primary_surface", line_number) != graph["primary_surface"]:
+                fail(f"Publication cluster index line {line_number}: primary_surface mismatch")
+            if item.get("prereq_packet_ids", "") != graph.get("prereq_packet_ids", ""):
+                fail(f"Publication cluster index line {line_number}: prereq_packet_ids mismatch")
+            if item.get("next_cluster_packet_ids", "") != graph.get("next_packet_ids", ""):
+                fail(f"Publication cluster index line {line_number}: next_cluster_packet_ids mismatch")
+            if require_cell(item, "localization_status", line_number) != localization_status_from_flags(source.flags):
+                fail(f"Publication cluster index line {line_number}: localization_status mismatch")
+            if require_cell(item, "localization_flags", line_number) != str(source.flags):
+                fail(f"Publication cluster index line {line_number}: localization_flags mismatch")
+            if item.get("poi_tags", "") != format_tag_tuple(source.poi_tags):
+                fail(f"Publication cluster index line {line_number}: poi_tags mismatch")
+            if item.get("biome_tags", "") != format_tag_tuple(source.biome_tags):
+                fail(f"Publication cluster index line {line_number}: biome_tags mismatch")
+            if require_cell(item, "truth_payload", line_number) != graph["truth_claim"]:
+                fail(f"Publication cluster index line {line_number}: truth_payload mismatch")
+            if require_cell(item, "player_question", line_number) != graph["player_decision"]:
+                fail(f"Publication cluster index line {line_number}: player_question mismatch")
+
+            page_path = require_cell(item, "page_path", line_number)
+            expected_page_path = f"{surface}/{locale}/{packet_id}.md"
+            if page_path != expected_page_path:
+                fail(f"Publication cluster index line {line_number}: page_path mismatch")
+            if not (root / "Docs" / "Lore" / "AppliedContent" / page_path).exists():
+                fail(f"Publication cluster index line {line_number}: missing page {page_path}")
+
+            require_cell(item, "title", line_number)
+            count += 1
+
+    if count != expected_count:
+        fail(f"Publication cluster index row count mismatch: expected={expected_count} actual={count}")
+    return count
 
 
 def validate_route_cards(root: Path, rows: list[CsvPacketRow]) -> int:
@@ -2318,6 +2664,7 @@ def run(root: Path, *, source_only: bool = False) -> str:
     blob_path = root / "Assets" / "StreamingAssets" / "Hecton8" / "DataMonolith" / "static_data.h8bin"
 
     rows = load_csv(csv_path)
+    marker_csv_fields, marker_pages = validate_no_visible_localization_markers(root, rows)
     constants = parse_generated_constants(constants_path)
     validate_generated_hashes(rows, constants)
     validate_source_route(root)
@@ -2328,7 +2675,9 @@ def run(root: Path, *, source_only: bool = False) -> str:
     graph_rows = validate_evidence_graph(root, rows)
     route_cards = validate_route_cards(root, rows)
     route_source_rows = validate_route_card_source_export(root, rows)
-    wiki_pages, site_pages, index_pages = validate_publication_pages(root, rows)
+    wiki_pages, site_pages, index_pages, frontmatter_pages = validate_publication_pages(root, rows)
+    publication_surface_rows = validate_publication_surface_index(root, rows)
+    publication_cluster_rows = validate_publication_cluster_index(root, rows)
     serialized_bindings = count_serialized_authoring_bindings(root)
     scene_placement_serialized_rows = count_serialized_scene_placement_rows(root)
     scene_placement_covered_rows = count_scene_placement_covered_rows(root)
@@ -2345,6 +2694,8 @@ def run(root: Path, *, source_only: bool = False) -> str:
         return (
             "AppliedLore source audit OK: "
             f"packets={packets} locales={locales} rows={len(rows)} "
+            f"visible_marker_csv_fields={marker_csv_fields} "
+            f"visible_marker_pages={marker_pages} "
             "source_route=ok "
             f"binding_map_rows={binding_map_rows} "
             f"target_backlog_rows={target_backlog_stats.rows} "
@@ -2379,6 +2730,9 @@ def run(root: Path, *, source_only: bool = False) -> str:
             f"graph_rows={graph_rows} "
             f"route_cards={route_cards} route_source_rows={route_source_rows} "
             f"wiki_pages={wiki_pages} site_pages={site_pages} index_pages={index_pages} "
+            f"publication_frontmatter_pages={frontmatter_pages} "
+            f"publication_surface_rows={publication_surface_rows} "
+            f"publication_cluster_rows={publication_cluster_rows} "
             f"scene_bindings={serialized_bindings.scene_bindings} "
             f"prefab_bindings={serialized_bindings.prefab_bindings} "
             f"asset_bindings={serialized_bindings.asset_bindings} "
@@ -2391,6 +2745,8 @@ def run(root: Path, *, source_only: bool = False) -> str:
     return (
         "AppliedLore audit OK: "
         f"packets={packets} locales={locales} rows={len(rows)} "
+        f"visible_marker_csv_fields={marker_csv_fields} "
+        f"visible_marker_pages={marker_pages} "
         f"blob_bytes={len(blob)} localization_bytes={localization.count} "
         f"applied_records={applied.count} applied_routes={applied_routes} source_route=ok "
         f"binding_map_rows={binding_map_rows} "
@@ -2426,6 +2782,9 @@ def run(root: Path, *, source_only: bool = False) -> str:
         f"graph_rows={graph_rows} "
         f"route_cards={route_cards} route_source_rows={route_source_rows} "
         f"wiki_pages={wiki_pages} site_pages={site_pages} index_pages={index_pages} "
+        f"publication_frontmatter_pages={frontmatter_pages} "
+        f"publication_surface_rows={publication_surface_rows} "
+        f"publication_cluster_rows={publication_cluster_rows} "
         f"scene_bindings={serialized_bindings.scene_bindings} "
         f"prefab_bindings={serialized_bindings.prefab_bindings} "
         f"asset_bindings={serialized_bindings.asset_bindings} "

@@ -185,6 +185,15 @@ namespace Hecton8.UI
                         CharBufferPool.Release(in lease);
                     }
                 }
+                else
+                {
+                    BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                        unchecked((uint)entry.LocalizationKeyHash),
+                        UIOptimizationFailureCode.TextBufferOverflow,
+                        CharBufferPool.RequiredBabelTextCapacity,
+                        0,
+                        0);
+                }
             }
 
             text.SetMaterialDirty();

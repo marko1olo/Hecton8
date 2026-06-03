@@ -308,7 +308,9 @@ namespace Hecton8.Core
                 pulse.LowFrequencyMotor01,
                 pulse.HighFrequencyMotor01,
                 decayRate,
-                HapticLowMotorMask | HapticHighMotorMask);
+                HapticLowMotorMask | HapticHighMotorMask,
+                ResolveHapticPulsePriority(pulse.PriorityFlags),
+                ResolveHapticPulseBlendMode(pulse.PriorityFlags));
         }
 
         private void QueueSynthesizedHapticCommand(float deltaTime, in InputProfileDTO profile, uint schemeHash)
@@ -327,7 +329,9 @@ namespace Hecton8.Core
                 synthesizedPulse.LowFrequencyMotor01,
                 synthesizedPulse.HighFrequencyMotor01,
                 decayRate,
-                HapticLowMotorMask | HapticHighMotorMask);
+                HapticLowMotorMask | HapticHighMotorMask,
+                ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags),
+                ResolveHapticPulseBlendMode(synthesizedPulse.PriorityFlags));
         }
 
         private bool TryRunHapticSynthesisTranslator(float deltaTime, in InputProfileDTO inputProfile, out HapticPulseSignal pulse)

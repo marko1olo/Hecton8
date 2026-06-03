@@ -4020,6 +4020,13 @@ namespace Hecton8.Core
         /// <returns>True when the hash maps to an authored quest.</returns>
         bool TryGetQuestIdByHash(uint questHash, out string questId);
 
+        /// <summary>
+        /// Copies active quest hashes into a caller-owned buffer.
+        /// </summary>
+        /// <param name="destination">Caller-owned destination buffer.</param>
+        /// <returns>Number of active quest hashes copied.</returns>
+        int CopyActiveQuestHashes(uint[] destination);
+
         bool TryCopyQuestPresentation(
             uint questHash,
             char[] titleDestination,

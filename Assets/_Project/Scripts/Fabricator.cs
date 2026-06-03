@@ -71,7 +71,6 @@ namespace Hecton8.Crafting
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(ActiveFabricatorRegistryCapacity);
         private static readonly int _uiFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.UI_FABRICATOR);
         private static readonly int _interactUseFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.INTERACT_USE_FABRICATOR);
-        private static Mesh s_sharedAssemblyFallbackMesh;
         private static bool s_emergencyPowerLockActive;
         private const int InteractTextBufferCapacity = 96;
         private const string LegacyInteractText = "FABRICATOR";
@@ -152,7 +151,7 @@ namespace Hecton8.Crafting
         [SerializeField] private MeshRenderer assemblyPreviewRenderer;
         [Tooltip("Shared holographic material using Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader.")]
         [SerializeField] private Material hologramAssemblyMaterial;
-        [Tooltip("Optional authored fallback mesh for craftable items without a world prefab. If null, a tiny shared diamond mesh is generated once.")]
+        [Tooltip("Required authored fallback mesh for craftable items without a world prefab. Runtime mesh generation is forbidden.")]
         [SerializeField] private Mesh assemblyFallbackMesh;
         [SerializeField, Min(0f)] private float assemblyHeightPadding = 0.02f;
         [SerializeField] private Color assemblyBaseColor = new Color(0.05f, 0.86f, 1f, 0.72f);
@@ -570,8 +569,9 @@ namespace Hecton8.Crafting
             _activeCraftPowerMultiplier = 1f;
             _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
             _errorFeedbackBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - fabricator error emission property staging - owner: Fabricator
-            if (assemblyFallbackMesh == null)
-                EnsureSharedAssemblyFallbackMesh();
+            UnityEngine.Assertions.Assert.IsNotNull(
+                assemblyFallbackMesh,
+                "Fatal: Fabricator requires an authored assembly fallback mesh. Runtime mesh generation is forbidden.");
             FlushEndAssemblyVisual();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             CacheThermalHostModule();
@@ -3113,8 +3113,7 @@ namespace Hecton8.Crafting
             SkinnedMeshRenderer skinnedRenderer = ComponentReferenceUtility.ResolveOwnedComponent<SkinnedMeshRenderer>(prefab.transform);
             if (skinnedRenderer == null)
             {
-                sourceMesh = EnsureSharedAssemblyFallbackMesh();
-                return sourceMesh != null;
+                return false;
             }
 
             sourceMesh = skinnedRenderer.sharedMesh;
@@ -3130,63 +3129,10 @@ namespace Hecton8.Crafting
             if (assemblyFallbackMesh != null)
                 return assemblyFallbackMesh;
 
-            return s_sharedAssemblyFallbackMesh;
-        }
-
-        private static Mesh EnsureSharedAssemblyFallbackMesh()
-        {
-            if (s_sharedAssemblyFallbackMesh != null)
-                return s_sharedAssemblyFallbackMesh;
-
-            // COLD ALLOC: Mesh[1] - shared hologram fallback for craftables without world prefab - owner: Fabricator
-            Mesh mesh = new Mesh
-            {
-                name = "GEN_FabricatorAssemblyFallbackMesh",
-                hideFlags = HideFlags.HideAndDontSave
-            };
-
-            // COLD ALLOC: Vector3[6] - one-time octahedral fallback vertices - owner: Fabricator
-            Vector3[] vertices =
-            {
-                new Vector3(0f, 0.36f, 0f),
-                new Vector3(0f, -0.36f, 0f),
-                new Vector3(0f, 0f, 0.28f),
-                new Vector3(0.28f, 0f, 0f),
-                new Vector3(0f, 0f, -0.28f),
-                new Vector3(-0.28f, 0f, 0f)
-            };
-
-            // COLD ALLOC: int[24] - one-time octahedral fallback triangles - owner: Fabricator
-            int[] triangles =
-            {
-                0, 2, 3,
-                0, 3, 4,
-                0, 4, 5,
-                0, 5, 2,
-                1, 3, 2,
-                1, 4, 3,
-                1, 5, 4,
-                1, 2, 5
-            };
-
-            // COLD ALLOC: Vector3[6] - one-time octahedral fallback normals - owner: Fabricator
-            Vector3[] normals =
-            {
-                Vector3.up,
-                Vector3.down,
-                Vector3.forward,
-                Vector3.right,
-                Vector3.back,
-                Vector3.left
-            };
-
-            mesh.SetVertices(vertices);
-            mesh.SetTriangles(triangles, 0, false);
-            mesh.SetNormals(normals);
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(false);
-            s_sharedAssemblyFallbackMesh = mesh;
-            return s_sharedAssemblyFallbackMesh;
+            UnityEngine.Assertions.Assert.IsNotNull(
+                assemblyFallbackMesh,
+                "Fatal: Fabricator cannot resolve an assembly preview mesh and no authored fallback mesh is assigned.");
+            return null;
         }
 
         private void CalculateAssemblyFabricatorLocalHeightBounds(

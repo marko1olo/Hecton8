@@ -47,6 +47,8 @@ namespace Hecton8.Editor
         private const string LogManagedAudioValidated = "[HectonAudioPostprocessor:0xA11D5007] Managed audio clips validated. No importer drift detected.";
         private const string LogManagedAudioDriftFound = "[HectonAudioPostprocessor:0xA11D5008] Managed audio clips have importer drift.";
         private const string LogImportSettingsUnstable = "[HectonAudioPostprocessor:0xA11D5009] Import settings remained unstable after reimport.";
+        private static readonly List<string> s_deferredReimportPaths = new List<string>(128);
+        private static bool s_deferredReimportScheduled;
 
         [MenuItem("Hecton/Validation/Asset Pipeline/Reimport Managed SFX", priority = 183)]
         private static void ReimportManagedSfx()
@@ -199,6 +201,9 @@ namespace Hecton8.Editor
             if (importer == null)
                 return;
 
+            if (IsAudioImportDictatorOwnedAsset(assetPath))
+                return;
+
             if (IsManagedAmbientAsset(assetPath))
             {
                 ApplyAmbientImporterPolicy(importer);
@@ -216,6 +221,9 @@ namespace Hecton8.Editor
 
             AudioImporter importer = assetImporter as AudioImporter;
             if (importer == null)
+                return;
+
+            if (IsAudioImportDictatorOwnedAsset(assetPath))
                 return;
 
             bool isManagedAmbient = IsManagedAmbientAsset(assetPath);
@@ -243,7 +251,62 @@ namespace Hecton8.Editor
             }
 
             SessionState.SetBool(guardKey, true);
-            importer.SaveAndReimport();
+            QueueDeferredReimport(assetPath);
+        }
+
+        private static void QueueDeferredReimport(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            if (!s_deferredReimportPaths.Contains(path))
+                s_deferredReimportPaths.Add(path);
+
+            if (s_deferredReimportScheduled)
+                return;
+
+            s_deferredReimportScheduled = true;
+            EditorApplication.delayCall += FlushDeferredReimports;
+        }
+
+        private static void FlushDeferredReimports()
+        {
+            s_deferredReimportScheduled = false;
+            if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+            {
+                QueueDeferredReimportTick();
+                return;
+            }
+
+            int count = s_deferredReimportPaths.Count;
+            for (int i = 0; i < count; i++)
+            {
+                string path = s_deferredReimportPaths[i];
+                string guardKey = ReimportGuardPrefix + path;
+                AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+                if (importer == null)
+                {
+                    SessionState.SetBool(guardKey, false);
+                    continue;
+                }
+
+                importer.SaveAndReimport();
+            }
+
+            if (count > 0)
+                s_deferredReimportPaths.RemoveRange(0, count);
+
+            if (s_deferredReimportPaths.Count > 0)
+                QueueDeferredReimportTick();
+        }
+
+        private static void QueueDeferredReimportTick()
+        {
+            if (s_deferredReimportScheduled)
+                return;
+
+            s_deferredReimportScheduled = true;
+            EditorApplication.delayCall += FlushDeferredReimports;
         }
 
         internal static bool ApplyImporterPolicy(AudioImporter importer, float clipLengthSeconds)
@@ -390,6 +453,15 @@ namespace Hecton8.Editor
                 return false;
 
             return PathStartsWithAnyRoot(normalizedPath, ProjectSfxRoots);
+        }
+
+        private static bool IsAudioImportDictatorOwnedAsset(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            string normalizedPath = path.Replace('\\', '/');
+            return IsPathUnderRoot(normalizedPath, ProjectAudioRoot);
         }
 
         private static bool IsManagedAmbientAsset(string path)

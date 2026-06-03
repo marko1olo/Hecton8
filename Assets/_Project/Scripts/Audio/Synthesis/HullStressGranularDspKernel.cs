@@ -140,6 +140,8 @@ namespace Hecton8.Audio.Synthesis
         public const uint TelemetryFlagOutputCapacityInvalid = 1u << 4;
 
         private const float TwoPi = 6.28318530718f;
+        private const float InverseByteMax = 0.0039215686f;
+        private const float Inverse1023 = 0.0009775171f;
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
 
@@ -215,6 +217,26 @@ namespace Hecton8.Audio.Synthesis
         internal static float SoftClip(float value)
         {
             return value * math.rcp(1f + math.abs(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float FastLengthFromSq(float lengthSq)
+        {
+            float sanitized = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float estimate = sanitized * math.rsqrt(math.max(sanitized, 0.000001f));
+            return math.select(0f, estimate, sanitized > 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float DecodeByte01(uint value)
+        {
+            return (value & 255u) * InverseByteMax;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float DecodeTenBit01(uint value)
+        {
+            return (value & 1023u) * Inverse1023;
         }
     }
 
@@ -422,7 +444,7 @@ namespace Hecton8.Audio.Synthesis
                 flags |= HullStressGranularDspMath.TelemetryFlagOutputClamped;
 
             float rms = frameCount > 0
-                ? math.sqrt(math.max(0f, sumSq) * math.rcp(frameCount * outputStride))
+                ? HullStressGranularDspMath.FastLengthFromSq(math.max(0f, sumSq) * math.rcp(frameCount * outputStride))
                 : 0f;
             RecordTelemetry(
                 telemetryRing,
@@ -534,7 +556,7 @@ namespace Hecton8.Audio.Synthesis
             {
                 uint hash = HullStressGranularDspMath.MixHash(BaseHash == 0u ? 0x42535744u : BaseHash, (uint)i);
                 float angle = (i * 2.3999631f) + (Frame * 0.017f);
-                float radius = math.lerp(1.5f, 42f, ((hash >> 8) & 255u) * (1f / 255f));
+                float radius = math.lerp(1.5f, 42f, HullStressGranularDspMath.DecodeByte01(hash >> 8));
                 Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
                 float vertical = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle * 0.37f) * 2.5f;
                 double3 offset = math.double3(
@@ -542,8 +564,8 @@ namespace Hecton8.Audio.Synthesis
                     vertical,
                     sin * radius);
                 double3 aup = CenterAUP + offset;
-                float stress = math.saturate(0.18f + ((hash & 1023u) * (1f / 1023f)) * 0.82f);
-                float panic = math.saturate(((hash >> 10) & 1023u) * (1f / 1023f));
+                float stress = math.saturate(0.18f + HullStressGranularDspMath.DecodeTenBit01(hash) * 0.82f);
+                float panic = math.saturate(HullStressGranularDspMath.DecodeTenBit01(hash >> 10));
                 BaseStructuralWarningSignal signal = default;
                 signal.EpicenterAup = ToAcousticAup(aup);
                 signal.BaseHash = hash;

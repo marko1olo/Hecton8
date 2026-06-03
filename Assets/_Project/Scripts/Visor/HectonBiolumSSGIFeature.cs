@@ -565,10 +565,6 @@ namespace Hecton8.Visor
 #endif
 
             Shader compositeShader = settings != null ? settings.compositeShader : null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (compositeShader == null)
-                compositeShader = Shader.Find("Hidden/Hecton8/BiolumSSGIComposite");
-#endif
 
             if (_pass == null)
                 _pass = new BiolumSsgiPass();

@@ -1,30 +1,23 @@
-﻿Assets\_Project\Scripts\Core\BurstCallback.cs:83:            _events = new NativeQueue<int>(Allocator.Persistent);
-Assets\_Project\Scripts\Core\BurstCallback.cs:87:                Allocator.Persistent,
+﻿Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapStatus.cs:338:            Debug.LogError(SafeHaltMessage);
 Assets\_Project\Scripts\Core\ConnectionSplineBatchRenderer.cs:974:            array = new NativeArray<SplineDescriptor>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\Core\ConnectionSplineBatchRenderer.cs:989:            array = new NativeArray<FlexiblePipeInstanceGpuData>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\BurstCallback.cs:83:            _events = new NativeQueue<int>(Allocator.Persistent);
+Assets\_Project\Scripts\Core\BurstCallback.cs:87:                Allocator.Persistent,
 Assets\_Project\Scripts\Core\Bridge\H8PrefabRegistry.cs:471:                prefab.GetComponentsInChildren(true, s_RendererScratch);
 Assets\_Project\Scripts\Core\Data\StaticDataStore.cs:133:                Allocator.Persistent,
 Assets\_Project\Scripts\Core\Data\StaticDataStore.cs:408:                H8Memory.FreeRaw(_ownedFallbackPointer, Allocator.Persistent, SystemID.CoreDataVault);
-Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapStatus.cs:338:            Debug.LogError(SafeHaltMessage);
-Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:175:                    Allocator.Persistent,
-Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:378:            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:133:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:156:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:400:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:407:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:414:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:421:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:428:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
+Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:435:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
+Assets\_Project\Scripts\Core\Content\ContentAssetHashMap.cs:358:            Hecton8.Core.H8Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
 Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:166:                Hecton8.Core.H8Debug.Log("[H8DataBaker] Static data bake complete. Records=" + result.RecordCount.ToString(CultureInfo.InvariantCulture));
 Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:170:                Hecton8.Core.H8Debug.LogError("[H8DataBaker] " + result.Message);
 Assets\_Project\Scripts\Core\Data\H8DataBaker.cs:1339:                Hecton8.Core.H8Debug.LogError("[H8DataHotReload] " + result.Message);
-Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:436:                Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:869:                    Hecton8.Core.H8Debug.LogWarning(SlowJobCompleteWarningMessage);
-Assets\_Project\Scripts\Core\H8Debug.cs:21:            Debug.Log(message);
-Assets\_Project\Scripts\Core\H8Debug.cs:33:            Debug.Log(message, context);
-Assets\_Project\Scripts\Core\H8Debug.cs:44:            Debug.LogWarning(message);
-Assets\_Project\Scripts\Core\H8Debug.cs:56:            Debug.LogWarning(message, context);
-Assets\_Project\Scripts\Core\H8Debug.cs:67:            Debug.LogError(message);
-Assets\_Project\Scripts\Core\H8Debug.cs:79:            Debug.LogError(message, context);
-Assets\_Project\Scripts\Core\H8Debug.cs:90:            Debug.LogException(exception);
-Assets\_Project\Scripts\Core\H8Debug.cs:102:            Debug.LogException(exception, context);
-Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:749:                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
-Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:762:                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
-Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:773:                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
-Assets\_Project\Scripts\Core\DodReplayRecorder.cs:974:            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
 Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:584:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition.");
 Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:591:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata.");
 Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:598:            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle.");
@@ -54,20 +47,49 @@ Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2329:            
 Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2336:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump.");
 Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2343:            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path.");
 Assets\_Project\Scripts\Core\Content\ContentRuntimeServices.cs:2680:            Hecton8.Core.H8Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value.");
-Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:115:                payload = new NativeArray<byte>(byteCount, allocator, options);
-Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:279:            handle.Complete();
-Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:290:            handle.Complete();
-Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:314:            _buffer = new NativeArray<T>(capacity, allocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:315:            _publishedTickets = new NativeArray<long>(capacity, allocator, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:316:            _cursor = new NativeArray<MpscSignalRingCursorState>(1, allocator, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:133:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:156:                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:400:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:407:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:414:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:421:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:428:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
-Assets\_Project\Scripts\Core\Content\ContentLoreBinaryProvider.cs:435:            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
+Assets\_Project\Scripts\Core\Determinism\LockstepStateValidator.cs:1962:            Hecton8.Core.H8Debug.LogException(ex);
+Assets\_Project\Scripts\Core\UIStateStore.cs:156:            _states = new NativeArray<UIStateData>(StateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[StateCount] - headless UI simulation state - owner: UIStateStore
+Assets\_Project\Scripts\Core\UIStateStore.cs:157:            _valueSlots = new NativeArray<UIValueSlot>(ValueSlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIValueSlot>[ValueSlotCount] - headless numeric UI value bridge - owner: UIStateStore
+Assets\_Project\Scripts\Core\UIStateStore.cs:158:            _historyStates = new NativeArray<UIStateData>(UIStateHistoryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[UIStateHistoryFrames] - PDA UI rollback snapshot ring - owner: UIStateStore
+Assets\_Project\Scripts\Core\UIStateStore.cs:159:            _pdaLogEventHashes = new NativeArray<uint>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[MaxPdaLogEvents] - PDA event-sourced log history - owner: UIStateStore
+Assets\_Project\Scripts\Core\UIStateStore.cs:160:            _pdaLogEventTimestamps = new NativeArray<float>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[MaxPdaLogEvents] - PDA event-sourced log timestamps - owner: UIStateStore
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:180:                root.GetComponentsInChildren(true, s_cameraScratch);
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:273:            Hecton8.Core.H8Debug.LogWarning($"[HectonUrpTextureRequirementsGuard] {message}");
+Assets\_Project\Scripts\Core\DodReplayRecorder.cs:974:            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
+Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:749:                    _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
+Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:762:                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
+Assets\_Project\Scripts\Core\GlobalTelemetryBus.cs:773:                    _exportScratch = new NativeArray<byte>(exportScratchBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[65552] — unmanaged binary telemetry export scratch — owner: GlobalTelemetryBus
+Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:274:                    _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
+Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:882:            _pendingStorageReservationCommitResolved = new NativeQueue<StorageReservationCommitResolvedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
+Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:968:            Hecton8.Core.H8Debug.LogError("[ThreadSafeCommandQueue] Storage reservation commit listener capacity exceeded. capacity=" +
+Assets\_Project\Scripts\Core\HectonInputRuntime_HapticSynth.cs:606:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] Haptic synthesis ABI violation.");
+Assets\_Project\Scripts\Core\FrameTimeWatchdog.cs:274:            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
+Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:175:                    Allocator.Persistent,
+Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:378:            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+Assets\_Project\Scripts\Core\OceanKinematicsRuntimeService.cs:308:            Hecton8.Core.H8Debug.LogError("[OceanKinematicsRuntimeService] Provider capacity exceeded. capacity=" + ProviderCapacity);
+Assets\_Project\Scripts\Core\NativeRingBuffer.cs:34:            _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
+Assets\_Project\Scripts\Core\H8Debug.cs:21:            Debug.Log(message);
+Assets\_Project\Scripts\Core\H8Debug.cs:33:            Debug.Log(message, context);
+Assets\_Project\Scripts\Core\H8Debug.cs:44:            Debug.LogWarning(message);
+Assets\_Project\Scripts\Core\H8Debug.cs:56:            Debug.LogWarning(message, context);
+Assets\_Project\Scripts\Core\H8Debug.cs:67:            Debug.LogError(message);
+Assets\_Project\Scripts\Core\H8Debug.cs:79:            Debug.LogError(message, context);
+Assets\_Project\Scripts\Core\H8Debug.cs:90:            Debug.LogException(exception);
+Assets\_Project\Scripts\Core\H8Debug.cs:102:            Debug.LogException(exception, context);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:839:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1174:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1199:                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1414:                            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1429:                        ? Allocator.Persistent
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1437:                    Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1457:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1483:            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1544:                    Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1953:                Hecton8.Core.H8Debug.LogError(PersistentFragmentationRiskMessage);
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1969:                    return Allocator.Persistent;
+Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:2191:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\Core\JobFenceManager.cs:26:            Handles = new NativeArray<JobHandle>(Capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Core\MemoryBudgetTracker.cs:82:                Hecton8.Core.H8Debug.LogWarning("[MemoryBudgetTracker] Persistent native budget exceeded.");
 Assets\_Project\Scripts\Core\GlobalRegistry.cs:3786:                Debug.LogError("[GlobalRegistry] Cannot register null as IBabelLocalization.");
 Assets\_Project\Scripts\Core\GlobalRegistry.cs:5617:                Debug.LogWarning("[GlobalRegistry] Unregister mismatch for IBabelLocalization.");
 Assets\_Project\Scripts\Core\GlobalRegistry.cs:6961:            Debug.LogError(report);
@@ -83,66 +105,6 @@ Assets\_Project\Scripts\Core\GlobalRegistry.cs:7502:                    Debug.Lo
 Assets\_Project\Scripts\Core\GlobalRegistry.cs:7542:                _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
 Assets\_Project\Scripts\Core\GlobalRegistry.cs:7549:                _nextFrameServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
 Assets\_Project\Scripts\Core\GlobalRegistry.cs:7903:                Debug.LogException(exception);
-Assets\_Project\Scripts\Core\Content\ContentAssetHashMap.cs:358:            Hecton8.Core.H8Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
-Assets\_Project\Scripts\Core\UIStateStore.cs:156:            _states = new NativeArray<UIStateData>(StateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[StateCount] - headless UI simulation state - owner: UIStateStore
-Assets\_Project\Scripts\Core\UIStateStore.cs:157:            _valueSlots = new NativeArray<UIValueSlot>(ValueSlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIValueSlot>[ValueSlotCount] - headless numeric UI value bridge - owner: UIStateStore
-Assets\_Project\Scripts\Core\UIStateStore.cs:158:            _historyStates = new NativeArray<UIStateData>(UIStateHistoryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[UIStateHistoryFrames] - PDA UI rollback snapshot ring - owner: UIStateStore
-Assets\_Project\Scripts\Core\UIStateStore.cs:159:            _pdaLogEventHashes = new NativeArray<uint>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[MaxPdaLogEvents] - PDA event-sourced log history - owner: UIStateStore
-Assets\_Project\Scripts\Core\UIStateStore.cs:160:            _pdaLogEventTimestamps = new NativeArray<float>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[MaxPdaLogEvents] - PDA event-sourced log timestamps - owner: UIStateStore
-Assets\_Project\Scripts\Core\Determinism\LockstepStateValidator.cs:1962:            Hecton8.Core.H8Debug.LogException(ex);
-Assets\_Project\Scripts\Core\FrameTimeWatchdog.cs:274:            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
-Assets\_Project\Scripts\Core\PlayerSensoryManager.cs:353:                        _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-Assets\_Project\Scripts\Core\PlayerRuntimeContextService.cs:1063:                _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1077:                image.material = _transitionDitherMaterial;
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1169:                root.GetComponentsInChildren(false, _cameraSearchBuffer);
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1423:            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' still blocked after {waitFrames} frames. Reason: {blockedBy}. Progress: {progress:0.00}.");
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1440:            Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1449:            Hecton8.Core.H8Debug.LogWarning($"[SceneRuntimeService] Scene load '{sceneName}' rejected because '{pendingSceneName}' is already in flight.");
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1457:            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' rejected while bootstrap is incomplete.");
-Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1465:            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' failed to create an AsyncOperation.");
-Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:274:                    _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
-Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:882:            _pendingStorageReservationCommitResolved = new NativeQueue<StorageReservationCommitResolvedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
-Assets\_Project\Scripts\Core\ThreadSafeCommandQueue.cs:968:            Hecton8.Core.H8Debug.LogError("[ThreadSafeCommandQueue] Storage reservation commit listener capacity exceeded. capacity=" +
-Assets\_Project\Scripts\Core\MemoryBudgetTracker.cs:82:                Hecton8.Core.H8Debug.LogWarning("[MemoryBudgetTracker] Persistent native budget exceeded.");
-Assets\_Project\Scripts\Core\RuntimeWatchdog.cs:1140:                H8Debug.LogException(exception);
-Assets\_Project\Scripts\Core\RuntimeWatchdog.cs:1155:                H8Debug.LogException(exception);
-Assets\_Project\Scripts\Core\RuntimeWatchdog.cs:1169:                H8Debug.LogException(exception);
-Assets\_Project\Scripts\Core\RegistryBucket.cs:46:                    Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\RegistryBucket.cs:89:                    Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\RegistryBucket.cs:100:                    Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\RegistryBucket.cs:134:                Hecton8.Core.H8Debug.LogWarning(
-Assets\_Project\Scripts\Core\RegistryBucket.cs:217:                    Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\RebindingManager.cs:1002:            Hecton8.Core.H8Debug.Log(message);
-Assets\_Project\Scripts\Core\RebindingManager.cs:1008:            Hecton8.Core.H8Debug.LogWarning(message);
-Assets\_Project\Scripts\Core\Signals\GlobalSignals.RuntimeLifecycle.cs:486:                    Hecton8.Core.H8Debug.LogWarning("[SIGNAL STORM DETECTED]");
-Assets\_Project\Scripts\Core\Signals\GlobalSignals.RuntimeLifecycle.cs:962:                Hecton8.Core.H8Debug.LogError("[GlobalSignals] signal managed-reference violation.");
-Assets\_Project\Scripts\Core\Signals\GlobalSignals.RuntimeLifecycle.cs:972:                Hecton8.Core.H8Debug.LogError("[GlobalSignals] signal size violation.");
-Assets\_Project\Scripts\Core\Signals\SignalWardenRuntime.cs:1574:                Hecton8.Core.H8Debug.LogError("[SignalThreadContentionLayoutGuard] layout violation");
-Assets\_Project\Scripts\Core\HectonInputRuntime_HapticSynth.cs:606:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] Haptic synthesis ABI violation.");
-Assets\_Project\Scripts\Core\Signals\SignalStormConcurrencyFuzzer1311.cs:71:                    Allocator.Persistent,
-Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:180:                root.GetComponentsInChildren(true, s_cameraScratch);
-Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs:273:            Hecton8.Core.H8Debug.LogWarning($"[HectonUrpTextureRequirementsGuard] {message}");
-Assets\_Project\Scripts\Core\OceanKinematicsRuntimeService.cs:308:            Hecton8.Core.H8Debug.LogError("[OceanKinematicsRuntimeService] Provider capacity exceeded. capacity=" + ProviderCapacity);
-Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:169:                        Hecton8.Core.H8Debug.LogError("[SIGNAL LANE REGISTRY OVERFLOW]");
-Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:571:                    Hecton8.Core.H8Debug.LogError("[SIGNAL CONTRACT] Rejected late reconfigure.");
-Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:607:                    Hecton8.Core.H8Debug.LogError("[SIGNAL ABI FENCE] Rejected payload stride.");
-Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:615:                Allocator.Persistent,
-Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:634:                Allocator.Persistent,
-Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:934:                    Hecton8.Core.H8Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
-Assets\_Project\Scripts\Core\NativeRingBuffer.cs:34:            _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
-Assets\_Project\Scripts\Core\JobFenceManager.cs:26:            Handles = new NativeArray<JobHandle>(Capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:839:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1174:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1199:                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1414:                            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1429:                        ? Allocator.Persistent
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1437:                    Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1457:                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1483:            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1544:                    Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1953:                Hecton8.Core.H8Debug.LogError(PersistentFragmentationRiskMessage);
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:1969:                    return Allocator.Persistent;
-Assets\_Project\Scripts\Core\NativeMemorySentinel.cs:2191:                Hecton8.Core.H8Debug.LogException(exception);
 Assets\_Project\Scripts\Core\InputDispatcher.cs:1044:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] InputState ABI violation; expected 24 bytes with natural ARM64 alignment.");
 Assets\_Project\Scripts\Core\InputDispatcher.cs:1046:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] PlayerInputState ABI violation; expected 64 bytes with natural ARM64 alignment.");
 Assets\_Project\Scripts\Core\InputDispatcher.cs:1048:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] InputStateDTO ABI violation; expected 24 bytes.");
@@ -151,6 +113,20 @@ Assets\_Project\Scripts\Core\InputDispatcher.cs:1052:                Hecton8.Cor
 Assets\_Project\Scripts\Core\InputDispatcher.cs:1054:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] BufferedActionEntry ABI violation; expected 16 bytes with natural ARM64 alignment.");
 Assets\_Project\Scripts\Core\InputDispatcher.cs:1056:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] ReplayFrameDTO ABI violation; expected 80 bytes.");
 Assets\_Project\Scripts\Core\InputDispatcher.cs:1058:                Hecton8.Core.H8Debug.LogError("[InputDispatcher] MemoryStateTelemetryEntry ABI violation; expected 64 bytes.");
+Assets\_Project\Scripts\Core\PlayerRuntimeContextService.cs:1099:                _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
+Assets\_Project\Scripts\Core\RuntimeWatchdog.cs:1140:                H8Debug.LogException(exception);
+Assets\_Project\Scripts\Core\RuntimeWatchdog.cs:1155:                H8Debug.LogException(exception);
+Assets\_Project\Scripts\Core\RuntimeWatchdog.cs:1169:                H8Debug.LogException(exception);
+Assets\_Project\Scripts\Core\RebindingManager.cs:1002:            Hecton8.Core.H8Debug.Log(message);
+Assets\_Project\Scripts\Core\RebindingManager.cs:1008:            Hecton8.Core.H8Debug.LogWarning(message);
+Assets\_Project\Scripts\Core\Signals\SignalWardenRuntime.cs:1574:                Hecton8.Core.H8Debug.LogError("[SignalThreadContentionLayoutGuard] layout violation");
+Assets\_Project\Scripts\Core\Signals\SignalStormConcurrencyFuzzer1311.cs:71:                    Allocator.Persistent,
+Assets\_Project\Scripts\Core\PlayerSensoryManager.cs:353:                        _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
+Assets\_Project\Scripts\Core\RegistryBucket.cs:46:                    Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\RegistryBucket.cs:89:                    Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\RegistryBucket.cs:100:                    Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\RegistryBucket.cs:134:                Hecton8.Core.H8Debug.LogWarning(
+Assets\_Project\Scripts\Core\RegistryBucket.cs:217:                    Hecton8.Core.H8Debug.LogError(
 Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:714:                _buffers = new UnsafeHashMap<int, IntPtr>(safeCapacity, Allocator.Persistent);
 Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:715:                _metadata = new UnsafeHashMap<int, VaultBufferMeta>(safeCapacity, Allocator.Persistent);
 Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:716:                _metadataGenerationByBufferId = new UnsafeHashMap<int, uint>(safeCapacity, Allocator.Persistent);
@@ -180,33 +156,57 @@ Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:3783:                H8Me
 Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:3862:                H8Memory.FreeRaw(_arenaBase, Allocator.Persistent, SystemID.CoreDataVault);
 Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:3998:                        H8Memory.FreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
 Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs:5292:                    Allocator.Persistent,
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2606:            _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2608:            _allocationRecordIndices = new NativeParallelHashMap<long, int>(safeCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2610:            _ownerPointers = new NativeParallelHashMap<ushort, NativeList<IntPtr>>(OwnerRegistryCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2612:            _ownerJobHandles = new NativeParallelHashMap<ushort, JobHandle>(OwnerRegistryCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2614:            _ownerPointerKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2616:            _ownerJobKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2618:            _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2620:            _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2622:            _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2624:            _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2626:            _eventBlackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2785:            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3733:            ownerHandle.Complete();
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3916:                pointers = new NativeList<IntPtr>(DefaultOwnerPointerCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:4388:                new NativeArray<H8AllocationRecord>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:4390:                new NativeParallelHashMap<long, SystemID>(newCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Core\Memory\H8Memory.cs:4392:                new NativeParallelHashMap<long, int>(newCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\Bootstrap\BootstrapRouteEnforcer.cs:39:            Hecton8.Core.H8Debug.LogError(
-Assets\_Project\Scripts\Bootstrap\SceneGuard.cs:49:                Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:169:                        Hecton8.Core.H8Debug.LogError("[SIGNAL LANE REGISTRY OVERFLOW]");
+Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:571:                    Hecton8.Core.H8Debug.LogError("[SIGNAL CONTRACT] Rejected late reconfigure.");
+Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:607:                    Hecton8.Core.H8Debug.LogError("[SIGNAL ABI FENCE] Rejected payload stride.");
+Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:615:                Allocator.Persistent,
+Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:634:                Allocator.Persistent,
+Assets\_Project\Scripts\Core\Signals\SignalBusRuntime.cs:934:                    Hecton8.Core.H8Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2610:            _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2612:            _allocationRecordIndices = new NativeParallelHashMap<long, int>(safeCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2614:            _ownerPointers = new NativeParallelHashMap<ushort, NativeList<IntPtr>>(OwnerRegistryCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2616:            _ownerJobHandles = new NativeParallelHashMap<ushort, JobHandle>(OwnerRegistryCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2618:            _ownerPointerKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2620:            _ownerJobKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2622:            _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2624:            _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2626:            _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2628:            _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2630:            _eventBlackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:2789:            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3737:            ownerHandle.Complete();
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3920:                pointers = new NativeList<IntPtr>(DefaultOwnerPointerCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:4392:                new NativeArray<H8AllocationRecord>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:4394:                new NativeParallelHashMap<long, SystemID>(newCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs:4396:                new NativeParallelHashMap<long, int>(newCapacity, Allocator.Persistent);
+Assets\_Project\Scripts\Core\Signals\GlobalSignals.RuntimeLifecycle.cs:486:                    Hecton8.Core.H8Debug.LogWarning("[SIGNAL STORM DETECTED]");
+Assets\_Project\Scripts\Core\Signals\GlobalSignals.RuntimeLifecycle.cs:962:                Hecton8.Core.H8Debug.LogError("[GlobalSignals] signal managed-reference violation.");
+Assets\_Project\Scripts\Core\Signals\GlobalSignals.RuntimeLifecycle.cs:972:                Hecton8.Core.H8Debug.LogError("[GlobalSignals] signal size violation.");
+Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:115:                payload = new NativeArray<byte>(byteCount, allocator, options);
+Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:279:            handle.Complete();
+Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:290:            handle.Complete();
+Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:314:            _buffer = new NativeArray<T>(capacity, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:315:            _publishedTickets = new NativeArray<long>(capacity, allocator, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\Contracts\CoreLowLevelUtilities.cs:316:            _cursor = new NativeArray<MpscSignalRingCursorState>(1, allocator, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1077:                image.material = _transitionDitherMaterial;
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1169:                root.GetComponentsInChildren(false, _cameraSearchBuffer);
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1423:            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' still blocked after {waitFrames} frames. Reason: {blockedBy}. Progress: {progress:0.00}.");
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1440:            Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1449:            Hecton8.Core.H8Debug.LogWarning($"[SceneRuntimeService] Scene load '{sceneName}' rejected because '{pendingSceneName}' is already in flight.");
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1457:            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' rejected while bootstrap is incomplete.");
+Assets\_Project\Scripts\Core\SceneRuntimeService.cs:1465:            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' failed to create an AsyncOperation.");
+Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:436:                Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\Core\FoveatedSimulationManager.cs:869:                    Hecton8.Core.H8Debug.LogWarning(SlowJobCompleteWarningMessage);
 Assets\_Project\Scripts\Bootstrap\SceneInstantiationGate.cs:106:                    Hecton8.Core.H8Debug.LogError(
 Assets\_Project\Scripts\Bootstrap\BootstrapRegistryCycleValidator.cs:307:            Hecton8.Core.H8Debug.LogError("[BootstrapRegistryCycleValidator] Circular registry dependency detected. Edge details emitted to GlobalTelemetryBus.");
+Assets\_Project\Scripts\Bootstrap\SceneGuard.cs:49:                Hecton8.Core.H8Debug.LogError(
 Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:106:            Hecton8.Core.H8Debug.Log(
 Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:114:                Hecton8.Core.H8Debug.LogWarning(
 Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:121:                Hecton8.Core.H8Debug.LogWarning(
 Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:201:                Hecton8.Core.H8Debug.LogWarning($"[LoreSystemsRoot] Missing systems: {BuildMissingSystemsSummary()}");
 Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:251:                if (!existingChild.TryGetComponent<T>(out _))
 Assets\_Project\Scripts\Bootstrap\HectonLoreSystemsRoot.cs:285:                Hecton8.Core.H8Debug.LogWarning(
+Assets\_Project\Scripts\Bootstrap\BootstrapRouteEnforcer.cs:39:            Hecton8.Core.H8Debug.LogError(
 Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:681:            Debug.LogError(
 Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1490:        private void Update()
 Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1572:                    Debug.LogError("[GameBootstrapper] SERVICE_HEARTBEAT_FREEZE");
@@ -255,13 +255,13 @@ Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:7882:                     
 Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:7910:            Debug.LogException(exception);
 Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:8273:                Debug.LogError(message);
 Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:8289:                Debug.LogException(exception);
-Assets\_Project\Scripts\Optimization\VisorRTManager.cs:213:            Hecton8.Core.H8Debug.LogWarning("[VisorRTManager] BUDGET EXCEEDED", this);
-Assets\_Project\Scripts\Optimization\PreInitAssetIdMap.cs:66:            _guidRecords = new NativeArray<AssetGuidIdRecord>(
-Assets\_Project\Scripts\Optimization\PreInitAssetIdMap.cs:68:                Allocator.Persistent,
-Assets\_Project\Scripts\Optimization\UIRTManager.cs:213:            Hecton8.Core.H8Debug.LogWarning("[UIRTManager] BUDGET EXCEEDED", this);
 Assets\_Project\Scripts\Optimization\PostFXRTManager.cs:220:            Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
 Assets\_Project\Scripts\Optimization\RenderTexturePool.cs:205:                Hecton8.Core.H8Debug.LogWarning("[RTPool] Return called with null RenderTexture");
+Assets\_Project\Scripts\Optimization\VisorRTManager.cs:213:            Hecton8.Core.H8Debug.LogWarning("[VisorRTManager] BUDGET EXCEEDED", this);
+Assets\_Project\Scripts\Optimization\UIRTManager.cs:213:            Hecton8.Core.H8Debug.LogWarning("[UIRTManager] BUDGET EXCEEDED", this);
 Assets\_Project\Scripts\Optimization\CameraRTManager.cs:222:            Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
+Assets\_Project\Scripts\Optimization\PreInitAssetIdMap.cs:66:            _guidRecords = new NativeArray<AssetGuidIdRecord>(
+Assets\_Project\Scripts\Optimization\PreInitAssetIdMap.cs:68:                Allocator.Persistent,
 Assets\_Project\Scripts\Optimization\AssetLifecycleGovernor.cs:243:                Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] AssetHandleMapEntryDTO must remain 64 bytes.", this);
 Assets\_Project\Scripts\Optimization\AssetLifecycleGovernor.cs:245:                Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] AssetTrackerDTO must remain 64 bytes.", this);
 Assets\_Project\Scripts\Optimization\AssetLifecycleGovernor.cs:891:                Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] Double release detected.", this);

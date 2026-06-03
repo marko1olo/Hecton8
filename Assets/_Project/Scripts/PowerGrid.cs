@@ -210,6 +210,13 @@ namespace Hecton8.Power
         private VaultGenerationHandle<int> _thermalEdgeOffsetsHandle;
         private VaultGenerationHandle<int> _thermalEdgeDestinationsHandle;
         private VaultGenerationHandle<float> _thermalEdgeConductanceHandle;
+        private readonly List<int> _thermalEdgeOffsetsScratch;
+        private readonly List<int> _thermalEdgeDestinationsScratch;
+        private readonly List<float> _thermalEdgeConductanceScratch;
+        private readonly List<float> _thermalTemperatureFrontScratch;
+        private readonly List<float> _thermalTemperatureBackScratch;
+        private readonly List<float> _thermalHeatInjectionScratch;
+        private readonly List<float> _thermalHullSinkConductanceScratch;
         private JobHandle _thermalDissipationHandle;
         private bool _thermalDissipationPending;
         private bool _thermalDissipationResultInBackBuffer;
@@ -444,6 +451,14 @@ namespace Hecton8.Power
             _overloadThermalDamageByNode = new Dictionary<PowerNode, float>(safeCapacity);
             _overloadServiceCache = new Dictionary<BaseModule, CachedOverloadServices>(safeCapacity);
             _logisticsGraph = new LogisticsNetworkGraph(safeCapacity, safeCapacity * 4, safeCapacity * 2, dataVault);
+            int edgeCapacity = math.max(1, safeCapacity * 4);
+            _thermalEdgeOffsetsScratch = new List<int>(safeCapacity + 1);
+            _thermalEdgeDestinationsScratch = new List<int>(edgeCapacity);
+            _thermalEdgeConductanceScratch = new List<float>(edgeCapacity);
+            _thermalTemperatureFrontScratch = new List<float>(safeCapacity);
+            _thermalTemperatureBackScratch = new List<float>(safeCapacity);
+            _thermalHeatInjectionScratch = new List<float>(safeCapacity);
+            _thermalHullSinkConductanceScratch = new List<float>(safeCapacity);
         }
 
         public void InjectDataVault(IDataVault dataVault)
@@ -1600,184 +1615,88 @@ namespace Hecton8.Power
             if (!EnsureThermalDissipationCapacity(nodeCount, directedEdgeCount))
                 return 0;
 
-            if (!TryAcquireWriteBuffer(in _thermalEdgeOffsetsHandle, out NativeArray<int> thermalEdgeOffsets))
-                return 0;
+            List<int> edgeOffsets = _thermalEdgeOffsetsScratch;
+            List<int> edgeDestinations = _thermalEdgeDestinationsScratch;
+            List<float> edgeConductance = _thermalEdgeConductanceScratch;
+            List<float> temperatureFront = _thermalTemperatureFrontScratch;
+            List<float> temperatureBack = _thermalTemperatureBackScratch;
+            List<float> heatInjection = _thermalHeatInjectionScratch;
+            List<float> hullSinkConductance = _thermalHullSinkConductanceScratch;
 
-            try
+            ResetScratchList(edgeOffsets, nodeCount + 1, 0);
+            ResetScratchList(edgeDestinations, directedEdgeCount, 0);
+            ResetScratchList(edgeConductance, directedEdgeCount, 0f);
+            ResetScratchList(temperatureFront, nodeCount, 0f);
+            ResetScratchList(temperatureBack, nodeCount, 0f);
+            ResetScratchList(heatInjection, nodeCount, 0f);
+            ResetScratchList(hullSinkConductance, nodeCount, 0f);
+
+            for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
+                edgeOffsets[nodeIndex] = 0;
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                if (!thermalEdgeOffsets.IsCreated || thermalEdgeOffsets.Length <= nodeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
-                    thermalEdgeOffsets[nodeIndex] = 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                PowerNode node = _topologyNodes[nodeIndex];
+                List<PowerNode> neighbors = node != null ? node.Neighbors : null;
+                int neighborCount = neighbors != null ? neighbors.Count : 0;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
                 {
-                    PowerNode node = _topologyNodes[nodeIndex];
-                    List<PowerNode> neighbors = node != null ? node.Neighbors : null;
-                    int neighborCount = neighbors != null ? neighbors.Count : 0;
-                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-                    {
-                        PowerNode neighbor = neighbors[neighborIndex];
-                        if (!IsThermalNeighborValid(node, neighbor, nodeCount))
-                            continue;
+                    PowerNode neighbor = neighbors[neighborIndex];
+                    if (!IsThermalNeighborValid(node, neighbor, nodeCount))
+                        continue;
 
-                        thermalEdgeOffsets[nodeIndex + 1] = thermalEdgeOffsets[nodeIndex + 1] + 1;
-                    }
-                }
-
-                for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
-                    thermalEdgeOffsets[nodeIndex] = thermalEdgeOffsets[nodeIndex] + thermalEdgeOffsets[nodeIndex - 1];
-            }
-            finally
-            {
-                ReleaseWriteBuffer(in _thermalEdgeOffsetsHandle);
-            }
-
-            if (!TryAcquireWriteBuffer(in _thermalTemperatureFrontHandle, out NativeArray<float> thermalTemperatureFront))
-                return 0;
-
-            try
-            {
-                if (!thermalTemperatureFront.IsCreated || thermalTemperatureFront.Length < nodeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                {
-                    PowerNode node = _topologyNodes[nodeIndex];
-                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-                    thermalTemperatureFront[nodeIndex] = binding.Atmosphere != null && binding.RoomIndex >= 0
-                        ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
-                        : OceanThermalSinkTemperatureCelsius;
+                    edgeOffsets[nodeIndex + 1] = edgeOffsets[nodeIndex + 1] + 1;
                 }
             }
-            finally
+
+            for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
+                edgeOffsets[nodeIndex] = edgeOffsets[nodeIndex] + edgeOffsets[nodeIndex - 1];
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                ReleaseWriteBuffer(in _thermalTemperatureFrontHandle);
+                PowerNode node = _topologyNodes[nodeIndex];
+                OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                float sourceTemperature = binding.Atmosphere != null && binding.RoomIndex >= 0
+                    ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
+                    : OceanThermalSinkTemperatureCelsius;
+                temperatureFront[nodeIndex] = sourceTemperature;
+                temperatureBack[nodeIndex] = sourceTemperature;
+                heatInjection[nodeIndex] = ResolveNodeHeatInjection(node);
+                hullSinkConductance[nodeIndex] = ResolveHullSinkConductance(in binding);
             }
-
-            if (!TryAcquireWriteBuffer(in _thermalTemperatureBackHandle, out NativeArray<float> thermalTemperatureBack))
-                return 0;
-
-            try
-            {
-                if (!thermalTemperatureBack.IsCreated || thermalTemperatureBack.Length < nodeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                {
-                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-                    thermalTemperatureBack[nodeIndex] = binding.Atmosphere != null && binding.RoomIndex >= 0
-                        ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
-                        : OceanThermalSinkTemperatureCelsius;
-                }
-            }
-            finally
-            {
-                ReleaseWriteBuffer(in _thermalTemperatureBackHandle);
-            }
-
-            if (!TryAcquireWriteBuffer(in _thermalHeatInjectionHandle, out NativeArray<float> thermalHeatInjection))
-                return 0;
-
-            try
-            {
-                if (!thermalHeatInjection.IsCreated || thermalHeatInjection.Length < nodeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                    thermalHeatInjection[nodeIndex] = ResolveNodeHeatInjection(_topologyNodes[nodeIndex]);
-            }
-            finally
-            {
-                ReleaseWriteBuffer(in _thermalHeatInjectionHandle);
-            }
-
-            if (!TryAcquireWriteBuffer(in _thermalHullSinkConductanceHandle, out NativeArray<float> thermalHullSinkConductance))
-                return 0;
-
-            try
-            {
-                if (!thermalHullSinkConductance.IsCreated || thermalHullSinkConductance.Length < nodeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                {
-                    OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-                    thermalHullSinkConductance[nodeIndex] = ResolveHullSinkConductance(in binding);
-                }
-            }
-            finally
-            {
-                ReleaseWriteBuffer(in _thermalHullSinkConductanceHandle);
-            }
-
-            if (!TryAcquireWriteBuffer(in _thermalEdgeDestinationsHandle, out NativeArray<int> thermalEdgeDestinations))
-                return 0;
-
-            int writeIndex = 0;
-            try
-            {
-                if (!thermalEdgeDestinations.IsCreated || thermalEdgeDestinations.Length < directedEdgeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                {
-                    PowerNode node = _topologyNodes[nodeIndex];
-                    List<PowerNode> neighbors = node != null ? node.Neighbors : null;
-                    int neighborCount = neighbors != null ? neighbors.Count : 0;
-                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-                    {
-                        PowerNode neighbor = neighbors[neighborIndex];
-                        if (!IsThermalNeighborValid(node, neighbor, nodeCount))
-                            continue;
-
-                        thermalEdgeDestinations[writeIndex] = neighbor.GraphScratchIndex;
-                        writeIndex++;
-                    }
-                }
-            }
-            finally
-            {
-                ReleaseWriteBuffer(in _thermalEdgeDestinationsHandle);
-            }
-
-            if (writeIndex != directedEdgeCount)
-                return 0;
-
-            if (!TryAcquireWriteBuffer(in _thermalEdgeConductanceHandle, out NativeArray<float> thermalEdgeConductance))
-                return 0;
 
             int conductanceWriteIndex = 0;
-            try
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                if (!thermalEdgeConductance.IsCreated || thermalEdgeConductance.Length < directedEdgeCount)
-                    return 0;
-
-                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                PowerNode node = _topologyNodes[nodeIndex];
+                List<PowerNode> neighbors = node != null ? node.Neighbors : null;
+                int neighborCount = neighbors != null ? neighbors.Count : 0;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
                 {
-                    PowerNode node = _topologyNodes[nodeIndex];
-                    List<PowerNode> neighbors = node != null ? node.Neighbors : null;
-                    int neighborCount = neighbors != null ? neighbors.Count : 0;
-                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-                    {
-                        PowerNode neighbor = neighbors[neighborIndex];
-                        if (!IsThermalNeighborValid(node, neighbor, nodeCount))
-                            continue;
+                    PowerNode neighbor = neighbors[neighborIndex];
+                    if (!IsThermalNeighborValid(node, neighbor, nodeCount))
+                        continue;
 
-                        thermalEdgeConductance[conductanceWriteIndex] =
-                            CableThermalConductivityWattsPerCelsius /
-                            math.max(MinEdgeResistance, ResolveEdgeResistance(node, neighbor));
-                        conductanceWriteIndex++;
-                    }
+                    edgeDestinations[conductanceWriteIndex] = neighbor.GraphScratchIndex;
+                    edgeConductance[conductanceWriteIndex] =
+                        CableThermalConductivityWattsPerCelsius /
+                        math.max(MinEdgeResistance, ResolveEdgeResistance(node, neighbor));
+                    conductanceWriteIndex++;
                 }
             }
-            finally
-            {
-                ReleaseWriteBuffer(in _thermalEdgeConductanceHandle);
-            }
 
-            return conductanceWriteIndex == directedEdgeCount ? directedEdgeCount : 0;
+            if (conductanceWriteIndex != directedEdgeCount)
+                return 0;
+
+            return CopyScratchToWriteBuffer(in _thermalEdgeOffsetsHandle, edgeOffsets, nodeCount + 1) &&
+                   CopyScratchToWriteBuffer(in _thermalTemperatureFrontHandle, temperatureFront, nodeCount) &&
+                   CopyScratchToWriteBuffer(in _thermalTemperatureBackHandle, temperatureBack, nodeCount) &&
+                   CopyScratchToWriteBuffer(in _thermalHeatInjectionHandle, heatInjection, nodeCount) &&
+                   CopyScratchToWriteBuffer(in _thermalHullSinkConductanceHandle, hullSinkConductance, nodeCount) &&
+                   CopyScratchToWriteBuffer(in _thermalEdgeDestinationsHandle, edgeDestinations, directedEdgeCount) &&
+                   CopyScratchToWriteBuffer(in _thermalEdgeConductanceHandle, edgeConductance, directedEdgeCount)
+                ? directedEdgeCount
+                : 0;
         }
 
         private int CountThermalDirectedEdges(int nodeCount)
@@ -1872,7 +1791,7 @@ namespace Hecton8.Power
         {
             int safeNodeCount = math.max(1, nodeCount);
             int safeEdgeCount = math.max(1, directedEdgeCount);
-            return
+            bool buffersReady =
                 EnsureVaultBuffer(
                     ref _thermalTemperatureFrontHandle,
                     ThermalTemperatureFrontBufferOffset,
@@ -1908,6 +1827,67 @@ namespace Hecton8.Power
                     ThermalEdgeConductanceBufferOffset,
                     safeEdgeCount,
                     NativeArrayOptions.UninitializedMemory);
+            if (!buffersReady)
+                return false;
+
+            EnsureThermalDissipationScratchCapacity(safeNodeCount, safeEdgeCount);
+            return true;
+        }
+
+        private void EnsureThermalDissipationScratchCapacity(int nodeCount, int directedEdgeCount)
+        {
+            int nodeArrayLength = math.max(1, nodeCount);
+            int offsetArrayLength = nodeArrayLength + 1;
+            int edgeArrayLength = math.max(1, directedEdgeCount);
+
+            // COLD/GROWTH MANAGED CAPACITY: PowerGrid already owns List caches; vault keeps all persistent native job buffers.
+            EnsureListCapacity(_thermalEdgeOffsetsScratch, offsetArrayLength);
+            EnsureListCapacity(_thermalTemperatureFrontScratch, nodeArrayLength);
+            EnsureListCapacity(_thermalTemperatureBackScratch, nodeArrayLength);
+            EnsureListCapacity(_thermalHeatInjectionScratch, nodeArrayLength);
+            EnsureListCapacity(_thermalHullSinkConductanceScratch, nodeArrayLength);
+            EnsureListCapacity(_thermalEdgeDestinationsScratch, edgeArrayLength);
+            EnsureListCapacity(_thermalEdgeConductanceScratch, edgeArrayLength);
+        }
+
+        private static void ResetScratchList<T>(List<T> list, int count, T value)
+        {
+            list.Clear();
+            for (int index = 0; index < count; index++)
+                list.Add(value);
+        }
+
+        private static void ClearScratchList<T>(List<T> list)
+        {
+            list.Clear();
+        }
+
+        private bool CopyScratchToWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            List<T> source,
+            int count)
+            where T : struct
+        {
+            if (source == null || source.Count < count)
+                return false;
+
+            if (!TryAcquireWriteBuffer(in handle, out NativeArray<T> destination))
+                return false;
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < count)
+                    return false;
+
+                for (int index = 0; index < count; index++)
+                    destination[index] = source[index];
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in handle);
+            }
         }
 
         private void CompleteThermalDissipationForTeardown()
@@ -1943,6 +1923,13 @@ namespace Hecton8.Power
             ReleaseVaultBuffer(ref _thermalEdgeOffsetsHandle);
             ReleaseVaultBuffer(ref _thermalEdgeDestinationsHandle);
             ReleaseVaultBuffer(ref _thermalEdgeConductanceHandle);
+            ClearScratchList(_thermalEdgeOffsetsScratch);
+            ClearScratchList(_thermalTemperatureFrontScratch);
+            ClearScratchList(_thermalTemperatureBackScratch);
+            ClearScratchList(_thermalHeatInjectionScratch);
+            ClearScratchList(_thermalHullSinkConductanceScratch);
+            ClearScratchList(_thermalEdgeDestinationsScratch);
+            ClearScratchList(_thermalEdgeConductanceScratch);
         }
 
         private void TryTriggerThermalMeltdown(
@@ -2030,6 +2017,8 @@ namespace Hecton8.Power
         {
             return sourceNode != null &&
                    destinationNode != null &&
+                   sourceNode.IsRuntimePowerConductive &&
+                   destinationNode.IsRuntimePowerConductive &&
                    !sourceNode.IsRuptured &&
                    !destinationNode.IsRuptured &&
                    !sourceNode.IsShortCircuited &&

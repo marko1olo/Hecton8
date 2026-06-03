@@ -2326,7 +2326,7 @@ namespace Hecton8.AI
         private void InitializeDehydrationResidencyState()
         {
             if (_faunaSimulationMemory.HasResidentBuffers &&
-                _faunaSimulationMemory.FreeSlots.IsCreated &&
+                _faunaSimulationMemory.HasFreeSlots &&
                 _dehydratedCreatureStates != null &&
                 _activeDehydrationSlots != null)
             {
@@ -2456,7 +2456,7 @@ namespace Hecton8.AI
 
         private int AllocateDehydrationSlot()
         {
-            if (!_faunaSimulationMemory.FreeSlots.IsCreated || !_faunaSimulationMemory.FreeSlots.TryDequeue(out int slotIndex))
+            if (!_faunaSimulationMemory.TryDequeueFreeSlot(out int slotIndex))
                 return InvalidDehydrationSlotIndex;
 
             return slotIndex;
@@ -2466,7 +2466,7 @@ namespace Hecton8.AI
         {
             if (slotIndex < 0 ||
                 !_faunaSimulationMemory.HasPoolSlot(slotIndex) ||
-                !_faunaSimulationMemory.FreeSlots.IsCreated ||
+                !_faunaSimulationMemory.HasFreeSlots ||
                 _dehydratedCreatureStates == null ||
                 slotIndex >= _dehydratedCreatureStates.Length)
             {
@@ -2476,10 +2476,12 @@ namespace Hecton8.AI
             if (!_dehydratedCreatureStates[slotIndex].isResident)
                 return;
 
+            if (!_faunaSimulationMemory.TryClearSlot(slotIndex))
+                return;
+
             RemoveActiveDehydrationSlot(slotIndex);
-            _faunaSimulationMemory.TryClearSlot(slotIndex);
             _dehydratedCreatureStates[slotIndex] = default;
-            _faunaSimulationMemory.FreeSlots.Enqueue(slotIndex);
+            _faunaSimulationMemory.EnqueueFreeSlot(slotIndex);
         }
 
         private void AddActiveDehydrationSlot(int slotIndex)
@@ -2535,6 +2537,7 @@ namespace Hecton8.AI
                 return;
 
             _residentDataOnlyLodScheduled = false;
+            _faunaSimulationMemory.ReleaseScheduledDataOnlyLodGuard();
 
             if (_dehydratedCreatureStates == null)
                 return;

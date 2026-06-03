@@ -1,10 +1,17 @@
 ---
 packet_id: P003_BARNARD_MARK
+release_set_id: RS001_FIRST_DESCENT
 article_id: player.barnard_mark
+unlock_id: unlock.first_barnard_mark
+poi_tags: poi.worker_locker;poi.shift_board
+biome_tags: biome.drowned_infrastructure
 locale: ar_SA
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # علامة Barnard

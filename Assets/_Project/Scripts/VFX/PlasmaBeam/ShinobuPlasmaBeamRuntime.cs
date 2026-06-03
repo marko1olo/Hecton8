@@ -169,8 +169,6 @@ namespace Hecton8.VFX.PlasmaBeam
         private const ulong PlasmaBeamJobMutationGuardMask = 0x0000000000FF0000UL;
         private const string CsvRelativePath = "Assets/_Project/Data/VFX/Beam/beam_visuals.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_LASER_SURGEON.bin";
-        private const string ShaderName = "Hecton8/VFX/PlasmaBeamIndirect";
-
         private const uint HashRadius = 0x0DBA4CB3u;
         private const uint HashNoiseFrequency = 0x451093ACu;
         private const uint HashNoiseAmplitude = 0xF2F668B3u;
@@ -217,6 +215,8 @@ namespace Hecton8.VFX.PlasmaBeam
         private GraphicsBuffer _indirectArgsGpuBufferB;
         private GraphicsBuffer _activeIndirectArgsGpuBuffer;
         private Material _material;
+        // COLD ALLOC: MaterialPropertyBlock[1] - indirect beam draw payload - owner: SHINOBU_69
+        private MaterialPropertyBlock _drawProperties;
         private Bounds _drawBounds;
         private string _csvPath;
         private string _dumpPath;
@@ -855,12 +855,16 @@ namespace Hecton8.VFX.PlasmaBeam
             _indirectArgsGpuUploadBufferIndex ^= 1;
 
             PlasmaBeamRuntimeScalarsDTO scalar = scalars[0];
-            _material.SetBuffer(VerticesBufferId, _activeVertexGpuBuffer);
-            _material.SetFloat(UvScrollId, scalar.UvScrollSpeed);
-            _material.SetFloat(IntensityId, math.lerp(1.15f, 4.0f, SmoothStep01(scalar.GlobalQualityWeight)));
-            _material.SetFloat(QualityId, scalar.GlobalQualityWeight);
-            _material.SetFloat(ScatterId, scalar.BiomeExtinction01);
-            _material.SetFloat(FrameTimeId, _lastDeterministicTimeSeconds);
+            if (_drawProperties == null)
+                return;
+
+            _drawProperties.Clear();
+            _drawProperties.SetBuffer(VerticesBufferId, _activeVertexGpuBuffer);
+            _drawProperties.SetFloat(UvScrollId, scalar.UvScrollSpeed);
+            _drawProperties.SetFloat(IntensityId, math.lerp(1.15f, 4.0f, SmoothStep01(scalar.GlobalQualityWeight)));
+            _drawProperties.SetFloat(QualityId, scalar.GlobalQualityWeight);
+            _drawProperties.SetFloat(ScatterId, scalar.BiomeExtinction01);
+            _drawProperties.SetFloat(FrameTimeId, _lastDeterministicTimeSeconds);
 
             UnityEngine.Graphics.DrawProceduralIndirect(
                 _material,
@@ -869,7 +873,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 _activeIndirectArgsGpuBuffer,
                 0,
                 null,
-                null,
+                _drawProperties,
                 ShadowCastingMode.Off,
                 false,
                 0);
@@ -1161,28 +1165,23 @@ namespace Hecton8.VFX.PlasmaBeam
 
             if (_material == null)
             {
-                if (!allowAllocation)
-                    return false;
-
-                Shader shader = null;
-                RuntimeShaderReferenceCatalog.TryGetPlasmaBeamIndirectShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (shader == null)
-                    shader = Shader.Find(ShaderName);
-#endif
-                if (shader == null)
+                if (!RuntimeShaderReferenceCatalog.TryGetPlasmaBeamIndirectMaterial(out _material))
                 {
                     _runtimeFlags |= FlagShaderMissing;
                     return false;
                 }
-
-                // COLD ALLOC: Material[1] - single shared procedural indirect beam material - owner: SHINOBU_69
-                _material = new Material(shader);
-                _material.hideFlags = HideFlags.DontSave;
-                _material.SetBuffer(VerticesBufferId, _activeVertexGpuBuffer);
             }
 
+            EnsureDrawPropertiesCold();
             return true;
+        }
+
+        private void EnsureDrawPropertiesCold()
+        {
+            if (_drawProperties != null)
+                return;
+
+            _drawProperties = new MaterialPropertyBlock();
         }
 
         private bool HasGraphicsResourcesReady()
@@ -1221,11 +1220,9 @@ namespace Hecton8.VFX.PlasmaBeam
             _activeIndirectArgsGpuBuffer = null;
             _indirectArgsGpuUploadBufferIndex = 0;
 
-            if (_material != null)
-            {
-                UnityEngine.Object.Destroy(_material);
-                _material = null;
-            }
+            if (_drawProperties != null)
+                _drawProperties.Clear();
+            _material = null;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

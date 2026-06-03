@@ -8,10 +8,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine.Serialization;
 
 namespace Hecton8.Visor
 {
@@ -20,9 +17,6 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonNoirDepthFogFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader";
-#endif
         private const int DepthFogGlobalsStrideBytes = 64;
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
@@ -46,8 +40,9 @@ namespace Hecton8.Visor
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Hidden fullscreen shader used for depth-based noir fog.")]
-            public Shader shader = null;
+            [Tooltip("Authored fullscreen material used for depth-based noir fog.")]
+            [FormerlySerializedAs("shader")]
+            public Material material = null;
 
             [Tooltip("Injection point. Before transparents keeps particles and visor overlays readable.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingTransparents;
@@ -403,24 +398,18 @@ namespace Hecton8.Visor
 
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
+            HectonDrsRenderFeatureGate.PrimeCold();
 
-            Shader shader = settings != null ? settings.shader : null;
-            if (shader == null)
-                RuntimeShaderReferenceCatalog.TryGetNoirDepthFogShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Hidden/Hecton8/NoirDepthFog");
-#endif
-            RecreateMaterial(ref _material, shader);
+            _material = settings != null ? settings.material : null;
             _pass ??= new NoirDepthFogPass();
             CacheGraphicsCapabilitiesCold();
-            if (Application.isPlaying)
-                _pass.PrepareResources();
-            else
+            if (_material == null)
+            {
+                _pass.Dispose();
+                return;
+            }
+
+            if (!Application.isPlaying)
                 _pass.Dispose();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
@@ -431,7 +420,11 @@ namespace Hecton8.Visor
             if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner())
                 return;
 
-            if (settings == null || _pass == null || _material == null)
+            if (settings == null || _pass == null)
+                return;
+
+            _material = settings.material;
+            if (_material == null)
                 return;
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
@@ -483,7 +476,7 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
-            DisposeMaterial(ref _material);
+            _material = null;
             _cachedPlayerContext = null;
             TryUnregisterHotSwapListener();
         }
@@ -525,28 +518,5 @@ namespace Hecton8.Visor
             _hotSwapRegistered = false;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                DisposeMaterial(ref material);
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            DisposeMaterial(ref material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
-
-        private static void DisposeMaterial(ref Material material)
-        {
-            if (material == null)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = null;
-        }
     }
 }

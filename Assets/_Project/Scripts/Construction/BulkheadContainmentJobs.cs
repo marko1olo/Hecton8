@@ -74,63 +74,6 @@ namespace Hecton8.Construction
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    public unsafe struct GenerateMockBulkheadsJob : IJobParallelFor
-    {
-        [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public double3* Aups;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadPlaneDTO* Planes;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadCsrEdgeDTO* CsrEdges;
-        public int Count;
-        public double3 OriginAup;
-        public uint Seed;
-
-        public void Execute(int index)
-        {
-            if ((uint)index >= (uint)Count ||
-                States == null ||
-                Aups == null ||
-                Planes == null ||
-                CsrEdges == null)
-            {
-                return;
-            }
-
-            uint edgeHash = BulkheadContainmentMath.Hash(Seed, (uint)index + 1u);
-            double3 center = OriginAup + new double3((index & 7) * 6.0, 0.0, (index >> 3) * 7.0);
-            ref BulkheadStateDTO state = ref UnsafeUtility.AsRef<BulkheadStateDTO>(States + index);
-            state.EdgeHashID = edgeHash;
-            state.ClosureProgress = 0f;
-            state.AssociatedLock = 0u;
-            state.SiblingNodeHash = BulkheadContainmentMath.Hash(edgeHash, 0xBADC0DEu);
-            state.Flags = BulkheadStateFlags.Active;
-
-            Aups[index] = center;
-            Planes[index] = new BulkheadPlaneDTO
-            {
-                CenterAup = center,
-                Normal = new float3(0f, 0f, 1f),
-                WidthMeters = 2.6f,
-                HeightMeters = 3.2f,
-                HalfThicknessMeters = 0.18f,
-                EdgeHashID = edgeHash,
-                Flags = BulkheadStateFlags.Active,
-                IntegrityIndex = (uint)index
-            };
-            CsrEdges[index] = new BulkheadCsrEdgeDTO
-            {
-                EdgeHashID = edgeHash,
-                ConductivityIndex = index,
-                FluidFlowIndex = index,
-                OpenConductivity = 1f,
-                OpenFluidFlow = 1f,
-                IntegrityIndex = index,
-                Flags = BulkheadStateFlags.Active
-            };
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct UpdateBulkheadClosureJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;

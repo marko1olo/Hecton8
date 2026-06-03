@@ -1,4 +1,6 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -14,9 +16,20 @@ namespace Hecton8.World
         private const float SegmentDistanceEpsilonSq = 0.00000001f;
         private const float MaximumDeltaTime = 0.1f;
         private const float MaximumCableVelocity = 64f;
+        private const int MinimumSegmentCount = 4;
+        private const int MaximumSegmentCapacity = 24;
+        private const int PredatorBiteContactCapacity = 8;
+        private const byte TetherSnapReasonPredatorBite = 3;
+        private const byte OxygenCutoffSeverityPredatorBite = OxygenCriticalSignal.CriticalSeverity;
+        private const byte OxygenCutoffFlagPredatorBite = OxygenCriticalSignal.FlagLifeSupportCutoff;
+        private const uint PredatorCableBiteSourceId = OxygenCriticalSignal.SourceBioCablePredatorBite;
 #if UNITY_EDITOR
         private const string EditorDefaultCableMaterialPath = "Assets/_Project/Art/Materials/Nature/ProceduralOrganicMisc/Mat_Organic_PlantStem.mat";
 #endif
+
+        // COLD ALLOC: SpatialQueryHit[8] - fixed predator bite broadphase scratch shared by managed cable rigs - owner: BioCableIK
+        private static readonly SpatialQueryHit[] s_predatorBiteHits = new SpatialQueryHit[PredatorBiteContactCapacity];
+        private static int s_x001BioCableBiteSignalPushDropCount;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -24,7 +37,7 @@ namespace Hecton8.World
         private Material cableMaterial;
 
         [Header("── Cable Shape ─────────────────────")]
-        [SerializeField, Range(4, 24)]
+        [SerializeField, Range(MinimumSegmentCount, MaximumSegmentCapacity)]
         [Tooltip("Segment count used by the light IK chain.")]
         private int segmentCount = 12;
 
@@ -52,7 +65,27 @@ namespace Hecton8.World
         [Tooltip("Cable width at the free end.")]
         private float tipWidth = 0.06f;
 
+        [SerializeField, Range(0f, 8f)]
+        [Tooltip("World-space predator bite radius. Zero suppresses bite detection without changing cable allocation behavior.")]
+        private float predatorBiteRadius = 1.1f;
+
+        [SerializeField, Range(0f, 2f)]
+        [Tooltip("Minimum seconds between bite signal bursts from this cable rig.")]
+        private float predatorBiteSignalCooldownSeconds = 0.35f;
+
         [Header("── EMP Charge Visuals ─────────────")]
+        [SerializeField]
+        [Tooltip("Authored or pooled spark particle root. Runtime particle-system construction is forbidden.")]
+        private ParticleSystem authoredSparkParticles;
+
+        [SerializeField]
+        [Tooltip("Renderer paired with authoredSparkParticles. Runtime renderer construction is forbidden.")]
+        private ParticleSystemRenderer authoredSparkRenderer;
+
+        [SerializeField]
+        [Tooltip("Optional prewarmed pool prefab for cable spark particles when no authored child is assigned.")]
+        private GameObject authoredSparkPrefab;
+
         [SerializeField]
         [Tooltip("Calm cable tint used when the nest is idle.")]
         private Color baseCableColor = new Color(0.12f, 0.52f, 0.46f, 0.92f);
@@ -99,6 +132,7 @@ namespace Hecton8.World
         private Vector3[] _points;
         // COLD ALLOC: Vector3[24] - cable point velocities for manager-driven IK simulation - owner: BioCableIK
         private Vector3[] _velocities;
+        private int _pointCount;
 
         private Vector3 _anchorPositionWS;
         private Vector3 _anchorUpWS = Vector3.up;
@@ -120,23 +154,36 @@ namespace Hecton8.World
         private Vector3 _pendingElasticRuptureVelocityWS;
         private ParticleSystem _sparkParticles;
         private ParticleSystemRenderer _sparkRenderer;
+        private IObjectPoolService _objectPoolService;
+        private GameObject _sparkPooledInstance;
+        private IObjectPoolService _sparkPooledInstancePool;
+        private bool _sparkPooledInstanceOwned;
+        private bool _sparkEffectResolutionAttempted;
+        private float _nextPredatorBiteSignalTime;
+        private float _lastSparkEmissionRate = -1f;
 
         private void Awake()
         {
             _splineLinkId = GetEntityId().GetHashCode();
+            CacheObjectPoolServiceCold(GlobalRegistry.ObjectPoolService);
             ResolveRuntimeWiring();
             EnsureStorage();
-            EnsureChargeEffects();
+            if (authoredSparkParticles != null || _objectPoolService != null)
+                EnsureChargeEffects();
             InitializeAt(transform.position, Vector3.up);
         }
 
         private void OnDisable()
         {
+            if (_sparkParticles != null && _sparkParticles.isPlaying)
+                _sparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
             ConnectionSplineBatchRenderer.RemovePipeLink(_splineLinkId);
         }
 
         private void OnDestroy()
         {
+            ReleaseSparkEffectToPool();
             ConnectionSplineBatchRenderer.RemovePipeLink(_splineLinkId);
         }
 
@@ -158,7 +205,7 @@ namespace Hecton8.World
             _pendingElasticRupture = false;
             _pendingElasticRuptureVelocityWS = Vector3.zero;
 
-            for (int i = 0; i < _points.Length; i++)
+            for (int i = 0; i < _pointCount; i++)
             {
                 _points[i] = _anchorPositionWS - _anchorUpWS * (ResolveSegmentLength() * i);
                 _velocities[i] = Vector3.zero;
@@ -202,7 +249,7 @@ namespace Hecton8.World
             float safeAttractorSpring = ResolveRange(attractorSpring, 0f, 32f, 9.5f);
             float safeDamping = ResolveRange(damping, 0f, 4f, 1.45f);
             float safeWrapStrength = ResolveRange(wrapStrength, 0f, 3f, 1.2f);
-            Vector3 safeAttractorPosition = SanitizePosition(attractorPositionWS, _points[_points.Length - 1]);
+            Vector3 safeAttractorPosition = SanitizePosition(attractorPositionWS, _points[_pointCount - 1]);
             Vector3 safeAttractorVelocity = SanitizeVelocity(attractorVelocityWS);
             Vector3 velocityBias = safeAttractorVelocity * LerpClamped(0.08f, 0.42f, clampedWrap);
             Vector3 attractorDirection = ResolveSafeDirection(safeAttractorVelocity, Vector3.forward);
@@ -212,9 +259,9 @@ namespace Hecton8.World
                 wrapAxis = Vector3.Cross(_anchorUpWS, Vector3.right);
             wrapAxis = ResolveSafeDirection(wrapAxis, Vector3.up);
 
-            for (int i = 1; i < _points.Length; i++)
+            for (int i = 1; i < _pointCount; i++)
             {
-                float tail01 = i / (float)(_points.Length - 1);
+                float tail01 = i / (float)(_pointCount - 1);
                 Vector3 restFallback = _points[i - 1] - _anchorUpWS * safeSegmentLength;
                 Vector3 point = SanitizePosition(_points[i], restFallback);
                 Vector3 velocity = SanitizeVelocity(_velocities[i]);
@@ -242,9 +289,228 @@ namespace Hecton8.World
             }
 
             UpdateElasticRupture(deltaTime, safeAttractorPosition, clampedAttraction);
+            if (TryResolvePredatorCableBite(out Vector3 bitePoint, out SpatialQueryHit predatorHit))
+            {
+                TriggerPredatorCableBite(bitePoint, in predatorHit);
+                return;
+            }
+
             UpdateSparkAnchor();
             ApplyVisualState();
             SyncRenderer();
+        }
+
+        private bool TryResolvePredatorCableBite(out Vector3 bitePoint, out SpatialQueryHit predatorHit)
+        {
+            bitePoint = default;
+            predatorHit = default;
+            if (!_isCableActive || _points == null || _pointCount < 2)
+                return false;
+
+            float biteRadius = ResolveRange(predatorBiteRadius, 0f, 8f, 0f);
+            if (biteRadius <= 0.0001f)
+                return false;
+
+            if (!TryResolveCableBroadphase(biteRadius, out Vector3 queryCenter, out float broadphaseRadius))
+                return false;
+
+            int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                queryCenter,
+                broadphaseRadius,
+                SpatialTargetKind.Bioform,
+                s_predatorBiteHits);
+
+            bool found = false;
+            float bestDistanceSq = biteRadius * biteRadius;
+            int safeHitCount = math.clamp(hitCount, 0, s_predatorBiteHits.Length);
+            for (int i = 0; i < safeHitCount; i++)
+            {
+                SpatialQueryHit hit = s_predatorBiteHits[i];
+                if (!(hit.Owner is IFaunaSpatialContact faunaContact) ||
+                    !IsPredatorCableBiteContact(faunaContact) ||
+                    !TryResolveClosestCablePoint(hit.Position, bestDistanceSq, out Vector3 candidatePoint, out float candidateDistanceSq))
+                {
+                    continue;
+                }
+
+                bestDistanceSq = candidateDistanceSq;
+                bitePoint = candidatePoint;
+                predatorHit = hit;
+                found = true;
+            }
+
+            ClearPredatorBiteHits(safeHitCount);
+            return found;
+        }
+
+        private bool TryResolveCableBroadphase(float biteRadius, out Vector3 queryCenter, out float queryRadius)
+        {
+            queryCenter = default;
+            queryRadius = 0f;
+            if (_points == null || _pointCount <= 0)
+                return false;
+
+            Vector3 first = SanitizePosition(_points[0], _anchorPositionWS);
+            float3 min = new float3(first.x, first.y, first.z);
+            float3 max = min;
+            for (int i = 1; i < _pointCount; i++)
+            {
+                Vector3 point = SanitizePosition(_points[i], first);
+                float3 p = new float3(point.x, point.y, point.z);
+                min = math.min(min, p);
+                max = math.max(max, p);
+            }
+
+            float3 center = (min + max) * 0.5f;
+            if (!math.all(math.isfinite(center)))
+                return false;
+
+            float radiusSq = 0f;
+            for (int i = 0; i < _pointCount; i++)
+            {
+                Vector3 point = SanitizePosition(_points[i], first);
+                float3 p = new float3(point.x, point.y, point.z);
+                float distanceSq = math.lengthsq(p - center);
+                if (math.isfinite(distanceSq))
+                    radiusSq = math.max(radiusSq, distanceSq);
+            }
+
+            float cableRadius = radiusSq > SegmentDistanceEpsilonSq
+                ? radiusSq * math.rsqrt(radiusSq)
+                : 0f;
+            queryRadius = math.max(biteRadius, cableRadius + biteRadius);
+            queryCenter = new Vector3(center.x, center.y, center.z);
+            return IsFinite(queryCenter) && math.isfinite(queryRadius) && queryRadius > 0.0001f;
+        }
+
+        private static bool IsPredatorCableBiteContact(IFaunaSpatialContact contact)
+        {
+            return contact != null &&
+                   !contact.IsDead &&
+                   (contact.IsApexPredatorContact || contact.IsAggressiveContact || contact.IsLeviathanContact);
+        }
+
+        private bool TryResolveClosestCablePoint(Vector3 predatorPosition, float maxDistanceSq, out Vector3 closestPoint, out float closestDistanceSq)
+        {
+            closestPoint = default;
+            closestDistanceSq = maxDistanceSq;
+            if (!IsFinite(predatorPosition) || _points == null || _pointCount < 2)
+                return false;
+
+            bool found = false;
+            for (int i = 1; i < _pointCount; i++)
+            {
+                Vector3 a = _points[i - 1];
+                Vector3 b = _points[i];
+                Vector3 ab = b - a;
+                float abLengthSq = ab.sqrMagnitude;
+                if (!math.isfinite(abLengthSq) || abLengthSq <= SegmentDistanceEpsilonSq)
+                    continue;
+
+                float t = Vector3.Dot(predatorPosition - a, ab) * math.rcp(abLengthSq);
+                Vector3 point = a + ab * math.saturate(t);
+                Vector3 delta = predatorPosition - point;
+                float distanceSq = delta.sqrMagnitude;
+                if (!math.isfinite(distanceSq) || distanceSq > closestDistanceSq)
+                    continue;
+
+                closestDistanceSq = distanceSq;
+                closestPoint = point;
+                found = true;
+            }
+
+            return found;
+        }
+
+        private void TriggerPredatorCableBite(Vector3 bitePoint, in SpatialQueryHit predatorHit)
+        {
+            Vector3 predatorPosition = SanitizePosition(predatorHit.Position, bitePoint);
+            Vector3 recoilDirection = ResolveSafeDirection(bitePoint - predatorPosition, _anchorUpWS);
+            TriggerSnapRecoil(recoilDirection * math.max(2f, ResolveSegmentLength() * 3f), 0.45f);
+            SetEmpCharge(0f, 0f);
+            SetCableActive(false);
+
+            float now = Time.unscaledTime;
+            float cooldown = ResolveRange(predatorBiteSignalCooldownSeconds, 0f, 2f, 0.35f);
+            if (now < _nextPredatorBiteSignalTime)
+                return;
+
+            _nextPredatorBiteSignalTime = now + cooldown;
+            PublishPredatorCableBiteSignals(bitePoint);
+        }
+
+        private static void PublishPredatorCableBiteSignals(Vector3 bitePoint)
+        {
+            uint frame = unchecked((uint)Time.frameCount);
+            OxygenCriticalSignal oxygenCritical = default;
+            oxygenCritical.Oxygen01 = 0f;
+            oxygenCritical.SecondsRemaining = 0f;
+            oxygenCritical.SourceId = PredatorCableBiteSourceId;
+            oxygenCritical.Frame = frame;
+            oxygenCritical.Severity = OxygenCutoffSeverityPredatorBite;
+            oxygenCritical.Flags = OxygenCutoffFlagPredatorBite;
+            SignalBus<OxygenCriticalSignal>.TryPushTracked(in oxygenCritical, ref s_x001BioCableBiteSignalPushDropCount);
+
+            HypoxiaSignal hypoxia = default;
+            hypoxia.Oxygen01 = 0f;
+            hypoxia.SecondsRemaining = 0f;
+            hypoxia.SourceId = PredatorCableBiteSourceId;
+            hypoxia.Frame = frame;
+            hypoxia.Severity = OxygenCutoffSeverityPredatorBite;
+            hypoxia.Flags = OxygenCutoffFlagPredatorBite;
+            SignalBus<HypoxiaSignal>.TryPushTracked(in hypoxia, ref s_x001BioCableBiteSignalPushDropCount);
+
+            HapticPulseSignal haptic = default;
+            haptic.LowFrequencyMotor01 = 0.9f;
+            haptic.HighFrequencyMotor01 = 1f;
+            haptic.DurationSeconds = 0.18f;
+            haptic.PriorityFlags = HapticPulseSignal.PriorityCollision;
+            SignalBus<HapticPulseSignal>.TryPushTracked(in haptic, ref s_x001BioCableBiteSignalPushDropCount);
+
+            if (TryResolveAupFromRuntimePosition(bitePoint, out AbsoluteUniversePosition biteAup))
+            {
+                TetherSnappedSignal snap = default;
+                snap.SnapAup = biteAup;
+                snap.TetherId = PredatorCableBiteSourceId;
+                snap.FrameIndex = frame;
+                snap.PeakTension = 0f;
+                snap.SnapThreshold = 0f;
+                snap.Severity01 = 1f;
+                snap.NodeCount = 0;
+                snap.Reason = TetherSnapReasonPredatorBite;
+                snap.Flags = OxygenCutoffFlagPredatorBite;
+                SignalBus<TetherSnappedSignal>.TryPushTracked(in snap, ref s_x001BioCableBiteSignalPushDropCount);
+            }
+        }
+
+        private static bool TryResolveAupFromRuntimePosition(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static void ClearPredatorBiteHits(int count)
+        {
+            int safeCount = math.clamp(count, 0, s_predatorBiteHits.Length);
+            for (int i = 0; i < safeCount; i++)
+                s_predatorBiteHits[i] = default;
         }
 
         private static float FastTriangleSineSigned(float radians)
@@ -282,9 +548,9 @@ namespace Hecton8.World
                     _snapTimer = 0f;
             }
 
-            for (int i = 1; i < _points.Length; i++)
+            for (int i = 1; i < _pointCount; i++)
             {
-                float tail01 = i / (float)(_points.Length - 1);
+                float tail01 = i / (float)(_pointCount - 1);
                 Vector3 restFallback = _points[i - 1] - _anchorUpWS * safeSegmentLength;
                 Vector3 point = SanitizePosition(_points[i], restFallback);
                 Vector3 velocity = SanitizeVelocity(_velocities[i]);
@@ -326,8 +592,16 @@ namespace Hecton8.World
         /// </summary>
         public void SetEmpCharge(float charge01, float pulse01)
         {
-            _empCharge01 = Clamp01Finite(charge01);
-            _empPulse01 = Clamp01Finite(pulse01);
+            float nextCharge01 = Clamp01Finite(charge01);
+            float nextPulse01 = Clamp01Finite(pulse01);
+            if (math.abs(_empCharge01 - nextCharge01) <= 0.0001f &&
+                math.abs(_empPulse01 - nextPulse01) <= 0.0001f)
+            {
+                return;
+            }
+
+            _empCharge01 = nextCharge01;
+            _empPulse01 = nextPulse01;
             ApplyVisualState();
         }
 
@@ -341,9 +615,9 @@ namespace Hecton8.World
             _snapDuration = ResolveRange(duration, 0.1f, 2f, 0.1f);
             _snapTimer = _snapDuration;
 
-            for (int i = 1; i < _velocities.Length; i++)
+            for (int i = 1; i < _pointCount; i++)
             {
-                float tail01 = i / (float)(_velocities.Length - 1);
+                float tail01 = i / (float)(_pointCount - 1);
                 _velocities[i] = SanitizeVelocity(_velocities[i] + _snapVelocityWS * LerpClamped(0.35f, 1f, tail01));
             }
         }
@@ -358,6 +632,13 @@ namespace Hecton8.World
         /// </summary>
         public void SetCableActive(bool isActive)
         {
+            if (_isCableActive == isActive)
+            {
+                if (!isActive && _sparkParticles != null && _sparkParticles.isPlaying)
+                    _sparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                return;
+            }
+
             _isCableActive = isActive;
 
             if (!isActive && _sparkParticles != null && _sparkParticles.isPlaying)
@@ -385,6 +666,29 @@ namespace Hecton8.World
                 _sparkRenderer.sharedMaterial = material;
         }
 
+        public void PrepareForPoolReturnCold()
+        {
+            SetCableActive(false);
+            ReleaseSparkEffectToPool();
+        }
+
+        public void ConfigureObjectPoolServiceCold(IObjectPoolService objectPoolService)
+        {
+            CacheObjectPoolServiceCold(objectPoolService);
+            if (authoredSparkParticles != null || _objectPoolService != null)
+                EnsureChargeEffects();
+        }
+
+        private void CacheObjectPoolServiceCold(IObjectPoolService objectPoolService)
+        {
+            if (ReferenceEquals(_objectPoolService, objectPoolService))
+                return;
+
+            _objectPoolService = objectPoolService;
+            if (_sparkParticles == null && authoredSparkPrefab != null && objectPoolService != null)
+                _sparkEffectResolutionAttempted = false;
+        }
+
         private void ResolveRuntimeWiring()
         {
             _currentCableColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
@@ -393,30 +697,33 @@ namespace Hecton8.World
 
         private void EnsureStorage()
         {
-            int clampedSegmentCount = Mathf.Clamp(segmentCount, 4, 24);
-            if (_points == null || _points.Length != clampedSegmentCount)
+            _pointCount = Mathf.Clamp(segmentCount, MinimumSegmentCount, MaximumSegmentCapacity);
+            if (_points == null ||
+                _velocities == null ||
+                _points.Length != MaximumSegmentCapacity ||
+                _velocities.Length != MaximumSegmentCapacity)
             {
                 // COLD ALLOC: Vector3[24] - cable point positions for manager-driven IK simulation - owner: BioCableIK
-                _points = new Vector3[clampedSegmentCount];
+                _points = new Vector3[MaximumSegmentCapacity];
                 // COLD ALLOC: Vector3[24] - cable point velocities for manager-driven IK simulation - owner: BioCableIK
-                _velocities = new Vector3[clampedSegmentCount];
+                _velocities = new Vector3[MaximumSegmentCapacity];
             }
         }
 
         private void UpdateElasticRupture(float deltaTime, Vector3 attractorPositionWS, float attraction01)
         {
-            if (_points == null || _points.Length <= 1)
+            if (_points == null || _pointCount <= 1)
                 return;
 
             float safeSegmentLength = ResolveSegmentLength();
             float safeElasticStretchLimit = ResolveRange(elasticStretchLimit, 1f, 2.5f, 1.42f);
             float safeElasticBreakHoldTime = ResolveRange(elasticBreakHoldTime, 0.02f, 1f, 0.14f);
             float safeElasticBreakRecoilMultiplier = ResolveRange(elasticBreakRecoilMultiplier, 0f, 4f, 1.35f);
-            float restLength = safeSegmentLength * (_points.Length - 1);
+            float restLength = safeSegmentLength * (_pointCount - 1);
             if (restLength <= 0.0001f)
                 return;
 
-            float tailDistanceSq = (_points[_points.Length - 1] - _anchorPositionWS).sqrMagnitude;
+            float tailDistanceSq = (_points[_pointCount - 1] - _anchorPositionWS).sqrMagnitude;
             float attractorDistanceSq = (attractorPositionWS - _anchorPositionWS).sqrMagnitude;
             if (!math.isfinite(tailDistanceSq) || !math.isfinite(attractorDistanceSq))
             {
@@ -447,7 +754,7 @@ namespace Hecton8.World
             if (_elasticBreakTimer < safeElasticBreakHoldTime || _pendingElasticRupture)
                 return;
 
-            Vector3 ruptureDirection = _points[_points.Length - 1] - _points[_points.Length - 2];
+            Vector3 ruptureDirection = _points[_pointCount - 1] - _points[_pointCount - 2];
             float ruptureLengthSq = ruptureDirection.sqrMagnitude;
             if (!math.isfinite(ruptureLengthSq) || ruptureLengthSq <= 0.0001f)
                 ruptureDirection = attractorPositionWS - _anchorPositionWS;
@@ -458,7 +765,7 @@ namespace Hecton8.World
             _pendingElasticRuptureVelocityWS =
                 SanitizeVelocity(
                     ResolveSafeDirection(ruptureDirection, Vector3.up) * (safeSegmentLength * safeElasticBreakRecoilMultiplier * LerpClamped(1f, 3.2f, overStretch01)) +
-                    SanitizeVelocity(_velocities[_velocities.Length - 1]) * safeElasticBreakRecoilMultiplier);
+                    SanitizeVelocity(_velocities[_pointCount - 1]) * safeElasticBreakRecoilMultiplier);
             _pendingElasticRupture = true;
             _elasticBreakTimer = 0f;
         }
@@ -468,27 +775,62 @@ namespace Hecton8.World
             if (_sparkParticles != null)
                 return;
 
-            Transform existing = transform.Find("CableSparkFX");
-            GameObject sparkObject;
-            if (existing != null)
+            if (_sparkEffectResolutionAttempted)
+                return;
+
+            _sparkEffectResolutionAttempted = true;
+
+            if (authoredSparkParticles != null)
             {
-                sparkObject = existing.gameObject;
+                _sparkParticles = authoredSparkParticles;
+                _lastSparkEmissionRate = -1f;
+                if (authoredSparkRenderer != null)
+                    _sparkRenderer = authoredSparkRenderer;
             }
-            else
+            else if (authoredSparkPrefab != null)
             {
-                // COLD ALLOC: GameObject[1] - persistent EMP spark child for abyssal cable charge-up visuals - owner: BioCableIK
-                sparkObject = new GameObject("CableSparkFX");
-                sparkObject.transform.SetParent(transform, false);
-                sparkObject.transform.localPosition = Vector3.zero;
-                sparkObject.transform.localRotation = Quaternion.identity;
-                sparkObject.transform.localScale = Vector3.one;
+                IObjectPoolService pool = _objectPoolService;
+                if (pool == null ||
+                    !pool.HasPool(authoredSparkPrefab) ||
+                    pool.GetAvailableCount(authoredSparkPrefab) <= 0)
+                {
+                    _sparkEffectResolutionAttempted = false;
+                    return;
+                }
+
+                GameObject sparkObject = pool.Spawn(authoredSparkPrefab, transform.position, transform.rotation, false);
+                if (sparkObject == null)
+                {
+                    _sparkEffectResolutionAttempted = false;
+                    return;
+                }
+
+                if (!pool.CanDespawnWithoutDestroy(sparkObject))
+                {
+                    pool.Despawn(sparkObject);
+                    return;
+                }
+
+                if (sparkObject.TryGetComponent(out _sparkParticles))
+                {
+                    _lastSparkEmissionRate = -1f;
+                    _sparkPooledInstance = sparkObject;
+                    _sparkPooledInstanceOwned = true;
+                    _sparkPooledInstancePool = pool;
+                    Transform sparkTransform = sparkObject.transform;
+                    sparkTransform.SetParent(transform, false);
+                    sparkTransform.localPosition = Vector3.zero;
+                    sparkTransform.localRotation = Quaternion.identity;
+                    sparkTransform.localScale = Vector3.one;
+                }
+                else
+                {
+                    pool.Despawn(sparkObject);
+                }
             }
 
-            if (!_sparkParticles && !sparkObject.TryGetComponent(out _sparkParticles))
-            {
-                // COLD ALLOC: Component[1] - persistent particle system used for EMP nest pre-fire sparks - owner: BioCableIK
-                _sparkParticles = sparkObject.AddComponent<ParticleSystem>();
-            }
+            if (_sparkParticles == null)
+                return;
 
             if (_sparkParticles != null)
             {
@@ -505,14 +847,15 @@ namespace Hecton8.World
                 var emission = _sparkParticles.emission;
                 emission.enabled = true;
                 emission.rateOverTime = 0f;
+                _lastSparkEmissionRate = 0f;
 
                 var shape = _sparkParticles.shape;
                 shape.enabled = true;
                 shape.shapeType = ParticleSystemShapeType.Sphere;
                 shape.radius = 0.05f;
 
-                if (!_sparkParticles.isPlaying)
-                    _sparkParticles.Play();
+                if (_sparkParticles.isPlaying && !_isCableActive)
+                    _sparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
             if (_sparkRenderer == null && _sparkParticles != null)
@@ -520,6 +863,26 @@ namespace Hecton8.World
 
             if (_sparkRenderer != null && _sparkRenderer.sharedMaterial == null)
                 _sparkRenderer.sharedMaterial = ResolveCableMaterial();
+        }
+
+        private void ReleaseSparkEffectToPool()
+        {
+            if (_sparkPooledInstance == null)
+                return;
+
+            IObjectPoolService pool = _sparkPooledInstanceOwned ? _sparkPooledInstancePool : null;
+            if (pool != null && pool.CanDespawnWithoutDestroy(_sparkPooledInstance))
+                pool.Despawn(_sparkPooledInstance);
+
+            _sparkPooledInstance = null;
+            _sparkPooledInstancePool = null;
+            _sparkPooledInstanceOwned = false;
+            _sparkParticles = authoredSparkParticles;
+            _sparkRenderer = authoredSparkRenderer;
+            _lastSparkEmissionRate = -1f;
+            _sparkEffectResolutionAttempted =
+                authoredSparkParticles == null &&
+                (authoredSparkPrefab == null || _objectPoolService == null);
         }
 
         private void ApplyVisualState()
@@ -534,21 +897,26 @@ namespace Hecton8.World
             {
                 float safeSparkThreshold = ResolveRange(sparkChargeThreshold, 0f, 1f, 0.28f);
                 float sparkGate = Clamp01Finite((_empCharge01 - safeSparkThreshold) / math.max(1f - safeSparkThreshold, 0.001f));
-                var emission = _sparkParticles.emission;
-                emission.rateOverTime = ResolveRange(sparkEmissionRate, 0f, 128f, 42f) * sparkGate * LerpClamped(0.25f, 1f, _empPulse01);
+                float nextSparkEmissionRate = ResolveRange(sparkEmissionRate, 0f, 128f, 42f) * sparkGate * LerpClamped(0.25f, 1f, _empPulse01);
+                if (math.abs(_lastSparkEmissionRate - nextSparkEmissionRate) > 0.001f)
+                {
+                    var emission = _sparkParticles.emission;
+                    emission.rateOverTime = nextSparkEmissionRate;
+                    _lastSparkEmissionRate = nextSparkEmissionRate;
+                }
                 if (!_sparkParticles.isPlaying && sparkGate > 0f)
                     _sparkParticles.Play();
-                else if (_sparkParticles.isPlaying && sparkGate <= 0f && !_isCableActive)
+                else if (_sparkParticles.isPlaying && sparkGate <= 0f)
                     _sparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
         }
 
         private void UpdateSparkAnchor()
         {
-            if (_sparkParticles == null || _points == null || _points.Length == 0)
+            if (_sparkParticles == null || _points == null || _pointCount == 0)
                 return;
 
-            int sparkIndex = Mathf.Min(2, _points.Length - 1);
+            int sparkIndex = Mathf.Min(2, _pointCount - 1);
             Transform sparkTransform = _sparkParticles.transform;
             Vector3 sparkPosition = SanitizePosition(_points[sparkIndex], _anchorPositionWS);
             if (IsFinite(sparkPosition))
@@ -666,20 +1034,20 @@ namespace Hecton8.World
 
         private void SyncRenderer()
         {
-            if (!_isCableActive || _points == null)
+            if (!_isCableActive || _points == null || _pointCount <= 0)
                 return;
 
             float safeSegmentLength = ResolveSegmentLength();
-            for (int i = 0; i < _points.Length; i++)
+            for (int i = 0; i < _pointCount; i++)
             {
                 Vector3 fallback = i == 0 ? _anchorPositionWS : _points[i - 1] - _anchorUpWS * safeSegmentLength;
                 _points[i] = SanitizePosition(_points[i], fallback);
             }
 
             Vector3 start = _points[0];
-            Vector3 end = _points[_points.Length - 1];
-            Vector3 startForward = _points.Length > 1 ? ResolveSafeDirection(_points[1] - start, _anchorUpWS) : _anchorUpWS;
-            Vector3 endForward = _points.Length > 1 ? ResolveSafeDirection(_points[_points.Length - 2] - end, -_anchorUpWS) : -_anchorUpWS;
+            Vector3 end = _points[_pointCount - 1];
+            Vector3 startForward = _pointCount > 1 ? ResolveSafeDirection(_points[1] - start, _anchorUpWS) : _anchorUpWS;
+            Vector3 endForward = _pointCount > 1 ? ResolveSafeDirection(_points[_pointCount - 2] - end, -_anchorUpWS) : -_anchorUpWS;
             SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
                 start,
                 end,
@@ -722,7 +1090,7 @@ namespace Hecton8.World
                 return;
             }
 
-            segmentCount = Mathf.Clamp(segmentCount, 4, 24);
+            segmentCount = Mathf.Clamp(segmentCount, MinimumSegmentCount, MaximumSegmentCapacity);
             segmentLength = ResolveRange(segmentLength, 0.1f, 128f, 1.25f);
             attractorSpring = ResolveRange(attractorSpring, 0f, 32f, 9.5f);
             damping = ResolveRange(damping, 0f, 4f, 1.45f);
@@ -738,8 +1106,9 @@ namespace Hecton8.World
             elasticBreakHoldTime = ResolveRange(elasticBreakHoldTime, 0.02f, 1f, 0.14f);
             elasticBreakRecoilMultiplier = ResolveRange(elasticBreakRecoilMultiplier, 0f, 4f, 1.35f);
 
-            if (_initialized && _points != null && _points.Length == Mathf.Clamp(segmentCount, 4, 24))
+            if (_initialized && _points != null)
             {
+                _pointCount = Mathf.Clamp(segmentCount, MinimumSegmentCount, MaximumSegmentCapacity);
                 ApplyVisualState();
                 SyncRenderer();
             }

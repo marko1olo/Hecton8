@@ -18,6 +18,9 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Environment
 {
@@ -43,6 +46,10 @@ namespace Hecton8.Environment
         private const int MinimumMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount;
         private const int OverkillMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount;
         private const int MaxMarineSnowParticleCapacity = OverkillMarineSnowParticleCapacity;
+#if UNITY_EDITOR
+        private const string DefaultEmptyCaveSdfTexturePath1728 = "Assets/_Project/Art/Textures/VFX/ParticulateFlipbooks1728/TX_MarineSnow_EmptyCaveSdf_1x1x1.asset";
+        private const string DefaultEmptyAbyssalFlowTexturePath1728 = "Assets/_Project/Art/Textures/VFX/ParticulateFlipbooks1728/TX_MarineSnow_EmptyAbyssalFlow_1x1x1.asset";
+#endif
         private const int ParticleDataStride = 32;
         private const int ParticleRenderMetaStride = 32;
         private const int ProceduralIndirectArgsStride = 16;
@@ -102,20 +109,6 @@ namespace Hecton8.Environment
         private static readonly Vector4 InvalidVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private static readonly Matrix4x4 IdentityMatrix = Matrix4x4.identity;
         private static readonly Matrix4x4 InvalidMatrix = new Matrix4x4(InvalidVector, InvalidVector, InvalidVector, InvalidVector);
-        private static readonly Vector3[] QuadMeshVertices =
-        {
-            new Vector3(-1f, -1f, 0f),
-            new Vector3(-1f, 1f, 0f),
-            new Vector3(1f, 1f, 0f),
-            new Vector3(-1f, -1f, 0f),
-            new Vector3(1f, 1f, 0f),
-            new Vector3(1f, -1f, 0f)
-        }; // COLD ALLOC: Vector3[6] - immutable marine-snow indirect quad vertices - owner: HectonMarineSnowRenderer
-        private static readonly int[] QuadMeshIndices =
-        {
-            0, 1, 2, 3, 4, 5
-        }; // COLD ALLOC: int[6] - immutable marine-snow indirect quad indices - owner: HectonMarineSnowRenderer
-
         [StructLayout(LayoutKind.Explicit, Size = FrameConstantsStride)]
         private struct FrameConstantsData
         {
@@ -393,6 +386,10 @@ namespace Hecton8.Environment
             internal static readonly int FlowSynchronyParamsId = Shader.PropertyToID("_HectonFlowSynchronyParams");
             internal static readonly int RenderParamsId = Shader.PropertyToID("_MarineSnowRenderParams");
             internal static readonly int TintId = Shader.PropertyToID("_MarineSnowTint");
+            internal static readonly int MaskAtlasId = Shader.PropertyToID("_MarineSnowMaskAtlas");
+            internal static readonly int NormalAtlasId = Shader.PropertyToID("_MarineSnowNormalAtlas");
+            internal static readonly int AtlasParamsId = Shader.PropertyToID("_MarineSnowAtlasParams");
+            internal static readonly int FlipbookParamsId = Shader.PropertyToID("_MarineSnowFlipbookParams");
             internal static readonly int EmissionParamsId = Shader.PropertyToID("_MarineSnowEmissionParams");
             internal static readonly int ViewProjectionId = Shader.PropertyToID("_MarineSnowViewProjection");
             internal static readonly int ViewMatrixId = Shader.PropertyToID("_MarineSnowViewMatrix");
@@ -469,6 +466,10 @@ namespace Hecton8.Environment
         [SerializeField, Range(0.1f, 4f)] private float flowFieldRecenterThresholdCells = 0.5f;
         [Tooltip("Cold GPU upload capacity for the ecosystem flow-field snapshot. Raise in editor if the vegetation grid is larger; never resized in play.")]
         [SerializeField, Min(1f)] private int flowFieldUploadCapacity = DefaultEcosystemFlowFieldBufferCapacity;
+        [Tooltip("Authored 1x1x1 neutral SDF volume used when cave SDF is inactive. Runtime Texture3D synthesis is forbidden.")]
+        [SerializeField] private Texture3D emptyCaveSdfTexture3D;
+        [Tooltip("Authored 1x1x1 clear flow volume used when abyssal flow is inactive. Runtime Texture3D synthesis is forbidden.")]
+        [SerializeField] private Texture3D emptyAbyssalFlowTexture3D;
 
         [Header("Wake Advection")]
         [Tooltip("Maximum particle speed after all wake, curl, and light-cone responses are applied.")]
@@ -501,6 +502,28 @@ namespace Hecton8.Environment
         [SerializeField, Range(4f, 48f)] private float maxViewDistance = 18f;
         [Tooltip("Shadow-casting mode for the marine-snow particle draw.")]
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
+
+        [Header("Offline Flipbook Atlas")]
+        [Tooltip("Optional packed atlas baked by ProceduralTextureBaker 1718/1728. R=density, G=biolum, B=flow hint, A=AO.")]
+        [SerializeField] private Texture2D marineSnowMaskAtlas;
+        [Tooltip("Optional normal atlas baked beside the packed mask atlas.")]
+        [SerializeField] private Texture2D marineSnowNormalAtlas;
+        [Tooltip("Flipbook atlas columns. The 1718/1728 high-quality baker emits an 8x8 atlas.")]
+        [SerializeField, Range(1, 16)] private int marineSnowAtlasColumns = 8;
+        [Tooltip("Flipbook atlas rows. The 1718/1728 high-quality baker emits an 8x8 atlas.")]
+        [SerializeField, Range(1, 16)] private int marineSnowAtlasRows = 8;
+        [Tooltip("Per-pixel headlight response from the baked normal atlas.")]
+        [SerializeField, Range(0f, 2f)] private float marineSnowNormalAtlasWeight = 0.55f;
+        [Tooltip("Blend from radial sprite coverage to baked density coverage.")]
+        [SerializeField, Range(0f, 1f)] private float marineSnowMaskAtlasWeight = 1f;
+        [Tooltip("Frame cycling rate for the 64-frame flipbook atlas.")]
+        [SerializeField, Range(0f, 2f)] private float marineSnowFlipbookTimeScale = 0.18f;
+        [Tooltip("Additional phase offset from particle lifetime to avoid lockstep shimmer.")]
+        [SerializeField, Range(0f, 1f)] private float marineSnowFlipbookLifePhase = 0.15f;
+        [Tooltip("How strongly the baked AO channel dims particulate pixels.")]
+        [SerializeField, Range(0f, 1f)] private float marineSnowAtlasAoGain = 0.22f;
+        [Tooltip("How strongly the baked biolum channel reacts to the flashlight boost.")]
+        [SerializeField, Range(0f, 2f)] private float marineSnowAtlasBiolumGain = 0.35f;
 
         [Header("Sprint Speed Lines")]
         [Tooltip("Camera/player velocity where marine snow stretches into full sprint speed lines.")]
@@ -565,7 +588,6 @@ namespace Hecton8.Environment
         private GraphicsBuffer _propwashEventBuffer;
         private GraphicsBuffer _boundAbyssalFlowBuffer;
         private Camera _targetCameraComponent;
-        private Mesh _quadMesh;
         private Bounds _drawBounds;
         private int _kernelIndex = -1;
         private int _initializeKernel = -1;
@@ -708,6 +730,11 @@ namespace Hecton8.Environment
         private GraphicsBuffer _boundMaterialParticlesBuffer;
         private GraphicsBuffer _boundMaterialParticleMetaBuffer;
         private GraphicsBuffer _boundMaterialVisibleParticleIndexBuffer;
+        private Texture _boundMaterialMaskAtlas;
+        private Texture _boundMaterialNormalAtlas;
+        private Material _materialAtlasFallbackSource;
+        private Vector4 _boundMaterialAtlasParams = InvalidVector;
+        private Vector4 _boundMaterialFlipbookParams = InvalidVector;
         private Vector4 _boundMaterialPropwashBiomeTint = InvalidVector;
         private GraphicsBuffer _boundSonarGlowParticlesWriteBuffer;
         private GraphicsBuffer _boundSonarGlowParticleMetaWriteBuffer;
@@ -782,11 +809,10 @@ namespace Hecton8.Environment
         private bool _dispatcherReady;
         private bool _particleBuffersNeedGpuBootstrap;
         private bool _externalGpuBindingsDirty = true;
+        private bool _materialAtlasFallbackResolved;
         private bool _sonarGlowGlobalsDirty = true;
         private bool _fogDensityGlobalsDirty = true;
         private bool _coldSupportsComputeShaders;
-        private TextureFormat _coldEmptyCaveSdfTextureFormat = TextureFormat.Alpha8;
-        private TextureFormat _coldEmptyAbyssalFlowTextureFormat = TextureFormat.RGBA32;
         [SerializeField] private int _debugActiveParticleCount;
         [SerializeField] private int _debugAllocatedParticleCapacity;
         [SerializeField] private int _debugScalabilityParticleCapacity = MinimumMarineSnowParticleCapacity;
@@ -820,12 +846,6 @@ namespace Hecton8.Environment
         private void CacheGraphicsCapabilitySnapshotCold()
         {
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
-            _coldEmptyCaveSdfTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
-                ? TextureFormat.R8
-                : TextureFormat.Alpha8;
-            _coldEmptyAbyssalFlowTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.RGBAHalf)
-                ? TextureFormat.RGBAHalf
-                : TextureFormat.RGBA32;
         }
 
         private void RefreshExternalShaderGlobalsCold()
@@ -852,12 +872,16 @@ namespace Hecton8.Environment
             ResolveTargetCameraCold();
             TryRegisterHotSwapListener();
             RefreshExternalShaderGlobalsCold();
+            RefreshAuthoredNeutralVolumeFallbacksColdEditor();
+            RefreshMaterialFlipbookAtlasFallbackCold();
             RefreshFluidBinding(force: true);
             RefreshDataVaultBinding(force: true);
             EnsureNativeState();
             RegisterVehicleCommandListener();
             HectonFloatingOrigin.RegisterListener(this);
+#if UNITY_EDITOR
             EnsureCsvProfileBackgroundReader();
+#endif
             TryRegisterLateFrame();
             TryRegisterSlowTick();
             TryRegisterColdTick();
@@ -866,7 +890,10 @@ namespace Hecton8.Environment
         private void OnValidate()
         {
             RefreshSpeedLineCache();
+            RefreshAuthoredNeutralVolumeFallbacksColdEditor();
+            RefreshMaterialFlipbookAtlasFallbackCold();
             _staticBindingsDirty = true;
+            _externalGpuBindingsDirty = true;
         }
 
         private void OnDisable()
@@ -874,7 +901,9 @@ namespace Hecton8.Environment
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterVehicleCommandListener();
             TryUnregisterHotSwapListener();
+#if UNITY_EDITOR
             StopCsvProfileBackgroundReader();
+#endif
             SetUnderwaterState(false, 0f, 0f, 1f, 0f);
             SetBubbleTrailState(0f, 0f);
             if (_registeredLateFrame)
@@ -913,7 +942,9 @@ namespace Hecton8.Environment
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterVehicleCommandListener();
             TryUnregisterHotSwapListener();
+#if UNITY_EDITOR
             StopCsvProfileBackgroundReader();
+#endif
             if (_registeredSlowTick)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -1219,8 +1250,8 @@ namespace Hecton8.Environment
             if (!_buffersReady)
                 return;
 
-            RefreshSiltProfileCsv();
 #if UNITY_EDITOR
+            RefreshSiltProfileCsv();
             RefreshPropwashWakeProfileCsv();
 #endif
             EnsureSonarGlowTexture();
@@ -2170,22 +2201,6 @@ namespace Hecton8.Environment
                 return 0;
             }
         }
-#else
-        private void EnsureCsvProfileBackgroundReader()
-        {
-        }
-
-        private void StopCsvProfileBackgroundReader()
-        {
-        }
-
-        private void RefreshSiltProfileCsv()
-        {
-        }
-
-        private void RefreshPropwashWakeProfileCsv()
-        {
-        }
 #endif
 
         private static int ResolveSafeGpuWriteCount<T>(GraphicsBuffer buffer, int requestedCount) where T : struct
@@ -2707,6 +2722,17 @@ namespace Hecton8.Environment
                 !_coldSupportsComputeShaders)
                 return;
 
+            RefreshAuthoredNeutralVolumeFallbacksColdEditor();
+            RefreshMaterialFlipbookAtlasFallbackCold();
+
+            if (emptyCaveSdfTexture3D == null || emptyAbyssalFlowTexture3D == null)
+            {
+                UnityEngine.Assertions.Assert.IsNotNull(emptyCaveSdfTexture3D, "Fatal: Missing authored neutral MarineSnow cave SDF Texture3D.");
+                UnityEngine.Assertions.Assert.IsNotNull(emptyAbyssalFlowTexture3D, "Fatal: Missing authored neutral MarineSnow abyssal flow Texture3D.");
+                enabled = false;
+                return;
+            }
+
             if (!TryResolveKernel("CSMain", out _kernelIndex))
             {
                 LogMissingMainKernel();
@@ -2788,7 +2814,6 @@ namespace Hecton8.Environment
             _particleBuffersNeedGpuBootstrap = true;
             EnsureEmptyCaveSdfTexture();
             EnsureEmptyAbyssalFlowTexture();
-            EnsureQuadMesh();
             EnsureSonarGlowTexture();
             EnsureFogDensityTexture();
             _buffersReady = true;
@@ -3263,6 +3288,7 @@ namespace Hecton8.Environment
             marineSnowMaterial.SetColor(ShaderIds.TintId, particleTint);
             marineSnowMaterial.SetVector(ShaderIds.PropwashBiomeTintId, Vector4.zero);
             _boundMaterialPropwashBiomeTint = Vector4.zero;
+            BindMaterialFlipbookAtlasIfNeeded();
 
             _staticBindingsDirty = false;
         }
@@ -3939,6 +3965,7 @@ namespace Hecton8.Environment
             SetMaterialBufferIfChanged(ShaderIds.ParticlesRenderId, writeBuffer, ref _boundMaterialParticlesBuffer);
             SetMaterialBufferIfChanged(ShaderIds.ParticleMetaRenderId, writeMetaBuffer, ref _boundMaterialParticleMetaBuffer);
             SetMaterialBufferIfChanged(ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer, ref _boundMaterialVisibleParticleIndexBuffer);
+            BindMaterialFlipbookAtlasIfNeeded();
         }
 
         private void DispatchAupRebaseIfNeeded(GraphicsBuffer particleBuffer, GraphicsBuffer particleMetaBuffer)
@@ -4265,51 +4292,18 @@ namespace Hecton8.Environment
 
         private void EnsureEmptyCaveSdfTexture()
         {
-            if (_emptyCaveSdfTexture != null)
+            if (ReferenceEquals(_emptyCaveSdfTexture, emptyCaveSdfTexture3D))
                 return;
 
-            TextureFormat textureFormat = _coldEmptyCaveSdfTextureFormat;
-            _emptyCaveSdfTexture = new Texture3D(1, 1, 1, textureFormat, false)
-            {
-                name = "__HectonMarineSnowEmptySdf",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Point,
-                anisoLevel = 0
-            }; // COLD ALLOC: Texture3D[1] - fallback SDF binding for marine-snow compute when cave volume is inactive - owner: HectonMarineSnowRenderer
-            _emptyCaveSdfTexture.SetPixel(0, 0, 0, new Color(0.5f, 0f, 0f, 0f));
-            _emptyCaveSdfTexture.Apply(false, true);
+            _emptyCaveSdfTexture = emptyCaveSdfTexture3D;
         }
 
         private void EnsureEmptyAbyssalFlowTexture()
         {
-            if (_emptyAbyssalFlowTexture != null)
+            if (ReferenceEquals(_emptyAbyssalFlowTexture, emptyAbyssalFlowTexture3D))
                 return;
 
-            TextureFormat textureFormat = _coldEmptyAbyssalFlowTextureFormat;
-            _emptyAbyssalFlowTexture = new Texture3D(1, 1, 1, textureFormat, false)
-            {
-                name = "__HectonMarineSnowEmptyAbyssalFlow",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Point,
-                anisoLevel = 0
-            }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for compute binding safety - owner: HectonMarineSnowRenderer
-            _emptyAbyssalFlowTexture.SetPixel(0, 0, 0, Color.clear);
-            _emptyAbyssalFlowTexture.Apply(false, true);
-        }
-
-        private void EnsureQuadMesh()
-        {
-            if (_quadMesh != null)
-                return;
-
-            _quadMesh = new Mesh
-            {
-                name = "__HectonMarineSnowIndirectQuad",
-                bounds = new Bounds(Vector3.zero, Vector3.one * 2f)
-            }; // COLD ALLOC: Mesh[1] - legacy six-vertex quad asset kept for editor fallback paths - owner: HectonMarineSnowRenderer
-            _quadMesh.SetVertices(QuadMeshVertices);
-            _quadMesh.SetIndices(QuadMeshIndices, MeshTopology.Triangles, 0, false);
-            _quadMesh.UploadMeshData(true);
+            _emptyAbyssalFlowTexture = emptyAbyssalFlowTexture3D;
         }
 
         private static bool NearlyEqual(Vector4 left, Vector4 right, float epsilon)
@@ -4373,6 +4367,85 @@ namespace Hecton8.Environment
 
             marineSnowMaterial.SetVector(shaderId, value);
             cachedValue = value;
+        }
+
+        private void SetMaterialTextureHotIfChanged(int shaderId, Texture texture, ref Texture cachedTexture)
+        {
+            if (marineSnowMaterial == null || texture == cachedTexture)
+                return;
+
+            marineSnowMaterial.SetTexture(shaderId, texture);
+            cachedTexture = texture;
+        }
+
+        private void BindMaterialFlipbookAtlasIfNeeded()
+        {
+            if (marineSnowMaterial == null)
+                return;
+
+            SetMaterialTextureHotIfChanged(ShaderIds.MaskAtlasId, marineSnowMaskAtlas, ref _boundMaterialMaskAtlas);
+            SetMaterialTextureHotIfChanged(ShaderIds.NormalAtlasId, marineSnowNormalAtlas, ref _boundMaterialNormalAtlas);
+            SetMaterialVectorHotIfChanged(ShaderIds.AtlasParamsId, ResolveMaterialAtlasParams(), ref _boundMaterialAtlasParams);
+            SetMaterialVectorHotIfChanged(ShaderIds.FlipbookParamsId, ResolveMaterialFlipbookParams(), ref _boundMaterialFlipbookParams);
+        }
+
+        private void RefreshMaterialFlipbookAtlasFallbackCold()
+        {
+            if (marineSnowMaterial == null)
+            {
+                _materialAtlasFallbackSource = null;
+                _materialAtlasFallbackResolved = false;
+                return;
+            }
+
+            if (_materialAtlasFallbackResolved &&
+                _materialAtlasFallbackSource == marineSnowMaterial &&
+                marineSnowMaskAtlas != null &&
+                marineSnowNormalAtlas != null)
+            {
+                return;
+            }
+
+            _materialAtlasFallbackSource = marineSnowMaterial;
+            _materialAtlasFallbackResolved = true;
+
+            if (marineSnowMaskAtlas == null && marineSnowMaterial.HasProperty(ShaderIds.MaskAtlasId))
+                marineSnowMaskAtlas = marineSnowMaterial.GetTexture(ShaderIds.MaskAtlasId) as Texture2D;
+
+            if (marineSnowNormalAtlas == null && marineSnowMaterial.HasProperty(ShaderIds.NormalAtlasId))
+                marineSnowNormalAtlas = marineSnowMaterial.GetTexture(ShaderIds.NormalAtlasId) as Texture2D;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void RefreshAuthoredNeutralVolumeFallbacksColdEditor()
+        {
+#if UNITY_EDITOR
+            if (emptyCaveSdfTexture3D == null)
+                emptyCaveSdfTexture3D = AssetDatabase.LoadAssetAtPath<Texture3D>(DefaultEmptyCaveSdfTexturePath1728);
+
+            if (emptyAbyssalFlowTexture3D == null)
+                emptyAbyssalFlowTexture3D = AssetDatabase.LoadAssetAtPath<Texture3D>(DefaultEmptyAbyssalFlowTexturePath1728);
+#endif
+        }
+
+        private Vector4 ResolveMaterialAtlasParams()
+        {
+            float maskWeight = marineSnowMaskAtlas != null ? math.saturate(marineSnowMaskAtlasWeight) : 0f;
+            float normalWeight = marineSnowNormalAtlas != null && marineSnowMaskAtlas != null ? math.max(0f, marineSnowNormalAtlasWeight) : 0f;
+            return new Vector4(
+                math.clamp(marineSnowAtlasColumns, 1, 16),
+                math.clamp(marineSnowAtlasRows, 1, 16),
+                normalWeight,
+                maskWeight);
+        }
+
+        private Vector4 ResolveMaterialFlipbookParams()
+        {
+            return new Vector4(
+                math.max(0f, marineSnowFlipbookTimeScale),
+                math.saturate(marineSnowFlipbookLifePhase),
+                math.saturate(marineSnowAtlasAoGain),
+                math.max(0f, marineSnowAtlasBiolumGain));
         }
 
         private void SetKernelTextureIfChanged(int kernelIndex, int shaderId, Texture texture, ref Texture cachedTexture)
@@ -4664,7 +4737,6 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _maelstromBufferB);
             ReleaseEmptyCaveSdfTexture();
             ReleaseEmptyAbyssalFlowTexture();
-            ReleaseQuadMesh();
             ReleaseSonarGlowTexture();
             ReleaseFogDensityTexture();
             PublishSonarGlowGlobals(Vector4.zero, Vector4.zero, null);
@@ -4705,6 +4777,10 @@ namespace Hecton8.Environment
             _boundMaterialParticlesBuffer = null;
             _boundMaterialParticleMetaBuffer = null;
             _boundMaterialVisibleParticleIndexBuffer = null;
+            _boundMaterialMaskAtlas = null;
+            _boundMaterialNormalAtlas = null;
+            _boundMaterialAtlasParams = InvalidVector;
+            _boundMaterialFlipbookParams = InvalidVector;
             _boundMaterialPropwashBiomeTint = InvalidVector;
             _boundSonarGlowParticlesWriteBuffer = null;
             _boundSonarGlowParticleMetaWriteBuffer = null;
@@ -4770,7 +4846,6 @@ namespace Hecton8.Environment
             if (_emptyCaveSdfTexture == null)
                 return;
 
-            Destroy(_emptyCaveSdfTexture);
             _emptyCaveSdfTexture = null;
         }
 
@@ -4779,17 +4854,7 @@ namespace Hecton8.Environment
             if (_emptyAbyssalFlowTexture == null)
                 return;
 
-            Destroy(_emptyAbyssalFlowTexture);
             _emptyAbyssalFlowTexture = null;
-        }
-
-        private void ReleaseQuadMesh()
-        {
-            if (_quadMesh == null)
-                return;
-
-            Destroy(_quadMesh);
-            _quadMesh = null;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

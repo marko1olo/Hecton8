@@ -15,7 +15,6 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Diegetic PDA Controller")]
     public sealed class DiegeticPDAController : MonoBehaviour, ILateFrameTickable, IPanelInteractable, IGlobalRegistryHotSwapListener
     {
-        private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
         private const float HoverRaycastPixelThresholdSq = 16f;
         private const int PointerTargetCapacity = 256;
         private const int PointerDiscoveryCapacity = 512;
@@ -50,10 +49,8 @@ namespace Hecton8.UI
         private GameObject diegeticPanelRoot;
         [SerializeField, Tooltip("CanvasGroup on the diegetic PDA root used for show/hide without Canvas rebuild spam.")]
         private CanvasGroup diegeticPanelCanvasGroup;
-        [SerializeField, Tooltip("Optional explicit unlit material used by the PDA screen mesh so the panel remains emissive in caves.")]
+        [SerializeField, Tooltip("Required authored unlit material used by the PDA screen mesh so the panel remains emissive in caves. Runtime material creation is forbidden.")]
         private Material tabletScreenUnlitMaterial;
-        [SerializeField, Tooltip("Optional explicit unlit shader used when no authored PDA screen material is assigned.")]
-        private Shader tabletScreenUnlitShader;
         [SerializeField, Tooltip("Optional explicit renderer used for the PDA screen mesh.")]
         private Renderer tabletScreenRenderer;
 
@@ -120,7 +117,6 @@ namespace Hecton8.UI
         private int _pointerTargetCount;
         private int _acceptedPanelId = 1;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private Material _runtimeTabletScreenMaterial;
 
         private void Awake()
         {
@@ -151,7 +147,6 @@ namespace Hecton8.UI
             _pointerTargetRoot = null;
             _pointerTargetCacheDirty = true;
             ApplyPresentationCullState(false, false, force: true);
-            DisposeRuntimeScreenMaterial();
         }
 
         private void OnDestroy()
@@ -159,7 +154,6 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             if (diegeticPanel != null)
                 diegeticPanel.ReleasePresentationRenderTexture();
-            DisposeRuntimeScreenMaterial();
         }
 
         private void OnApplicationQuit()
@@ -411,11 +405,6 @@ namespace Hecton8.UI
 
             if (!ReferenceEquals(_cachedTabletRoot, tabletRoot))
                 RebuildTabletVisibilityCache();
-
-#if UNITY_EDITOR
-            if (tabletScreenUnlitShader == null)
-                tabletScreenUnlitShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(TabletScreenShaderPath);
-#endif
 
             if (tabletRoot != null &&
                 tabletHandAnchor != null &&
@@ -719,8 +708,12 @@ namespace Hecton8.UI
                 _eventSystem = EventSystem.current;
                 if (_eventSystem == null && allowColdCreateFallback)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     GameObject eventSystemRoot = new GameObject("DiegeticPDA_EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — PDA pointer-dispatch fallback event system — owner: DiegeticPDAController
                     eventSystemRoot.TryGetComponent(out _eventSystem);
+#else
+                    return false;
+#endif
                 }
             }
 
@@ -1212,29 +1205,10 @@ namespace Hecton8.UI
 
         private Material ResolveTabletScreenMaterial()
         {
-            if (tabletScreenUnlitMaterial != null)
-                return tabletScreenUnlitMaterial;
-
-            if (_runtimeTabletScreenMaterial != null)
-                return _runtimeTabletScreenMaterial;
-
-            if (tabletScreenUnlitShader == null)
-                return null;
-
-            _runtimeTabletScreenMaterial = new Material(tabletScreenUnlitShader)
-            {
-                name = "DiegeticPDA_Screen_Runtime"
-            }; // COLD ALLOC: Material[1] — diegetic PDA emissive screen fallback — owner: DiegeticPDAController
-            return _runtimeTabletScreenMaterial;
-        }
-
-        private void DisposeRuntimeScreenMaterial()
-        {
-            if (_runtimeTabletScreenMaterial == null)
-                return;
-
-            Destroy(_runtimeTabletScreenMaterial);
-            _runtimeTabletScreenMaterial = null;
+            UnityEngine.Assertions.Assert.IsNotNull(
+                tabletScreenUnlitMaterial,
+                "Fatal: DiegeticPDAController requires an authored tablet screen material. Runtime material creation is forbidden.");
+            return tabletScreenUnlitMaterial;
         }
 
         private static Vector2Int SanitizeTabletResolution(Vector2Int resolution)

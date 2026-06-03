@@ -1,10 +1,17 @@
 ---
 packet_id: P106_ILIYA_VARNEK_TIDE_MARGIN
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.iliya_varnek_tide_margin
+unlock_id: unlock.first_iliya_varnek_tide_margin
+poi_tags: poi.tide_margin_memo;poi.risk_office_console
+biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Iliya Varnek: tide margin

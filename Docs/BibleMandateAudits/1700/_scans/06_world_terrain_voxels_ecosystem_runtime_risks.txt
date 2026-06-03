@@ -1,29 +1,10 @@
 ﻿Assets\_Project\Scripts\World\AbyssalFluidDecalManager.cs:943:                    Hecton8.Core.H8Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
-Assets\_Project\Scripts\World\BioCableIK.cs:708:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
-Assets\_Project\Scripts\World\AbyssalThermalManager.cs:796:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1058:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
-Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2304:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4231:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. Manager-created BioCableIK rigs are disabled until an authored material is assigned.", this);
-Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
-Assets\_Project\Scripts\World\CullingManager.cs:206:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
-Assets\_Project\Scripts\World\CullingManager.cs:213:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
-Assets\_Project\Scripts\World\CullingManager.cs:537:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
-Assets\_Project\Scripts\World\CullingManager.cs:552:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
-Assets\_Project\Scripts\World\CullingManager.cs:558:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
-Assets\_Project\Scripts\World\CullingManager.cs:645:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
-Assets\_Project\Scripts\World\CullingManager.cs:668:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
-Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
-Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
-Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
+Assets\_Project\Scripts\World\BioCableIK.cs:998:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
+Assets\_Project\Scripts\World\AbyssalThermalManager.cs:806:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1068:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
+Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2316:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4345:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. BioCableIK rigs are disabled until an authored material is assigned.", this);
 Assets\_Project\Scripts\World\Biolum\HectonBiolumZone.cs:454:            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
-Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
-Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
-Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
-Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
-Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
-Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
 Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:45:                Hecton8.Core.H8Debug.Log(
 Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:94:                samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:95:                sources = new NativeArray<BiomeTransitionFogSource>(
@@ -31,10 +12,6 @@ Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:99:                f
 Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:100:                toAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:101:                playerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:102:                results = new NativeArray<BiomeTransitionFogResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
-Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
-Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
-Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
 Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:629:            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
 Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:631:                Allocator.Persistent,
 Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:828:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -43,32 +20,58 @@ Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1414:     
 Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1519:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1947:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
-Assets\_Project\Scripts\World\FloraInteractionManager.cs:8127:                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:690:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:695:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:700:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:705:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:710:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:715:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:720:                Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1162:                    Allocator.Persistent,
-Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1667:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
-Assets\_Project\Scripts\World\HectonHLODRenderer.cs:288:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1518:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1519:            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1685:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1707:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:2519:            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4466:            _cullTelemetryReadback.Data = new NativeArray<uint>(
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4468:                Allocator.Persistent,
-Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:5122:            NativeArray<byte> visibilityMask = new NativeArray<byte>(
+Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
+Assets\_Project\Scripts\World\CullingManager.cs:215:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
+Assets\_Project\Scripts\World\CullingManager.cs:222:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
+Assets\_Project\Scripts\World\CullingManager.cs:552:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
+Assets\_Project\Scripts\World\CullingManager.cs:569:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
+Assets\_Project\Scripts\World\CullingManager.cs:575:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
+Assets\_Project\Scripts\World\CullingManager.cs:665:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
+Assets\_Project\Scripts\World\CullingManager.cs:688:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
+Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
+Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
+Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
+Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
+Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
+Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
+Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
+Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
+Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
+Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
 Assets\_Project\Scripts\World\HectonSpatialHash.cs:1225:                Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
-Assets\_Project\Scripts\World\HectonWorldShellVisualDriver1428.cs:28:        private void LateUpdate()
 Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:106:                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:107:                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:108:                reductions = new NativeArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:109:                summary = new NativeArray<HectonSandboxAbyssalShelfSmokeSummary>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:687:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:692:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:697:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:702:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:707:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:712:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:717:                Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1178:                    Allocator.Persistent,
+Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1694:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1521:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1522:            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1688:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1712:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:2524:            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4471:            _cullTelemetryReadback.Data = new NativeArray<uint>(
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4473:                Allocator.Persistent,
+Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:5127:            NativeArray<byte> visibilityMask = new NativeArray<byte>(
+Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
+Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
+Assets\_Project\Scripts\World\HectonHLODRenderer.cs:288:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4816:                Allocator.Persistent,
+Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5392:            Hecton8.Core.H8Debug.Log(
+Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5402:            Hecton8.Core.H8Debug.LogError("[HectonMapMagicVegetationBridge] Loop guard hit.");
+Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5598:                Allocator.Persistent,
+Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8598:            state.HeightReadbackData = new NativeArray<ushort>(
+Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8600:                Allocator.Persistent,
+Assets\_Project\Scripts\World\HectonWorldShellVisualDriver1428.cs:28:        private void LateUpdate()
 Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:25:            if (cameraRig == null && Camera.main != null)
 Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:26:                cameraRig = Camera.main.transform;
 Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:33:        private void Update()
@@ -76,34 +79,17 @@ Assets\_Project\Scripts\World\LODSystemManager.cs:214:                Hecton8.Co
 Assets\_Project\Scripts\World\LODSystemManager.cs:234:            Hecton8.Core.H8Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
 Assets\_Project\Scripts\World\LODSystemManager.cs:565:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Invalid quality preset value. Using default (Medium).");
 Assets\_Project\Scripts\World\LODSystemManager.cs:598:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Registered LOD groups exceeds max capacity. Consider increasing capacity.");
-Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4785:                Allocator.Persistent,
-Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5361:            Hecton8.Core.H8Debug.Log(
-Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5371:            Hecton8.Core.H8Debug.LogError("[HectonMapMagicVegetationBridge] Loop guard hit.");
-Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5567:                Allocator.Persistent,
-Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8567:            state.HeightReadbackData = new NativeArray<ushort>(
-Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8569:                Allocator.Persistent,
-Assets\_Project\Scripts\World\ImpostorSystem.cs:213:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
-Assets\_Project\Scripts\World\ImpostorSystem.cs:1012:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
-Assets\_Project\Scripts\World\ImpostorSystem.cs:1179:                Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
-Assets\_Project\Scripts\World\ImpostorSystem.cs:1181:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
-Assets\_Project\Scripts\World\ImpostorSystem.cs:1187:            Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor bake preset creation is unavailable because the Amplify package is not installed.");
-Assets\_Project\Scripts\World\ImpostorSystem.cs:1199:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
-Assets\_Project\Scripts\World\ImpostorSystem.cs:1208:            Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Batch bake scan complete. Candidates={bakedCount}");
-Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:36:                heights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:37:                sediment = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:38:                weights = new NativeArray<float4>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:39:                slopeWeights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:32:            Debug.Log("Agent 1411 PCIe bandwidth guard self test passed.");
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:37:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(MatrixInstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:38:            NativeArray<byte> dirtyPages = new NativeArray<byte>(
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:75:            NativeArray<byte> dirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:103:            NativeArray<byte> matrixDirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:104:            NativeArray<byte> metadataDirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:146:            NativeArray<int> source = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:147:            NativeArray<int> bufferA = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:148:            NativeArray<int> bufferB = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:150:            NativeArray<byte> dirtyA = new NativeArray<byte>(pageCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:151:            NativeArray<byte> dirtyB = new NativeArray<byte>(pageCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\ImpostorSystem.cs:261:                Hecton8.Core.H8Debug.LogError("[ImpostorSystem] DTO layout validation failed. Disabling impostor runtime.");
+Assets\_Project\Scripts\World\ImpostorSystem.cs:271:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
+Assets\_Project\Scripts\World\ImpostorSystem.cs:1215:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
+Assets\_Project\Scripts\World\ImpostorSystem.cs:1393:                Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
+Assets\_Project\Scripts\World\ImpostorSystem.cs:1395:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
+Assets\_Project\Scripts\World\ImpostorSystem.cs:1401:            Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor bake preset creation is unavailable because the Amplify package is not installed.");
+Assets\_Project\Scripts\World\ImpostorSystem.cs:1413:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
+Assets\_Project\Scripts\World\ImpostorSystem.cs:1422:            Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Batch bake scan complete. Candidates={bakedCount}");
+Assets\_Project\Scripts\World\SargassumCutManager.cs:481:                Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Duplicate instance detected. Destroying the newer component.", this);
+Assets\_Project\Scripts\World\SargassumCutManager.cs:802:                    Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Missing cut-mask compute shader. Expected Hecton_SargassumCutMask.compute.", this);
+Assets\_Project\Scripts\World\SargassumCutManager.cs:828:                    Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Missing terrain damage-volume compute shader. Expected Hecton_TerrainDamageVolume.compute.", this);
 Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2296:            H8Debug.Log("[1325] Persistent world memory sovereignty layout validator passed.");
 Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2661:        private const Allocator DataVaultExemptPersistentRecordAllocator = Allocator.Persistent;
 Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2662:        private const Allocator DataVaultExemptPersistentDeltaAllocator = Allocator.Persistent;
@@ -128,49 +114,83 @@ Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:9148:                  
 Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:10506:                Hecton8.Core.H8Debug.LogError("[PersistentWorldRegistry] Exhausted 24-bit persistent item instance UID counter.");
 Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:10543:            Hecton8.Core.H8Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node tombstone UID. tombstoneId=", tombstoneId));
 Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:10575:            Hecton8.Core.H8Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId=", tombstoneId));
-Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:202:                    scratch = new NativeArray<T>(length, Allocator.Persistent, options);
-Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2021:                payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2184:            mesh.RecalculateNormals();
-Assets\_Project\Scripts\World\ScatterEvaluator.cs:93:                Hecton8.Core.H8Debug.LogError("[ScatterEvaluator] Not initialized. Call Initialize() first.");
-Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:421:                    Workspace = new NativeArray<PressureMetamorphismSample>(
-Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:423:                        Allocator.Persistent,
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:32:            Debug.Log("Agent 1411 PCIe bandwidth guard self test passed.");
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:37:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(MatrixInstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:38:            NativeArray<byte> dirtyPages = new NativeArray<byte>(
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:75:            NativeArray<byte> dirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:103:            NativeArray<byte> matrixDirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:104:            NativeArray<byte> metadataDirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:146:            NativeArray<int> source = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:147:            NativeArray<int> bufferA = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:148:            NativeArray<int> bufferB = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:150:            NativeArray<byte> dirtyA = new NativeArray<byte>(pageCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:151:            NativeArray<byte> dirtyB = new NativeArray<byte>(pageCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:188:                    scratch = new NativeArray<T>(length, Allocator.Persistent, options);
+Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:1973:                payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2085:                H8Debug.LogError("[MarauderOutpostGenerationService] Missing authored shell mesh/material. Authored render resources are required.", this);
 Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs:310:            Allocator laneAllocator = Allocator.Persistent;
 Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs:631:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:254:                NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
-Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:3091:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5646:                result = new Mesh();
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5849:                result = new Mesh();
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5968:                result = new Mesh();
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6834:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6837:                MeshCollider meshCollider = meshColliders[i];
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6851:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
-Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6885:            Hecton8.Core.H8Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
+Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:255:                NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
+Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:3307:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:421:                    Workspace = new NativeArray<PressureMetamorphismSample>(
+Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:423:                        Allocator.Persistent,
+Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:1367:                    Hecton8.Core.H8Debug.LogError(
+Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:1378:            if (_authoredOrePrefab != null && _authoredOrePrefab.GetComponent<ResourceNode>() == null)
+Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:1380:                Hecton8.Core.H8Debug.LogWarning(
+Assets\_Project\Scripts\World\SpawnZoneSdfValidation.cs:1022:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:36:                heights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:37:                sediment = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:38:                weights = new NativeArray<float4>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:39:                slopeWeights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\ScatterDiagnosticsTracker.cs:109:                Hecton8.Core.H8Debug.Log(report, context);
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5660:                result = new Mesh();
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5866:                result = new Mesh();
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5988:                result = new Mesh();
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6880:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6883:                MeshCollider meshCollider = meshColliders[i];
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6897:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6931:            Hecton8.Core.H8Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
+Assets\_Project\Scripts\World\SoundscapeSystem.cs:915:            H8Debug.Log("[Soundscape] Tier changed.");
+Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
+Assets\_Project\Scripts\World\ScatterRuntimeBackendFacade.cs:147:                    Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Entities DOTS backend provider not registered. Falling back to ClassicJobs.");
+Assets\_Project\Scripts\World\ScatterRuntimeBackendFacade.cs:152:                    Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown scatter backend kind. Falling back to ClassicJobs.");
+Assets\_Project\Scripts\World\ScatterRuntimeBackendFacade.cs:171:            Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown backend provider cannot be scheduled through stale contract compatibility route.");
 Assets\_Project\Scripts\World\SargassumMicroFaunaBoids.cs:7603:            _parasiteLatchReadback.Data = new NativeArray<int>(
 Assets\_Project\Scripts\World\SargassumMicroFaunaBoids.cs:7605:                Allocator.Persistent,
 Assets\_Project\Scripts\World\SargassumMicroFaunaBoids.cs:9506:            Hecton8.Core.H8Debug.LogError(message, context);
 Assets\_Project\Scripts\World\SargassumMicroFaunaBoids.cs:9827:                Hecton8.Core.H8Debug.LogError("SargassumMicroFaunaBoids editor validation watchdog tripped.", this);
-Assets\_Project\Scripts\World\SargassumCutManager.cs:481:                Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Duplicate instance detected. Destroying the newer component.", this);
-Assets\_Project\Scripts\World\SargassumCutManager.cs:802:                    Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Missing cut-mask compute shader. Expected Hecton_SargassumCutMask.compute.", this);
-Assets\_Project\Scripts\World\SargassumCutManager.cs:828:                    Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Missing terrain damage-volume compute shader. Expected Hecton_TerrainDamageVolume.compute.", this);
-Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:1284:            Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:1547:                Hecton8.Core.H8Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
-Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:4048:            mesh.RecalculateNormals();
-Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:4192:                Hecton8.Core.H8Debug.LogError("SargassumGlobalDragManager editor validation watchdog tripped.", this);
-Assets\_Project\Scripts\World\SoundscapeSystem.cs:915:            H8Debug.Log("[Soundscape] Tier changed.");
-Assets\_Project\Scripts\World\ScatterRuntimeBackendFacade.cs:147:                    Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Entities DOTS backend provider not registered. Falling back to ClassicJobs.");
-Assets\_Project\Scripts\World\ScatterRuntimeBackendFacade.cs:152:                    Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown scatter backend kind. Falling back to ClassicJobs.");
-Assets\_Project\Scripts\World\ScatterRuntimeBackendFacade.cs:171:            Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown backend provider cannot be scheduled through stale contract compatibility route.");
-Assets\_Project\Scripts\World\ScatterDiagnosticsTracker.cs:109:                Hecton8.Core.H8Debug.Log(report, context);
+Assets\_Project\Scripts\World\ScatterEvaluator.cs:93:                Hecton8.Core.H8Debug.LogError("[ScatterEvaluator] Not initialized. Call Initialize() first.");
+Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:1276:            Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:1539:                Hecton8.Core.H8Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
+Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:4051:                Hecton8.Core.H8Debug.LogError("SargassumGlobalDragManager editor validation watchdog tripped.", this);
+Assets\_Project\Scripts\World\WorldSpatialHashGrid.cs:1571:                Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] Entry capacity exceeded. Runtime buffer growth is forbidden.");
+Assets\_Project\Scripts\World\WorldSpatialHashGrid.cs:1907:                    Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
 Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:483:                    Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:789:                Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:794:                Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:799:                Allocator.Persistent,
+Assets\_Project\Scripts\World\TerrainChunkPagerRuntime.cs:2346:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\WorldShippingSceneRuntimeGuard.cs:62:                Hecton8.Core.H8Debug.Log(
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:201:                            Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:614:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1668:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1673:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1678:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1683:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1741:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1746:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1751:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1756:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1761:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1766:                Allocator.Persistent,
+Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:2433:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\VegetationMemorySovereigntyRuntime.cs:510:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\World\TOOL_Procedural_Wreckage_Generator.cs:72:                Grid = new NativeArray<GridCell>(safeCellCount, allocator, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\World\TOOL_Procedural_Wreckage_Generator.cs:74:                RngState = new NativeArray<uint4>(1, allocator, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\World\TOOL_Procedural_Wreckage_Generator.cs:114:                return allocator == Allocator.Persistent
-Assets\_Project\Scripts\World\SpawnZoneSdfValidation.cs:1022:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\VegetationMemorySovereigntyRuntime.cs:510:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\World\TerrainChunkPagerRuntime.cs:2346:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\WorldReadabilityRuntimeBootstrap.cs:47:            Hecton8.Core.H8Debug.LogWarning(
+Assets\_Project\Scripts\World\WorldReadabilityRuntimeBootstrap.cs:65:            Hecton8.Core.H8Debug.LogWarning(
 Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:292:                Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:691:                Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:696:                Allocator.Persistent,
@@ -183,72 +203,53 @@ Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:1038:            
 Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:1134:                Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:1139:                Allocator.Persistent,
 Assets\_Project\Scripts\World\VegetationFlowFieldIntegrator.cs:1246:                    Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:135:            NativeList<Vector3> rawPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:136:            NativeList<Vector3> resultPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.Persistent);
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:203:                            Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:620:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1674:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1679:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1684:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1689:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1747:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1752:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1757:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1762:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1767:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:1772:                Allocator.Persistent,
-Assets\_Project\Scripts\World\VegetationNavGridSynchronizer.cs:2294:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:132:        private static readonly NativeArray<NavObstaclePrimitive>[] _obstacleSnapshotPool = new NativeArray<NavObstaclePrimitive>[MaxObstacleSnapshotLeaseCount];
+Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:1308:                    _obstacleSnapshotPool[i] = new NativeArray<NavObstaclePrimitive>(
+Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:1310:                        Allocator.Persistent,
+Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:2322:                Hecton8.Core.H8Debug.LogWarning(DynamicClearanceBudgetWarningMessage);
+Assets\_Project\Scripts\World\VolumetricBiomeSmokeTester.cs:127:                Hecton8.Core.H8Debug.Log(
+Assets\_Project\Scripts\World\VolumetricBiomeSmokeTester.cs:312:            Hecton8.Core.H8Debug.Log(
+Assets\_Project\Scripts\World\VolumetricBiomeSmokeTester.cs:327:            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\World\WorldGenRegistrySmokeTester.cs:86:            Hecton8.Core.H8Debug.Log(
 Assets\_Project\Scripts\World\WorldGenRegistrySmokeTester.cs:238:            Hecton8.Core.H8Debug.Log(
 Assets\_Project\Scripts\World\WorldLODSceneBootstrap.cs:83:                Hecton8.Core.H8Debug.LogError("[WorldLODSceneBootstrap] LODSystemManager missing. Bootstrap disabled.");
 Assets\_Project\Scripts\World\WorldLODSceneBootstrap.cs:93:                Hecton8.Core.H8Debug.LogError("[WorldLODSceneBootstrap] Target scene is invalid. Registration aborted.");
 Assets\_Project\Scripts\World\WorldLODSceneBootstrap.cs:107:                root.GetComponentsInChildren(_includeInactiveLODGroups, _sceneLODGroupBuffer);
 Assets\_Project\Scripts\World\WorldLODSceneBootstrap.cs:140:            Hecton8.Core.H8Debug.Log($"[WorldLODSceneBootstrap] Registered {_trackedLODGroups.Count} LODGroup components for scene '{currentScene.name}'.");
-Assets\_Project\Scripts\World\VolumetricBiomeSmokeTester.cs:127:                Hecton8.Core.H8Debug.Log(
-Assets\_Project\Scripts\World\VolumetricBiomeSmokeTester.cs:312:            Hecton8.Core.H8Debug.Log(
-Assets\_Project\Scripts\World\VolumetricBiomeSmokeTester.cs:327:            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:132:        private static readonly NativeArray<NavObstaclePrimitive>[] _obstacleSnapshotPool = new NativeArray<NavObstaclePrimitive>[MaxObstacleSnapshotLeaseCount];
-Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:1308:                    _obstacleSnapshotPool[i] = new NativeArray<NavObstaclePrimitive>(
-Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:1310:                        Allocator.Persistent,
-Assets\_Project\Scripts\World\VoxelDynamicNavGridRuntime.cs:2322:                Hecton8.Core.H8Debug.LogWarning(DynamicClearanceBudgetWarningMessage);
-Assets\_Project\Scripts\World\WorldReadabilityRuntimeBootstrap.cs:47:            Hecton8.Core.H8Debug.LogWarning(
-Assets\_Project\Scripts\World\WorldReadabilityRuntimeBootstrap.cs:65:            Hecton8.Core.H8Debug.LogWarning(
-Assets\_Project\Scripts\World\WorldSpatialHashGrid.cs:1571:                Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] Entry capacity exceeded. Runtime buffer growth is forbidden.");
-Assets\_Project\Scripts\World\WorldSpatialHashGrid.cs:1907:                    Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
-Assets\_Project\Scripts\World\WorldShippingSceneRuntimeGuard.cs:62:                Hecton8.Core.H8Debug.Log(
 Assets\_Project\Scripts\World\VoxelSurfaceNets\VoxelSurfaceNetsVault.cs:1705:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:121:                Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
-Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:123:                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed.");
+Assets\_Project\Scripts\World\FloraInteractionManager.cs:8127:                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
 Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:24:            if (!runtimeRoot.TryGetComponent<FaunaGeneticsManager>(out _))
 Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:27:            if (!runtimeRoot.TryGetComponent<EcosystemHealthDirector>(out _))
 Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:30:            if (!runtimeRoot.TryGetComponent<MigrationDirector>(out _))
 Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:33:            if (!runtimeRoot.TryGetComponent<EcosystemPopulationBalancer>(out _))
+Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:121:                Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
+Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime_SHINOBU300_Audit.cs:123:                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed.");
 Assets\_Project\Scripts\Fauna\FaunaPOI.cs:53:                Hecton8.Core.H8Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
 Assets\_Project\Scripts\Fauna\CreatureDamageManager.cs:229:            GetComponentsInChildren(true, _rendererScratch);
 Assets\_Project\Scripts\Fauna\FaunaSpeciesProfile.cs:127:            Hecton8.Core.H8Debug.LogWarning(
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4425:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:5063:                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:6121:                Hecton8.Core.H8Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7434:            GetComponentsInChildren(true, _logicalLodColliderScratch);
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7756:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7760:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
-Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7772:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
-Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1765:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
-Assets\_Project\Scripts\Environment\WeatherEvents.cs:45:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-Assets\_Project\Scripts\Environment\WeatherEvents.cs:402:            Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:2041:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4438:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:5001:                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:6059:                Hecton8.Core.H8Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7382:            GetComponentsInChildren(true, _logicalLodColliderScratch);
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7704:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7708:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7720:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
 Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:2028:                Hecton8.Core.H8Debug.LogError("[SHINOBU_345] Celestial/seismic DTO layout validation failed.");
 Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:3857:                Hecton8.Core.H8Debug.LogError("[HectonSeismicTideDirector] telemetry dump failed.");
 Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:5362:                    _statusLabel.text = "Play Mode and GlobalDataVault required.";
 Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:5410:                _statusLabel.text = "Vault live. Layout: CelestialStateDTO 64B, EnvironmentStateDTO 64B, CelestialTelemetryEntry 64B.";
-Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:28:                Hecton8.Core.H8Debug.LogError("[SHINOBU_221] Base atmosphere logistics layout mismatch.");
-Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:146:                _status.text =
-Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:156:                _status.text = "No atmosphere telemetry yet.";
+Assets\_Project\Scripts\Environment\WeatherEvents.cs:45:        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+Assets\_Project\Scripts\Environment\WeatherEvents.cs:402:            Hecton8.Core.H8Debug.LogException(exception);
 Assets\_Project\Scripts\Atmosphere\ShinobuAtmosphereWaveTunerWindow.cs:150:            _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
 Assets\_Project\Scripts\Atmosphere\SurfaceWeatherVfxRig.cs:215:                    Hecton8.Core.H8Debug.Log("[SurfaceWeatherVfxRig] Missing authored LineRenderer. Lightning presentation disabled until authoredBoltRenderer is assigned.", this);
 Assets\_Project\Scripts\Atmosphere\SurfaceWeatherVfxRig.cs:252:                Hecton8.Core.H8Debug.Log("[SurfaceWeatherVfxRig] Missing lightningBoltMaterial asset. Lightning presentation disabled until material is assigned.", this);
-Assets\_Project\Scripts\Atmosphere\StormPropagation\ShinobuStormPropagationContracts.cs:722:                Hecton8.Core.H8Debug.LogError("SHINOBU_234 StormPropagationDTO layout validation failed.");
-Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1746:            scratch = new NativeArray<GasDynamicsTelemetryEntry>(
-Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1748:                Allocator.Persistent,
+Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:28:                Hecton8.Core.H8Debug.LogError("[SHINOBU_221] Base atmosphere logistics layout mismatch.");
+Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:146:                _status.text =
+Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:156:                _status.text = "No atmosphere telemetry yet.";
 Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1789:            data = new NativeArray<float4>(
 Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1791:                Allocator.Persistent,
+Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1746:            scratch = new NativeArray<GasDynamicsTelemetryEntry>(
+Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1748:                Allocator.Persistent,
+Assets\_Project\Scripts\Atmosphere\StormPropagation\ShinobuStormPropagationContracts.cs:722:                Hecton8.Core.H8Debug.LogError("SHINOBU_234 StormPropagationDTO layout validation failed.");
 Assets\_Project\Scripts\Atmosphere\StormPropagation\ShinobuStormPropagationRuntime.cs:144:                array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);

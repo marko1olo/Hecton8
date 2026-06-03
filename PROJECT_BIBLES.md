@@ -7,9 +7,35 @@ Scope: root routing index for taste, bootstrap, gameplay, survival physiology, c
 
 Before creating a major system, boot route, screen, model, texture, shader, biome, terrain surface, ecosystem rule, sonar/scanner/navigation feature, logistics/power network, drone/automation route, XR feature, cinematic moment, celestial/macro-cycle, survival route, combat/damage path, input/control route, camera behavior, atmosphere/weather field, water effect, inventory/economy feature, creature, soundscape, lighting pass, VFX pass, menu, settings option, localized text route, performance budget, GPU compute route, networking/rollback surface, authoring tool, deterministic math route, telemetry route, modding route, SDK/API surface, testing/CI gate, platform claim, release claim, public text, or gameplay loop, read the relevant bible below. Technical mandates in `.agents-skills` still apply. These files define production taste, rejection gates, and system intent so agents do not produce polished-looking emptiness.
 
+## Product Bar Rule
+
+A bible is useful only if it pushes work toward a playable, beautiful, optimized, believable product. It must turn taste into decisions, decisions into implementation boundaries, and implementation into proof.
+
+Weak bible content is rejected:
+
+- mood words with no player-visible result;
+- optimization language that permits ugly visuals;
+- visual ambition with no low-tier path;
+- gameplay ambition with no physical operation;
+- lore ambition with no surface, source, unlock, or evidence object;
+- architecture ambition with no owner, route, or proof artifact;
+- acceptance language that says "good enough" without screenshots, profiler data, manifests, tests, or runtime proof where applicable.
+
+If a route bible does not force an agent to make a better object, scene, system, interaction, text, or proof packet, strengthen the bible before implementation.
+
+## Authority Scope
+
+Only files listed in `Routes` below are standing root bibles. Other root markdown files may be work plans, issue lists, generated playbooks, temporary reports, or historical snapshots; read them only when the task, a route bible, or the edited file directly references them.
+
+Do not bulk-read every root `.md` file as a substitute for judgment. For ordinary work, choose `PROJECT_BIBLES.md`, `TASTE.md` when player-facing taste is involved, `quality.md` when acceptance/proof is involved, and the narrow set of matching domain bibles. More documents require a concrete reason.
+
+Batch prompts, controller prompts, task files, and old logs assign work; they do not lower project standards. If they conflict with `AGENTS.md`, `TASTE.md`, this index, or the matching route bible, the root authority wins and the stale instruction must be corrected or reported.
+
+Planning snapshots such as `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_PLAN.md` are not standing design authority unless the user explicitly points at them for the current task.
+
 ## Routes
 
-- Project taste and rejection language: `taste.md`
+- Project taste and rejection language: `TASTE.md`
 - Procedural asset package pipeline: `PROCEDURAL_ASSET_PIPELINE.md`
 - Generated meshes, textures, materials, LODs, and collision: `3dmodel.md`
 - Hero generated models: `3DMODEL_HERO_REALISM_OVERKILL.md`
@@ -33,6 +59,7 @@ Before creating a major system, boot route, screen, model, texture, shader, biom
 - Drones, automation, repair/mining/scanner probes, remote systems, tether relays: `drones.md`
 - Inventory, resources, crafting, storage, salvage economy: `inventory.md`
 - Narrative, missions, evidence, black-box records, quest state, text taste: `narrative.md`
+- In-world articles, encyclopedia entries, survivor diaries, terminal notes, technical lore prose, and multilingual AppliedContent packets: `writing.md`
 - Public copy, store text, social posts, creator outreach, marketing captions: `textes.md`
 - Accessibility, readability, subtitles, remapping, flashing/motion reduction: `accessibility.md`
 - Bootstrap, startup, initialization, GlobalRegistry cold setup, scene transition: `bootstrap.md`

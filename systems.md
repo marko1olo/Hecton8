@@ -37,7 +37,7 @@ Every accepted system must document:
 - SignalBus lanes consumed;
 - SignalBus lanes published;
 - GlobalRegistry dependencies resolved at cold setup;
-- MX350/i3 budget in microseconds;
+- MX350/i3 budget target or estimate in microseconds, with measured values only when a profiler artifact exists;
 - load-shed behavior for low, middle, high, and ultra quality lanes;
 - black-box telemetry fields.
 

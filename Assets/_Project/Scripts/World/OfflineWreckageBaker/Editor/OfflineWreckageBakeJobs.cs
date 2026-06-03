@@ -484,12 +484,57 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             float3 bent = original + (dir * impulse);
             float ring = math.saturate(1f - math.abs((dist / radius) - 0.52f) * 2.4f);
             bent += math.cross(dir, new float3(0.17f, 1f, 0.31f)) * ring * damage * math.lerp(0.03f, 0.18f, q) * radius;
+            float voronoiEdge = ResolveVoronoiEdgeWeight(original, epicenter, radius, q);
+            bent += dir * voronoiEdge * falloff * damage * radius * math.lerp(0.015f, 0.075f, q);
             vertex.Position = math.all(math.isfinite(bent)) ? bent : original;
             vertex.Uv3AupLocal = vertex.Position;
 
             float tearStart = math.saturate(math.isfinite(TearThreshold) ? TearThreshold : 1f);
-            float tear = math.saturate((falloff - tearStart) * math.rcp(math.max(1f - tearStart, 0.001f)));
+            float radialTear = math.saturate((falloff - tearStart) * math.rcp(math.max(1f - tearStart, 0.001f)));
+            float seamBand = math.saturate(1f - math.abs((dist / radius) - math.lerp(0.42f, 0.68f, q)) * math.lerp(2.3f, 1.35f, q));
+            float tear = math.max(radialTear, voronoiEdge * seamBand * math.saturate(math.abs(damage)));
             TearWeights[index] = math.isfinite(tear) ? tear : 0f;
+        }
+
+        public static float ResolveVoronoiEdgeWeight(float3 position, float3 epicenter, float radius, float q)
+        {
+            int seedCount = math.clamp((int)math.round(math.lerp(5f, 31f, q)), 5, 31);
+            float nearest = float.MaxValue;
+            float secondNearest = float.MaxValue;
+            for (int seedIndex = 0; seedIndex < seedCount; seedIndex++)
+            {
+                float3 seed = BuildVoronoiSeed((uint)seedIndex, epicenter, radius, q);
+                float d = math.lengthsq(position - seed);
+                bool closer = d < nearest;
+                secondNearest = math.select(math.min(secondNearest, d), nearest, closer);
+                nearest = math.select(nearest, d, closer);
+            }
+
+            float delta = math.sqrt(math.max(secondNearest, 0f)) - math.sqrt(math.max(nearest, 0f));
+            float band = radius * math.lerp(0.18f, 0.045f, q);
+            return math.saturate(1f - delta * math.rcp(math.max(band, 0.0001f)));
+        }
+
+        public static float3 BuildVoronoiSeed(uint index, float3 epicenter, float radius, float q)
+        {
+            float3 raw = new float3(
+                Hash01(index, 101u) * 2f - 1f,
+                Hash01(index, 137u) * 2f - 1f,
+                Hash01(index, 173u) * 2f - 1f);
+            float3 dir = math.normalizesafe(raw, new float3(1f, 0f, 0f));
+            float radial = math.lerp(0.16f, 0.96f, Hash01(index, 211u));
+            return epicenter + dir * radius * radial * math.lerp(0.72f, 1.12f, q);
+        }
+
+        public static float Hash01(uint index, uint lane)
+        {
+            uint hash = 0xA341316Cu ^ (index * 0x9E3779B9u) ^ (lane * 0x85EBCA6Bu);
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return (hash & 0x00FFFFFFu) / 16777215f;
         }
     }
 
@@ -523,6 +568,8 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         public float TearThreshold;
         public float SplitDistance;
         public float GlobalQualityWeight;
+        public float3 EpicenterLocal;
+        public float DamageScale;
 
         public void Execute()
         {
@@ -536,13 +583,29 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 dst[i] = src[i];
 
             int writeVertex = sourceVertexCount;
+            int writeIndex = 0;
             int tornVertices = 0;
             int degenerateTriangles = 0;
+            int fractureHoleTriangles = 0;
             float split = math.clamp(math.isfinite(SplitDistance) ? math.abs(SplitDistance) : 0.001f, 0.001f, 100000f);
             float threshold = math.saturate(math.isfinite(TearThreshold) ? TearThreshold : 1f);
             float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+            float damage = math.saturate(math.isfinite(DamageScale) ? DamageScale : 0f);
+            float3 epicenter = math.all(math.isfinite(EpicenterLocal)) ? EpicenterLocal : float3.zero;
+            float3 min = new float3(float.MaxValue);
+            float3 max = new float3(float.MinValue);
             float tearDetail01 = math.smoothstep(0.18f, 0.82f, q);
-            float holeThresholdScale = math.lerp(2.2f, 1.55f, q);
+            float fractureHoleCutoff = ResolveFractureHoleCutoff(threshold, q, damage);
+            for (int i = 0; i < sourceVertexCount; i++)
+            {
+                float3 p = dst[i].Position;
+                if (!math.all(math.isfinite(p)))
+                    continue;
+
+                min = math.min(min, p);
+                max = math.max(max, p);
+            }
+
             int triCount = SourceIndices.Length / 3;
             for (int tri = 0; tri < triCount; tri++)
             {
@@ -552,21 +615,25 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 int i2 = srcIndices[baseIndex + 2];
                 if (!IsValidIndex(i0, sourceVertexCount) || !IsValidIndex(i1, sourceVertexCount) || !IsValidIndex(i2, sourceVertexCount))
                 {
-                    WriteDegenerate(dstIndices, baseIndex);
                     degenerateTriangles++;
                     continue;
                 }
 
                 float tear = (tears[i0] + tears[i1] + tears[i2]) * 0.33333334f;
                 tear = math.saturate(math.isfinite(tear) ? tear : 0f);
-                if (tear > threshold * holeThresholdScale)
+                if (tear > fractureHoleCutoff)
                 {
-                    WriteDegenerate(dstIndices, baseIndex);
-                    degenerateTriangles++;
+                    fractureHoleTriangles++;
                     continue;
                 }
 
                 float tearVisual01 = threshold < 0.9999f ? math.smoothstep(threshold, 1f, tear) * tearDetail01 : 0f;
+                if (writeIndex + 3 > OutputIndices.Length)
+                {
+                    degenerateTriangles++;
+                    continue;
+                }
+
                 if (tearVisual01 > 0.0001f && writeVertex + 2 < OutputVertices.Length)
                 {
                     OfflineWreckageBakeVertexDTO v0 = src[i0];
@@ -587,26 +654,38 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                     dst[writeVertex] = v0;
                     dst[writeVertex + 1] = v1;
                     dst[writeVertex + 2] = v2;
-                    dstIndices[baseIndex] = writeVertex;
-                    dstIndices[baseIndex + 1] = writeVertex + 1;
-                    dstIndices[baseIndex + 2] = writeVertex + 2;
+                    dstIndices[writeIndex++] = writeVertex;
+                    dstIndices[writeIndex++] = writeVertex + 1;
+                    dstIndices[writeIndex++] = writeVertex + 2;
                     writeVertex += 3;
                     tornVertices += 3;
                 }
                 else
                 {
-                    dstIndices[baseIndex] = i0;
-                    dstIndices[baseIndex + 1] = i1;
-                    dstIndices[baseIndex + 2] = i2;
+                    dstIndices[writeIndex++] = i0;
+                    dstIndices[writeIndex++] = i1;
+                    dstIndices[writeIndex++] = i2;
                 }
+            }
+
+            if (math.all(math.isfinite(min)) && math.all(math.isfinite(max)) && math.all(max > min))
+            {
+                float3 boundsCenter = (min + max) * 0.5f;
+                float3 boundsExtents = math.max((max - min) * 0.5f, new float3(0.05f));
+                AppendSupportBeams(dst, dstIndices, ref writeVertex, ref writeIndex, boundsCenter, boundsExtents, epicenter, q, damage);
+                AppendMergedDebris(dst, dstIndices, ref writeVertex, ref writeIndex, boundsCenter, boundsExtents, epicenter, q, damage);
             }
 
             if (Counters.Length > 0)
             {
                 OfflineWreckageBakeCounters64 counters = default;
                 counters.ActiveVertexCount = writeVertex;
+                counters.ActiveIndexCount = writeIndex;
                 counters.TornVertexCount = tornVertices;
                 counters.DegenerateTriangleCount = degenerateTriangles;
+                counters.FractureHoleTriangleCount = fractureHoleTriangles;
+                if (fractureHoleTriangles > 0)
+                    counters.WarningFlags |= OfflineWreckageBakeConstants.WarningFractureHolesGenerated;
                 Counters[0] = counters;
             }
         }
@@ -616,11 +695,258 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             return (uint)index < (uint)count;
         }
 
-        private static void WriteDegenerate(int* dstIndices, int baseIndex)
+        private static float ResolveFractureHoleCutoff(float threshold, float q, float damage)
         {
-            dstIndices[baseIndex] = 0;
-            dstIndices[baseIndex + 1] = 0;
-            dstIndices[baseIndex + 2] = 0;
+            float deterministicCsg01 = math.saturate(damage * math.lerp(0.62f, 1.18f, q));
+            float targetCutoff = math.saturate(threshold * math.lerp(0.95f, 0.58f, q));
+            return math.clamp(math.lerp(1.01f, targetCutoff, deterministicCsg01), 0.08f, 1.01f);
+        }
+
+        private void AppendSupportBeams(
+            OfflineWreckageBakeVertexDTO* vertices,
+            int* indices,
+            ref int writeVertex,
+            ref int writeIndex,
+            float3 boundsCenter,
+            float3 boundsExtents,
+            float3 epicenter,
+            float q,
+            float damage)
+        {
+            int supportCount = (int)math.round(math.lerp(1f, 7f, q) * math.saturate(damage));
+            float radius = math.lerp(0.04f, 0.14f, q);
+            for (int beam = 0; beam < supportCount; beam++)
+            {
+                if (writeVertex + 24 > OutputVertices.Length || writeIndex + 108 > OutputIndices.Length)
+                    return;
+
+                float hashA = Hash01((uint)beam, 11u);
+                float hashB = Hash01((uint)beam, 17u);
+                float hashC = Hash01((uint)beam, 23u);
+                float3 center = boundsCenter + new float3(
+                    (hashA - 0.5f) * boundsExtents.x * 1.45f,
+                    (hashB - 0.5f) * boundsExtents.y * 0.85f,
+                    (hashC - 0.5f) * boundsExtents.z * 1.45f);
+                float3 toBlast = math.normalizesafe(center - epicenter, new float3(1f, 0f, 0f));
+                center += toBlast * radius * math.lerp(0.8f, 3.0f, q);
+                float3 size = new float3(radius, math.max(boundsExtents.y * math.lerp(0.25f, 0.85f, hashB), radius), radius);
+                float noiseA = noise.snoise(new float3(hashA * 17f, beam + 0.13f, q * 31f));
+                float noiseB = noise.snoise(new float3(hashC * 19f, beam + 0.37f, damage * 29f));
+                float buckle = math.lerp(0.16f, 0.55f, q) * math.saturate(damage);
+                float3 beamAxis = math.normalizesafe(
+                    new float3(
+                        ((hashA - 0.5f) * 0.45f) + noiseA * buckle,
+                        1f,
+                        ((hashC - 0.5f) * 0.45f) + noiseB * buckle),
+                    new float3(0f, 1f, 0f));
+                AppendIBeam(vertices, indices, ref writeVertex, ref writeIndex, center, size.y, radius, beamAxis, toBlast, OfflineWreckageBakeMath.PackColor(220, 32, 96, 210));
+            }
+        }
+
+        private void AppendMergedDebris(
+            OfflineWreckageBakeVertexDTO* vertices,
+            int* indices,
+            ref int writeVertex,
+            ref int writeIndex,
+            float3 boundsCenter,
+            float3 boundsExtents,
+            float3 epicenter,
+            float q,
+            float damage)
+        {
+            int shardCount = (int)math.round(math.lerp(4f, 48f, q) * math.saturate(damage));
+            float radius = math.length(boundsExtents) * math.lerp(0.04f, 0.12f, q);
+            for (int shard = 0; shard < shardCount; shard++)
+            {
+                if (writeVertex + 3 > OutputVertices.Length || writeIndex + 3 > OutputIndices.Length)
+                    return;
+
+                float3 radial = math.normalizesafe(new float3(
+                    Hash01((uint)shard, 31u) - 0.5f,
+                    Hash01((uint)shard, 37u) * 0.25f,
+                    Hash01((uint)shard, 41u) - 0.5f), new float3(1f, 0f, 0f));
+                float3 tangent = math.normalizesafe(math.cross(radial, new float3(0f, 1f, 0f)), new float3(1f, 0f, 0f));
+                float3 bitangent = math.normalizesafe(math.cross(radial, tangent), new float3(0f, 1f, 0f));
+                float3 center = epicenter + radial * radius * math.lerp(1.5f, 7f, Hash01((uint)shard, 43u));
+                center = math.clamp(center, boundsCenter - boundsExtents * 1.35f, boundsCenter + boundsExtents * 1.35f);
+                float shardScale = radius * math.lerp(0.35f, 1.25f, Hash01((uint)shard, 47u));
+                float floorY = ResolveProjectedDebrisFloorY(center, boundsCenter, boundsExtents, (uint)shard, q, damage);
+                center.y = math.clamp(floorY + shardScale * 0.06f, boundsCenter.y - boundsExtents.y, boundsCenter.y + boundsExtents.y);
+                int baseVertex = writeVertex;
+                uint color = OfflineWreckageBakeMath.PackColor(235, 24, 180, 230);
+                vertices[writeVertex++] = BuildVertex(center + tangent * shardScale, radial, color);
+                vertices[writeVertex++] = BuildVertex(center - tangent * shardScale * 0.72f + bitangent * shardScale * 0.5f, radial, color);
+                vertices[writeVertex++] = BuildVertex(center - tangent * shardScale * 0.33f - bitangent * shardScale, radial, color);
+                indices[writeIndex++] = baseVertex;
+                indices[writeIndex++] = baseVertex + 1;
+                indices[writeIndex++] = baseVertex + 2;
+
+                if ((shard & 7) == 0 && writeVertex + 8 <= OutputVertices.Length && writeIndex + 36 <= OutputIndices.Length)
+                {
+                    float3 rodAxis = math.normalizesafe(
+                        tangent + bitangent * ((Hash01((uint)shard, 61u) - 0.5f) * 0.65f) + radial * 0.18f,
+                        tangent);
+                    float3 rodSide = math.normalizesafe(math.cross(radial, rodAxis), bitangent);
+                    float3 rodUp = math.normalizesafe(math.cross(rodAxis, rodSide), radial);
+                    float rodHalfLength = shardScale * math.lerp(0.85f, 2.1f, Hash01((uint)shard, 67u));
+                    float rodRadius = math.max(shardScale * math.lerp(0.025f, 0.055f, q), 0.008f);
+                    float3 rodCenter = center + radial * shardScale * 0.18f;
+                    rodCenter.y = math.clamp(rodCenter.y + rodRadius * 1.35f, boundsCenter.y - boundsExtents.y, boundsCenter.y + boundsExtents.y);
+                    AppendOrientedBox(
+                        vertices,
+                        indices,
+                        ref writeVertex,
+                        ref writeIndex,
+                        rodCenter,
+                        new float3(rodHalfLength, rodRadius, rodRadius),
+                        rodAxis,
+                        rodSide,
+                        rodUp,
+                        OfflineWreckageBakeMath.PackColor(165, 36, 132, 235));
+                }
+            }
+        }
+
+        private float ResolveProjectedDebrisFloorY(float3 point, float3 boundsCenter, float3 boundsExtents, uint shard, float q, float damage)
+        {
+            float tiltScale = math.lerp(0.015f, 0.12f, q) * math.saturate(damage);
+            float tiltX = (Hash01(shard, 53u) - 0.5f) * tiltScale;
+            float tiltZ = (Hash01(shard, 59u) - 0.5f) * tiltScale;
+            float2 local = new float2(point.x - boundsCenter.x, point.z - boundsCenter.z);
+            float baseY = boundsCenter.y - math.max(boundsExtents.y, 0.05f);
+            return baseY + math.dot(local, new float2(tiltX, tiltZ));
+        }
+
+        private static void AppendBox(
+            OfflineWreckageBakeVertexDTO* vertices,
+            int* indices,
+            ref int writeVertex,
+            ref int writeIndex,
+            float3 center,
+            float3 size,
+            uint color)
+        {
+            int baseVertex = writeVertex;
+            float3 e = math.max(size, new float3(0.01f));
+            float3 p0 = center + new float3(-e.x, -e.y, -e.z);
+            float3 p1 = center + new float3(e.x, -e.y, -e.z);
+            float3 p2 = center + new float3(e.x, e.y, -e.z);
+            float3 p3 = center + new float3(-e.x, e.y, -e.z);
+            float3 p4 = center + new float3(-e.x, -e.y, e.z);
+            float3 p5 = center + new float3(e.x, -e.y, e.z);
+            float3 p6 = center + new float3(e.x, e.y, e.z);
+            float3 p7 = center + new float3(-e.x, e.y, e.z);
+            vertices[writeVertex++] = BuildVertex(p0, math.normalizesafe(p0 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p1, math.normalizesafe(p1 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p2, math.normalizesafe(p2 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p3, math.normalizesafe(p3 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p4, math.normalizesafe(p4 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p5, math.normalizesafe(p5 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p6, math.normalizesafe(p6 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p7, math.normalizesafe(p7 - center, new float3(0f, 1f, 0f)), color);
+            WriteBoxIndices(indices, ref writeIndex, baseVertex);
+        }
+
+        private static void AppendIBeam(
+            OfflineWreckageBakeVertexDTO* vertices,
+            int* indices,
+            ref int writeVertex,
+            ref int writeIndex,
+            float3 center,
+            float halfLength,
+            float radius,
+            float3 beamAxis,
+            float3 blastAxis,
+            uint color)
+        {
+            float3 axisY = math.normalizesafe(beamAxis, new float3(0f, 1f, 0f));
+            float3 axisX = math.normalizesafe(math.cross(blastAxis, axisY), new float3(1f, 0f, 0f));
+            float3 axisZ = math.normalizesafe(math.cross(axisX, axisY), new float3(0f, 0f, 1f));
+            float flangeHalfY = math.max(radius * 0.22f, 0.0125f);
+            float safeHalfLength = math.max(halfLength, flangeHalfY * 2f);
+            float3 webHalf = new float3(radius * 0.42f, safeHalfLength, radius * 0.42f);
+            float3 flangeHalf = new float3(radius * 1.85f, flangeHalfY, radius * 0.72f);
+            float flangeOffset = math.max(0f, safeHalfLength - flangeHalfY);
+
+            AppendOrientedBox(vertices, indices, ref writeVertex, ref writeIndex, center, webHalf, axisX, axisY, axisZ, color);
+            AppendOrientedBox(vertices, indices, ref writeVertex, ref writeIndex, center + axisY * flangeOffset, flangeHalf, axisX, axisY, axisZ, color);
+            AppendOrientedBox(vertices, indices, ref writeVertex, ref writeIndex, center - axisY * flangeOffset, flangeHalf, axisX, axisY, axisZ, color);
+        }
+
+        private static void AppendOrientedBox(
+            OfflineWreckageBakeVertexDTO* vertices,
+            int* indices,
+            ref int writeVertex,
+            ref int writeIndex,
+            float3 center,
+            float3 halfExtents,
+            float3 axisX,
+            float3 axisY,
+            float3 axisZ,
+            uint color)
+        {
+            int baseVertex = writeVertex;
+            float3 x = axisX * math.max(halfExtents.x, 0.01f);
+            float3 y = axisY * math.max(halfExtents.y, 0.01f);
+            float3 z = axisZ * math.max(halfExtents.z, 0.01f);
+            float3 p0 = center - x - y - z;
+            float3 p1 = center + x - y - z;
+            float3 p2 = center + x + y - z;
+            float3 p3 = center - x + y - z;
+            float3 p4 = center - x - y + z;
+            float3 p5 = center + x - y + z;
+            float3 p6 = center + x + y + z;
+            float3 p7 = center - x + y + z;
+            vertices[writeVertex++] = BuildVertex(p0, math.normalizesafe(p0 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p1, math.normalizesafe(p1 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p2, math.normalizesafe(p2 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p3, math.normalizesafe(p3 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p4, math.normalizesafe(p4 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p5, math.normalizesafe(p5 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p6, math.normalizesafe(p6 - center, new float3(0f, 1f, 0f)), color);
+            vertices[writeVertex++] = BuildVertex(p7, math.normalizesafe(p7 - center, new float3(0f, 1f, 0f)), color);
+            WriteBoxIndices(indices, ref writeIndex, baseVertex);
+        }
+
+        private static OfflineWreckageBakeVertexDTO BuildVertex(float3 position, float3 normal, uint color)
+        {
+            OfflineWreckageBakeVertexDTO vertex = default;
+            vertex.Position = math.all(math.isfinite(position)) ? position : float3.zero;
+            vertex.Normal = math.normalizesafe(normal, new float3(0f, 1f, 0f));
+            float3 helper = math.abs(vertex.Normal.y) > 0.92f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
+            float3 tangent = math.normalizesafe(math.cross(helper, vertex.Normal), new float3(1f, 0f, 0f));
+            vertex.Tangent = new float4(tangent, 1f);
+            vertex.Uv0 = float2.zero;
+            vertex.PackedColor = color;
+            vertex.Uv3AupLocal = vertex.Position;
+            return vertex;
+        }
+
+        private static void WriteBoxIndices(int* indices, ref int writeIndex, int b)
+        {
+            indices[writeIndex++] = b; indices[writeIndex++] = b + 2; indices[writeIndex++] = b + 1;
+            indices[writeIndex++] = b; indices[writeIndex++] = b + 3; indices[writeIndex++] = b + 2;
+            indices[writeIndex++] = b + 4; indices[writeIndex++] = b + 5; indices[writeIndex++] = b + 6;
+            indices[writeIndex++] = b + 4; indices[writeIndex++] = b + 6; indices[writeIndex++] = b + 7;
+            indices[writeIndex++] = b; indices[writeIndex++] = b + 1; indices[writeIndex++] = b + 5;
+            indices[writeIndex++] = b; indices[writeIndex++] = b + 5; indices[writeIndex++] = b + 4;
+            indices[writeIndex++] = b + 1; indices[writeIndex++] = b + 2; indices[writeIndex++] = b + 6;
+            indices[writeIndex++] = b + 1; indices[writeIndex++] = b + 6; indices[writeIndex++] = b + 5;
+            indices[writeIndex++] = b + 2; indices[writeIndex++] = b + 3; indices[writeIndex++] = b + 7;
+            indices[writeIndex++] = b + 2; indices[writeIndex++] = b + 7; indices[writeIndex++] = b + 6;
+            indices[writeIndex++] = b + 3; indices[writeIndex++] = b; indices[writeIndex++] = b + 4;
+            indices[writeIndex++] = b + 3; indices[writeIndex++] = b + 4; indices[writeIndex++] = b + 7;
+        }
+
+        private float Hash01(uint index, uint lane)
+        {
+            uint hash = (uint)SourceIndices.Length ^ (index * 0x9E3779B9u) ^ (lane * 0x85EBCA6Bu);
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return (hash & 0x00FFFFFFu) / 16777215f;
         }
     }
 
@@ -640,13 +966,18 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         public void Execute()
         {
-            int vertexCount = Counters.Length > 0 ? math.clamp(Counters[0].ActiveVertexCount, 0, Vertices.Length) : 0;
+            OfflineWreckageBakeCounters64 counters = Counters.Length > 0 ? Counters[0] : default;
+            int vertexCount = math.clamp(counters.ActiveVertexCount, 0, Vertices.Length);
+            int indexCount = Counters.Length > 0
+                ? math.clamp(counters.ActiveIndexCount, 0, Indices.Length)
+                : Indices.Length;
+            indexCount -= indexCount % 3;
             OfflineWreckageBakeVertexDTO* vertices = (OfflineWreckageBakeVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Vertices);
             int* indices = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Indices);
             for (int i = 0; i < vertexCount; i++)
                 vertices[i].Normal = float3.zero;
 
-            int triCount = Indices.Length / 3;
+            int triCount = indexCount / 3;
             for (int tri = 0; tri < triCount; tri++)
             {
                 int baseIndex = tri * 3;
@@ -742,12 +1073,67 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             float dist = math.sqrt(distSq);
             float scorch01 = math.saturate(1f - (dist / radius));
             scorch01 = math.saturate(scorch01 * intensity * math.lerp(0.8f, 1.45f, q));
-            byte scorch = (byte)math.clamp((int)math.round(scorch01 * 255f), 0, 255);
-            byte rust = (byte)math.clamp((int)math.round(math.saturate(scorch01 * 0.65f + math.abs(normal.y) * 0.2f) * 255f), 0, 255);
+            float concavity01 = math.saturate(1f - math.abs(normal.y));
+            byte edgeWear = (byte)math.clamp((int)math.round(math.saturate(scorch01 * 0.55f + concavity01 * 0.35f) * 255f), 0, 255);
+            byte corrosion = (byte)math.clamp((int)math.round(math.saturate(scorch01 * 0.12f + concavity01 * 0.38f) * 255f), 0, 255);
+            byte grime = (byte)math.clamp((int)math.round(math.saturate(scorch01 * 0.48f + concavity01 * 0.46f) * 255f), 0, 255);
+            byte soot = (byte)math.clamp((int)math.round(math.saturate(scorch01 * math.lerp(0.72f, 1f, q)) * 255f), 0, 255);
             vertex.Position = position;
             vertex.Normal = normal;
             vertex.Uv3AupLocal = position;
-            vertex.PackedColor = OfflineWreckageBakeMath.PackColor(rust, (byte)128, scorch, (byte)255);
+            vertex.PackedColor = OfflineWreckageBakeMath.PackColor(edgeWear, corrosion, grime, soot);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct BendFractureNormalsJob : IJobParallelFor
+    {
+        // SAFETY: IJobParallelFor mutates only Vertices[index]; counters are immutable after torn triangle construction.
+        [NativeDisableParallelForRestriction]
+        [NoAlias]
+        public NativeArray<OfflineWreckageBakeVertexDTO> Vertices;
+
+        [ReadOnly]
+        [NoAlias]
+        public NativeArray<OfflineWreckageBakeCounters64> Counters;
+
+        public float3 EpicenterLocal;
+        public float BlastRadius;
+        public float DamageScale;
+        public float GlobalQualityWeight;
+
+        public void Execute(int index)
+        {
+            int vertexCount = Counters.Length > 0 ? math.clamp(Counters[0].ActiveVertexCount, 0, Vertices.Length) : 0;
+            if (index >= vertexCount)
+                return;
+
+            OfflineWreckageBakeVertexDTO* ptr = (OfflineWreckageBakeVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Vertices);
+            ref OfflineWreckageBakeVertexDTO vertex = ref UnsafeUtility.AsRef<OfflineWreckageBakeVertexDTO>(ptr + index);
+            float3 position = math.all(math.isfinite(vertex.Position)) ? vertex.Position : float3.zero;
+            float3 normal = math.normalizesafe(
+                math.all(math.isfinite(vertex.Normal)) ? vertex.Normal : new float3(0f, 1f, 0f),
+                new float3(0f, 1f, 0f));
+            float3 epicenter = math.all(math.isfinite(EpicenterLocal)) ? EpicenterLocal : float3.zero;
+            float radius = math.clamp(math.isfinite(BlastRadius) ? math.abs(BlastRadius) : 0.001f, 0.001f, 100000f);
+            float damage = math.saturate(math.isfinite(DamageScale) ? DamageScale : 0f);
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+            float3 delta = position - epicenter;
+            delta = math.all(math.isfinite(delta)) ? delta : float3.zero;
+            float distSq = math.max(math.lengthsq(delta), 0.000001f);
+            float dist = math.sqrt(distSq);
+            float3 radial = delta * math.rsqrt(distSq);
+            float voronoiEdge = ApplyRadialBlastJob.ResolveVoronoiEdgeWeight(position, epicenter, radius, q);
+            float seamRing = math.saturate(1f - math.abs((dist / radius) - math.lerp(0.42f, 0.68f, q)) * math.lerp(2.25f, 1.35f, q));
+            float peel = math.saturate(voronoiEdge * seamRing * damage);
+            float3 shear = math.normalizesafe(math.cross(radial, normal), new float3(0f, 1f, 0f));
+            float3 bent = normal + radial * peel * math.lerp(0.35f, 1.1f, q) + shear * peel * math.lerp(0.05f, 0.22f, q);
+            bent = math.normalizesafe(math.all(math.isfinite(bent)) ? bent : normal, normal);
+            vertex.Position = position;
+            vertex.Normal = bent;
+            float3 helper = math.abs(bent.y) > 0.92f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
+            float3 tangent = math.normalizesafe(math.cross(helper, bent), new float3(1f, 0f, 0f));
+            vertex.Tangent = new float4(tangent, 1f);
         }
     }
 

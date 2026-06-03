@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Hecton8.World.OfflineWreckageBaker;
 using Unity.Collections;
@@ -19,9 +20,23 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
     public sealed class WreckageForgeWindow : EditorWindow
     {
         private const string OutputFolder = "Assets/_Project/BakedGeometry/Wreckage";
+        private const string PrefabOutputFolder = "Assets/Prefabs/Environment/Wrecks";
         private const string ProfileFileName = "wreckage_deformation_profiles.csv";
         internal const int ProfileCapacity = 16;
         private const int IndexCopyTileSize = 384;
+        private const float MinTriangleArea = 0.0001f;
+        private const float MinNormalLengthSq = 0.64f;
+        private const float MaxNormalLengthSq = 1.44f;
+        private const string EquipmentMetadataTypeName = "Hecton8.Interaction.EquipmentMetadata, Assembly-CSharp";
+        private const string InteractionAnchorDataTypeName = "Hecton8.Interaction.InteractionAnchorData, Assembly-CSharp";
+        private const string EquipmentMetadataFullName = "Hecton8.Interaction.EquipmentMetadata";
+        private const string InteractionAnchorDataFullName = "Hecton8.Interaction.InteractionAnchorData";
+        private const string WreckIndirectShaderName = "Hecton8/World/WreckIndirectLit";
+        private const string DefaultWreckMaterialFolder = "Assets/_Project/Art/Materials/WorldProceduralProxy";
+        private const string DefaultWreckMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_HectonWreckIndirect_Default.mat";
+        private const int MaxWreckMaterialSlots = 2;
+        private const uint AnchorFlagActive = 1u << 0;
+        private const uint AnchorFlagTwoHanded = 1u << 1;
         private static readonly VertexAttributeDescriptor[] s_vertexLayout =
         {
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
@@ -53,7 +68,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         private int _profileCount;
         private int _batchIndex;
         private bool _batchActive;
-        private BakeReportAccumulator _report;
+        private BakeStatsAccumulator _bakeStats;
 
         [MenuItem("HECTON-8/Wreckage Forge/Open Forge")]
         public static void Open()
@@ -61,8 +76,32 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             GetWindow<WreckageForgeWindow>("Wreckage Forge");
         }
 
+        [MenuItem("HECTON-8/Wreckage Forge/Bake Selected Assets")]
+        public static void BakeSelectedAssets()
+        {
+            if (!HasValidSelectedBakeSources())
+            {
+                UnityEngine.Debug.LogError("[WRECKAGE_FORGE] Select at least one pristine mesh, prefab, or source folder outside generated wreckage outputs before baking.");
+                return;
+            }
+
+            WreckageForgeWindow window = GetWindow<WreckageForgeWindow>("Wreckage Forge");
+            EditorApplication.delayCall -= window.BeginBakeSelected;
+            EditorApplication.delayCall += window.BeginBakeSelected;
+        }
+
+        [MenuItem("HECTON-8/Wreckage Forge/Validate Selected Source Assets")]
+        public static void ValidateSelectedSourceAssets()
+        {
+            if (HasValidSelectedBakeSources())
+                UnityEngine.Debug.Log("[WRECKAGE_FORGE] Selected source asset gate passed.");
+            else
+                UnityEngine.Debug.LogError("[WRECKAGE_FORGE] Select at least one pristine mesh, prefab, or source folder outside generated wreckage outputs.");
+        }
+
         public void CreateGUI()
         {
+            rootVisualElement.Clear();
             rootVisualElement.style.paddingLeft = 8;
             rootVisualElement.style.paddingRight = 8;
             rootVisualElement.style.paddingTop = 8;
@@ -104,10 +143,12 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             Button loadProfiles = new Button(LoadProfiles) { text = "LOAD CSV PROFILES" };
             Button previewButton = new Button(PreviewSelectedMesh) { text = "PREVIEW SELECTED MESH" };
             Button bakeButton = new Button(BeginBake) { text = "BAKE DAMAGE STATES" };
+            Button bakeSelectionButton = new Button(BeginBakeSelected) { text = "BAKE SELECTED ASSETS" };
             Button scanButton = new Button(RunScanner) { text = "SCAN RUNTIME DESTRUCTION" };
             rootVisualElement.Add(loadProfiles);
             rootVisualElement.Add(previewButton);
             rootVisualElement.Add(bakeButton);
+            rootVisualElement.Add(bakeSelectionButton);
             rootVisualElement.Add(scanButton);
 
             _progressBar = new ProgressBar { title = "Idle", lowValue = 0f, highValue = 1f, value = 0f };
@@ -157,12 +198,16 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         private void BeginBake()
         {
+            EnsureUiReady();
+            if (RejectActiveBake())
+                return;
+
             _pendingAssetPaths.Clear();
             UnityEngine.Object folderObject = _folderField.value;
             string folderPath = folderObject == null ? null : AssetDatabase.GetAssetPath(folderObject);
             if (string.IsNullOrEmpty(folderPath) || !AssetDatabase.IsValidFolder(folderPath))
             {
-                _statusLabel.text = "Select a project folder containing pristine prefabs or meshes.";
+                SetStatus("Select a project folder containing pristine prefabs or meshes.");
                 return;
             }
 
@@ -170,20 +215,85 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { folderPath });
             AddGuids(meshGuids);
             AddGuids(prefabGuids);
+            StartQueuedBake("No mesh or prefab assets found in selected folder.");
+        }
+
+        private void BeginBakeSelected()
+        {
+            EnsureUiReady();
+            if (RejectActiveBake())
+                return;
+
+            _pendingAssetPaths.Clear();
+            UnityEngine.Object[] selectedObjects = Selection.objects;
+            for (int i = 0; i < selectedObjects.Length; i++)
+            {
+                string path = AssetDatabase.GetAssetPath(selectedObjects[i]);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                if (AssetDatabase.IsValidFolder(path))
+                {
+                    string[] meshGuids = AssetDatabase.FindAssets("t:Mesh", new[] { path });
+                    string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { path });
+                    AddGuids(meshGuids);
+                    AddGuids(prefabGuids);
+                    continue;
+                }
+
+                QueueAssetPath(path);
+            }
+
+            StartQueuedBake("Select pristine mesh, prefab, or source folder assets before running the 1717 bake.");
+        }
+
+        private void StartQueuedBake(string emptyStatus)
+        {
             if (_pendingAssetPaths.Count <= 0)
             {
-                _statusLabel.text = "No mesh or prefab assets found in selected folder.";
+                SetStatus(emptyStatus);
                 return;
             }
 
             Directory.CreateDirectory(Path.Combine(ProjectRoot(), OutputFolder));
-            _report = new BakeReportAccumulator();
+            Directory.CreateDirectory(Path.Combine(ProjectRoot(), PrefabOutputFolder));
+            _bakeStats = new BakeStatsAccumulator();
             _batchIndex = 0;
             _batchActive = true;
             _progressBar.value = 0f;
             _progressBar.title = "Baking";
             EditorApplication.update -= BakeTick;
             EditorApplication.update += BakeTick;
+        }
+
+        private void EnsureUiReady()
+        {
+            if (_statusLabel != null &&
+                _progressBar != null &&
+                _profileDropdown != null &&
+                _qualitySlider != null)
+            {
+                return;
+            }
+
+            CreateGUI();
+        }
+
+        private bool RejectActiveBake()
+        {
+            if (!_batchActive)
+                return false;
+
+            SetStatus("Bake is already running; current queue is preserved.");
+            return true;
+        }
+
+        private void SetStatus(string message)
+        {
+            if (_statusLabel != null)
+                _statusLabel.text = message;
+            else
+                UnityEngine.Debug.LogWarning(message);
         }
 
         private void BakeTick()
@@ -195,12 +305,15 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             {
                 _batchActive = false;
                 EditorApplication.update -= BakeTick;
-                WriteReport(_report);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
                 _progressBar.value = 1f;
-                _progressBar.title = "Bake pass ended - PENDING VERIFICATION";
-                _statusLabel.text = "Baked " + _report.ProcessedMeshes + " mesh inputs. Report: Docs/Reports/WRECKAGE_BAKE_REPORT.json";
+                _progressBar.title = "Bake pass ended";
+                _statusLabel.text = "Baked " + _bakeStats.ProcessedMeshes +
+                                    " mesh inputs. States=" + _bakeStats.GeneratedStates +
+                                    " tornVerts=" + _bakeStats.TornVertices +
+                                    " csgHoles=" + _bakeStats.FractureHoleTriangles +
+                                    " maxHullVerts=" + _bakeStats.MaxHullVertices + ".";
                 return;
             }
 
@@ -215,7 +328,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 profile.ShearTorsion = _shearTorsionSlider.value;
                 profile.ScorchIntensity = _scorchSlider.value;
                 profile.CollapseCompression = _collapseSlider.value;
-                BakeMesh(mesh, path, profile, ref _report);
+                BakeMesh(mesh, path, profile, ref _bakeStats);
             }
 
             _batchIndex++;
@@ -255,17 +368,43 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             NativeArray<int> stateIndices = default;
             try
             {
-                int vertexCapacity = baseVertices.Length + baseIndices.Length;
+                int extraVertexCapacity = ResolveAdditionalFractureVertexCapacity(baseIndices.Length, profile.GlobalQualityWeight);
+                int extraIndexCapacity = ResolveAdditionalFractureIndexCapacity(baseIndices.Length, profile.GlobalQualityWeight);
+                int vertexCapacity = baseVertices.Length + baseIndices.Length + extraVertexCapacity;
+                int indexCapacity = baseIndices.Length + extraIndexCapacity;
                 workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                stateIndices = new NativeArray<int>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 float3 localBlast = ResolveLocalBlast();
                 BakeStateToBuffers(baseVertices, baseIndices, profile, OfflineWreckageDamageState.Ruptured, localBlast, workingVertices, stateVertices, stateIndices, tearWeights, counters, out JobHandle previewHandle, out _);
                 previewHandle.Complete();
                 OfflineWreckageBakeCounters64 previewCounters = counters[0];
-                OfflineWreckagePreviewStore.SetMesh(CreateMesh(mesh.name + "_WRECKAGE_PREVIEW", stateVertices, previewCounters.ActiveVertexCount, stateIndices));
+                int activeVertexCount = math.clamp(previewCounters.ActiveVertexCount <= 0 ? baseVertices.Length : previewCounters.ActiveVertexCount, 0, stateVertices.Length);
+                int activeIndexCount = math.clamp(previewCounters.ActiveIndexCount, 0, stateIndices.Length);
+                if (HasNonFinite(stateVertices, activeVertexCount) ||
+                    !ValidateFinalTopology(stateVertices, activeVertexCount, stateIndices, activeIndexCount))
+                {
+                    uint warningFlags = previewCounters.WarningFlags |
+                                        OfflineWreckageBakeConstants.WarningNonFiniteFallback |
+                                        OfflineWreckageBakeConstants.WarningDegenerateTriangles;
+                    OfflineWreckageBlackBox.Record(
+                        ResolveModuleAup(),
+                        HashAscii(mesh.name),
+                        (uint)OfflineWreckageDamageState.Ruptured,
+                        activeVertexCount,
+                        activeIndexCount,
+                        previewCounters.TornVertexCount,
+                        previewCounters.HullVertexCount,
+                        0.0,
+                        warningFlags);
+                    OfflineWreckageBlackBox.Dump(ProjectRoot());
+                    _statusLabel.text = "Preview aborted: degenerate wreckage topology.";
+                    return;
+                }
+
+                OfflineWreckagePreviewStore.SetMesh(CreateMesh(mesh.name + "_WRECKAGE_PREVIEW", stateVertices, activeVertexCount, stateIndices, activeIndexCount));
                 SceneView.RepaintAll();
                 _statusLabel.text = "Preview mesh updated. Add OfflineWreckagePreviewGizmo to an editor-only scene object to view wireframe.";
             }
@@ -290,11 +429,11 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         private void RunScanner()
         {
-            int findings = Runtime_Destruction_Scanner.ScanAndWriteReport(ProjectRoot());
-            _statusLabel.text = "Runtime destruction scan findings: " + findings + ". Report: Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
+            int findings = Runtime_Destruction_Scanner.ScanFindings(ProjectRoot());
+            _statusLabel.text = "Runtime destruction scan findings: " + findings + ". No report file written.";
         }
 
-        private void BakeMesh(Mesh source, string sourcePath, WreckageDeformationProfileDTO profile, ref BakeReportAccumulator report)
+        private void BakeMesh(Mesh source, string sourcePath, WreckageDeformationProfileDTO profile, ref BakeStatsAccumulator stats)
         {
             if (!TryBuildBaseBuffers(source, out NativeArray<OfflineWreckageBakeVertexDTO> baseVertices, out NativeArray<int> baseIndices))
                 return;
@@ -307,25 +446,42 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             NativeArray<int> stateIndices = default;
             try
             {
-                int vertexCapacity = baseVertices.Length + baseIndices.Length;
+                int extraVertexCapacity = ResolveAdditionalFractureVertexCapacity(baseIndices.Length, profile.GlobalQualityWeight);
+                int extraIndexCapacity = ResolveAdditionalFractureIndexCapacity(baseIndices.Length, profile.GlobalQualityWeight);
+                int vertexCapacity = baseVertices.Length + baseIndices.Length + extraVertexCapacity;
+                int indexCapacity = baseIndices.Length + extraIndexCapacity;
                 tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                stateIndices = new NativeArray<int>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                 string safeName = BuildStableSafeName(sourcePath);
                 float3 localBlast = ResolveLocalBlast();
                 double3 moduleAup = ResolveModuleAup();
                 MeshDamageStateMappingDTO mapping = default;
                 mapping.PristineMeshHash = HashAscii(sourcePath);
-                mapping.StressedMeshHash = BakeStateAsset(source, safeName, baseVertices, baseIndices, profile, OfflineWreckageDamageState.Stressed, localBlast, moduleAup, workingVertices, stateVertices, stateIndices, tearWeights, counters, hullPoints, ref report);
-                mapping.RupturedMeshHash = BakeStateAsset(source, safeName, baseVertices, baseIndices, profile, OfflineWreckageDamageState.Ruptured, localBlast, moduleAup, workingVertices, stateVertices, stateIndices, tearWeights, counters, hullPoints, ref report);
-                mapping.CollapsedMeshHash = BakeStateAsset(source, safeName, baseVertices, baseIndices, profile, OfflineWreckageDamageState.Collapsed, localBlast, moduleAup, workingVertices, stateVertices, stateIndices, tearWeights, counters, hullPoints, ref report);
+                mapping.MappingVersion = OfflineWreckageBakeConstants.MappingLayoutVersion;
+                mapping.ArtifactVersion = OfflineWreckageBakeConstants.BakeArtifactVersion;
+                mapping.StressedMeshHash = BakeStateAsset(source, safeName, baseVertices, baseIndices, profile, OfflineWreckageDamageState.Stressed, localBlast, moduleAup, workingVertices, stateVertices, stateIndices, tearWeights, counters, hullPoints, ref stats);
+                mapping.RupturedMeshHash = BakeStateAsset(source, safeName, baseVertices, baseIndices, profile, OfflineWreckageDamageState.Ruptured, localBlast, moduleAup, workingVertices, stateVertices, stateIndices, tearWeights, counters, hullPoints, ref stats);
+                mapping.CollapsedMeshHash = BakeStateAsset(source, safeName, baseVertices, baseIndices, profile, OfflineWreckageDamageState.Collapsed, localBlast, moduleAup, workingVertices, stateVertices, stateIndices, tearWeights, counters, hullPoints, ref stats);
+                if (mapping.StressedMeshHash == 0u || mapping.RupturedMeshHash == 0u || mapping.CollapsedMeshHash == 0u)
+                {
+                    stats.WarningFlags |= OfflineWreckageBakeConstants.WarningDegenerateTriangles;
+                    return;
+                }
+
                 WriteMappingBytes(safeName, mapping);
-                report.ProcessedMeshes++;
-                report.SourcePolygons += baseIndices.Length / 3;
+                if (!PublishStaticWreckPrefab(sourcePath, safeName, profile, localBlast))
+                {
+                    stats.WarningFlags |= OfflineWreckageBakeConstants.WarningPrefabSerializationFailed;
+                    return;
+                }
+
+                stats.ProcessedMeshes++;
+                stats.SourcePolygons += baseIndices.Length / 3;
             }
             finally
             {
@@ -363,7 +519,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             NativeArray<float> tearWeights,
             NativeArray<OfflineWreckageBakeCounters64> counters,
             NativeArray<float3> hullPoints,
-            ref BakeReportAccumulator report)
+            ref BakeStatsAccumulator stats)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             BakeStateToBuffers(baseVertices, baseIndices, profile, state, localBlast, workingVertices, stateVertices, stateIndices, tearWeights, counters, out JobHandle handle, out uint warningFlags);
@@ -378,47 +534,601 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             stopwatch.Stop();
 
             string suffix = StateSuffix(state);
-            string meshPath = OutputFolder + "/GEN_" + safeName + "_" + suffix + ".asset";
+            string meshPath = BuildStateMeshPath(safeName, suffix);
             OfflineWreckageBakeCounters64 stateCounters = counters[0];
             warningFlags |= stateCounters.WarningFlags;
             int hullCount = stateCounters.HullVertexCount;
+            int activeVertexCount = math.clamp(stateCounters.ActiveVertexCount <= 0 ? baseVertices.Length : stateCounters.ActiveVertexCount, 0, stateVertices.Length);
+            int activeIndexCount = math.clamp(stateCounters.ActiveIndexCount, 0, stateIndices.Length);
             double burstMicroseconds = stopwatch.Elapsed.TotalMilliseconds * 1000.0;
             if (hullCount > 256)
                 warningFlags |= OfflineWreckageBakeConstants.WarningHullBudgetExceeded;
             if (stateCounters.DegenerateTriangleCount > 0)
                 warningFlags |= OfflineWreckageBakeConstants.WarningDegenerateTriangles;
-            if (HasNonFinite(stateVertices, stateCounters.ActiveVertexCount))
+            if (HasNonFinite(stateVertices, activeVertexCount))
                 warningFlags |= OfflineWreckageBakeConstants.WarningNonFiniteFallback;
+            if (!ValidateFinalTopology(stateVertices, activeVertexCount, stateIndices, activeIndexCount))
+                warningFlags |= OfflineWreckageBakeConstants.WarningDegenerateTriangles;
 
             uint meshHash = HashAscii(meshPath);
             OfflineWreckageBlackBox.Record(
                 moduleAup,
                 meshHash,
                 (uint)state,
-                stateCounters.ActiveVertexCount,
-                stateIndices.Length,
+                activeVertexCount,
+                activeIndexCount,
                 stateCounters.TornVertexCount,
                 hullCount,
                 burstMicroseconds,
                 warningFlags);
-            if ((warningFlags & OfflineWreckageBakeConstants.WarningNonFiniteFallback) != 0u)
+            uint fatalGeometryWarnings = OfflineWreckageBakeConstants.WarningNonFiniteFallback |
+                                         OfflineWreckageBakeConstants.WarningDegenerateTriangles;
+            if ((warningFlags & fatalGeometryWarnings) != 0u)
+            {
                 OfflineWreckageBlackBox.Dump(ProjectRoot());
+                UnityEngine.Debug.LogError("Degenerate triangle detected in Wreckage output: " + meshPath);
+                stats.WarningFlags |= warningFlags;
+                return 0u;
+            }
 
-            Mesh mesh = CreateMesh(source.name + "_" + suffix, stateVertices, stateCounters.ActiveVertexCount, stateIndices);
+            Mesh mesh = CreateMesh(source.name + "_" + suffix, stateVertices, activeVertexCount, stateIndices, activeIndexCount);
+            if (!ValidateCreatedMeshBounds(mesh))
+            {
+                OfflineWreckageBlackBox.Dump(ProjectRoot());
+                UnityEngine.Debug.LogError("Invalid wreckage mesh bounds detected: " + meshPath);
+                UnityEngine.Object.DestroyImmediate(mesh);
+                stats.WarningFlags |= OfflineWreckageBakeConstants.WarningNonFiniteFallback;
+                return 0u;
+            }
+
             PublishMeshAsset(mesh, meshPath);
 
-            string hullPath = OutputFolder + "/GEN_" + safeName + "_" + suffix + "_COLLIDER.asset";
+            string hullPath = BuildStateHullPath(safeName, suffix);
             Mesh hullMesh = CreateHullMesh(source.name + "_" + suffix + "_COLLIDER", hullPoints, hullCount);
+            if (!ValidateCreatedMeshBounds(hullMesh))
+            {
+                OfflineWreckageBlackBox.Dump(ProjectRoot());
+                UnityEngine.Debug.LogError("Invalid wreckage hull bounds detected: " + hullPath);
+                UnityEngine.Object.DestroyImmediate(mesh);
+                UnityEngine.Object.DestroyImmediate(hullMesh);
+                stats.WarningFlags |= OfflineWreckageBakeConstants.WarningNonFiniteFallback;
+                return 0u;
+            }
+
             PublishMeshAsset(hullMesh, hullPath);
 
-            report.GeneratedStates++;
-            report.GeneratedPolygons += stateIndices.Length / 3;
-            report.TornVertices += stateCounters.TornVertexCount;
-            report.BurstMicroseconds += burstMicroseconds;
-            report.MaxHullVertices = math.max(report.MaxHullVertices, hullCount);
-            report.WarningFlags |= warningFlags;
-            report.AppendState(meshPath, hullPath, state, stateVertices.Length, stateCounters.ActiveVertexCount, stateIndices.Length / 3, stateCounters.TornVertexCount, hullCount, burstMicroseconds, warningFlags);
+            stats.GeneratedStates++;
+            stats.GeneratedPolygons += activeIndexCount / 3;
+            stats.TornVertices += stateCounters.TornVertexCount;
+            stats.FractureHoleTriangles += stateCounters.FractureHoleTriangleCount;
+            stats.BurstMicroseconds += burstMicroseconds;
+            stats.MaxHullVertices = math.max(stats.MaxHullVertices, hullCount);
+            stats.WarningFlags |= warningFlags;
             return meshHash;
+        }
+
+        private static int ResolveAdditionalFractureVertexCapacity(int sourceIndexCount, float quality)
+        {
+            float q = math.saturate(quality);
+            int scaled = (int)math.ceil(math.max(sourceIndexCount, 256) * math.lerp(0.10f, 0.40f, q));
+            return math.max((int)math.ceil(math.lerp(160f, 512f, q)), scaled);
+        }
+
+        private static int ResolveAdditionalFractureIndexCapacity(int sourceIndexCount, float quality)
+        {
+            float q = math.saturate(quality);
+            int scaled = (int)math.ceil(math.max(sourceIndexCount, 384) * math.lerp(0.20f, 0.72f, q));
+            return math.max((int)math.ceil(math.lerp(320f, 1536f, q)), scaled);
+        }
+
+        private static string BuildStateMeshPath(string safeName, string suffix)
+        {
+            return OutputFolder + "/GEN_" + safeName + "_" + suffix + ".asset";
+        }
+
+        private static string BuildStateHullPath(string safeName, string suffix)
+        {
+            return OutputFolder + "/GEN_" + safeName + "_" + suffix + "_COLLIDER.asset";
+        }
+
+        private static bool PublishStaticWreckPrefab(
+            string sourcePath,
+            string safeName,
+            WreckageDeformationProfileDTO profile,
+            float3 localBlast)
+        {
+            Mesh stressed = AssetDatabase.LoadAssetAtPath<Mesh>(BuildStateMeshPath(safeName, StateSuffix(OfflineWreckageDamageState.Stressed)));
+            Mesh ruptured = AssetDatabase.LoadAssetAtPath<Mesh>(BuildStateMeshPath(safeName, StateSuffix(OfflineWreckageDamageState.Ruptured)));
+            Mesh collapsed = AssetDatabase.LoadAssetAtPath<Mesh>(BuildStateMeshPath(safeName, StateSuffix(OfflineWreckageDamageState.Collapsed)));
+            if (stressed == null || ruptured == null || collapsed == null)
+                return false;
+
+            EnsureAssetFolder(PrefabOutputFolder);
+            int worldStaticLayer = LayerMask.NameToLayer("World_Static");
+            if (worldStaticLayer < 0)
+                worldStaticLayer = 0;
+
+            GameObject root = new GameObject("GEN_Wreck_" + safeName);
+            try
+            {
+                root.layer = worldStaticLayer;
+                Bounds bounds = ruptured.bounds;
+
+                Material[] materials = ResolveSourceMaterials(sourcePath);
+                AddVisualState(root.transform, worldStaticLayer, "VIS_Stressed", stressed, materials, false);
+                AddVisualState(root.transform, worldStaticLayer, "VIS_Ruptured", ruptured, materials, true);
+                AddVisualState(root.transform, worldStaticLayer, "VIS_Collapsed", collapsed, materials, false);
+                AddPrimitiveCollision(root.transform, worldStaticLayer, bounds, localBlast, profile);
+                if (!AttachWreckageSalvageMetadata(root, safeName, bounds, localBlast, profile.GlobalQualityWeight))
+                {
+                    UnityEngine.Debug.LogError("Wreckage prefab serialization aborted: invalid salvage metadata for " + safeName);
+                    return false;
+                }
+
+                if (!ValidateStaticWreckPrefabContract(root))
+                {
+                    UnityEngine.Debug.LogError("Wreckage prefab serialization aborted: primitive/material contract failed for " + safeName);
+                    return false;
+                }
+
+                string prefabPath = PrefabOutputFolder + "/GEN_Wreck_" + safeName + ".prefab";
+                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                return true;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static bool AttachWreckageSalvageMetadata(GameObject root, string safeName, Bounds bounds, float3 localBlast, float quality)
+        {
+            if (root == null)
+                return false;
+
+            Type metadataType = ResolveColdEditorType(EquipmentMetadataTypeName, EquipmentMetadataFullName);
+            Type anchorType = ResolveColdEditorType(InteractionAnchorDataTypeName, InteractionAnchorDataFullName);
+            if (metadataType == null || anchorType == null || !typeof(Component).IsAssignableFrom(metadataType))
+                return false;
+
+            MethodInfo validateLayout = metadataType.GetMethod("ValidateStaticLayout", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            if (validateLayout == null || !(validateLayout.Invoke(null, null) is bool validLayout) || !validLayout)
+                return false;
+
+            MethodInfo setBakeData = metadataType.GetMethod("SetEditorBakeData", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (setBakeData == null)
+                return false;
+
+            MethodInfo validateAnchorSet = metadataType.GetMethod("ValidateAnchorSet", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            if (validateAnchorSet == null)
+                return false;
+
+            Array anchors = BuildWreckageAnchors(anchorType, bounds, localBlast); // COLD ALLOC: InteractionAnchorData[3] serialized to prefab only.
+            object[] validationArgs = { anchors, string.Empty }; // COLD ALLOC: reflection bridge for out string.
+            if (!(validateAnchorSet.Invoke(null, validationArgs) is bool validAnchors) || !validAnchors)
+            {
+                string failureReason = validationArgs[1] as string;
+                UnityEngine.Debug.LogError("Wreckage salvage anchor validation failed for " + safeName + ": " + (failureReason ?? "unknown"));
+                return false;
+            }
+
+            Component metadata = root.AddComponent(metadataType);
+            uint safeHash = HashAscii(safeName);
+            uint wreckHash = OfflineWreckageBakeMath.Hash(safeHash ^ 0x1717A11Cu);
+            uint bakeHash = OfflineWreckageBakeMath.Hash(safeHash ^ 0xBACE1717u);
+            object[] args = { wreckHash, bakeHash, quality, anchors }; // COLD ALLOC: reflection bridge across asmdef boundary.
+            setBakeData.Invoke(metadata, args);
+            return true;
+        }
+
+        private static bool ValidateStaticWreckPrefabContract(GameObject root)
+        {
+            if (root == null)
+                return false;
+
+            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true); // COLD ALLOC: editor prefab gate only.
+            if (meshColliders != null && meshColliders.Length > 0)
+                return false;
+
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(true); // COLD ALLOC: editor prefab gate only.
+            int solidPrimitiveCount = 0;
+            for (int i = 0; colliders != null && i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider is BoxCollider || collider is CapsuleCollider || collider is SphereCollider)
+                {
+                    if (!collider.isTrigger)
+                        solidPrimitiveCount++;
+                    continue;
+                }
+
+                return false;
+            }
+
+            if (solidPrimitiveCount <= 0)
+                return false;
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true); // COLD ALLOC: editor prefab gate only.
+            if (renderers == null || renderers.Length == 0)
+                return false;
+
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Material[] slots = renderers[rendererIndex].sharedMaterials; // COLD ALLOC: editor prefab gate only.
+                if (slots == null || slots.Length == 0 || slots.Length > MaxWreckMaterialSlots)
+                    return false;
+
+                for (int slot = 0; slot < slots.Length; slot++)
+                {
+                    if (!IsPreferredWreckMaterial(slots[slot]))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Type ResolveColdEditorType(string assemblyQualifiedName, string fullName)
+        {
+            Type type = Type.GetType(assemblyQualifiedName, false);
+            if (type != null)
+                return type;
+
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies(); // COLD ALLOC: editor bake asmdef bridge only.
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                type = assemblies[i].GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
+        }
+
+        private static Array BuildWreckageAnchors(Type anchorType, Bounds bounds, float3 localBlast)
+        {
+            Vector3 centerVector = bounds.center;
+            Vector3 extentsVector = bounds.extents;
+            float3 center = new float3(centerVector.x, centerVector.y, centerVector.z);
+            float3 extents = new float3(
+                math.max(math.abs(extentsVector.x), 0.1f),
+                math.max(math.abs(extentsVector.y), 0.1f),
+                math.max(math.abs(extentsVector.z), 0.1f));
+            float3 clampedBlast = math.clamp(localBlast, center - extents * 0.82f, center + extents * 0.82f);
+            float snap = math.clamp(math.cmin(extents) * 0.35f, 0.12f, 0.55f);
+            Array anchors = Array.CreateInstance(anchorType, 3);
+            anchors.SetValue(CreateAnchor(
+                anchorType,
+                "ANCHOR_WreckCoreAccess_1717",
+                clampedBlast,
+                ResolveAnchorForward(center, clampedBlast),
+                new float3(0f, 1f, 0f),
+                snap,
+                AnchorFlagActive | AnchorFlagTwoHanded,
+                3,
+                2), 0);
+            anchors.SetValue(CreateAnchor(
+                anchorType,
+                "ANCHOR_WreckForeSalvage_1717",
+                center + new float3(0f, extents.y * 0.12f, -extents.z * 0.72f),
+                new float3(0f, 0f, -1f),
+                new float3(0f, 1f, 0f),
+                snap * 0.85f,
+                AnchorFlagActive,
+                3,
+                1), 1);
+            anchors.SetValue(CreateAnchor(
+                anchorType,
+                "ANCHOR_WreckAftSalvage_1717",
+                center + new float3(0f, extents.y * 0.08f, extents.z * 0.72f),
+                new float3(0f, 0f, 1f),
+                new float3(0f, 1f, 0f),
+                snap * 0.85f,
+                AnchorFlagActive,
+                3,
+                1), 2);
+            return anchors;
+        }
+
+        private static object CreateAnchor(Type anchorType, string key, float3 localPosition, float3 forward, float3 up, float snapRadius, uint flags, byte handMask, byte surfaceKind)
+        {
+            object anchor = Activator.CreateInstance(anchorType);
+            SetAnchorField(anchorType, anchor, "LocalPosition", math.all(math.isfinite(localPosition)) ? localPosition : float3.zero);
+            SetAnchorField(anchorType, anchor, "LocalForward", math.normalizesafe(forward, new float3(0f, 0f, 1f)));
+            SetAnchorField(anchorType, anchor, "LocalUp", math.normalizesafe(up, new float3(0f, 1f, 0f)));
+            SetAnchorField(anchorType, anchor, "SnapRadiusMeters", math.clamp(math.isfinite(snapRadius) ? snapRadius : 0.15f, 0.05f, 1.25f));
+            SetAnchorField(anchorType, anchor, "AnchorId", HashAscii(key));
+            SetAnchorField(anchorType, anchor, "Flags", flags);
+            SetAnchorField(anchorType, anchor, "HandMask", handMask);
+            SetAnchorField(anchorType, anchor, "SurfaceKind", surfaceKind);
+            return anchor;
+        }
+
+        private static void SetAnchorField(Type anchorType, object anchor, string fieldName, object value)
+        {
+            FieldInfo field = anchorType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field != null)
+                field.SetValue(anchor, value);
+        }
+
+        private static float3 ResolveAnchorForward(float3 center, float3 anchor)
+        {
+            float3 outward = anchor - center;
+            outward.y = 0f;
+            return math.normalizesafe(outward, new float3(0f, 0f, 1f));
+        }
+
+        private static Material[] ResolveSourceMaterials(string sourcePath)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
+            if (prefab == null)
+                return ResolveDefaultWreckMaterialArray();
+
+            Renderer renderer = prefab.GetComponentInChildren<Renderer>(true);
+            if (renderer == null)
+                return ResolveDefaultWreckMaterialArray();
+
+            Material[] sourceMaterials = renderer.sharedMaterials; // COLD ALLOC: Unity editor material slot snapshot for prefab serialization only.
+            if (sourceMaterials == null || sourceMaterials.Length == 0)
+                return ResolveDefaultWreckMaterialArray();
+
+            Material primary = null;
+            Material secondary = null;
+            for (int i = 0; i < sourceMaterials.Length; i++)
+            {
+                Material material = sourceMaterials[i];
+                if (!IsPreferredWreckMaterial(material))
+                    continue;
+
+                if (TryAssignWreckMaterialSlot(material, ref primary, ref secondary))
+                    break;
+            }
+
+            if (primary == null)
+                return ResolveDefaultWreckMaterialArray();
+            if (secondary == null)
+                return new[] { primary }; // COLD ALLOC: serialized prefab renderer material array.
+            return new[] { primary, secondary }; // COLD ALLOC: hard cap prevents accidental SetPass/material-slot explosion.
+        }
+
+        private static Material[] ResolveDefaultWreckMaterialArray()
+        {
+            Material material = ResolveDefaultWreckMaterial();
+            return material == null
+                ? Array.Empty<Material>()
+                : new[] { material }; // COLD ALLOC: one shared fallback material slot for prefab serialization.
+        }
+
+        private static Material ResolveDefaultWreckMaterial()
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(DefaultWreckMaterialPath);
+            if (material != null)
+                return IsPreferredWreckMaterial(material) ? material : null;
+
+            Shader shader = Shader.Find(WreckIndirectShaderName);
+            if (shader == null)
+                return null;
+
+            EnsureAssetFolder(DefaultWreckMaterialFolder);
+            material = new Material(shader)
+            {
+                name = Path.GetFileNameWithoutExtension(DefaultWreckMaterialPath),
+                enableInstancing = true
+            };
+            SetMaterialFloatIfPresent(material, "_Metallic", 0.72f);
+            SetMaterialFloatIfPresent(material, "_Smoothness", 0.47f);
+            SetMaterialFloatIfPresent(material, "_WreckRustStrength", 0.92f);
+            SetMaterialFloatIfPresent(material, "_WreckGrimeStrength", 0.78f);
+            SetMaterialFloatIfPresent(material, "_WreckSootStrength", 0.95f);
+            AssetDatabase.CreateAsset(material, DefaultWreckMaterialPath);
+            return material;
+        }
+
+        private static void SetMaterialFloatIfPresent(Material material, string propertyName, float value)
+        {
+            if (material != null && material.HasProperty(propertyName))
+                material.SetFloat(propertyName, value);
+        }
+
+        private static bool IsPreferredWreckMaterial(Material material)
+        {
+            Shader shader = material != null ? material.shader : null;
+            return shader != null && string.Equals(shader.name, WreckIndirectShaderName, StringComparison.Ordinal);
+        }
+
+        private static bool TryAssignWreckMaterialSlot(Material material, ref Material primary, ref Material secondary)
+        {
+            if (material == null || ReferenceEquals(material, primary) || ReferenceEquals(material, secondary))
+                return CountResolvedWreckMaterialSlots(primary, secondary) >= MaxWreckMaterialSlots;
+            if (primary == null)
+            {
+                primary = material;
+                return false;
+            }
+            if (secondary == null)
+            {
+                secondary = material;
+                return CountResolvedWreckMaterialSlots(primary, secondary) >= MaxWreckMaterialSlots;
+            }
+            return true;
+        }
+
+        private static int CountResolvedWreckMaterialSlots(Material primary, Material secondary)
+        {
+            int count = primary != null ? 1 : 0;
+            return secondary != null ? count + 1 : count;
+        }
+
+        private static void EnsureAssetFolder(string folder)
+        {
+            string normalized = NormalizeAssetFolder(folder);
+            if (string.IsNullOrEmpty(normalized))
+                return;
+            if (AssetDatabase.IsValidFolder(normalized))
+                return;
+
+            int firstSlash = normalized.IndexOf('/');
+            if (firstSlash <= 0)
+                return;
+
+            string current = normalized.Substring(0, firstSlash);
+            int segmentStart = firstSlash + 1;
+            while (segmentStart < normalized.Length)
+            {
+                int slash = normalized.IndexOf('/', segmentStart);
+                int segmentEnd = slash < 0 ? normalized.Length : slash;
+                int segmentLength = segmentEnd - segmentStart;
+                if (segmentLength <= 0)
+                    return;
+
+                string segment = normalized.Substring(segmentStart, segmentLength);
+                string next = current + "/" + segment;
+                if (!AssetDatabase.IsValidFolder(next))
+                    AssetDatabase.CreateFolder(current, segment);
+                current = next;
+                if (slash < 0)
+                    break;
+                segmentStart = slash + 1;
+            }
+        }
+
+        private static string NormalizeAssetFolder(string folder)
+        {
+            if (string.IsNullOrEmpty(folder))
+                return string.Empty;
+
+            string normalized = folder.Replace('\\', '/').TrimEnd('/');
+            if (!normalized.StartsWith("Assets", StringComparison.Ordinal))
+                return string.Empty;
+            if (normalized.IndexOf("..", StringComparison.Ordinal) >= 0)
+                return string.Empty;
+            return normalized;
+        }
+
+        private static void AddVisualState(Transform root, int layer, string name, Mesh mesh, Material[] materials, bool active)
+        {
+            GameObject child = new GameObject(name);
+            child.layer = layer;
+            child.SetActive(active);
+            child.transform.SetParent(root, false);
+            MeshFilter filter = child.AddComponent<MeshFilter>();
+            filter.sharedMesh = mesh;
+            MeshRenderer renderer = child.AddComponent<MeshRenderer>();
+            if (materials != null && materials.Length > 0)
+                renderer.sharedMaterials = materials;
+        }
+
+        private static void AddPrimitiveCollision(Transform root, int layer, Bounds bounds, float3 localBlast, WreckageDeformationProfileDTO profile)
+        {
+            GameObject collision = new GameObject("COL_WreckProxy");
+            collision.layer = layer;
+            collision.transform.SetParent(root, false);
+
+            float q = math.saturate(profile.GlobalQualityWeight);
+            Vector3 boundsCenter = bounds.center;
+            Vector3 boundsSize = SanitizeColliderSize(bounds.size);
+            Vector3 min = boundsCenter - boundsSize * 0.5f;
+            Vector3 max = boundsCenter + boundsSize * 0.5f;
+            float breachSize = math.max(0.25f, profile.BlastRadius * math.lerp(0.08f, 0.22f, q));
+            float gapHalfX = math.min(boundsSize.x * 0.45f, math.max(breachSize * 1.35f, boundsSize.x * math.lerp(0.10f, 0.22f, q)));
+            float gapHalfZ = math.min(boundsSize.z * 0.45f, math.max(breachSize * 1.35f, boundsSize.z * math.lerp(0.10f, 0.22f, q)));
+            float gapCenterX = math.clamp(localBlast.x, min.x + 0.05f, max.x - 0.05f);
+            float gapCenterZ = math.clamp(localBlast.z, min.z + 0.05f, max.z - 0.05f);
+            float gapMinX = math.clamp(gapCenterX - gapHalfX, min.x, max.x);
+            float gapMaxX = math.clamp(gapCenterX + gapHalfX, min.x, max.x);
+            float gapMinZ = math.clamp(gapCenterZ - gapHalfZ, min.z, max.z);
+            float gapMaxZ = math.clamp(gapCenterZ + gapHalfZ, min.z, max.z);
+
+            AddBoxColliderSpan(collision.transform, layer, "COL_Hull_Left", min.x, gapMinX, min.y, max.y, min.z, max.z);
+            AddBoxColliderSpan(collision.transform, layer, "COL_Hull_Right", gapMaxX, max.x, min.y, max.y, min.z, max.z);
+            AddBoxColliderSpan(collision.transform, layer, "COL_Hull_Fore", gapMinX, gapMaxX, min.y, max.y, min.z, gapMinZ);
+            AddBoxColliderSpan(collision.transform, layer, "COL_Hull_Aft", gapMinX, gapMaxX, min.y, max.y, gapMaxZ, max.z);
+
+            float plateThickness = math.max(0.05f, math.min(boundsSize.y * 0.08f, 0.35f));
+            AddBoxColliderFrame(collision.transform, layer, "COL_Floor", min.y, min.y + plateThickness, min, max, gapMinX, gapMaxX, gapMinZ, gapMaxZ);
+            AddBoxColliderFrame(collision.transform, layer, "COL_Ceiling", max.y - plateThickness, max.y, min, max, gapMinX, gapMaxX, gapMinZ, gapMaxZ);
+
+            GameObject breach = new GameObject("COL_BreachAccess");
+            breach.layer = layer;
+            breach.transform.SetParent(collision.transform, false);
+            BoxCollider breachBox = breach.AddComponent<BoxCollider>();
+            breachBox.center = new Vector3(localBlast.x, localBlast.y, localBlast.z);
+            breachBox.size = new Vector3(breachSize, breachSize, breachSize);
+            breachBox.isTrigger = true;
+
+            GameObject salvagePocket = new GameObject("COL_SalvagePocket");
+            salvagePocket.layer = layer;
+            salvagePocket.transform.SetParent(collision.transform, false);
+            SphereCollider salvageSphere = salvagePocket.AddComponent<SphereCollider>();
+            float pocketMinY = math.min(min.y + plateThickness, max.y);
+            float pocketMaxY = math.max(max.y - plateThickness, pocketMinY);
+            float pocketY = math.clamp(localBlast.y, pocketMinY, pocketMaxY);
+            float pocketPlanarLimit = math.max(0.08f, math.min(boundsSize.x, boundsSize.z) * 0.22f);
+            salvageSphere.center = new Vector3(gapCenterX, pocketY, gapCenterZ);
+            salvageSphere.radius = Mathf.Min(pocketPlanarLimit, Mathf.Max(0.08f, breachSize * Mathf.Lerp(0.55f, 0.95f, q)));
+            salvageSphere.isTrigger = true;
+
+            GameObject support = new GameObject("COL_SupportSpan");
+            support.layer = layer;
+            support.transform.SetParent(collision.transform, false);
+            CapsuleCollider supportCapsule = support.AddComponent<CapsuleCollider>();
+            supportCapsule.direction = 1;
+            supportCapsule.center = bounds.center;
+            float horizontalExtent = Mathf.Max(0.05f, Mathf.Min(Mathf.Abs(bounds.extents.x), Mathf.Abs(bounds.extents.z)));
+            supportCapsule.radius = Mathf.Max(0.05f, horizontalExtent * Mathf.Lerp(0.035f, 0.09f, q));
+            supportCapsule.height = Mathf.Max(supportCapsule.radius * 2f, Mathf.Abs(bounds.size.y) * Mathf.Lerp(0.35f, 0.9f, q));
+        }
+
+        private static void AddBoxColliderFrame(
+            Transform parent,
+            int layer,
+            string namePrefix,
+            float minY,
+            float maxY,
+            Vector3 min,
+            Vector3 max,
+            float gapMinX,
+            float gapMaxX,
+            float gapMinZ,
+            float gapMaxZ)
+        {
+            AddBoxColliderSpan(parent, layer, namePrefix + "_Left", min.x, gapMinX, minY, maxY, min.z, max.z);
+            AddBoxColliderSpan(parent, layer, namePrefix + "_Right", gapMaxX, max.x, minY, maxY, min.z, max.z);
+            AddBoxColliderSpan(parent, layer, namePrefix + "_Fore", gapMinX, gapMaxX, minY, maxY, min.z, gapMinZ);
+            AddBoxColliderSpan(parent, layer, namePrefix + "_Aft", gapMinX, gapMaxX, minY, maxY, gapMaxZ, max.z);
+        }
+
+        private static void AddBoxColliderSpan(
+            Transform parent,
+            int layer,
+            string name,
+            float minX,
+            float maxX,
+            float minY,
+            float maxY,
+            float minZ,
+            float maxZ)
+        {
+            float sizeX = maxX - minX;
+            float sizeY = maxY - minY;
+            float sizeZ = maxZ - minZ;
+            if (sizeX < 0.05f || sizeY < 0.05f || sizeZ < 0.05f)
+                return;
+
+            GameObject child = new GameObject(name);
+            child.layer = layer;
+            child.transform.SetParent(parent, false);
+            BoxCollider box = child.AddComponent<BoxCollider>();
+            box.center = new Vector3((minX + maxX) * 0.5f, (minY + maxY) * 0.5f, (minZ + maxZ) * 0.5f);
+            box.size = new Vector3(sizeX, sizeY, sizeZ);
+        }
+
+        private static Vector3 SanitizeColliderSize(Vector3 size)
+        {
+            return new Vector3(
+                Mathf.Max(0.05f, Mathf.Abs(size.x)),
+                Mathf.Max(0.05f, Mathf.Abs(size.y)),
+                Mathf.Max(0.05f, Mathf.Abs(size.z)));
         }
 
         private static void BakeStateToBuffers(
@@ -476,7 +1186,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 Counters = counters,
                 TearThreshold = math.saturate(profile.TearThreshold) * math.lerp(1.25f, 0.75f, stateScale),
                 SplitDistance = math.lerp(0.02f, 0.22f, stateScale),
-                GlobalQualityWeight = profile.GlobalQualityWeight
+                GlobalQualityWeight = profile.GlobalQualityWeight,
+                EpicenterLocal = localBlast,
+                DamageScale = stateScale
             };
             handle = torn.Schedule(handle);
 
@@ -487,6 +1199,17 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 Counters = counters
             };
             handle = normals.Schedule(handle);
+
+            BendFractureNormalsJob bentNormals = new BendFractureNormalsJob
+            {
+                Vertices = stateVertices,
+                Counters = counters,
+                EpicenterLocal = localBlast,
+                BlastRadius = math.max(profile.BlastRadius, 0.001f) * math.lerp(0.65f, 1.35f, stateScale),
+                DamageScale = stateScale,
+                GlobalQualityWeight = profile.GlobalQualityWeight
+            };
+            handle = bentNormals.Schedule(stateVertices.Length, 64, handle);
 
             BakeDamageColorsJob colors = new BakeDamageColorsJob
             {
@@ -515,6 +1238,53 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             }
 
             return false;
+        }
+
+        private static bool ValidateFinalTopology(
+            NativeArray<OfflineWreckageBakeVertexDTO> vertices,
+            int vertexCount,
+            NativeArray<int> indices,
+            int indexCount)
+        {
+            int safeVertexCount = math.clamp(vertexCount, 0, vertices.Length);
+            int safeIndexCount = math.clamp(indexCount, 0, indices.Length);
+            if (safeVertexCount <= 0 || safeIndexCount < 3 || safeIndexCount % 3 != 0)
+                return false;
+
+            for (int vertexIndex = 0; vertexIndex < safeVertexCount; vertexIndex++)
+            {
+                OfflineWreckageBakeVertexDTO vertex = vertices[vertexIndex];
+                if (!math.all(math.isfinite(vertex.Position)) || !math.all(math.isfinite(vertex.Normal)))
+                    return false;
+
+                float normalLengthSq = math.lengthsq(vertex.Normal);
+                if (!math.isfinite(normalLengthSq) || normalLengthSq < MinNormalLengthSq || normalLengthSq > MaxNormalLengthSq)
+                    return false;
+            }
+
+            float minCrossLengthSq = MinTriangleArea * MinTriangleArea * 4f;
+            for (int index = 0; index < safeIndexCount; index += 3)
+            {
+                int i0 = indices[index];
+                int i1 = indices[index + 1];
+                int i2 = indices[index + 2];
+                if ((uint)i0 >= (uint)safeVertexCount ||
+                    (uint)i1 >= (uint)safeVertexCount ||
+                    (uint)i2 >= (uint)safeVertexCount)
+                {
+                    return false;
+                }
+
+                float3 v0 = vertices[i0].Position;
+                float3 v1 = vertices[i1].Position;
+                float3 v2 = vertices[i2].Position;
+                float3 cross = math.cross(v1 - v0, v2 - v0);
+                float crossLengthSq = math.lengthsq(cross);
+                if (!math.isfinite(crossLengthSq) || crossLengthSq < minCrossLengthSq)
+                    return false;
+            }
+
+            return true;
         }
 
         private bool TryBuildBaseBuffers(Mesh source, out NativeArray<OfflineWreckageBakeVertexDTO> vertices, out NativeArray<int> indices)
@@ -706,18 +1476,22 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                    sourceData.GetVertexAttributeDimension(attribute) >= minDimension;
         }
 
-        private static Mesh CreateMesh(string name, NativeArray<OfflineWreckageBakeVertexDTO> vertices, int vertexCount, NativeArray<int> indices)
+        private static Mesh CreateMesh(string name, NativeArray<OfflineWreckageBakeVertexDTO> vertices, int vertexCount, NativeArray<int> indices, int indexCount)
         {
             int safeVertexCount = math.clamp(vertexCount, 0, vertices.Length);
+            int safeIndexCount = math.clamp(indexCount, 0, indices.Length);
+            safeIndexCount -= safeIndexCount % 3;
+            if (safeVertexCount <= 0)
+                safeIndexCount = 0;
             Mesh mesh = new Mesh { name = name, indexFormat = IndexFormat.UInt32 };
             const MeshUpdateFlags flags = MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers;
             Bounds bounds = ComputeBounds(vertices, safeVertexCount);
             mesh.SetVertexBufferParams(safeVertexCount, s_vertexLayout);
-            mesh.SetIndexBufferParams(indices.Length, IndexFormat.UInt32);
+            mesh.SetIndexBufferParams(safeIndexCount, IndexFormat.UInt32);
             mesh.SetVertexBufferData(vertices, 0, 0, safeVertexCount, 0, flags);
-            mesh.SetIndexBufferData(indices, 0, 0, indices.Length, flags);
+            mesh.SetIndexBufferData(indices, 0, 0, safeIndexCount, flags);
             mesh.subMeshCount = 1;
-            mesh.SetSubMesh(0, new SubMeshDescriptor(0, indices.Length, MeshTopology.Triangles)
+            mesh.SetSubMesh(0, new SubMeshDescriptor(0, safeIndexCount, MeshTopology.Triangles)
             {
                 bounds = bounds,
                 vertexCount = safeVertexCount
@@ -831,6 +1605,25 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             return new Bounds(new Vector3(center.x, center.y, center.z), new Vector3(size.x, size.y, size.z));
         }
 
+        private static bool ValidateCreatedMeshBounds(Mesh mesh)
+        {
+            if (mesh == null || mesh.vertexCount <= 0)
+                return false;
+
+            mesh.RecalculateBounds();
+            Bounds bounds = mesh.bounds;
+            Vector3 extents = bounds.extents;
+            float extentMagnitudeSq = extents.sqrMagnitude;
+            return float.IsFinite(bounds.center.x) &&
+                   float.IsFinite(bounds.center.y) &&
+                   float.IsFinite(bounds.center.z) &&
+                   float.IsFinite(extents.x) &&
+                   float.IsFinite(extents.y) &&
+                   float.IsFinite(extents.z) &&
+                   float.IsFinite(extentMagnitudeSq) &&
+                   extentMagnitudeSq > 0.000001f;
+        }
+
         private static Bounds ComputeFloat3Bounds(NativeArray<float3> vertices, int vertexCount)
         {
             int count = math.clamp(vertexCount, 0, vertices.Length);
@@ -862,9 +1655,36 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                if (!string.IsNullOrEmpty(path) && !_pendingAssetPaths.Contains(path))
-                    _pendingAssetPaths.Add(path);
+                QueueAssetPath(path);
             }
+        }
+
+        private void QueueAssetPath(string path)
+        {
+            if (string.IsNullOrEmpty(path) ||
+                !IsValidWreckageSourcePath(path) ||
+                LoadMeshFromAsset(path) == null ||
+                _pendingAssetPaths.Contains(path))
+            {
+                return;
+            }
+
+            _pendingAssetPaths.Add(path);
+        }
+
+        private static bool IsValidWreckageSourcePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+            if (path.StartsWith(OutputFolder + "/", StringComparison.Ordinal) ||
+                path.StartsWith(PrefabOutputFolder + "/", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string fileName = Path.GetFileNameWithoutExtension(path);
+            return !fileName.StartsWith("GEN_", StringComparison.Ordinal) &&
+                   fileName.IndexOf("_COLLIDER", StringComparison.Ordinal) < 0;
         }
 
         private static Mesh LoadMeshFromAsset(string path)
@@ -879,6 +1699,45 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
             MeshFilter filter = prefab.GetComponentInChildren<MeshFilter>(true);
             return filter == null ? null : filter.sharedMesh;
+        }
+
+        internal static bool HasValidSelectedBakeSources()
+        {
+            UnityEngine.Object[] selectedObjects = Selection.objects;
+            for (int i = 0; i < selectedObjects.Length; i++)
+            {
+                string path = AssetDatabase.GetAssetPath(selectedObjects[i]);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                if (AssetDatabase.IsValidFolder(path))
+                {
+                    if (HasValidBakeGuid(AssetDatabase.FindAssets("t:Mesh", new[] { path })) ||
+                        HasValidBakeGuid(AssetDatabase.FindAssets("t:Prefab", new[] { path })))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (IsValidWreckageSourcePath(path) && LoadMeshFromAsset(path) != null)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasValidBakeGuid(string[] guids)
+        {
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (IsValidWreckageSourcePath(path) && LoadMeshFromAsset(path) != null)
+                    return true;
+            }
+
+            return false;
         }
 
         private WreckageDeformationProfileDTO CurrentProfile()
@@ -1001,6 +1860,8 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             WriteUInt32(bytes, 4, mapping.StressedMeshHash);
             WriteUInt32(bytes, 8, mapping.RupturedMeshHash);
             WriteUInt32(bytes, 12, mapping.CollapsedMeshHash);
+            WriteUInt32(bytes, 16, mapping.MappingVersion);
+            WriteUInt32(bytes, 20, mapping.ArtifactVersion);
             OfflineWreckageAtomicFile.WriteBytes(fullPath, bytes);
             AssetDatabase.ImportAsset(assetPath);
         }
@@ -1033,79 +1894,17 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             bytes[offset + 3] = (byte)((value >> 24) & 0xFFu);
         }
 
-        private static void WriteReport(BakeReportAccumulator report)
-        {
-            string reportPath = Path.Combine(ProjectRoot(), "Docs", "Reports", "WRECKAGE_BAKE_REPORT.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
-            StringBuilder json = new StringBuilder(16384);
-            json.Append("{\n");
-            json.Append("  \"agent\": \"SHINOBU_209\",\n");
-            json.Append("  \"status\": \"PENDING_VERIFICATION\",\n");
-            json.Append("  \"version\": ").Append(OfflineWreckageBakeConstants.BakeReportVersion).Append(",\n");
-            json.Append("  \"processedMeshes\": ").Append(report.ProcessedMeshes).Append(",\n");
-            json.Append("  \"generatedStates\": ").Append(report.GeneratedStates).Append(",\n");
-            json.Append("  \"sourcePolygons\": ").Append(report.SourcePolygons).Append(",\n");
-            json.Append("  \"generatedPolygons\": ").Append(report.GeneratedPolygons).Append(",\n");
-            json.Append("  \"tornVertices\": ").Append(report.TornVertices).Append(",\n");
-            json.Append("  \"maxHullVertices\": ").Append(report.MaxHullVertices).Append(",\n");
-            json.Append("  \"burstMicroseconds\": ").Append(report.BurstMicroseconds.ToString("0.000", CultureInfo.InvariantCulture)).Append(",\n");
-            json.Append("  \"warningFlags\": ").Append(report.WarningFlags).Append(",\n");
-            json.Append("  \"criticalWarning\": \"").Append((report.WarningFlags & OfflineWreckageBakeConstants.WarningHullBudgetExceeded) != 0u ? "CRITICAL_WARNING" : "NONE").Append("\",\n");
-            json.Append("  \"states\": [\n");
-            json.Append(report.StateRows);
-            json.Append("\n  ]\n");
-            json.Append("}\n");
-            WriteTextAtomic(reportPath, json.ToString());
-        }
-
-        private static void WriteTextAtomic(string path, string text)
-        {
-            OfflineWreckageAtomicFile.WriteTextUtf8(path, text);
-        }
-
-        private sealed class BakeReportAccumulator
+        private sealed class BakeStatsAccumulator
         {
             public int ProcessedMeshes;
             public int GeneratedStates;
             public int SourcePolygons;
             public int GeneratedPolygons;
             public int TornVertices;
+            public int FractureHoleTriangles;
             public int MaxHullVertices;
             public double BurstMicroseconds;
             public uint WarningFlags;
-            public readonly StringBuilder StateRows = new StringBuilder(8192);
-
-            public void AppendState(string meshPath, string hullPath, OfflineWreckageDamageState state, int capacityVertices, int activeVertices, int polygons, int tornVertices, int hullVertices, double micros, uint warnings)
-            {
-                if (StateRows.Length > 0)
-                    StateRows.Append(",\n");
-
-                StateRows.Append("    { \"mesh\": \"");
-                AppendEscaped(StateRows, meshPath);
-                StateRows.Append("\", \"collisionHull\": \"");
-                AppendEscaped(StateRows, hullPath);
-                StateRows.Append("\", \"state\": \"").Append(state).Append("\", \"capacityVertices\": ").Append(capacityVertices);
-                StateRows.Append(", \"activeVertices\": ").Append(activeVertices);
-                StateRows.Append(", \"polygons\": ").Append(polygons);
-                StateRows.Append(", \"tornVertices\": ").Append(tornVertices);
-                StateRows.Append(", \"hullVertices\": ").Append(hullVertices);
-                StateRows.Append(", \"burstMicroseconds\": ").Append(micros.ToString("0.000", CultureInfo.InvariantCulture));
-                StateRows.Append(", \"warnings\": ").Append(warnings);
-                StateRows.Append(", \"severity\": \"");
-                StateRows.Append((warnings & OfflineWreckageBakeConstants.WarningHullBudgetExceeded) != 0u ? "CRITICAL_WARNING" : warnings != 0u ? "WARNING" : "OK");
-                StateRows.Append("\" }");
-            }
-        }
-
-        private static void AppendEscaped(StringBuilder builder, string value)
-        {
-            for (int i = 0; i < value.Length; i++)
-            {
-                char c = value[i];
-                if (c == '\\' || c == '"')
-                    builder.Append('\\');
-                builder.Append(c);
-            }
         }
     }
 

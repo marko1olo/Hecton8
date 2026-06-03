@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6147706325014075563}
   - component: {fileID: 3840101998207025733}
+  - component: {fileID: 8401561738337459108}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__whip
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7304483181323747057}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.08866638, y: 2.7301908, z: -0.021027446}
-  m_Size: 5.4603815
+  m_LocalReferencePoint: {x: -0.07983625, y: 2.839632, z: 0.0062627196}
+  m_Size: 5.679264
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 3197238330212196623}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &8401561738337459108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7304483181323747057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 3181f06177bae6d46afcde18eb123b4a, type: 2}
 --- !u!1 &8331431687646628146
 GameObject:
   m_ObjectHideFlags: 0

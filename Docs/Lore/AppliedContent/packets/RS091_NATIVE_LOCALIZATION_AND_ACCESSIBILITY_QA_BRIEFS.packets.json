@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P451_RU_NATIVE_ENCODING_QA_BRIEF",
+      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+      "article_id": "applied_lore.ru_native_encoding_qa_brief",
+      "title_key": "applied_lore.ru_native_encoding_qa_brief.title",
+      "unlock": {
+        "primary": "unlock.ru_native_encoding_qa_brief",
+        "poi_tags": [
+          "poi.ru_native_encoding_qa",
+          "poi.mojibake_guard",
+          "poi.loc_source_review_card"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.qa"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "RU Native Encoding QA Brief",
+          "scanner": "Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "ru_RU": {
+          "title": "RU native encoding QA brief",
+          "scanner": "Localization QA: русские rows требуют native pass, UTF-8 source proof и rejection mojibake до publication lock.",
+          "terminal": "RU QA: reject broken encoding, mixed register drift, overlong terminal copy и untranslated gameplay units.",
+          "audio": "Localization note: битый текст - производственный дефект, а не flavor corruption.",
+          "in_game_wiki": "Русский source может нести рабочий тон проекта, но release rows требуют чистую native phrasing, стабильные units и отсутствие encoding damage.",
+          "external_site": "Русские public pages должны проходить native review как copy, не machine draft. Proper nouns, tone и hard-sci-fi units остаются стабильными.",
+          "field_note": "QA gate: сравнить packet JSON, exported CSV, wiki page и site page bytes как UTF-8. Если любая поверхность displays mojibake, block publication and fix source generation."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft JA localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft JA localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft JA localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft JA localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft JA localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft JA localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft ZH localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft ZH localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft ZH localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft ZH localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft ZH localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft FR localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft FR localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft FR localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft FR localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft FR localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft FR localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft ES localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft ES localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft ES localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft ES localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft ES localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft ES localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft DE localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft DE localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft DE localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft DE localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft DE localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft DE localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft PL localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft PL localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft PL localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft PL localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft PL localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft PL localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft UK localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft UK localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft UK localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft UK localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft UK localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft UK localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft AR localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft AR localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft AR localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft AR localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft AR localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft AR localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft ID localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft ID localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft ID localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft ID localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft ID localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft ID localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft KO localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft KO localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft KO localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft KO localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft KO localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft KO localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft HE localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft HE localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft HE localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft HE localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft HE localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft HE localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft PT localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft PT localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft PT localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft PT localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft PT localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft PT localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. RU Native Encoding QA Brief",
+          "scanner": "Draft NL localization pending native pass. Localization QA: Russian rows need native pass, UTF-8 source proof and mojibake rejection before final publication.",
+          "terminal": "Draft NL localization pending native pass. RU QA: reject broken encoding, mixed register drift, overlong terminal copy and untranslated gameplay units.",
+          "audio": "Draft NL localization pending native pass. Localization note: broken text is a production defect, not flavor corruption.",
+          "in_game_wiki": "Draft NL localization pending native pass. Russian source can carry the project's working discussion tone, but release rows require clean native phrasing, stable units and no encoding damage.",
+          "external_site": "Draft NL localization pending native pass. Russian public pages must be reviewed as native copy, not machine draft. Proper nouns, tone and hard-sci-fi units stay stable.",
+          "field_note": "Draft NL localization pending native pass. QA gate: compare packet JSON, exported CSV, wiki page and site page bytes as UTF-8. If any surface displays mojibake, block publication and fix source generation."
+        }
+      }
+    },
+    {
+      "packet_id": "P452_CJK_FONT_WRAP_QA_BRIEF",
+      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+      "article_id": "applied_lore.cjk_font_wrap_qa_brief",
+      "title_key": "applied_lore.cjk_font_wrap_qa_brief.title",
+      "unlock": {
+        "primary": "unlock.cjk_font_wrap_qa_brief",
+        "poi_tags": [
+          "poi.cjk_font_wrap_qa",
+          "poi.static_atlas_budget_card",
+          "poi.codex_linebreak_review"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.ui_rules"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "CJK Font Wrap QA Brief",
+          "scanner": "Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "ru_RU": {
+          "title": "CJK font wrap QA brief",
+          "scanner": "Localization QA: CJK rows требуют static atlas coverage, line-break proof и короткие evidence labels.",
+          "terminal": "CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "UI note: если language needs less space, тратить это на clarity, не extra lore.",
+          "in_game_wiki": "CJK pages должны сохранять packet identity, proper nouns, pressure units и receiver labels внутри PDA/terminal surfaces.",
+          "external_site": "CJK public articles требуют native typography, line break и glyph coverage review до publication.",
+          "field_note": "QA gate: review zh_CN, ja_JP и ko_KR на glyph atlas coverage, wraps внутри small terminal surfaces и evidence-tier label length."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft JA localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft JA localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft JA localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft JA localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft JA localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft JA localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft ZH localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft ZH localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft ZH localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft ZH localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft ZH localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft ZH localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft FR localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft FR localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft FR localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft FR localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft FR localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft FR localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft ES localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft ES localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft ES localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft ES localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft ES localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft ES localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft DE localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft DE localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft DE localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft DE localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft DE localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft DE localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft PL localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft PL localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft PL localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft PL localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft PL localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft PL localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft UK localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft UK localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft UK localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft UK localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft UK localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft UK localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft AR localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft AR localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft AR localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft AR localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft AR localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft AR localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft ID localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft ID localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft ID localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft ID localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft ID localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft ID localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft KO localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft KO localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft KO localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft KO localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft KO localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft KO localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft HE localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft HE localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft HE localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft HE localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft HE localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft HE localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft PT localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft PT localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft PT localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft PT localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft PT localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft PT localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. CJK Font Wrap QA Brief",
+          "scanner": "Draft NL localization pending native pass. Localization QA: CJK rows need static atlas coverage, line-break proof and short evidence labels.",
+          "terminal": "Draft NL localization pending native pass. CJK QA: no dynamic atlas for story text, no runtime translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+          "audio": "Draft NL localization pending native pass. UI note: if a language needs less space, spend it on clarity, not extra lore.",
+          "in_game_wiki": "Draft NL localization pending native pass. CJK pages must preserve packet identity, proper nouns, pressure units and receiver labels while fitting PDA and terminal surfaces.",
+          "external_site": "Draft NL localization pending native pass. CJK public articles require native typography, line break and glyph coverage review before publication.",
+          "field_note": "Draft NL localization pending native pass. QA gate: review zh_CN, ja_JP and ko_KR for glyph atlas coverage, wraps inside small terminal surfaces, and evidence-tier label length."
+        }
+      }
+    },
+    {
+      "packet_id": "P453_RTL_BIDI_NUMERIC_QA_BRIEF",
+      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+      "article_id": "applied_lore.rtl_bidi_numeric_qa_brief",
+      "title_key": "applied_lore.rtl_bidi_numeric_qa_brief.title",
+      "unlock": {
+        "primary": "unlock.rtl_bidi_numeric_qa_brief",
+        "poi_tags": [
+          "poi.rtl_bidi_numeric_qa",
+          "poi.hebrew_arabic_codex_review",
+          "poi.unit_directionality_card"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.accessibility"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "RTL Bidi Numeric QA Brief",
+          "scanner": "Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "ru_RU": {
+          "title": "RTL bidi numeric QA brief",
+          "scanner": "Localization QA: Arabic и Hebrew rows требуют bidi, unit, hash, depth, window и receiver-label proof.",
+          "terminal": "RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes и receiver names в logical source order.",
+          "audio": "Caption note: число должно оставаться тем же давлением.",
+          "in_game_wiki": "RTL review - это gameplay readability issue, потому что route windows, depths, debts и receivers входят в решения игрока.",
+          "external_site": "Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "QA gate: test ar_SA и he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft JA localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft JA localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft JA localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft JA localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft JA localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft JA localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft ZH localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft ZH localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft ZH localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft ZH localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft ZH localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft ZH localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft FR localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft FR localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft FR localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft FR localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft FR localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft FR localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft ES localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft ES localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft ES localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft ES localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft ES localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft ES localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft DE localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft DE localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft DE localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft DE localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft DE localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft DE localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft PL localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft PL localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft PL localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft PL localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft PL localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft PL localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft UK localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft UK localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft UK localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft UK localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft UK localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft UK localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft AR localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft AR localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft AR localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft AR localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft AR localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft AR localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft ID localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft ID localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft ID localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft ID localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft ID localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft ID localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft KO localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft KO localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft KO localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft KO localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft KO localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft KO localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft HE localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft HE localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft HE localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft HE localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft HE localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft HE localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft PT localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft PT localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft PT localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft PT localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft PT localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft PT localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. RTL Bidi Numeric QA Brief",
+          "scanner": "Draft NL localization pending native pass. Localization QA: Arabic and Hebrew rows need bidi, unit, hash, depth, window and receiver-label proof.",
+          "terminal": "Draft NL localization pending native pass. RTL QA: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes and receiver names in logical source order.",
+          "audio": "Draft NL localization pending native pass. Caption note: the number must remain the same pressure.",
+          "in_game_wiki": "Draft NL localization pending native pass. RTL review is a gameplay readability issue because route windows, depths, debts and receivers are part of player decisions.",
+          "external_site": "Draft NL localization pending native pass. Arabic and Hebrew public pages need native directionality proof before release publication.",
+          "field_note": "Draft NL localization pending native pass. QA gate: test ar_SA and he_IL pages with mixed Latin IDs, numbers, units and spoiler receiver labels. Do not manually reverse source strings."
+        }
+      }
+    },
+    {
+      "packet_id": "P454_EUROPEAN_EXPANSION_FIT_QA_BRIEF",
+      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+      "article_id": "applied_lore.european_expansion_fit_qa_brief",
+      "title_key": "applied_lore.european_expansion_fit_qa_brief.title",
+      "unlock": {
+        "primary": "unlock.european_expansion_fit_qa_brief",
+        "poi_tags": [
+          "poi.european_expansion_fit_qa",
+          "poi.terminal_length_review",
+          "poi.contract_label_fit_card"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.ui_rules"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "European Expansion Fit QA Brief",
+          "scanner": "Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "ru_RU": {
+          "title": "European expansion fit QA brief",
+          "scanner": "Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese и Dutch need label-length and terminal-fit review.",
+          "terminal": "EU QA: не урезать evidence meaning ради box. Collapse, page, scroll или shorten через native editorial review.",
+          "audio": "Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "European-language review должен сохранять cold terminal tone, receiver labels, route warnings и spoiler gates при longer copy length.",
+          "external_site": "Public site copy может быть длиннее terminal copy; не reuse layout limits blindly across surfaces.",
+          "field_note": "QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR и nl_NL for terminal label overflow and article rhythm."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft JA localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft JA localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft JA localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft JA localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft JA localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft JA localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft ZH localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft ZH localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft ZH localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft ZH localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft ZH localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft ZH localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft FR localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft FR localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft FR localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft FR localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft FR localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft FR localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft ES localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft ES localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft ES localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft ES localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft ES localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft ES localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft DE localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft DE localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft DE localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft DE localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft DE localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft DE localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft PL localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft PL localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft PL localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft PL localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft PL localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft PL localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft UK localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft UK localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft UK localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft UK localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft UK localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft UK localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft AR localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft AR localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft AR localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft AR localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft AR localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft AR localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft ID localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft ID localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft ID localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft ID localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft ID localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft ID localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft KO localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft KO localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft KO localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft KO localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft KO localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft KO localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft HE localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft HE localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft HE localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft HE localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft HE localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft HE localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft PT localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft PT localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft PT localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft PT localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft PT localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft PT localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. European Expansion Fit QA Brief",
+          "scanner": "Draft NL localization pending native pass. Localization QA: German, French, Spanish, Polish, Ukrainian, Portuguese and Dutch need label-length and terminal-fit review.",
+          "terminal": "Draft NL localization pending native pass. EU QA: do not shrink evidence meaning to fit a box. Collapse, page, scroll or shorten with native editorial review.",
+          "audio": "Draft NL localization pending native pass. Copy note: short is not simple when the room is flooding.",
+          "in_game_wiki": "Draft NL localization pending native pass. European-language review must preserve cold terminal tone, receiver labels, route warnings and spoiler gates under longer copy length.",
+          "external_site": "Draft NL localization pending native pass. Public site copy can be longer than terminal copy; do not reuse layout limits blindly across surfaces.",
+          "field_note": "Draft NL localization pending native pass. QA gate: review de_DE, fr_FR, es_ES, pl_PL, uk_UA, pt_BR and nl_NL for terminal label overflow and article rhythm."
+        }
+      }
+    },
+    {
+      "packet_id": "P455_SUBTITLE_AUDIO_TIMING_QA_BRIEF",
+      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+      "article_id": "applied_lore.subtitle_audio_timing_qa_brief",
+      "title_key": "applied_lore.subtitle_audio_timing_qa_brief.title",
+      "unlock": {
+        "primary": "unlock.subtitle_audio_timing_qa_brief",
+        "poi_tags": [
+          "poi.subtitle_audio_timing_qa",
+          "poi.audio_caption_review",
+          "poi.vo_line_budget_card"
+        ],
+        "biome_tags": [
+          "biome.localization",
+          "biome.audio"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Subtitle Audio Timing QA Brief",
+          "scanner": "Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "ru_RU": {
+          "title": "Subtitle audio timing QA brief",
+          "scanner": "Localization QA: subtitle rows требуют speaker, timing, pressure-warning и spoiler-stage review.",
+          "terminal": "SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces и ending records need per-locale timing budgets.",
+          "audio": "Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Subtitles являются частью survival readability. Delayed caption может ломать route trust не хуже плохого waypoint.",
+          "external_site": "Transcript articles могут быть длиннее; in-game subtitles должны сохранять timing, speaker и actionable pressure.",
+          "field_note": "QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft JA localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft JA localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft JA localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft JA localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft JA localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft JA localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft ZH localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft ZH localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft ZH localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft ZH localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft ZH localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft FR localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft FR localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft FR localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft FR localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft FR localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft FR localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft ES localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft ES localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft ES localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft ES localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft ES localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft ES localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft DE localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft DE localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft DE localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft DE localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft DE localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft DE localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft PL localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft PL localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft PL localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft PL localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft PL localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft PL localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft UK localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft UK localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft UK localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft UK localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft UK localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft UK localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft AR localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft AR localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft AR localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft AR localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft AR localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft AR localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft ID localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft ID localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft ID localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft ID localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft ID localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft ID localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft KO localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft KO localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft KO localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft KO localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft KO localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft KO localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft HE localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft HE localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft HE localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft HE localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft HE localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft HE localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft PT localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft PT localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft PT localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft PT localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft PT localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft PT localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Subtitle Audio Timing QA Brief",
+          "scanner": "Draft NL localization pending native pass. Localization QA: subtitle rows need speaker, timing, pressure-warning and spoiler-stage review.",
+          "terminal": "Draft NL localization pending native pass. SUBTITLE QA: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces and ending records need per-locale timing budgets.",
+          "audio": "Draft NL localization pending native pass. Caption rule: warning first, poetry never.",
+          "in_game_wiki": "Draft NL localization pending native pass. Subtitles are part of survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+          "external_site": "Draft NL localization pending native pass. Transcript articles can be longer; in-game subtitles must preserve timing, speaker and actionable pressure.",
+          "field_note": "Draft NL localization pending native pass. QA gate: verify caption line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+        }
+      }
+    }
+  ]
+}

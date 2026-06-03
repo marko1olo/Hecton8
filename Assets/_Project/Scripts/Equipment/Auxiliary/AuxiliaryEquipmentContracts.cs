@@ -286,6 +286,8 @@ namespace Hecton8.Equipment.Auxiliary
 
     public static class AuxiliaryEquipmentMath
     {
+        private const float LengthEpsilonSq = 0.000000000001f;
+        internal const float InverseByteMax = 0.0039215689f;
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
 
@@ -310,6 +312,15 @@ namespace Hecton8.Equipment.Auxiliary
             float safeFallback = math.select(0.01f, fallback, math.isfinite(fallback));
             float safe = math.select(safeFallback, value, math.isfinite(value));
             return math.max(0.01f, safe);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return float.NaN;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, LengthEpsilonSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

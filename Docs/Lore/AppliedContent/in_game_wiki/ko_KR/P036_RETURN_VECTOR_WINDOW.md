@@ -1,10 +1,17 @@
 ---
 packet_id: P036_RETURN_VECTOR_WINDOW
+release_set_id: RS008_ESCAPE_ENDINGS_ATLAS_QUESTION
 article_id: hecton8.return_vector_window
+unlock_id: unlock.first_return_vector_window
+poi_tags: poi.orbital_comm_window;poi.black_keel_signal
+biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: ko_KR
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # 귀환 벡터 창

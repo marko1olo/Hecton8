@@ -9,6 +9,14 @@ Celestial systems are macro pressure clocks, not astronomy simulation.
 
 HECTON-8 uses moons, tides, surface storms, seismic pulses, and light cycles to create route timing, visibility changes, predator behavior pressure, and environmental evidence. It rejects orbital realism that costs frame time without changing decisions, decorative sky cycles with no underwater consequence, and celestial claims that imply unsupported simulation.
 
+## Surface And Celestial Visual Boundary
+
+The sky, Aegir, moons, cloud decks, and surface relay light are spectacle and navigation grammar, not a dark/noir default. Surface celestial presentation must be bright enough to read silhouettes, weather, route timing, and scale.
+
+Eclipse is a temporary route, communication, and lighting occlusion scalar. It may dim, color-shift, interrupt signals, and stage urgency, but it must not become a permanent black skybox or a standing dark-surface art direction.
+
+Celestial visuals must use authored project textures, proven asset sources, or controlled offline generation with reviewable results. Muddy bands, random sine stripes, low-resolution blobs, and crayon-like moon textures are rejected. `GlobalQualityWeight` scales cloud depth, reflection, atmosphere, texture resolution, and secondary shafts; it does not scale the surface into ugliness.
+
 ## Truth Ownership
 
 Celestial owns macro cycle phase, tide schedules, day/night relay inputs, seismic timing seeds, and cycle events. It does not own weather fields, water physics, AI cognition, rendering implementation, or mission state.

@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6667576831618204697}
   - component: {fileID: 5693060470172745869}
+  - component: {fileID: 7915129107338527865}
   m_Layer: 0
   m_Name: GEN_family_coral_low__knoll
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7169655087606241769}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.06304884, y: 0.30945405, z: 0.012780488}
-  m_Size: 2.201857
+  m_LocalReferencePoint: {x: 0.06290388, y: 0.30937502, z: 0.01287365}
+  m_Size: 2.2004979
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 4076943856878235455}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &7915129107338527865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7169655087606241769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 66fb8a9ab859c9142aae395eae388e81, type: 2}
 --- !u!1 &8301874549489615608
 GameObject:
   m_ObjectHideFlags: 0

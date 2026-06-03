@@ -39,6 +39,9 @@ namespace Hecton8.Input
     public class InputManager : MonoBehaviour, INativeInputManagerRuntime
     {
         private const string GeneratedInputActionsTypeName = "HectonInputActions, Hecton8.Input.Generated";
+        private const string GamepadStickDeadzoneProcessor = "stickDeadzone(min=0.14,max=0.96)";
+        private const string PlayerPdaKeyboardBindingPath = "<Keyboard>/p";
+        private const string LegacyPlayerPdaKeyboardBindingPath = "<Keyboard>/tab";
 
         private enum InputRecoveryState : byte
         {
@@ -2379,7 +2382,11 @@ namespace Hecton8.Input
 
             InputActionMap playerActionMap = runtimeAsset.FindActionMap("Player");
             if (playerActionMap != null)
+            {
                 EnsurePauseAction(playerActionMap);
+                EnsurePlayerKeyboardBindings(playerActionMap);
+                EnsurePlayerGamepadBindings(playerActionMap);
+            }
 
             EnsureUiActionMap(runtimeAsset);
         }
@@ -2392,6 +2399,34 @@ namespace Hecton8.Input
             InputAction pauseAction = playerActionMap.AddAction("Pause", type: InputActionType.Button);
             pauseAction.AddBinding("<Keyboard>/escape");
             pauseAction.AddBinding("<Gamepad>/start");
+        }
+
+        private static void EnsurePlayerGamepadBindings(InputActionMap playerActionMap)
+        {
+            if (playerActionMap == null)
+                return;
+
+            AddBindingIfMissing(playerActionMap.FindAction("Movement"), "<Gamepad>/leftStick", GamepadStickDeadzoneProcessor);
+            AddBindingIfMissing(playerActionMap.FindAction("Look"), "<Gamepad>/rightStick", GamepadStickDeadzoneProcessor);
+            AddBindingIfMissing(playerActionMap.FindAction("Jump"), "<Gamepad>/buttonSouth");
+            AddBindingIfMissing(playerActionMap.FindAction("Sprint"), "<Gamepad>/leftStickPress");
+            AddBindingIfMissing(playerActionMap.FindAction("Interact"), "<Gamepad>/buttonWest");
+            AddBindingIfMissing(playerActionMap.FindAction("Flashlight"), "<Gamepad>/buttonNorth");
+            AddBindingIfMissing(playerActionMap.FindAction("PDA"), "<Gamepad>/dpad/up");
+            AddBindingIfMissing(playerActionMap.FindAction("Pause"), "<Gamepad>/start");
+            AddBindingIfMissing(playerActionMap.FindAction("PrimaryAction"), "<Gamepad>/rightTrigger");
+            AddBindingIfMissing(playerActionMap.FindAction("SecondaryAction"), "<Gamepad>/leftTrigger");
+            AddBindingIfMissing(playerActionMap.FindAction("Inventory"), "<Gamepad>/select");
+        }
+
+        private static void EnsurePlayerKeyboardBindings(InputActionMap playerActionMap)
+        {
+            if (playerActionMap == null)
+                return;
+
+            InputAction pdaAction = playerActionMap.FindAction("PDA");
+            ReplaceBindingPathIfPresent(pdaAction, LegacyPlayerPdaKeyboardBindingPath, PlayerPdaKeyboardBindingPath);
+            AddBindingIfMissing(pdaAction, PlayerPdaKeyboardBindingPath);
         }
 
         private static InputActionMap EnsureUiActionMap(InputActionAsset runtimeAsset)
@@ -2426,7 +2461,7 @@ namespace Hecton8.Input
             }
 
             AddBindingIfMissing(navigateAction, "<Gamepad>/dpad");
-            AddBindingIfMissing(navigateAction, "<Gamepad>/leftStick");
+            AddBindingIfMissing(navigateAction, "<Gamepad>/leftStick", GamepadStickDeadzoneProcessor);
 
             InputAction submitAction = EnsureUiAction(uiActionMap, "Submit", InputActionType.Button, "Button");
             AddBindingIfMissing(submitAction, "<Keyboard>/enter");
@@ -2435,13 +2470,13 @@ namespace Hecton8.Input
 
             InputAction cancelAction = EnsureUiAction(uiActionMap, "Cancel", InputActionType.Button, "Button");
             AddBindingIfMissing(cancelAction, "<Keyboard>/escape");
-            AddBindingIfMissing(cancelAction, "<Keyboard>/tab");
             AddBindingIfMissing(cancelAction, "<Mouse>/rightButton");
             AddBindingIfMissing(cancelAction, "<Gamepad>/buttonEast");
             AddBindingIfMissing(cancelAction, "<Gamepad>/start");
 
             InputAction tabNextAction = EnsureUiAction(uiActionMap, "TabNext", InputActionType.Button, "Button");
             AddBindingIfMissing(tabNextAction, "<Keyboard>/e");
+            AddBindingIfMissing(tabNextAction, "<Keyboard>/tab");
             AddBindingIfMissing(tabNextAction, "<Gamepad>/rightShoulder");
 
             InputAction tabPreviousAction = EnsureUiAction(uiActionMap, "TabPrevious", InputActionType.Button, "Button");
@@ -2523,6 +2558,12 @@ namespace Hecton8.Input
 
         private static bool HasBindingPath(InputAction action, string bindingPath)
         {
+            return TryFindBindingPathIndex(action, bindingPath, out _);
+        }
+
+        private static bool TryFindBindingPathIndex(InputAction action, string bindingPath, out int bindingIndex)
+        {
+            bindingIndex = -1;
             if (action == null || string.IsNullOrEmpty(bindingPath))
                 return false;
 
@@ -2531,7 +2572,10 @@ namespace Hecton8.Input
             for (int i = 0; i < bindingCount; i++)
             {
                 if (string.Equals(bindings[i].path, bindingPath, StringComparison.Ordinal))
+                {
+                    bindingIndex = i;
                     return true;
+                }
             }
 
             return false;
@@ -2539,10 +2583,91 @@ namespace Hecton8.Input
 
         private static void AddBindingIfMissing(InputAction action, string bindingPath)
         {
-            if (action == null || HasBindingPath(action, bindingPath))
+            AddBindingIfMissing(action, bindingPath, null);
+        }
+
+        private static void AddBindingIfMissing(InputAction action, string bindingPath, string processor)
+        {
+            if (action == null)
                 return;
 
-            action.AddBinding(bindingPath);
+            if (TryFindBindingPathIndex(action, bindingPath, out int bindingIndex))
+            {
+                EnsureBindingProcessor(action, bindingIndex, processor);
+                return;
+            }
+
+            InputActionSetupExtensions.BindingSyntax binding = action.AddBinding(bindingPath);
+            if (!string.IsNullOrEmpty(processor))
+                binding.WithProcessor(processor);
+        }
+
+        private static void ReplaceBindingPathIfPresent(InputAction action, string oldBindingPath, string newBindingPath)
+        {
+            if (action == null ||
+                string.IsNullOrEmpty(oldBindingPath) ||
+                string.IsNullOrEmpty(newBindingPath) ||
+                !TryFindBindingPathIndex(action, oldBindingPath, out int oldBindingIndex))
+            {
+                return;
+            }
+
+            if (TryFindBindingPathIndex(action, newBindingPath, out _))
+            {
+                try
+                {
+                    action.ChangeBinding(oldBindingIndex).Erase();
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                catch (ArgumentException)
+                {
+                }
+
+                return;
+            }
+
+            try
+            {
+                InputBinding binding = action.bindings[oldBindingIndex];
+                binding.path = newBindingPath;
+                action.ChangeBinding(oldBindingIndex).To(binding);
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+
+        private static void EnsureBindingProcessor(InputAction action, int bindingIndex, string processor)
+        {
+            if (action == null ||
+                bindingIndex < 0 ||
+                bindingIndex >= action.bindings.Count ||
+                string.IsNullOrEmpty(processor))
+            {
+                return;
+            }
+
+            string processors = action.bindings[bindingIndex].processors;
+            if (string.Equals(processors, processor, StringComparison.Ordinal))
+                return;
+
+            InputBinding binding = action.bindings[bindingIndex];
+            binding.processors = processor;
+            try
+            {
+                action.ChangeBinding(bindingIndex).To(binding);
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

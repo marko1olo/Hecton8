@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS080_PUBLIC_WIKI_ARTICLE_MODULES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE",
+      "release_set_id": "RS080_PUBLIC_WIKI_ARTICLE_MODULES",
+      "article_id": "applied_lore.public_starting_premise_article_module",
+      "title_key": "applied_lore.public_starting_premise_article_module.title",
+      "unlock": {
+        "primary": "unlock.public_starting_premise_article_module",
+        "poi_tags": [
+          "poi.public_premise_card",
+          "poi.starting_contract_excerpt",
+          "poi.protagonist_context_gate"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Public Starting Premise Article Module",
+          "scanner": "Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Use for website overview, store-page lore block and codex front matter."
+        },
+        "ru_RU": {
+          "title": "Публичный модуль: стартовая завязка",
+          "scanner": "Publication module: premise. Marauder contract, debt pressure и старый язык Deep Reach.",
+          "terminal": "PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context только как starting frame, не как full liability proof.",
+          "audio": "Ты не открываешь легенду. Ты возвращаешься к бумагам, которые слишком хорошо знаешь.",
+          "in_game_wiki": "Этот article module нужен для spoiler-light summaries и in-game codex front matter.",
+          "external_site": "Ты прибываешь на HECTON-8 как debt-bound Marauder и бывший field-systems specialist Deep Reach. Контракт выглядит как salvage, пока старые процедуры не начинают называть твое прошлое.",
+          "field_note": "Для website overview, store-page lore block и codex front matter."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft JA localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft JA localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft JA localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft JA localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft JA localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft ZH localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft ZH localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft ZH localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft ZH localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft FR localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft FR localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft FR localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft FR localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft FR localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft ES localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft ES localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft ES localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft ES localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft ES localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft DE localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft DE localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft DE localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft DE localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft DE localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft PL localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft PL localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft PL localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft PL localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft PL localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft UK localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft UK localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft UK localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft UK localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft UK localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft AR localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft AR localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft AR localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft AR localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft AR localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft ID localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft ID localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft ID localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft ID localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft ID localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft KO localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft KO localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft KO localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft KO localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft KO localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft HE localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft HE localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft HE localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft HE localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft HE localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft PT localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft PT localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft PT localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft PT localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft PT localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Public Starting Premise Article Module",
+          "scanner": "Draft NL localization pending native pass. Publication module: premise. Marauder contract, debt pressure and old Deep Reach language.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC MODULE PREMISE: reveal ex-Deep-Reach professional context only as starting frame, not full liability proof.",
+          "audio": "Draft NL localization pending native pass. You are not discovering a legend. You are returning to paperwork you know too well.",
+          "in_game_wiki": "Draft NL localization pending native pass. This article module is for spoiler-light player-facing summaries and in-game codex front matter.",
+          "external_site": "Draft NL localization pending native pass. You arrive at HECTON-8 as a debt-bound Marauder and former Deep Reach field-systems specialist. The contract looks like salvage until the old procedures start naming your past.",
+          "field_note": "Draft NL localization pending native pass. Use for website overview, store-page lore block and codex front matter."
+        }
+      }
+    },
+    {
+      "packet_id": "P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE",
+      "release_set_id": "RS080_PUBLIC_WIKI_ARTICLE_MODULES",
+      "article_id": "applied_lore.public_no_ftl_route_article_module",
+      "title_key": "applied_lore.public_no_ftl_route_article_module.title",
+      "unlock": {
+        "primary": "unlock.public_no_ftl_route_article_module",
+        "poi_tags": [
+          "poi.public_transit_diagram",
+          "poi.no_ftl_article_panel",
+          "poi.route_delay_caption"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.human_space"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Public No FTL Route Article Module",
+          "scanner": "Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Help can be legally present and physically years away.",
+          "in_game_wiki": "No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "ru_RU": {
+          "title": "Публичный модуль: маршрут без FTL",
+          "scanner": "Publication module: no FTL. Distance - infrastructure, не декоративный scale.",
+          "terminal": "PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Используй probe, lane, braking и packet-delay language.",
+          "audio": "Помощь может юридически присутствовать и физически быть в годах пути.",
+          "in_game_wiki": "No-FTL travel - часть давления игры. Игрок может получить law, debt и delayed packets задолго до помощи.",
+          "external_site": "В HECTON-8 нет faster-than-light rescue. Aegir достигли через probes, beam/pellet infrastructure, braking architecture и годы legal/cargo delay.",
+          "field_note": "Для public site hard-sci-fi page и wiki transit section."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft JA localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft JA localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft JA localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft JA localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft JA localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft ZH localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft ZH localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft ZH localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft ZH localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft ZH localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft FR localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft FR localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft FR localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft FR localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft FR localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft ES localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft ES localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft ES localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft ES localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft ES localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft DE localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft DE localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft DE localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft DE localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft DE localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft PL localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft PL localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft PL localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft PL localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft PL localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft UK localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft UK localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft UK localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft UK localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft UK localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft AR localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft AR localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft AR localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft AR localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft AR localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft ID localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft ID localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft ID localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft ID localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft ID localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft KO localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft KO localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft KO localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft KO localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft KO localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft HE localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft HE localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft HE localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft HE localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft HE localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft PT localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft PT localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft PT localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft PT localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft PT localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Public No FTL Route Article Module",
+          "scanner": "Draft NL localization pending native pass. Publication module: no FTL. Distance is infrastructure, not decorative scale.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC MODULE TRANSIT: no FTL, no ansible, no instant rescue. Use probe, lane, braking and packet-delay language.",
+          "audio": "Draft NL localization pending native pass. Help can be legally present and physically years away.",
+          "in_game_wiki": "Draft NL localization pending native pass. No-FTL travel is part of the game's pressure. The player can receive law, debt and delayed packets long before help can arrive.",
+          "external_site": "Draft NL localization pending native pass. There is no faster-than-light rescue in HECTON-8. Aegir was reached through probes, beam and pellet infrastructure, braking architecture and years of legal/cargo delay.",
+          "field_note": "Draft NL localization pending native pass. Use for public site hard-sci-fi page and wiki transit section."
+        }
+      }
+    },
+    {
+      "packet_id": "P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE",
+      "release_set_id": "RS080_PUBLIC_WIKI_ARTICLE_MODULES",
+      "article_id": "applied_lore.public_aegir_moon_map_article_module",
+      "title_key": "applied_lore.public_aegir_moon_map_article_module.title",
+      "unlock": {
+        "primary": "unlock.public_aegir_moon_map_article_module",
+        "poi_tags": [
+          "poi.public_aegir_map",
+          "poi.moon_ladder_caption",
+          "poi.route_window_overlay"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.aegir_system"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Public Aegir Moon Map Article Module",
+          "scanner": "Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Use for Aegir public map, article art and route-window captions."
+        },
+        "ru_RU": {
+          "title": "Публичный модуль: карта лун Aegir",
+          "scanner": "Publication module: Aegir map. Moons explain relay, radiation, scatter и rescue timing.",
+          "terminal": "PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Карта - не фон. Это причина, почему никто не приходит, когда ты просишь.",
+          "in_game_wiki": "Aegir moon map должен учить orbital windows, relay shutters, ice scatter и tide pressure, не делая каждую луну playable.",
+          "external_site": "Aegir - multi-moon gas giant system. HECTON-8 - mid-orbit ocean moon, где tides, storms и relay geometry делают rescue conditional.",
+          "field_note": "Для Aegir public map, article art и route-window captions."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft JA localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft JA localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft JA localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft JA localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft JA localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft ZH localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft ZH localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft ZH localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft ZH localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft FR localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft FR localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft FR localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft FR localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft FR localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft ES localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft ES localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft ES localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft ES localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft ES localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft DE localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft DE localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft DE localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft DE localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft DE localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft PL localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft PL localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft PL localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft PL localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft PL localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft UK localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft UK localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft UK localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft UK localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft UK localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft AR localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft AR localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft AR localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft AR localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft AR localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft ID localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft ID localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft ID localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft ID localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft ID localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft KO localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft KO localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft KO localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft KO localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft KO localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft HE localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft HE localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft HE localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft HE localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft HE localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft PT localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft PT localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft PT localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft PT localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft PT localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Public Aegir Moon Map Article Module",
+          "scanner": "Draft NL localization pending native pass. Publication module: Aegir map. Moons explain relay, radiation, scatter and rescue timing.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC MODULE AEGIR: keep moon names as labels; route function is canon. Spoiler-gate Atlas payload consequences.",
+          "audio": "Draft NL localization pending native pass. The map is not background. It is why no one arrives when you ask.",
+          "in_game_wiki": "Draft NL localization pending native pass. The Aegir moon map should teach orbital windows, relay shutters, ice scatter and tide pressure without making every moon playable.",
+          "external_site": "Draft NL localization pending native pass. Aegir is a multi-moon gas giant system. HECTON-8 is one mid-orbit ocean moon whose tides, storms and relay geometry make rescue conditional.",
+          "field_note": "Draft NL localization pending native pass. Use for Aegir public map, article art and route-window captions."
+        }
+      }
+    },
+    {
+      "packet_id": "P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE",
+      "release_set_id": "RS080_PUBLIC_WIKI_ARTICLE_MODULES",
+      "article_id": "applied_lore.public_deep_reach_liability_article_module",
+      "title_key": "applied_lore.public_deep_reach_liability_article_module.title",
+      "unlock": {
+        "primary": "unlock.public_deep_reach_liability_article_module",
+        "poi_tags": [
+          "poi.public_deep_reach_article",
+          "poi.liability_chain_diagram",
+          "poi.sanitized_report_excerpt"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.deep_reach"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Public Deep Reach Liability Article Module",
+          "scanner": "Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "ru_RU": {
+          "title": "Публичный модуль: ответственность Deep Reach",
+          "scanner": "Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Не пиши villain monologues.",
+          "audio": "Катастрофа может быть природной и все равно иметь подписи.",
+          "in_game_wiki": "Этот module объясняет guilt Deep Reach, не делая physics HECTON-8 фейком. Компания приняла margins, задержала evacuation и отмыла losses.",
+          "external_site": "Deep Reach не нужно было изобретать океан, чтобы быть виновной. HECTON-8 затопило реальной физикой; компания сделала систему дешевле, медленнее и проще для стирания.",
+          "field_note": "Для public evidence article, press kit lore и spoiler-tiered liability summary."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft JA localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft JA localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft JA localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft JA localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft ZH localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft ZH localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft ZH localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft ZH localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft FR localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft FR localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft FR localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft FR localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft ES localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft ES localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft ES localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft ES localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft DE localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft DE localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft DE localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft DE localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft PL localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft PL localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft PL localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft PL localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft UK localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft UK localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft UK localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft UK localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft AR localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft AR localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft AR localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft AR localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft ID localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft ID localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft ID localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft ID localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft KO localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft KO localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft KO localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft KO localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft HE localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft HE localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft HE localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft HE localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft PT localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft PT localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft PT localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft PT localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Public Deep Reach Liability Article Module",
+          "scanner": "Draft NL localization pending native pass. Publication module: Deep Reach. Physics caused the flood; corporate procedure shaped the loss.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC MODULE LIABILITY: pair sanitized accident language with physical proof chain. Do not write villain monologues.",
+          "audio": "Draft NL localization pending native pass. A disaster can be natural and still have signatures on it.",
+          "in_game_wiki": "Draft NL localization pending native pass. This module explains Deep Reach's guilt without making HECTON-8 physics fake. The company accepted margins, delayed evacuation and laundered losses.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach did not need to invent the ocean to be culpable. HECTON-8 flooded through real physics; the company made the system cheaper, slower and easier to erase.",
+          "field_note": "Draft NL localization pending native pass. Use for public evidence article, press kit lore and spoiler-tiered liability summary."
+        }
+      }
+    },
+    {
+      "packet_id": "P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE",
+      "release_set_id": "RS080_PUBLIC_WIKI_ARTICLE_MODULES",
+      "article_id": "applied_lore.public_atlas_spoiler_gate_article_module",
+      "title_key": "applied_lore.public_atlas_spoiler_gate_article_module.title",
+      "unlock": {
+        "primary": "unlock.public_atlas_spoiler_gate_article_module",
+        "poi_tags": [
+          "poi.public_atlas_spoiler_gate",
+          "poi.factory_temple_teaser",
+          "poi.payload_gate_warning"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Public Atlas Spoiler Gate Article Module",
+          "scanner": "Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "ru_RU": {
+          "title": "Публичный модуль: Atlas spoiler gate",
+          "scanner": "Publication module: Atlas spoiler gate. Покажи failed maintenance ecology, спрячь receiver outcomes.",
+          "terminal": "PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Скажи, что он ремонтирует. Не говори пока, что он считает ремонтом.",
+          "in_game_wiki": "Atlas публично можно описывать как failed industrial governor и repair ecology. Final payload receivers остаются gated.",
+          "external_site": "Atlas-6 - не boss reveal. Это industrial system, сросшаяся с ocean ecology. Финальные consequences должны быть behind spoiler gates.",
+          "field_note": "Для Atlas public article, spoiler modal copy и final-depth publication boundary."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft JA localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft JA localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft JA localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft JA localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft JA localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft ZH localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft ZH localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft ZH localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft ZH localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft FR localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft FR localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft FR localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft FR localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft ES localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft ES localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft ES localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft ES localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft DE localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft DE localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft DE localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft DE localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft PL localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft PL localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft PL localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft PL localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft UK localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft UK localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft UK localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft UK localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft AR localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft AR localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft AR localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft AR localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft ID localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft ID localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft ID localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft ID localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft KO localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft KO localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft KO localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft KO localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft HE localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft HE localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft HE localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft HE localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft PT localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft PT localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft PT localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft PT localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Public Atlas Spoiler Gate Article Module",
+          "scanner": "Draft NL localization pending native pass. Publication module: Atlas spoiler gate. Show failed maintenance ecology, hide receiver outcomes.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC MODULE ATLAS: open layer = industrial AI and repair ecology. Spoiler layer = payload receiver, severance and final custody.",
+          "audio": "Draft NL localization pending native pass. Say it repairs. Do not say yet what it thinks is repair.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas can be described publicly as a failed industrial governor and repair ecology. Final payload receivers stay gated.",
+          "external_site": "Draft NL localization pending native pass. Atlas-6 is not a boss reveal. It is an industrial system fused with ocean ecology. The final consequences belong behind spoiler gates.",
+          "field_note": "Draft NL localization pending native pass. Use for Atlas public article, spoiler modal copy and final-depth publication boundary."
+        }
+      }
+    }
+  ]
+}

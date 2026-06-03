@@ -884,4 +884,37 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             HalfDistances[index] = (ushort)math.f32tof16(value);
         }
     }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct CompressSdfToEncodedByteJob : IJobParallelFor
+    {
+        [ReadOnly]
+        [NoAlias]
+        public NativeArray<float> Distances;
+
+        [WriteOnly]
+        [NoAlias]
+        public NativeArray<byte> EncodedDistances;
+
+        public float MaxSdfDistance;
+
+        public void Execute(int index)
+        {
+            if (!Distances.IsCreated ||
+                !EncodedDistances.IsCreated ||
+                (uint)index >= (uint)Distances.Length ||
+                (uint)index >= (uint)EncodedDistances.Length)
+            {
+                return;
+            }
+
+            float range = math.max(MaxSdfDistance, 0.001f);
+            float signedDistance = Distances[index];
+            if (!math.isfinite(signedDistance))
+                signedDistance = range;
+
+            float encoded = math.saturate(signedDistance * math.rcp(range) * 0.5f + 0.5f);
+            EncodedDistances[index] = (byte)math.clamp((int)math.round(encoded * 255f), 0, 255);
+        }
+    }
 }

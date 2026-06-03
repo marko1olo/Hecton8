@@ -47,7 +47,7 @@ namespace Hecton8.UI
         private readonly char[] _estimatedFpsText = new char[16]; // COLD ALLOC: char[16] - estimated FPS TMP buffer - owner: SettingsComparisonView
         private readonly char[] _impactText = new char[32]; // COLD ALLOC: char[32] - FPS impact TMP buffer - owner: SettingsComparisonView
 
-        private const int MaxContinuousQualityLevel = SettingsManager.MaxContinuousQualityLevel;
+        private const int MaxGraphicsPreset = SettingsManager.MaxGraphicsPreset;
         private const float MinimumEstimatedFps = 30f;
         private const float MaximumEstimatedFps = 60f;
 
@@ -111,7 +111,7 @@ namespace Hecton8.UI
             if (_settings == null)
                 return;
 
-            _pendingGraphicsPreset = Mathf.Clamp(pendingGraphicsPreset, 0, MaxContinuousQualityLevel);
+            _pendingGraphicsPreset = Mathf.Clamp(pendingGraphicsPreset, 0, MaxGraphicsPreset);
             RefreshComparison();
         }
 
@@ -150,7 +150,7 @@ namespace Hecton8.UI
             if (_settings == null)
                 return;
 
-            int currentGraphicsPreset = Mathf.Clamp(_settings.GraphicsPreset, 0, MaxContinuousQualityLevel);
+            int currentGraphicsPreset = Mathf.Clamp(_settings.GraphicsPreset, 0, MaxGraphicsPreset);
             int pendingGraphicsPreset = _pendingGraphicsPreset >= 0 ? _pendingGraphicsPreset : currentGraphicsPreset;
 
             if (_lastRenderedCurrentGraphicsPreset == currentGraphicsPreset &&
@@ -206,7 +206,7 @@ namespace Hecton8.UI
 
         private static float ResolveContinuousQuality01(int qualityLevel)
         {
-            float normalized = Mathf.Clamp01(qualityLevel / (float)MaxContinuousQualityLevel);
+            float normalized = Mathf.Clamp01(qualityLevel / (float)MaxGraphicsPreset);
             return normalized * normalized * (3f - 2f * normalized);
         }
 

@@ -14,18 +14,10 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Visor
 {
     public sealed partial class HectonVisorUberPostFeature
     {
-#if UNITY_EDITOR
-        private const string NoirShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader";
-#endif
-
         private const uint NoirSourceHash = 0x53483235u; // SH25
         private const uint NoirFlagMockInput = 1u << 0;
         private const uint NoirFlagPhysiologyInput = 1u << 1;
@@ -84,6 +76,9 @@ namespace Hecton8.Visor
 
             [Tooltip("Editor/debug split. Left half raw, right half Deep Sea Noir.")]
             public bool noirAbSplit = false;
+
+            [Tooltip("Authored fullscreen material for the Deep Sea Noir single-pass post process.")]
+            public Material noirMaterial = null;
         }
 
         private sealed class NoirPostProcessPass : ScriptableRenderPass
@@ -250,12 +245,6 @@ namespace Hecton8.Visor
         private static float s_noirEditorMockStress = 0.65f;
         private static float s_noirEditorMockDepth = 420f;
         private static float s_noirEditorMockToxicity = 0.35f;
-
-        private void TryAssignNoirShaderEditor()
-        {
-            if (settings != null && settings.deepSeaNoirUnifiedPass)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(NoirShaderAssetPath);
-        }
 
         public static void SetEditorNoirOverride(
             bool active,

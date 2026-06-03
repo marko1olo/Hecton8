@@ -1,0 +1,442 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "TEXT_EXPANSION_GT_1_35": 41
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Ran/Aegir Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Aegir Window Bands",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: HECTON-8 Moon Ladder",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Black Keel Transfer Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Ephemeris Handoff Rule",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

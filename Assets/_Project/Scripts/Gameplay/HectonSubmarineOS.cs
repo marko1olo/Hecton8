@@ -509,7 +509,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — deferred submarine OS event lane — owner: HectonSubmarineOsEvents
+                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -521,7 +521,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — next-frame submarine OS event lane prevents same-frame reentrant dispatch — owner: HectonSubmarineOsEvents
+                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - next-frame submarine OS event lane prevents same-frame reentrant dispatch - owner: HectonSubmarineOsEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -825,10 +825,18 @@ namespace Hecton8.Gameplay
                     continue;
 
                 if (!submarineRoot.TryGetComponent(out HectonSubmarineOS _))
-                    submarineRoot.gameObject.AddComponent<HectonSubmarineOS>(); // COLD ALLOC: HectonSubmarineOS[1] — submarine-wide diagnostic owner — owner: HectonSubmarineOS
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    submarineRoot.gameObject.AddComponent<HectonSubmarineOS>(); // COLD ALLOC: HectonSubmarineOS[1] - submarine-wide diagnostic owner - owner: HectonSubmarineOS
+#endif
+                }
 
                 if (!submarineRoot.TryGetComponent(out SubmarineStationKeepingController _))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     submarineRoot.gameObject.AddComponent<SubmarineStationKeepingController>(); // COLD ALLOC: SubmarineStationKeepingController[1] - cinematic station-keeping owner - owner: HectonSubmarineOS
+#endif
+                }
             }
         }
 

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P201_CONTRACT_CONTINUITY_DESK_SIGNATURES",
+      "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+      "article_id": "deep_reach.contract_continuity_desk_signatures",
+      "title_key": "applied_lore.contract_continuity_desk_signatures.title",
+      "unlock": {
+        "primary": "unlock.contract_continuity_desk_signatures",
+        "poi_tags": [
+          "poi.contract_continuity_stamp",
+          "poi.lien_clause_merge",
+          "poi.black_keel_clause_card"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.p63_shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Nobody says trap. They say continuity.",
+          "in_game_wiki": "Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "ru_RU": {
+          "title": "Подписи Contract Continuity Desk",
+          "scanner": "Контрактная ловушка собрана из фрагментов условий, а не из одного злодейского приказа.",
+          "field_note": "Нижние подписи работают как следы процедуры: слияние долга, кислородное приложение, риск blacklist и payload hold.",
+          "terminal": "SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Функция: сшивает условия Aegir Reclamation Pool с Black Keel recovery clauses. Не mastermind.",
+          "audio": "Никто не пишет ловушка. Пишут continuity.",
+          "in_game_wiki": "Подписи Contract Continuity Desk показывают, как salvage job превращается в юридическое давление без нового главного злодея.",
+          "external_site": "Подписи Contract Continuity Desk задают нижнюю бумажную поверхность Deep Reach за стартовым контрактом."
+        },
+        "ja_JP": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft JP localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft JP localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft JP localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft JP localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft JP localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft JP localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "zh_CN": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft CN localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft CN localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft CN localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft CN localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft CN localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft CN localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "fr_FR": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft FR localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft FR localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft FR localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft FR localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft FR localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft FR localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "es_ES": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft ES localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft ES localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft ES localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft ES localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft ES localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft ES localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "de_DE": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft DE localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft DE localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft DE localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft DE localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft DE localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft DE localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "pl_PL": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft PL localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft PL localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft PL localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft PL localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft PL localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft PL localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "uk_UA": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft UA localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft UA localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft UA localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft UA localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft UA localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft UA localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "ar_SA": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft AR localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft AR localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft AR localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft AR localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft AR localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft AR localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "id_ID": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft ID localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft ID localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft ID localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft ID localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft ID localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft ID localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "ko_KR": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft KO localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft KO localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft KO localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft KO localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft KO localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft KO localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "he_IL": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft HE localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft HE localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft HE localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft HE localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft HE localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft HE localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "pt_BR": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft PT localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft PT localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft PT localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft PT localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft PT localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft PT localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        },
+        "nl_NL": {
+          "title": "Contract Continuity Desk Signatures",
+          "scanner": "Draft NL localization pending native pass. The contract trap is assembled from clause fragments, not one villain order.",
+          "field_note": "Draft NL localization pending native pass. Use lower signatures as stamps of procedure: lien merge, oxygen addendum, blacklist risk and payload hold.",
+          "terminal": "Draft NL localization pending native pass. SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.",
+          "audio": "Draft NL localization pending native pass. Nobody says trap. They say continuity.",
+          "in_game_wiki": "Draft NL localization pending native pass. Contract Continuity Desk signatures let mission text show how a salvage job becomes legal pressure without inventing a new villain.",
+          "external_site": "Draft NL localization pending native pass. Contract Continuity Desk Signatures defines the lower Deep Reach paperwork surface behind the opening contract."
+        }
+      }
+    },
+    {
+      "packet_id": "P202_PACKET_NOTARY_INTERFACE_SIGNATURES",
+      "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+      "article_id": "deep_reach.packet_notary_interface_signatures",
+      "title_key": "applied_lore.packet_notary_interface_signatures.title",
+      "unlock": {
+        "primary": "unlock.packet_notary_interface_signatures",
+        "poi_tags": [
+          "poi.packet_notary_seal",
+          "poi.relay_delay_stamp",
+          "poi.witness_hash_strip"
+        ],
+        "biome_tags": [
+          "biome.relay_spine",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Подписи Packet Notary Interface",
+          "scanner": "Пакетная печать может защитить правду или похоронить ее под custody delay.",
+          "field_note": "Нотариальная поверхность ценна тем, что в одном месте дает relay time, witness hash и custody owner.",
+          "terminal": "SIGNATURE SEED: Som Varela, Packet Notary Interface. Функция: заверяет packet hashes, relay delay и custody status. Это маршрутизация доказательства, не мотив.",
+          "audio": "Печать не милосердие. Это часы с ценой.",
+          "in_game_wiki": "Подписи Packet Notary Interface объясняют, почему часть логов важна только после доказательства маршрута, времени и witness hash.",
+          "external_site": "Подписи Packet Notary Interface превращают межзвездную задержку в юридическую систему доказательств HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft JP localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft JP localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft JP localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft JP localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft JP localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft JP localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft CN localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft CN localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft CN localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft CN localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft CN localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft CN localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft FR localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft FR localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft FR localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft FR localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft FR localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft FR localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "es_ES": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft ES localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft ES localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft ES localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft ES localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft ES localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft ES localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "de_DE": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft DE localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft DE localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft DE localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft DE localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft DE localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft DE localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft PL localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft PL localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft PL localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft PL localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft PL localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft PL localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft UA localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft UA localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft UA localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft UA localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft UA localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft UA localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft AR localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft AR localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft AR localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft AR localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft AR localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft AR localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "id_ID": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft ID localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft ID localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft ID localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft ID localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft ID localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft ID localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft KO localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft KO localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft KO localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft KO localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft KO localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft KO localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "he_IL": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft HE localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft HE localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft HE localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft HE localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft HE localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft HE localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft PT localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft PT localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft PT localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft PT localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft PT localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft PT localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Packet Notary Interface Signatures",
+          "scanner": "Draft NL localization pending native pass. A packet seal can protect truth or bury it under custody delay.",
+          "field_note": "Draft NL localization pending native pass. The notary surface is useful because it names relay time, hash witness and custody owner in one place.",
+          "terminal": "Draft NL localization pending native pass. SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.",
+          "audio": "Draft NL localization pending native pass. A seal is not mercy. It is a clock with a price.",
+          "in_game_wiki": "Draft NL localization pending native pass. Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.",
+          "external_site": "Draft NL localization pending native pass. Packet Notary Interface Signatures turns interstellar delay into a legal evidence system for HECTON-8."
+        }
+      }
+    },
+    {
+      "packet_id": "P203_QUARANTINE_REVIEW_GATE_SIGNATURES",
+      "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+      "article_id": "deep_reach.quarantine_review_gate_signatures",
+      "title_key": "applied_lore.quarantine_review_gate_signatures.title",
+      "unlock": {
+        "primary": "unlock.quarantine_review_gate_signatures",
+        "poi_tags": [
+          "poi.quarantine_review_gate",
+          "poi.evacuate_hold_card",
+          "poi.bio_pressure_warning"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.med_lock"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Pending review is still a locked door.",
+          "in_game_wiki": "Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "ru_RU": {
+          "title": "Подписи Quarantine Review Gate",
+          "scanner": "Гейту не нужна злоба. Ему достаточно одного unresolved hazard field.",
+          "field_note": "Quarantine signatures должны стоять рядом с поломанной эвакуационной техникой или закрытым survivor route.",
+          "terminal": "SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Функция: держит extraction до pressure-biology certification и external review.",
+          "audio": "Pending review все равно закрытая дверь.",
+          "in_game_wiki": "Подписи Quarantine Review Gate держат вину Deep Reach через задержку, а не cartoon murder.",
+          "external_site": "Подписи Quarantine Review Gate объясняют, как язык безопасности помог превратить HECTON-8 в unrecovered claim."
+        },
+        "ja_JP": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft JP localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft JP localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft JP localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft JP localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft JP localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft JP localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "zh_CN": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft CN localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft CN localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft CN localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft CN localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft CN localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft CN localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "fr_FR": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft FR localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft FR localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft FR localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft FR localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft FR localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft FR localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "es_ES": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft ES localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft ES localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft ES localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft ES localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft ES localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft ES localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "de_DE": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft DE localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft DE localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft DE localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft DE localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft DE localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft DE localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "pl_PL": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft PL localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft PL localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft PL localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft PL localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft PL localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft PL localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "uk_UA": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft UA localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft UA localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft UA localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft UA localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft UA localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft UA localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "ar_SA": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft AR localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft AR localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft AR localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft AR localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft AR localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft AR localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "id_ID": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft ID localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft ID localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft ID localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft ID localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft ID localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft ID localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "ko_KR": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft KO localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft KO localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft KO localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft KO localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft KO localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft KO localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "he_IL": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft HE localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft HE localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft HE localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft HE localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft HE localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft HE localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "pt_BR": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft PT localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft PT localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft PT localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft PT localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft PT localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft PT localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        },
+        "nl_NL": {
+          "title": "Quarantine Review Gate Signatures",
+          "scanner": "Draft NL localization pending native pass. The gate does not need malice. It needs one unresolved hazard field.",
+          "field_note": "Draft NL localization pending native pass. Quarantine signatures should be physically paired with broken evacuation hardware or locked survivor routes.",
+          "terminal": "Draft NL localization pending native pass. SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Function: holds extraction pending pressure-biology certification and external review.",
+          "audio": "Draft NL localization pending native pass. Pending review is still a locked door.",
+          "in_game_wiki": "Draft NL localization pending native pass. Quarantine Review Gate signatures keep Deep Reach guilty through delay, not cartoon murder.",
+          "external_site": "Draft NL localization pending native pass. Quarantine Review Gate Signatures defines how safety language helped convert HECTON-8 into an unrecovered claim."
+        }
+      }
+    },
+    {
+      "packet_id": "P204_ASSET_SILENCE_BOARD_SIGNATURES",
+      "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+      "article_id": "deep_reach.asset_silence_board_signatures",
+      "title_key": "applied_lore.asset_silence_board_signatures.title",
+      "unlock": {
+        "primary": "unlock.asset_silence_board_signatures",
+        "poi_tags": [
+          "poi.asset_silence_board",
+          "poi.redaction_vote_card",
+          "poi.worker_name_erasure"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.worker_locker"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "ru_RU": {
+          "title": "Подписи Asset Silence Board",
+          "scanner": "Silence vote не оружие. Но он все равно может заставить людей исчезнуть.",
+          "field_note": "Эти подписи нужны рядом с стертыми именами, приглушенными пакетами и странными accounting categories.",
+          "terminal": "SIGNATURE SEED: Brigit Senn, Asset Silence Board. Функция: маршрутизирует witness names в asset-risk silence categories после relay review.",
+          "audio": "Сотри маршрут, и тело становится cargo math.",
+          "in_game_wiki": "Подписи Asset Silence Board показывают, как бюрократия превращает людей в missing load.",
+          "external_site": "Подписи Asset Silence Board дают publication-safe способ показать стирание Deep Reach."
+        },
+        "ja_JP": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft JP localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft JP localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft JP localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft JP localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft JP localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft JP localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "zh_CN": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft CN localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft CN localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft CN localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft CN localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft CN localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft CN localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "fr_FR": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft FR localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft FR localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft FR localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft FR localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft FR localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft FR localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "es_ES": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft ES localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft ES localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft ES localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft ES localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft ES localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft ES localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "de_DE": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft DE localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft DE localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft DE localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft DE localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft DE localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft DE localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "pl_PL": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft PL localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft PL localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft PL localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft PL localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft PL localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft PL localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "uk_UA": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft UA localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft UA localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft UA localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft UA localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft UA localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft UA localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "ar_SA": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft AR localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft AR localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft AR localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft AR localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft AR localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft AR localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "id_ID": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft ID localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft ID localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft ID localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft ID localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft ID localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft ID localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "ko_KR": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft KO localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft KO localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft KO localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft KO localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft KO localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft KO localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "he_IL": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft HE localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft HE localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft HE localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft HE localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft HE localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft HE localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "pt_BR": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft PT localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft PT localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft PT localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft PT localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft PT localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft PT localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        },
+        "nl_NL": {
+          "title": "Asset Silence Board Signatures",
+          "scanner": "Draft NL localization pending native pass. A silence vote is not a gun. It can still make people disappear.",
+          "field_note": "Draft NL localization pending native pass. Pair these signatures with erased names, muted packets and unexplained accounting categories.",
+          "terminal": "Draft NL localization pending native pass. SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.",
+          "audio": "Draft NL localization pending native pass. Erase the route and the body becomes cargo math.",
+          "in_game_wiki": "Draft NL localization pending native pass. Asset Silence Board signatures let the player see how bureaucracy turns people into missing load.",
+          "external_site": "Draft NL localization pending native pass. Asset Silence Board Signatures defines a publication-safe way to show Deep Reach erasure."
+        }
+      }
+    },
+    {
+      "packet_id": "P205_RETURN_ACTION_QUEUE_SIGNATURES",
+      "release_set_id": "RS041_DEEP_REACH_LOWER_SIGNATURES",
+      "article_id": "deep_reach.return_action_queue_signatures",
+      "title_key": "applied_lore.return_action_queue_signatures.title",
+      "unlock": {
+        "primary": "unlock.return_action_queue_signatures",
+        "poi_tags": [
+          "poi.return_action_queue",
+          "poi.payload_first_stamp",
+          "poi.recovery_order_strip"
+        ],
+        "biome_tags": [
+          "biome.claim_admin",
+          "biome.black_keel"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "The old crime has a live queue.",
+          "field_note": "Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "ru_RU": {
+          "title": "Подписи Return Action Queue",
+          "scanner": "У старого преступления есть живая очередь.",
+          "field_note": "Return Action signatures нужны там, где давление Deep Reach приходит через delayed packets, carrier clauses или payload bargains.",
+          "terminal": "SIGNATURE SEED: Amara Keene, Return Action Queue. Функция: ставит payload custody выше contractor rescue во время живых Aegir windows.",
+          "audio": "Они не призраки. Они delayed paperwork with engines.",
+          "in_game_wiki": "Подписи Return Action Queue доказывают, что Deep Reach не только старые логи; кто-то до сих пор хочет payload первым.",
+          "external_site": "Подписи Return Action Queue закрепляют настоящее давление Deep Reach для HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft JP localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft JP localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft JP localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft JP localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft JP localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft JP localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "zh_CN": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft CN localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft CN localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft CN localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft CN localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft CN localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft CN localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "fr_FR": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft FR localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft FR localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft FR localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft FR localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft FR localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft FR localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "es_ES": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft ES localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft ES localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft ES localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft ES localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft ES localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft ES localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "de_DE": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft DE localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft DE localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft DE localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft DE localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft DE localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft DE localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "pl_PL": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft PL localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft PL localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft PL localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft PL localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft PL localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft PL localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "uk_UA": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft UA localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft UA localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft UA localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft UA localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft UA localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft UA localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "ar_SA": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft AR localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft AR localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft AR localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft AR localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft AR localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft AR localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "id_ID": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft ID localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft ID localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft ID localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft ID localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft ID localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft ID localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "ko_KR": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft KO localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft KO localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft KO localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft KO localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft KO localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft KO localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "he_IL": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft HE localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft HE localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft HE localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft HE localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft HE localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft HE localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "pt_BR": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft PT localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft PT localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft PT localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft PT localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft PT localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft PT localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        },
+        "nl_NL": {
+          "title": "Return Action Queue Signatures",
+          "scanner": "Draft NL localization pending native pass. The old crime has a live queue.",
+          "field_note": "Draft NL localization pending native pass. Use Return Action signatures whenever Deep Reach pressure arrives through delayed packets, carrier clauses or payload bargains.",
+          "terminal": "Draft NL localization pending native pass. SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.",
+          "audio": "Draft NL localization pending native pass. They are not ghosts. They are delayed paperwork with engines.",
+          "in_game_wiki": "Draft NL localization pending native pass. Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.",
+          "external_site": "Draft NL localization pending native pass. Return Action Queue Signatures anchors present-tense Deep Reach pressure for HECTON-8."
+        }
+      }
+    }
+  ]
+}

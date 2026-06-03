@@ -10,9 +10,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Physics
 {
@@ -24,10 +21,6 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton8/Physics/Tether Manager")]
     public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
-        private const string RuntimeShaderName = "Hecton8/Physics/TetherLineStrip";
-#if UNITY_EDITOR
-        private const string RuntimeShaderPath = "Assets/_Project/Art/Shaders/Hecton_TetherLineStrip.shader";
-#endif
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
         private static readonly int _TetherSegmentTensionsId = Shader.PropertyToID("_TetherSegmentTensions");
         private static readonly int _TetherDrawParamsId = Shader.PropertyToID("_TetherDrawParams");
@@ -51,26 +44,12 @@ namespace Hecton8.Physics
         // COLD ALLOC: Plane[6] - reused camera frustum for tether upload rejection - owner: TetherManager
         private static readonly Plane[] s_TetherFrustumPlanes = new Plane[6];
 
-        // COLD ALLOC: Vector3[6] - canonical six-vertex segment impostor mesh for RenderMeshIndirect - owner: TetherManager
-        private static readonly Vector3[] s_TetherIndirectSegmentVertices =
-        {
-            Vector3.zero,
-            Vector3.zero,
-            Vector3.zero,
-            Vector3.zero,
-            Vector3.zero,
-            Vector3.zero
-        };
-
-        // COLD ALLOC: int[6] - one triangle pair index stream preserving SV_VertexID 0..5 - owner: TetherManager
-        private static readonly int[] s_TetherIndirectSegmentIndices = { 0, 1, 2, 3, 4, 5 };
-
         [Header("Tether Rendering")]
-        [Tooltip("Optional explicit material for tether line rendering. When omitted the manager creates a runtime material from the built-in tether shader.")]
+        [Tooltip("Required authored material for tether line rendering. Runtime material creation is forbidden.")]
         [SerializeField] private Material tetherRenderMaterial;
 
-        [Tooltip("Authored tether shader reference used when no explicit material is provided. Required for release player fallback material creation.")]
-        [SerializeField] private Shader tetherRenderShader;
+        [Tooltip("Optional authored six-index segment mesh for indirect tether rendering. When omitted the system falls back to RenderPrimitives without generating meshes.")]
+        [SerializeField] private Mesh indirectTetherSegmentMesh;
 
         [Tooltip("Fallback tether line tint used by the procedural line-strip renderer.")]
         [SerializeField] private Color tetherRenderColor = new Color(0.22f, 0.92f, 0.96f, 0.92f);
@@ -108,9 +87,6 @@ namespace Hecton8.Physics
         // COLD ALLOC: List<TetherInstance>[64] - prewarmed tether instances reused across attach/release cycles - owner: TetherManager
         private readonly List<TetherInstance> _pooledInstances = new List<TetherInstance>(MaxManagedTetherInstances);
         private MaterialPropertyBlock _renderPropertyBlock;
-        private Material _runtimeRenderMaterial;
-        private bool _ownsRuntimeMaterial;
-        private Mesh _indirectTetherSegmentMesh;
         private GraphicsBuffer _indirectTetherArgsBuffer;
         private Mesh _indirectArgsMesh;
         private int _indirectArgsSegmentCount = -1;
@@ -212,7 +188,7 @@ namespace Hecton8.Physics
                     renderCamera = childCamera;
             }
 
-            _renderPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — procedural tether render binding payload — owner: TetherManager
+            _renderPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - procedural tether render binding payload - owner: TetherManager
             EnsurePresentationResourcesCold();
             RefreshColdDependencyCache();
             PrewarmTetherPool(InitialPooledTetherInstances);
@@ -344,13 +320,6 @@ namespace Hecton8.Physics
             {
                 if (_activeInstances[i] != null)
                     _activeInstances[i].DisposeRuntimeResources();
-            }
-
-            if (_ownsRuntimeMaterial && _runtimeRenderMaterial != null)
-            {
-                Destroy(_runtimeRenderMaterial);
-                _runtimeRenderMaterial = null;
-                _ownsRuntimeMaterial = false;
             }
 
             ReleaseIndirectTetherRenderResources();
@@ -721,7 +690,7 @@ namespace Hecton8.Physics
         private bool HasIndirectTetherRenderResources()
         {
             return _supportsIndirectTetherRenderingCold &&
-                   _indirectTetherSegmentMesh != null &&
+                   indirectTetherSegmentMesh != null &&
                    _indirectTetherArgsBuffer != null;
         }
 
@@ -736,7 +705,7 @@ namespace Hecton8.Physics
             if (segmentCount <= 0)
                 return false;
 
-            Mesh mesh = _indirectTetherSegmentMesh;
+            Mesh mesh = indirectTetherSegmentMesh;
             if (mesh == null || _indirectTetherArgsBuffer == null)
                 return false;
 
@@ -747,7 +716,6 @@ namespace Hecton8.Physics
 
         private void EnsurePresentationResourcesCold()
         {
-            EnsureRuntimeRenderMaterialCold();
             _supportsIndirectTetherRenderingCold = SystemInfo.supportsInstancing && SystemInfo.supportsComputeShaders;
             if (!_supportsIndirectTetherRenderingCold)
             {
@@ -755,24 +723,13 @@ namespace Hecton8.Physics
                 return;
             }
 
-            EnsureIndirectTetherSegmentMeshCold();
-            EnsureIndirectTetherArgsBufferCold();
-        }
-
-        private void EnsureIndirectTetherSegmentMeshCold()
-        {
-            if (_indirectTetherSegmentMesh != null)
-                return;
-
-            _indirectTetherSegmentMesh = new Mesh
+            if (indirectTetherSegmentMesh == null)
             {
-                name = "MESH_TetherIndirectSegment",
-                hideFlags = HideFlags.DontSave
-            }; // COLD ALLOC: Mesh[1] - canonical tether impostor segment mesh for indirect draw - owner: TetherManager
-            _indirectTetherSegmentMesh.SetVertices(s_TetherIndirectSegmentVertices);
-            _indirectTetherSegmentMesh.SetIndices(s_TetherIndirectSegmentIndices, MeshTopology.Triangles, 0, false);
-            _indirectTetherSegmentMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
-            _indirectTetherSegmentMesh.UploadMeshData(false);
+                ReleaseIndirectTetherRenderResources();
+                return;
+            }
+
+            EnsureIndirectTetherArgsBufferCold();
         }
 
         private void EnsureIndirectTetherArgsBufferCold()
@@ -824,12 +781,6 @@ namespace Hecton8.Physics
             {
                 _indirectTetherArgsBuffer.Release();
                 _indirectTetherArgsBuffer = null;
-            }
-
-            if (_indirectTetherSegmentMesh != null)
-            {
-                Destroy(_indirectTetherSegmentMesh);
-                _indirectTetherSegmentMesh = null;
             }
 
             _indirectArgsMesh = null;
@@ -1655,51 +1606,8 @@ namespace Hecton8.Physics
 
         private Material ResolveRenderMaterial()
         {
-            if (tetherRenderMaterial != null)
-                return tetherRenderMaterial;
-
-            return _runtimeRenderMaterial;
+            return tetherRenderMaterial;
         }
-
-        private void EnsureRuntimeRenderMaterialCold()
-        {
-            if (tetherRenderMaterial != null)
-                return;
-
-            if (_runtimeRenderMaterial != null)
-                return;
-
-            Shader shader = tetherRenderShader;
-#if UNITY_EDITOR
-            if (shader == null)
-            {
-                shader = AssetDatabase.LoadAssetAtPath<Shader>(RuntimeShaderPath);
-                tetherRenderShader = shader;
-            }
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find(RuntimeShaderName);
-#endif
-            if (shader == null)
-                return;
-
-            // COLD ALLOC: Material[1] — runtime tether line-strip material fallback built from first-party shader — owner: TetherManager
-            _runtimeRenderMaterial = new Material(shader)
-            {
-                name = "MAT_Runtime_TetherLineStrip",
-                hideFlags = HideFlags.DontSave
-            };
-            _ownsRuntimeMaterial = true;
-        }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (tetherRenderShader == null)
-                tetherRenderShader = AssetDatabase.LoadAssetAtPath<Shader>(RuntimeShaderPath);
-        }
-#endif
 
         internal float ResolveTowSpringStiffness(HeavyTowWinch owner)
         {

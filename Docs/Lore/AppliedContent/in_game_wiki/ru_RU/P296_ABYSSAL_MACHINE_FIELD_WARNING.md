@@ -1,0 +1,37 @@
+---
+packet_id: P296_ABYSSAL_MACHINE_FIELD_WARNING
+release_set_id: RS060_FINAL_DESCENT_ROUTE_FRAGMENTS
+article_id: applied_lore.p296_abyssal_machine_field_warning
+unlock_id: unlock.p296_abyssal_machine_field_warning
+poi_tags: poi.abyssal_machine_field_warning;poi.filter_body_shadow
+biome_tags: biome.abyssal_machine_field;biome.warning
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Предупреждение abyssal machine field
+
+Abyssal Machine Field Warning связывает deep ecology с final Atlas approach.
+
+## Scanner
+
+Machine field warning: silt motion не совпадает с current.
+
+## Terminal
+
+ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+
+## Audio
+
+Дно не неподвижно.
+
+## Field Note
+
+Late-game warning должен быть quiet and objective, не boss buildup.
+
+<!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/ru_RU. -->

@@ -986,7 +986,6 @@ namespace Hecton8.Celestial
         private bool _sunCookieDefaultsCaptured;
         private Vector2 _surfaceCloudShadowCookieOffset;
         private Vector2 _aegirRingShadowCookieOffset;
-        private Texture2D _runtimeAegirRingShadowCookie;
         private bool _aegirRingShadowCookieBound;
         private bool _sunDirectionResolvedFromMatrix;
 
@@ -1015,9 +1014,8 @@ namespace Hecton8.Celestial
         private Color _resolvedSkyZenith;
         private Color _resolvedSkyHorizon;
         private Color _resolvedSkyNadir;
-        private Texture2D _celestialAtmosphereLutTexture;
-        private TextureFormat _coldCelestialAtmosphereLutTextureFormat = TextureFormat.RGBAFloat;
         private bool _celestialAtmosphereLutRepairRequested;
+        private bool _celestialAtmosphereLutSamplesDirty = true;
         private bool _coldSupportsComputeShaders;
         private int _coldMaxTextureSize;
         private int _coldGraphicsMemoryMb;
@@ -1109,7 +1107,7 @@ namespace Hecton8.Celestial
         private AtmosphericLightingState _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
         private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
-        private const int CelestialAtmosphereLutResolution = 64;
+        private const int CelestialAtmosphereLutSampleCount = 16;
         private const int FirmamentStartupStarCount = 100000;
         private const int FirmamentStarBakeThreads = 64;
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
@@ -1134,8 +1132,6 @@ namespace Hecton8.Celestial
         private const float FirmamentSurvivalMemoryMb = 2048f;
         private const float FirmamentOverkillMemoryMb = 12288f;
         private const float FirmamentUnknownMemoryBudget01 = 0.25f;
-        private const int AegirRingShadowGeneratedCookieResolution = 256;
-        private const float AegirRingShadowGeneratedLineMinLuma = 0.094117647f;
         private const int BestVisualDefaultsVersion = 5;
         private const float NightAtmosphereInscatterFloor = 0.001f;
         private const int AtmosphereGradientSampleCount = 8;
@@ -1158,7 +1154,8 @@ namespace Hecton8.Celestial
         private bool _editorPreviewDirty;
         private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
         private readonly List<Renderer> _moonRenderers = new List<Renderer>(CelestialBodyCacheCapacity); // COLD ALLOC: List<Renderer>[8] - cached moon renderers for shared atmosphere overrides - owner: HectonCelestialEngine
-        private readonly Color[] _celestialAtmosphereLutPixels = new Color[CelestialAtmosphereLutResolution]; // COLD ALLOC: Color[64] - celestial atmosphere LUT bake buffer - owner: HectonCelestialEngine
+        private readonly Color[] _celestialAtmosphereLutSamples = new Color[CelestialAtmosphereLutSampleCount]; // COLD ALLOC: Color[16] - celestial atmosphere shader sample buffer - owner: HectonCelestialEngine
+        private readonly Vector4[] _celestialAtmosphereLutSampleVectors = new Vector4[CelestialAtmosphereLutSampleCount]; // COLD ALLOC: Vector4[16] - Unity shader global array payload for atmosphere LUT samples - owner: HectonCelestialEngine
         private int _nextCelestialSnapshotFrame;
         private int _lastSunDirectionGlobalUploadMinute = int.MinValue;
         private float _sunOrbitPeriodReciprocal;
@@ -1262,7 +1259,7 @@ namespace Hecton8.Celestial
         private static readonly int _ID_SkyColorZenith     = Shader.PropertyToID("_SkyColorZenith");
         private static readonly int _ID_SkyColorHorizon    = Shader.PropertyToID("_SkyColorHorizon");
         private static readonly int _ID_SkyColorNadir      = Shader.PropertyToID("_SkyColorNadir");
-        private static readonly int _ID_CelestialAtmosphereLut = Shader.PropertyToID("_CelestialAtmosphereLUT");
+        private static readonly int _ID_CelestialAtmosphereLutSamples = Shader.PropertyToID("_CelestialAtmosphereLUTSamples");
         private static readonly int _ID_CelestialAtmosphereLutReady = Shader.PropertyToID("_CelestialAtmosphereLUTReady");
         private static readonly int _ID_AtmosphereExposure = Shader.PropertyToID("_AtmosphereExposure");
         private static readonly int _ID_CelestialHorizonDensity = Shader.PropertyToID("_CelestialHorizonDensity");
@@ -1553,7 +1550,6 @@ namespace Hecton8.Celestial
             ReleaseFirmamentBakeResources();
             RestoreCelestialTextureDefaults();
             RestoreSurfaceCloudShadowCookie();
-            ReleaseRuntimeAegirRingShadowCookie();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
             TryUnregisterFromTickManager();
@@ -1596,7 +1592,6 @@ namespace Hecton8.Celestial
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
             RestoreSurfaceCloudShadowCookie();
-            ReleaseRuntimeAegirRingShadowCookie();
             TryUnregisterFromTickManager();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
@@ -2447,66 +2442,13 @@ namespace Hecton8.Celestial
 
         private Texture2D ResolveAegirRingShadowCookie()
         {
-            return aegirRingShadowCookie != null
-                ? aegirRingShadowCookie
-                : _runtimeAegirRingShadowCookie;
+            return aegirRingShadowCookie;
         }
 
         private void EnsureAegirRingShadowCookieReady()
         {
-            if (aegirRingShadowCookie != null)
-            {
-                ReleaseRuntimeAegirRingShadowCookie();
-                return;
-            }
-
-            if (_runtimeAegirRingShadowCookie != null)
-                return;
-
-            int resolution = AegirRingShadowGeneratedCookieResolution;
-            _runtimeAegirRingShadowCookie = new Texture2D(
-                resolution,
-                resolution,
-                TextureFormat.RGBA32,
-                false,
-                true)
-            {
-                name = "__HectonAegirRingShadowCookie",
-                wrapMode = TextureWrapMode.Repeat,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave
-            }; // COLD ALLOC: Texture2D[256x256 RGBA32] - fallback Aegir parallel-line directional-light cookie when no authored asset is wired - owner: HectonCelestialEngine
-
-            float invResolution = math.rcp(Mathf.Max(1, resolution - 1));
-            for (int y = 0; y < resolution; y++)
-            {
-                for (int x = 0; x < resolution; x++)
-                {
-                    float u = x * invResolution;
-                    float primary = CinematicMath.FastTriangleWave01((u * 13f) + 0.17f);
-                    float secondary = CinematicMath.FastTriangleWave01((u * 29f) + 0.41f);
-                    float primaryLine = 1f - Mathf.SmoothStep(0.018f, 0.085f, primary);
-                    float secondaryLine = 1f - Mathf.SmoothStep(0.012f, 0.052f, secondary);
-                    float lineMask = Mathf.Clamp01(Mathf.Max(primaryLine, secondaryLine * 0.62f));
-                    byte luma = (byte)Mathf.RoundToInt(Mathf.Lerp(255f, AegirRingShadowGeneratedLineMinLuma * 255f, lineMask));
-                    _runtimeAegirRingShadowCookie.SetPixel(x, y, new Color32(luma, luma, luma, 255));
-                }
-            }
-
-            _runtimeAegirRingShadowCookie.Apply(false, true);
-        }
-
-        private void ReleaseRuntimeAegirRingShadowCookie()
-        {
-            if (_runtimeAegirRingShadowCookie == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(_runtimeAegirRingShadowCookie);
-            else
-                DestroyImmediate(_runtimeAegirRingShadowCookie);
-
-            _runtimeAegirRingShadowCookie = null;
+            if (aegirRingShadowCookie == null && _aegirRingShadowCookieBound)
+                DetachAegirRingShadowCookie();
         }
 
         private void CacheSunAdditionalLightDataCold()
@@ -2605,7 +2547,6 @@ namespace Hecton8.Celestial
         private void EnsureCelestialAtmosphereLutReady(bool publishOnRebuild = true)
         {
             EnsureCelestialAtmosphereAuthoring();
-            EnsureCelestialAtmosphereTexture();
             float sunElevation = GetCurrentSunElevationForAtmosphere();
             _currentSunAngle = sunElevation;
             UpdateSkyboxBlend(sunElevation);
@@ -2730,28 +2671,10 @@ namespace Hecton8.Celestial
             _visualDefaultsVersion = BestVisualDefaultsVersion;
         }
 
-        private void EnsureCelestialAtmosphereTexture()
-        {
-            if (_celestialAtmosphereLutTexture != null)
-                return;
-
-            _celestialAtmosphereLutTexture = new Texture2D(
-                CelestialAtmosphereLutResolution,
-                1,
-                _coldCelestialAtmosphereLutTextureFormat,
-                false,
-                true)
-            {
-                name = "HectonCelestialAtmosphereLUT",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.HideAndDontSave
-            };
-        }
-
         private bool HasCelestialAtmosphereLutResourceStateReady()
         {
-            return _celestialAtmosphereLutTexture != null;
+            return _celestialAtmosphereLutSamples != null &&
+                   _celestialAtmosphereLutSamples.Length == CelestialAtmosphereLutSampleCount;
         }
 
         private void QueueCelestialAtmosphereLutRepair()
@@ -2777,9 +2700,6 @@ namespace Hecton8.Celestial
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
             _coldMaxTextureSize = SystemInfo.maxTextureSize;
             _coldGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
-            _coldCelestialAtmosphereLutTextureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.RGBAHalf)
-                ? TextureFormat.RGBAHalf
-                : TextureFormat.RGBAFloat;
         }
 
         private void TryUpdateDynamicCelestialAtmosphereVisualSync(float sunElevation)
@@ -2845,13 +2765,13 @@ namespace Hecton8.Celestial
             float nightWeight,
             bool publishOnRebuild)
         {
-            if (_celestialAtmosphereLutTexture == null)
+            if (!HasCelestialAtmosphereLutResourceStateReady())
                 return;
 
-            float lutTStep = CelestialAtmosphereLutResolution > 1
-                ? math.rcp(CelestialAtmosphereLutResolution - 1f)
+            float lutTStep = CelestialAtmosphereLutSampleCount > 1
+                ? math.rcp(CelestialAtmosphereLutSampleCount - 1f)
                 : 0f;
-            for (int i = 0; i < CelestialAtmosphereLutResolution; i++)
+            for (int i = 0; i < CelestialAtmosphereLutSampleCount; i++)
             {
                 float t = i * lutTStep;
 
@@ -2869,11 +2789,11 @@ namespace Hecton8.Celestial
                     dayWeight,
                     sunsetWeight,
                     nightWeight);
-                _celestialAtmosphereLutPixels[i] = lutColor;
+                _celestialAtmosphereLutSamples[i] = lutColor;
+                _celestialAtmosphereLutSampleVectors[i] = new Vector4(lutColor.r, lutColor.g, lutColor.b, lutColor.a);
             }
 
-            _celestialAtmosphereLutTexture.SetPixels(_celestialAtmosphereLutPixels, 0);
-            _celestialAtmosphereLutTexture.Apply(false, false);
+            _celestialAtmosphereLutSamplesDirty = true;
             if (publishOnRebuild)
                 PublishCelestialAtmosphereLut(pushRenderSettings: true);
         }
@@ -3312,9 +3232,14 @@ namespace Hecton8.Celestial
 
         private void PublishCelestialAtmosphereLut(bool pushRenderSettings)
         {
-            if (_celestialAtmosphereLutTexture != null)
+            if (HasCelestialAtmosphereLutResourceStateReady())
             {
-                Shader.SetGlobalTexture(_ID_CelestialAtmosphereLut, _celestialAtmosphereLutTexture);
+                if (_celestialAtmosphereLutSamplesDirty)
+                {
+                    Shader.SetGlobalVectorArray(_ID_CelestialAtmosphereLutSamples, _celestialAtmosphereLutSampleVectors);
+                    _celestialAtmosphereLutSamplesDirty = false;
+                }
+
                 Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, 1f);
                 Shader.SetGlobalFloat(_ID_AtmosphereExposure, _currentAtmosphereExposure);
                 Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, horizonDensity);
@@ -3327,22 +3252,12 @@ namespace Hecton8.Celestial
 
         private void ReleaseCelestialAtmosphereLut()
         {
-            if (_celestialAtmosphereLutTexture == null)
-                return;
-
-            Shader.SetGlobalTexture(_ID_CelestialAtmosphereLut, Texture2D.blackTexture);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, 0f);
             Shader.SetGlobalFloat(_ID_AtmosphereExposure, 0f);
             Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, 0f);
             Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, 0f);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, 1f);
-
-            if (Application.isPlaying)
-                Destroy(_celestialAtmosphereLutTexture);
-            else
-                DestroyImmediate(_celestialAtmosphereLutTexture);
-
-            _celestialAtmosphereLutTexture = null;
+            _celestialAtmosphereLutSamplesDirty = true;
             _lastAtmosphereBakeSunElevation = float.PositiveInfinity;
             _lastAtmosphereBakeDayWeight = -1f;
             _lastAtmosphereBakeSunsetWeight = -1f;
@@ -3950,10 +3865,10 @@ namespace Hecton8.Celestial
             Color ambientBaseColor = ResolveSurfaceAmbientBaseColor();
             Color horizonSkyTint = Color.Lerp(skyHorizonColor, skyZenithColor, 0.14f);
             horizonSkyTint = Color.Lerp(horizonSkyTint, skyNadirColor, 0.05f);
-            if (_celestialAtmosphereLutPixels.Length > 0)
+            if (_celestialAtmosphereLutSamples.Length > 0)
             {
-                horizonSkyTint = Color.Lerp(horizonSkyTint, _celestialAtmosphereLutPixels[0], 0.14f);
-                horizonTransmittance = Mathf.Clamp01(_celestialAtmosphereLutPixels[0].a);
+                horizonSkyTint = Color.Lerp(horizonSkyTint, _celestialAtmosphereLutSamples[0], 0.14f);
+                horizonTransmittance = Mathf.Clamp01(_celestialAtmosphereLutSamples[0].a);
                 horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
                 hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
             }
@@ -6463,7 +6378,7 @@ namespace Hecton8.Celestial
             Shader.SetGlobalFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
             Shader.SetGlobalFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
             Shader.SetGlobalFloat(_ID_AtmosphereDensity, _currentAtmosphereDensity);
-            Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, _celestialAtmosphereLutTexture != null ? 1f : 0f);
+            Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, HasCelestialAtmosphereLutResourceStateReady() ? 1f : 0f);
             Shader.SetGlobalFloat(_ID_AtmosphereExposure, _currentAtmosphereExposure);
             Shader.SetGlobalFloat(_ID_StarSeed, _resolvedStarMapSeed);
             Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, horizonDensity);

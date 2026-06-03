@@ -40,7 +40,6 @@ namespace Hecton8.Editor
         private Slider _gravityAssistSlider;
         private Slider _gravityResistanceSlider;
         private Slider _deltaSmoothingSlider;
-        private Button _mockButton;
         private TextField _csvSourceField;
         private TextField _binaryOutputField;
         private Label _bridgeStatusLabel;
@@ -117,8 +116,6 @@ namespace Hecton8.Editor
             rootVisualElement.Add(_gravityResistanceSlider);
             rootVisualElement.Add(_deltaSmoothingSlider);
 
-            _mockButton = new Button(GenerateMock) { text = "Generate Mock Drainage Network" };
-            rootVisualElement.Add(_mockButton);
             BuildProfileBridgeUi();
         }
 
@@ -214,11 +211,6 @@ namespace Hecton8.Editor
         {
             _cachedTuning.DeltaSmoothingFactor = Mathf.Clamp01(evt.newValue);
             SumpPumpPipeGridRuntime.SetTuning(in _cachedTuning);
-        }
-
-        private void GenerateMock()
-        {
-            SumpPumpPipeGridRuntime.TryGenerateMockDrainageNetwork();
         }
 
         private void OnCsvSourceChanged(ChangeEvent<string> evt)

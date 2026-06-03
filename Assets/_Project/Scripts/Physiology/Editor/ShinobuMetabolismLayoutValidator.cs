@@ -31,7 +31,8 @@ namespace Hecton8.Physiology.Editor
             bool valid = ShinobuMetabolismLayoutGuards.ValidateMetabolismLayouts() &&
                          ShinobuPhysiologyLayoutGuards.ValidatePhysiologyLayouts() &&
                          ValidateThermodynamicFlowSampleLayout() &&
-                         UnsafeUtility.SizeOf<MetabolicStateDTO>() == 32 &&
+                         UnsafeUtility.SizeOf<MetabolicStateDTO>() == ShinobuMetabolismVaultContract.MetabolicStateSizeBytes &&
+                         (UnsafeUtility.SizeOf<MetabolicStateDTO>() & 7) == 0 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Calories))) == 0 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Hydration))) == 4 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.CoreTemperature))) == 8 &&
@@ -39,8 +40,9 @@ namespace Hecton8.Physiology.Editor
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.EntityHashID))) == 16 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Flags))) == 20 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Fatigue01))) == 24 &&
-                         UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO._pad0))) == 24 &&
-                         UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO._pad1))) == 28 &&
+                         UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.RealO2))) == 28 &&
+                         UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.AgonyTimeRemaining))) == 32 &&
+                         UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.IsInHypoxia))) == 36 &&
                          UnsafeUtility.SizeOf<GasPhysiologyStateDTO>() == 32 &&
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO.OxygenPartialPressure))) == 0 &&
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO.NitrogenPartialPressure))) == 4 &&

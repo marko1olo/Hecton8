@@ -1,30 +1,37 @@
 ---
 packet_id: P097_RECOVERY_COMPLIANCE_OFFICE
+release_set_id: RS020_ATLAS_ENDING_AGENCY_DOSSIER
 article_id: deep_reach.recovery_compliance_office
+unlock_id: unlock.first_recovery_compliance_office
+poi_tags: poi.recovery_compliance_packet;poi.proxy_authority_window
+biome_tags: biome.drowned_admin;biome.carrier_link
 locale: pt_BR
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Recovery Compliance Office
 
-Draft PT-BR localization pending native pass. Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
 
 ## Scanner
 
-Draft PT-BR localization pending native pass. Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
+Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.
 
 ## Terminal
 
-Draft PT-BR localization pending native pass. RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
+RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.
 
 ## Audio
 
-Draft PT-BR localization pending native pass. They are late enough to be legal and current enough to be dangerous.
+They are late enough to be legal and current enough to be dangerous.
 
 ## Field Note
 
-Draft PT-BR localization pending native pass. A living faction makes pressure current without turning the whole corporation into a single shouting villain.
+A living faction makes pressure current without turning the whole corporation into a single shouting villain.
 
 <!-- External Site; generated from P097_RECOVERY_COMPLIANCE_OFFICE/pt_BR. -->

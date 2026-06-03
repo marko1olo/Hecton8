@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS051_PUBLIC_SITE_PILLAR_ARTICLES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P251_HECTON8_PUBLIC_PRIMER_ARTICLE",
+      "release_set_id": "RS051_PUBLIC_SITE_PILLAR_ARTICLES",
+      "article_id": "applied_lore.hecton8_public_primer_article",
+      "title_key": "applied_lore.hecton8_public_primer_article.title",
+      "unlock": {
+        "primary": "unlock.hecton8_public_primer_article",
+        "poi_tags": [
+          "poi.public_hecton8_article",
+          "poi.site_primer_card",
+          "poi.archive_cover_plate"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.hecton8_atlas"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "HECTON-8 Public Primer Article",
+          "scanner": "A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "ru_RU": {
+          "title": "Публичный вводный материал HECTON-8",
+          "scanner": "Сканер: A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Полевая заметка: This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Терминал: PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Аудио: First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Внутриигровая вики: HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Публичная статья: HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft JP localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft JP localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft JP localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft JP localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft JP localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft CN localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft CN localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft CN localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft CN localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft CN localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft FR localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft FR localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft FR localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft ES localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft ES localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft ES localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft DE localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft DE localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft DE localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft PL localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft PL localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft PL localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft UA localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft UA localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft UA localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft UA localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft UA localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft AR localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft AR localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft AR localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft ID localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft ID localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft ID localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft KR localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft KR localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft KR localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft KR localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft KR localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft KR localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft HE localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft HE localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft HE localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft PT-BR localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft PT-BR localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft PT-BR localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft PT-BR localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft PT-BR localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. HECTON-8 Public Primer Article",
+          "scanner": "Draft NL localization pending native pass. A public primer is allowed to be beautiful. It is not allowed to lie.",
+          "field_note": "Draft NL localization pending native pass. This is the site-facing entry point: ocean moon, dead colony, salvage return, no final payload spoilers.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ARTICLE TIER: safe for pre-release site and in-game non-spoiler index.",
+          "audio": "Draft NL localization pending native pass. First sell the ocean. Then earn the crime.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 Public Primer Article gives the spoiler-safe foundation for codex and website surfaces.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 is a drowned industrial ocean moon in the Aegir system. Its shallow shelves are bright and alive; its deep basins carry the remains of Deep Reach infrastructure, colony failure and Atlas-6's damaged maintenance logic."
+        }
+      }
+    },
+    {
+      "packet_id": "P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE",
+      "release_set_id": "RS051_PUBLIC_SITE_PILLAR_ARTICLES",
+      "article_id": "applied_lore.aegir_system_public_primer_article",
+      "title_key": "applied_lore.aegir_system_public_primer_article.title",
+      "unlock": {
+        "primary": "unlock.aegir_system_public_primer_article",
+        "poi_tags": [
+          "poi.public_aegir_article",
+          "poi.moon_ladder_plate",
+          "poi.ephemeris_site_card"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.aegir_orbital_pressure"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir System Public Primer Article",
+          "scanner": "Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "The sky is a system, not a ceiling.",
+          "in_game_wiki": "Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "ru_RU": {
+          "title": "Публичный вводный материал системы Aegir",
+          "scanner": "Сканер: Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Полевая заметка: Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Терминал: PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Аудио: The sky is a system, not a ceiling.",
+          "in_game_wiki": "Внутриигровая вики: Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Публичная статья: Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft JP localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft JP localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft JP localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft JP localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft JP localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft CN localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft CN localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft CN localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft CN localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft CN localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft FR localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft FR localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft FR localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft FR localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft FR localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft ES localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft ES localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft ES localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft ES localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft ES localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft DE localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft DE localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft DE localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft DE localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft DE localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft PL localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft PL localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft PL localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft PL localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft PL localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft UA localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft UA localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft UA localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft UA localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft UA localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft AR localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft AR localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft AR localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft AR localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft AR localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft ID localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft ID localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft ID localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft ID localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft ID localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft KR localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft KR localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft KR localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft KR localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft KR localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft KR localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft HE localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft HE localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft HE localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft HE localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft HE localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft PT-BR localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft PT-BR localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft PT-BR localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft PT-BR localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft PT-BR localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Aegir System Public Primer Article",
+          "scanner": "Draft NL localization pending native pass. Aegir is not backdrop. It is a timetable with gravity.",
+          "field_note": "Draft NL localization pending native pass. Public Aegir text should explain why HECTON-8 is far, valuable and inconvenient.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ARTICLE TIER: moon labels are safe; exact route payload consequences are gated.",
+          "audio": "Draft NL localization pending native pass. The sky is a system, not a ceiling.",
+          "in_game_wiki": "Draft NL localization pending native pass. Aegir System Public Primer Article gives the public-facing astronomy frame for the moon ladder and route windows.",
+          "external_site": "Draft NL localization pending native pass. Aegir is the host system around HECTON-8. Its moon ladder, radiation windows, tides and relay geometry shape every descent, rescue delay and salvage bargain."
+        }
+      }
+    },
+    {
+      "packet_id": "P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE",
+      "release_set_id": "RS051_PUBLIC_SITE_PILLAR_ARTICLES",
+      "article_id": "applied_lore.deep_reach_public_dossier_article",
+      "title_key": "applied_lore.deep_reach_public_dossier_article.title",
+      "unlock": {
+        "primary": "unlock.deep_reach_public_dossier_article",
+        "poi_tags": [
+          "poi.public_deep_reach_article",
+          "poi.shell_chain_card",
+          "poi.liability_teaser"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.deep_reach_pressure"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Public Dossier Article",
+          "scanner": "The public company name is cleaner than its route history.",
+          "field_note": "Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "ru_RU": {
+          "title": "Публичное досье Deep Reach",
+          "scanner": "Сканер: The public company name is cleaner than its route history.",
+          "field_note": "Полевая заметка: Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Терминал: PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Аудио: Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Внутриигровая вики: Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Публичная статья: Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft JP localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft JP localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft JP localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft JP localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft JP localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft CN localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft CN localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft CN localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft CN localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft CN localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft FR localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft FR localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft FR localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft ES localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft ES localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft ES localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft DE localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft DE localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft DE localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft PL localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft PL localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft PL localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft UA localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft UA localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft UA localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft UA localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft UA localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft AR localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft AR localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft AR localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft ID localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft ID localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft ID localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft KR localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft KR localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft KR localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft KR localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft KR localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft KR localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft HE localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft HE localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft HE localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft PT-BR localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft PT-BR localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft PT-BR localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft PT-BR localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft PT-BR localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Deep Reach Public Dossier Article",
+          "scanner": "Draft NL localization pending native pass. The public company name is cleaner than its route history.",
+          "field_note": "Draft NL localization pending native pass. Site copy should show Deep Reach as plausible infrastructure power before revealing the full liability chain.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ARTICLE TIER: public name and shell chain safe; signoff fragments gated.",
+          "audio": "Draft NL localization pending native pass. Never make the villain simpler than the paperwork.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach Public Dossier Article defines the spoiler-safe corporate foundation for later evidence pages.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach Extraterrestrial Development Combine is the corporate body behind HECTON-8's industrial history. Publicly it is a failed development authority; deeper records show delayed evacuation, priority weighting and evidence suppression."
+        }
+      }
+    },
+    {
+      "packet_id": "P254_ATLAS6_SPOILER_GATED_ARTICLE",
+      "release_set_id": "RS051_PUBLIC_SITE_PILLAR_ARTICLES",
+      "article_id": "applied_lore.atlas6_spoiler_gated_article",
+      "title_key": "applied_lore.atlas6_spoiler_gated_article.title",
+      "unlock": {
+        "primary": "unlock.atlas6_spoiler_gated_article",
+        "poi_tags": [
+          "poi.public_atlas_article",
+          "poi.spoiler_gate_plate",
+          "poi.final_axis_card"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.atlas_maintenance"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas-6 Spoiler-Gated Article",
+          "scanner": "This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "ru_RU": {
+          "title": "Спойлерный материал Atlas-6",
+          "scanner": "Сканер: This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Полевая заметка: Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Терминал: PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Аудио: Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Внутриигровая вики: Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Публичная статья: Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft JP localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft JP localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft JP localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft JP localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft JP localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft CN localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft CN localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft CN localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft CN localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft CN localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft FR localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft FR localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft FR localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft FR localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft ES localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft ES localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft ES localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft ES localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft DE localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft DE localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft DE localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft DE localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft PL localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft PL localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft PL localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft PL localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft UA localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft UA localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft UA localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft UA localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft UA localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft AR localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft AR localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft AR localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft AR localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft ID localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft ID localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft ID localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft ID localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft KR localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft KR localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft KR localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft KR localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft KR localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft KR localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft HE localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft HE localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft HE localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft HE localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft PT-BR localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft PT-BR localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft PT-BR localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft PT-BR localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft PT-BR localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Atlas-6 Spoiler-Gated Article",
+          "scanner": "Draft NL localization pending native pass. This page should not open before the player has chosen what Atlas is allowed to mean.",
+          "field_note": "Draft NL localization pending native pass. Atlas public text must stay gated until the game has earned the broken guardian question.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ARTICLE TIER: spoiler gated; final payload consequences hidden before endings.",
+          "audio": "Draft NL localization pending native pass. Do not explain the bottom before the player has heard it breathe.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas-6 Spoiler-Gated Article keeps the final machine-ocean truth out of public pages until discovery or ending records permit it.",
+          "external_site": "Draft NL localization pending native pass. Atlas-6 is HECTON-8's broken industrial intelligence, inseparable from the ocean after decades of repair, flooding and biological adaptation. Its spoiler-gated article must preserve the ethical ambiguity of the final choice."
+        }
+      }
+    },
+    {
+      "packet_id": "P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE",
+      "release_set_id": "RS051_PUBLIC_SITE_PILLAR_ARTICLES",
+      "article_id": "applied_lore.blue_debt_public_resource_article",
+      "title_key": "applied_lore.blue_debt_public_resource_article.title",
+      "unlock": {
+        "primary": "unlock.blue_debt_public_resource_article",
+        "poi_tags": [
+          "poi.public_blue_debt_article",
+          "poi.sample_case_site_card",
+          "poi.resource_warning_strip"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.resource_custody"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blue Debt Public Resource Article",
+          "scanner": "The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "ru_RU": {
+          "title": "Публичный материал ресурса blue debt",
+          "scanner": "Сканер: The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Полевая заметка: Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Терминал: PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Аудио: Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Внутриигровая вики: Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Публичная статья: Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft JP localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft JP localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft JP localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft JP localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft JP localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft CN localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft CN localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft CN localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft CN localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft CN localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft FR localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft FR localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft FR localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft FR localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft ES localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft ES localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft ES localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft ES localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft DE localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft DE localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft DE localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft DE localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft PL localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft PL localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft PL localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft PL localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft UA localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft UA localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft UA localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft UA localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft UA localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft AR localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft AR localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft AR localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft AR localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft ID localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft ID localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft ID localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft ID localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft KR localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft KR localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft KR localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft KR localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft KR localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft KR localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft HE localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft HE localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft HE localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft HE localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft PT-BR localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft PT-BR localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft PT-BR localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft PT-BR localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft PT-BR localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Blue Debt Public Resource Article",
+          "scanner": "Draft NL localization pending native pass. The public name sounds like slang because the official name is built to hide liability.",
+          "field_note": "Draft NL localization pending native pass. Blue debt text should keep the resource grounded in pressure chemistry, computation and custody.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC ARTICLE TIER: sample behavior safe; exact recipe economics gated to gameplay tables.",
+          "audio": "Draft NL localization pending native pass. Ore is what people call it when they want to forget the paperwork.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blue Debt Public Resource Article explains the strategic resource as hard-sci-fi pressure substrate, not magic loot.",
+          "external_site": "Draft NL localization pending native pass. Blue debt is Marauder slang for Xenon-Omega-bearing pressure substrate: a volatile family of clathrate, brine, mineral and industrial-biological material used for extreme computation and containment infrastructure."
+        }
+      }
+    }
+  ]
+}

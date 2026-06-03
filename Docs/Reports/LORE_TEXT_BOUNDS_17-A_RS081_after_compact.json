@@ -1,0 +1,658 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "TEXT_EXPANSION_GT_1_35": 65
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P401_MARA_VENN_PUMP_CHIEF_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Mara Venn/Pump Chief",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P402_JUNO_KADE_RELAY_NOTARY_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Juno Kade/Relay",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Ren Okoye/Brine Map",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Sahana Iqbal/Triage",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    },
+    {
+      "release_set_id": "RS081_COLONY_ANCHOR_WORKER_DOSSIERS",
+      "packet_id": "P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Lian Torres/Vent Forge",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS081_COLONY_ANCHOR_WORKER_DOSSIERS.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

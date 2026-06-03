@@ -1,30 +1,37 @@
 ---
 packet_id: P066_LIAN_TORRES_LAST_PACKET
+release_set_id: RS014_COLONY_RETURN_WINDOWS
 article_id: hecton8.lian_torres_last_packet
+unlock_id: unlock.first_lian_torres_last_packet
+poi_tags: poi.last_packet_buffer;poi.comms_rack
+biome_tags: biome.relay_spine;biome.drowned_comms
 locale: zh_CN
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Lian Torres Last Packet
 
-Draft CN localization pending native pass. Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
+Lian Torres anchors the communications truth. His last clean packet proves that some evidence escaped HECTON-8 before Deep Reach buried it under signal corruption and quarantine language.
 
 ## Scanner
 
-Draft CN localization pending native pass. The last clean packet was not lost. It was too expensive to admit receiving.
+The last clean packet was not lost. It was too expensive to admit receiving.
 
 ## Terminal
 
-Draft CN localization pending native pass. TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
+TORRES, L. Clean carrier handshake achieved. Worker count attached. Evacuation proof attached. Relay age unacceptable for live rescue. Corporate archive later marks packet corrupted.
 
 ## Audio
 
-Draft CN localization pending native pass. He sent the names. The archive called them noise.
+He sent the names. The archive called them noise.
 
 ## Field Note
 
-Draft CN localization pending native pass. A timestamp can be a corpse when the carrier answers the wrong queue.
+A timestamp can be a corpse when the carrier answers the wrong queue.
 
 <!-- In-Game Wiki; generated from P066_LIAN_TORRES_LAST_PACKET/zh_CN. -->

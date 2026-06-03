@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P281_HECTON8_SITE_OPENING_HOOK",
+    "P282_AEGIR_SITE_SYSTEM_MAP_COPY",
+    "P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY",
+    "P284_ATLAS6_SITE_SPOILER_GATE_COPY",
+    "P285_BLUE_DEBT_SITE_RESOURCE_COPY"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS.packets.json"
+  ]
+}

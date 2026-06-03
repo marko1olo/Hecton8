@@ -1,10 +1,17 @@
 ---
 packet_id: P117_NOBLE_GAS_BRINE_POCKETS
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.noble_gas_brine_pockets
+unlock_id: unlock.first_noble_gas_brine_pockets
+poi_tags: poi.noble_gas_bubble_trap;poi.brine_pocket_vent
+biome_tags: biome.brine_canyon;biome.vent_forge
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Noble gas brine pockets

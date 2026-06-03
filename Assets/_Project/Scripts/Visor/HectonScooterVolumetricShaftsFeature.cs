@@ -12,10 +12,6 @@ using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Visor
 {
     /// <summary>
@@ -23,10 +19,6 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonScooterVolumetricShaftsFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader";
-#endif
-        private const string AutoExposureComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirAutoExposure.compute";
         private const int HistogramBinCount = 64;
         private const int ShaftGlobalsStrideBytes = 176;
         private const int MaterialParameterStateSizeBytes = 152;
@@ -51,7 +43,7 @@ namespace Hecton8.Visor
         private sealed class FeatureSettings
         {
             [Tooltip("Hidden multi-pass shader used for screen-space bright-pass shafts, bilateral upsample, lens ghosts, and final composite.")]
-            public Shader shader = null;
+            [FormerlySerializedAs("shader")] public Material material = null;
 
             [Tooltip("GPU histogram compute shader used to resolve weighted EV and temporal exposure smoothing.")]
             public ComputeShader autoExposureComputeShader = null;
@@ -230,10 +222,7 @@ namespace Hecton8.Visor
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Underwater Noir Stack");
             private FeatureSettings _settings;
-            private Material _raymarchMaterial;
-            private Material _blurHorizontalMaterial;
-            private Material _blurVerticalMaterial;
-            private Material _compositeMaterial;
+            private Material _material;
             private ComputeShader _autoExposureComputeShader;
             private GraphicsBuffer _histogramBuffer;
             private GraphicsBuffer _exposureStateBuffer;
@@ -264,18 +253,12 @@ namespace Hecton8.Visor
 
             public void Setup(
                 FeatureSettings settings,
-                Material raymarchMaterial,
-                Material blurHorizontalMaterial,
-                Material blurVerticalMaterial,
-                Material compositeMaterial,
+                Material material,
                 HectonUnderwaterVisuals underwaterVisuals,
                 IPlayerRuntimeContext playerContext)
             {
                 _settings = settings;
-                _raymarchMaterial = raymarchMaterial;
-                _blurHorizontalMaterial = blurHorizontalMaterial;
-                _blurVerticalMaterial = blurVerticalMaterial;
-                _compositeMaterial = compositeMaterial;
+                _material = material;
                 _underwaterVisuals = underwaterVisuals;
                 _playerContext = playerContext;
                 SetAutoExposureComputeShader(settings != null ? settings.autoExposureComputeShader : null);
@@ -343,10 +326,7 @@ namespace Hecton8.Visor
                     return;
 
                 if (_settings == null ||
-                    _raymarchMaterial == null ||
-                    _blurHorizontalMaterial == null ||
-                    _blurVerticalMaterial == null ||
-                    _compositeMaterial == null)
+                    _material == null)
                 {
                     return;
                 }
@@ -530,7 +510,7 @@ namespace Hecton8.Visor
                     halfResDepthTexture,
                     shaftGlobalsHandle,
                     default,
-                    _raymarchMaterial,
+                    _material,
                     HalfResContactDepthPassIndex,
                     true,
                     false,
@@ -547,7 +527,7 @@ namespace Hecton8.Visor
                     shaftsTexture,
                     shaftGlobalsHandle,
                     exposureStateHandle,
-                    _raymarchMaterial,
+                    _material,
                     0,
                     true,
                     false,
@@ -564,7 +544,7 @@ namespace Hecton8.Visor
                     blurTexture,
                     shaftGlobalsHandle,
                     exposureStateHandle,
-                    _blurHorizontalMaterial,
+                    _material,
                     1,
                     true,
                     false,
@@ -581,7 +561,7 @@ namespace Hecton8.Visor
                     shaftsTexture,
                     shaftGlobalsHandle,
                     exposureStateHandle,
-                    _blurVerticalMaterial,
+                    _material,
                     2,
                     true,
                     false,
@@ -598,7 +578,7 @@ namespace Hecton8.Visor
                     compositeTexture,
                     shaftGlobalsHandle,
                     exposureStateHandle,
-                    _compositeMaterial,
+                    _material,
                     3,
                     true,
                     true,
@@ -1457,10 +1437,7 @@ namespace Hecton8.Visor
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private ShaftsPass _pass;
-        private Material _raymarchMaterial;
-        private Material _blurHorizontalMaterial;
-        private Material _blurVerticalMaterial;
-        private Material _compositeMaterial;
+        private Material _material;
         private HectonUnderwaterVisuals _cachedUnderwaterVisuals;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapRegistered;
@@ -1471,30 +1448,12 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-            if (settings != null && settings.autoExposureComputeShader == null)
-                settings.autoExposureComputeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(AutoExposureComputeAssetPath);
-#endif
-
-            Shader shader = settings != null ? settings.shader : null;
-            if (shader == null)
-                RuntimeShaderReferenceCatalog.TryGetScooterVolumetricShaftsShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Hidden/Hecton8/ScooterVolumetricShafts");
-#endif
+            HectonDrsRenderFeatureGate.PrimeCold();
 
             _pass ??= new ShaftsPass();
             CacheGraphicsCapabilitiesCold();
-            RecreateMaterial(ref _raymarchMaterial, shader);
-            RecreateMaterial(ref _blurHorizontalMaterial, shader);
-            RecreateMaterial(ref _blurVerticalMaterial, shader);
-            RecreateMaterial(ref _compositeMaterial, shader);
-            if (Application.isPlaying)
-                _pass.PrepareResources(settings);
-            else
+            _material = settings != null ? settings.material : null;
+            if (!Application.isPlaying)
                 _pass.Dispose();
             TryRegisterHotSwapListener();
             _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
@@ -1509,10 +1468,7 @@ namespace Hecton8.Visor
 
             if (settings == null ||
                 _pass == null ||
-                _raymarchMaterial == null ||
-                _blurHorizontalMaterial == null ||
-                _blurVerticalMaterial == null ||
-                _compositeMaterial == null)
+                _material == null)
             {
                 return;
             }
@@ -1526,10 +1482,7 @@ namespace Hecton8.Visor
 
             _pass.Setup(
                 settings,
-                _raymarchMaterial,
-                _blurHorizontalMaterial,
-                _blurVerticalMaterial,
-                _compositeMaterial,
+                _material,
                 _cachedUnderwaterVisuals,
                 _cachedPlayerContext);
             renderer.EnqueuePass(_pass);
@@ -1539,14 +1492,7 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
-            CoreUtils.Destroy(_raymarchMaterial);
-            CoreUtils.Destroy(_blurHorizontalMaterial);
-            CoreUtils.Destroy(_blurVerticalMaterial);
-            CoreUtils.Destroy(_compositeMaterial);
-            _raymarchMaterial = null;
-            _blurHorizontalMaterial = null;
-            _blurVerticalMaterial = null;
-            _compositeMaterial = null;
+            _material = null;
             _cachedUnderwaterVisuals = null;
             _cachedPlayerContext = null;
             TryUnregisterHotSwapListener();
@@ -1610,20 +1556,5 @@ namespace Hecton8.Visor
             _hotSwapRegistered = false;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                CoreUtils.Destroy(material);
-                material = null;
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
     }
 }

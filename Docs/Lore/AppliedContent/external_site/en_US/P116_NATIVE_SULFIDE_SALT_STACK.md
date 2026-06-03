@@ -1,10 +1,17 @@
 ---
 packet_id: P116_NATIVE_SULFIDE_SALT_STACK
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.native_sulfide_salt_stack
+unlock_id: unlock.first_native_sulfide_salt_stack
+poi_tags: poi.sulfide_wall_sample;poi.salt_crust_shelf
+biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Native Sulfide Salt Stack

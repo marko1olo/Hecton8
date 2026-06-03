@@ -5,9 +5,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.World
 {
@@ -18,9 +15,6 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-90)]
     public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
-#if UNITY_EDITOR
-        private const string SilhouetteShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader";
-#endif
         private const int BrgMetadataPlaceholderCount = 1;
 
         private static readonly int LandmarkMatricesId = Shader.PropertyToID("_HectonLandmarkMatrices");
@@ -32,12 +26,8 @@ namespace Hecton8.World
         private Mesh _mesh;
 
         [SerializeField]
-        [Tooltip("Material used for the silhouette-only BRG draw. If empty, the hidden shader fallback is used.")]
+        [Tooltip("Required authored material used for the silhouette-only BRG draw. Runtime material generation is forbidden.")]
         private Material _material;
-
-        [SerializeField]
-        [Tooltip("Optional shader fallback used to build the hidden landmark material when no material is assigned.")]
-        private Shader _silhouetteShader;
 
         [SerializeField]
         [Tooltip("Submesh index rendered through RenderMeshPrimitives.")]
@@ -78,8 +68,6 @@ namespace Hecton8.World
         private BatchMaterialID _batchMaterialId;
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
-        private Material _runtimeMaterial;
-        private Shader _runtimeMaterialShader;
         private GraphicsBuffer _registeredBatchBuffer;
         private bool _hotSwapListenerRegistered;
 
@@ -97,12 +85,10 @@ namespace Hecton8.World
         {
             _drawBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             EnsureResources();
-            PrepareRuntimeMaterialCold();
         }
 
         private void OnEnable()
         {
-            PrepareRuntimeMaterialCold();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterHotSwapListener();
             RegisterTick();
@@ -133,7 +119,7 @@ namespace Hecton8.World
                 return;
 
             Mesh activeMesh = _mesh;
-            Material activeMaterial = GetPreparedMaterial();
+            Material activeMaterial = _material;
             if (activeMesh == null || activeMaterial == null)
                 return;
 
@@ -410,6 +396,8 @@ namespace Hecton8.World
 
         private void EnsureResources()
         {
+            UnityEngine.Assertions.Assert.IsNotNull(_mesh, "Fatal: HectonDistantLandmarkRenderer requires an authored landmark mesh.");
+            UnityEngine.Assertions.Assert.IsNotNull(_material, "Fatal: HectonDistantLandmarkRenderer requires an authored landmark material.");
             if (_batchRendererGroup == null)
             {
                 _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
@@ -516,53 +504,6 @@ namespace Hecton8.World
             _ownedUploadBufferIndex ^= 1;
         }
 
-        private void PrepareRuntimeMaterialCold()
-        {
-            if (_material != null)
-                return;
-
-            Shader fallbackShader = ResolveFallbackShader();
-            if (fallbackShader == null)
-                return;
-
-            if (_runtimeMaterial != null && _runtimeMaterialShader == fallbackShader)
-                return;
-
-            ReleaseRuntimeMaterial();
-            _runtimeMaterial = new Material(fallbackShader)
-            {
-                name = "Hecton Distant Landmark Runtime Material",
-                hideFlags = HideFlags.HideAndDontSave
-            };
-            _runtimeMaterialShader = fallbackShader;
-        }
-
-        private Material GetPreparedMaterial()
-        {
-            if (_material != null)
-                return _material;
-
-            return _runtimeMaterial;
-        }
-
-        private Shader ResolveFallbackShader()
-        {
-            if (_silhouetteShader != null)
-                return _silhouetteShader;
-
-#if UNITY_EDITOR
-            Shader editorShader = AssetDatabase.LoadAssetAtPath<Shader>(SilhouetteShaderAssetPath);
-            if (editorShader != null)
-                return editorShader;
-#endif
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            return Shader.Find("Hidden/Hecton8/World/DistantLandmarkSilhouette");
-#else
-            return null;
-#endif
-        }
-
         private Bounds ResolveDrawBounds()
         {
             if (_hasBoundsOverride)
@@ -576,7 +517,6 @@ namespace Hecton8.World
         {
             _externalMatrixBuffer = null;
             _usingOwnedUploadBuffers = false;
-            ReleaseRuntimeMaterial();
 
             if (_batchRendererGroup != null)
             {
@@ -667,22 +607,6 @@ namespace Hecton8.World
 
             buffer.Release();
             buffer = null;
-        }
-
-        private void ReleaseRuntimeMaterial()
-        {
-            if (_runtimeMaterial == null)
-                return;
-
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                DestroyImmediate(_runtimeMaterial);
-            else
-#endif
-                Destroy(_runtimeMaterial);
-
-            _runtimeMaterial = null;
-            _runtimeMaterialShader = null;
         }
 
         private static bool IsFiniteBounds(Bounds bounds)

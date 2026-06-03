@@ -45,14 +45,20 @@ namespace Hecton8.Interaction
         public const uint TelemetryFlagBudgetExceeded = VRInteractionBridgeContract.TelemetryFlagBudgetExceeded;
         public const uint TelemetryFlagQualityScaled = VRInteractionBridgeContract.TelemetryFlagQualityScaled;
         public const uint SocketFlagActive = VRInteractionBridgeContract.SocketFlagActive;
+        public const uint SocketFlagTwoHanded = 1u << 1;
+        public const uint SocketFlagHandLeft = 1u << 2;
+        public const uint SocketFlagHandRight = 1u << 3;
+        public const int SocketSurfaceKindShift = 8;
+        public const uint SocketSurfaceKindMask = 0xFFu << SocketSurfaceKindShift;
+        public const uint SocketSurfaceKindLever = (uint)InteractionAnchorData.SurfaceKindLever << SocketSurfaceKindShift;
+        public const uint SocketSurfaceKindValve = (uint)InteractionAnchorData.SurfaceKindValve << SocketSurfaceKindShift;
+        public const uint SocketSurfaceKindToggle = (uint)InteractionAnchorData.SurfaceKindToggle << SocketSurfaceKindShift;
         public const uint TuningFlagInitialized = VRInteractionBridgeContract.TuningFlagInitialized;
         public const uint TuningFlagSdfEnabled = VRInteractionBridgeContract.TuningFlagSdfEnabled;
         public const uint TuningFlagSocketSnapEnabled = VRInteractionBridgeContract.TuningFlagSocketSnapEnabled;
         public const uint TuningFlagVelocitySignalEnabled = VRInteractionBridgeContract.TuningFlagVelocitySignalEnabled;
         public const uint TuningFlagMockInputEnabled = VRInteractionBridgeContract.TuningFlagMockInputEnabled;
         public const uint TelemetryMarker = VRInteractionBridgeContract.TelemetryMarker;
-        public const string DumpPath = VRInteractionBridgeContract.DumpRelativePath;
-
         public const BufferID HandStatesBuffer = BufferID.VRInteractionHandStates;
         public const BufferID PreviousHandStatesBuffer = BufferID.VRInteractionPreviousHandStates;
         public const BufferID ControllerMatrixInputsBuffer = BufferID.VRInteractionControllerMatrixInputs;
@@ -61,6 +67,7 @@ namespace Hecton8.Interaction
         public const BufferID TelemetryRingBuffer = BufferID.VRInteractionTelemetryRing;
         public const BufferID TelemetryCursorBuffer = BufferID.VRInteractionTelemetryCursor;
         public const BufferID ResolvedHandMatricesBuffer = BufferID.VRInteractionResolvedHandMatrices;
+        public const ulong MutationGuardMask = VRInteractionBridgeContract.MutationGuardMask;
         public const SystemID OwnerSystemId = SystemID.GameplayPlayer;
     }
 
@@ -175,6 +182,12 @@ namespace Hecton8.Interaction
                    OffsetOf<VRInteractionTuningDTO>(nameof(VRInteractionTuningDTO.ShoulderAUP)) == 24 &&
                    OffsetOf<VRInteractionTuningDTO>(nameof(VRInteractionTuningDTO.SdfOriginAUP)) == 48 &&
                    OffsetOf<VRInteractionTuningDTO>(nameof(VRInteractionTuningDTO.SdfDimensions)) == 88 &&
+                   OffsetOf<VRInteractionSocketDTO>(nameof(VRInteractionSocketDTO.SocketAUP)) == 0 &&
+                   OffsetOf<VRInteractionSocketDTO>(nameof(VRInteractionSocketDTO.Orientation)) == 24 &&
+                   OffsetOf<VRInteractionSocketDTO>(nameof(VRInteractionSocketDTO.Normal)) == 40 &&
+                   OffsetOf<VRInteractionSocketDTO>(nameof(VRInteractionSocketDTO.SnapRadiusMeters)) == 52 &&
+                   OffsetOf<VRInteractionSocketDTO>(nameof(VRInteractionSocketDTO.SocketId)) == 56 &&
+                   OffsetOf<VRInteractionSocketDTO>(nameof(VRInteractionSocketDTO.Flags)) == 60 &&
                    OffsetOf<VRInteractionTelemetryEntry>(nameof(VRInteractionTelemetryEntry.RawControllerAUP)) == 16 &&
                    OffsetOf<VRInteractionTelemetryEntry>(nameof(VRInteractionTelemetryEntry.ResolvedHandAUP)) == 40;
         }
@@ -191,7 +204,7 @@ namespace Hecton8.Interaction
         public static bool EnsureBuffers(IDataVault vault, out VRInteractionKinematicBridgeViews views)
         {
             views = default;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             if (vault.IsAllocationLocked)
@@ -244,6 +257,12 @@ namespace Hecton8.Interaction
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
 
+            if (vault.IsCompactionFenceActive)
+            {
+                views = default;
+                return false;
+            }
+
             if (!vault.TryResolveHandle(in handStates, out views.HandStates) ||
                 !vault.TryResolveHandle(in previousStates, out views.PreviousHandStates) ||
                 !vault.TryResolveHandle(in matrices, out views.ControllerMatrices) ||
@@ -283,8 +302,9 @@ namespace Hecton8.Interaction
         {
             state = default;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryGetGenerationHandle<VRHandStateDTO>(VRInteractionKinematicBridgeConstants.HandStatesBuffer, out VaultGenerationHandle<VRHandStateDTO> handle) ||
-                !vault.TryReadHandle(in handle, out NativeArray<VRHandStateDTO> states) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<VRHandStateDTO>.ReadOnly states) ||
                 !states.IsCreated)
             {
                 return false;
@@ -301,22 +321,198 @@ namespace Hecton8.Interaction
                    VRInteractionKinematicBridgeMath.IsFinite(state.ResolvedHandAUP);
         }
 
-        public static unsafe bool DumpTelemetryFaultOnly(IDataVault vault, string path = null)
+        public static bool TryReplaceSocketRange(
+            IDataVault vault,
+            NativeArray<VRInteractionSocketDTO> source,
+            int sourceCount,
+            int destinationStartIndex,
+            int destinationSlotCount,
+            out int written)
         {
+            written = 0;
             if (vault == null ||
-                !vault.TryGetGenerationHandle<VRInteractionTelemetryEntry>(VRInteractionKinematicBridgeConstants.TelemetryRingBuffer, out VaultGenerationHandle<VRInteractionTelemetryEntry> handle) ||
-                !vault.TryReadHandle(in handle, out NativeArray<VRInteractionTelemetryEntry> ring) ||
-                !ring.IsCreated ||
-                ring.Length < VRInteractionKinematicBridgeConstants.TelemetryCapacity)
+                vault.IsCompactionFenceActive ||
+                destinationStartIndex < 0 ||
+                destinationSlotCount <= 0 ||
+                sourceCount < 0 ||
+                (sourceCount > 0 && !source.IsCreated))
             {
                 return false;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path) ? VRInteractionKinematicBridgeConstants.DumpPath : path;
-            int stride = UnsafeUtility.SizeOf<VRInteractionTelemetryEntry>();
-            int byteCount = stride * ring.Length;
-            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-            return NativeFaultDumpWriter.TryWriteAll(resolvedPath, new ReadOnlySpan<byte>(source, byteCount), byteCount);
+            return TryReplaceSocketRangeCore(
+                vault,
+                source,
+                null,
+                true,
+                sourceCount,
+                destinationStartIndex,
+                destinationSlotCount,
+                out written);
+        }
+
+        public static bool TryReplaceSocketRange(
+            IDataVault vault,
+            VRInteractionSocketDTO[] source,
+            int sourceCount,
+            int destinationStartIndex,
+            int destinationSlotCount,
+            out int written)
+        {
+            written = 0;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                destinationStartIndex < 0 ||
+                destinationSlotCount <= 0 ||
+                sourceCount < 0 ||
+                (sourceCount > 0 && (source == null || sourceCount > source.Length)))
+            {
+                return false;
+            }
+
+            return TryReplaceSocketRangeCore(
+                vault,
+                default,
+                source,
+                false,
+                sourceCount,
+                destinationStartIndex,
+                destinationSlotCount,
+                out written);
+        }
+
+        public static bool TryPublishEquipmentMetadataSockets(
+            IDataVault vault,
+            EquipmentMetadata metadata,
+            NativeArray<VRInteractionSocketDTO> scratch,
+            int destinationStartIndex,
+            int destinationSlotCount,
+            double3 rootAup,
+            quaternion localToWorldRotation,
+            out int written)
+        {
+            written = 0;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                metadata == null ||
+                !scratch.IsCreated ||
+                destinationStartIndex < 0 ||
+                destinationSlotCount <= 0)
+            {
+                return false;
+            }
+
+            int socketCount = metadata.CopyAnchorsToSockets(
+                scratch,
+                0,
+                rootAup,
+                localToWorldRotation);
+            return TryReplaceSocketRange(
+                vault,
+                scratch,
+                socketCount,
+                destinationStartIndex,
+                destinationSlotCount,
+                out written);
+        }
+
+        public static bool TryPublishEquipmentMetadataSockets(
+            IDataVault vault,
+            EquipmentMetadata metadata,
+            NativeArray<VRInteractionSocketDTO> scratch,
+            int destinationStartIndex,
+            int destinationSlotCount,
+            double3 rootAup,
+            float3 rootRuntimePosition,
+            float4x4 localToWorldMatrix,
+            out int written)
+        {
+            written = 0;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                metadata == null ||
+                !scratch.IsCreated ||
+                destinationStartIndex < 0 ||
+                destinationSlotCount <= 0)
+            {
+                return false;
+            }
+
+            int socketCount = metadata.CopyAnchorsToSockets(
+                scratch,
+                0,
+                rootAup,
+                rootRuntimePosition,
+                localToWorldMatrix);
+            return TryReplaceSocketRange(
+                vault,
+                scratch,
+                socketCount,
+                destinationStartIndex,
+                destinationSlotCount,
+                out written);
+        }
+
+        private static bool TryReplaceSocketRangeCore(
+            IDataVault vault,
+            NativeArray<VRInteractionSocketDTO> nativeSource,
+            VRInteractionSocketDTO[] managedSource,
+            bool useNativeSource,
+            int sourceCount,
+            int destinationStartIndex,
+            int destinationSlotCount,
+            out int written)
+        {
+            written = 0;
+            bool mutationGuardAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(VRInteractionKinematicBridgeConstants.MutationGuardMask))
+                    return false;
+
+                mutationGuardAcquired = true;
+                if (vault.IsCompactionFenceActive ||
+                    !TryOpenExistingLane(
+                        vault,
+                        VRInteractionKinematicBridgeConstants.InteractionSocketsBuffer,
+                        VRInteractionKinematicBridgeConstants.SocketCapacity,
+                        out NativeArray<VRInteractionSocketDTO> sockets) ||
+                    destinationStartIndex >= sockets.Length)
+                {
+                    return false;
+                }
+
+                int slotLimit = sockets.Length - destinationStartIndex;
+                int slotsToWrite = destinationSlotCount < slotLimit ? destinationSlotCount : slotLimit;
+                int copyCount = sourceCount < slotsToWrite ? sourceCount : slotsToWrite;
+                if (useNativeSource)
+                {
+                    if (nativeSource.IsCreated && copyCount > nativeSource.Length)
+                        copyCount = nativeSource.Length;
+                }
+                else if (managedSource != null && copyCount > managedSource.Length)
+                {
+                    copyCount = managedSource.Length;
+                }
+
+                for (int i = 0; i < copyCount; i++)
+                {
+                    sockets[destinationStartIndex + i] = useNativeSource
+                        ? nativeSource[i]
+                        : managedSource[i];
+                }
+
+                for (int i = copyCount; i < slotsToWrite; i++)
+                    sockets[destinationStartIndex + i] = default;
+
+                written = copyCount;
+                return true;
+            }
+            finally
+            {
+                if (mutationGuardAcquired)
+                    vault.ReleaseMutationGuard(VRInteractionKinematicBridgeConstants.MutationGuardMask);
+            }
         }
 
         private static bool TryOpenExistingLane<T>(
@@ -328,6 +524,7 @@ namespace Hecton8.Interaction
         {
             buffer = default;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !vault.TryResolveHandle(in handle, out buffer) ||
@@ -653,10 +850,86 @@ namespace Hecton8.Interaction
             out uint socketId,
             out int iterations)
         {
+            socketId = 0u;
+            VRHandStateDTO result = ResolveHandBase(
+                input,
+                previous,
+                encodedSdf,
+                in tuning,
+                handIndex,
+                out double3 resolvedAup,
+                out maxPenetration,
+                out surfaceNormal,
+                out iterations,
+                out bool canSnap);
+
+            if (canSnap &&
+                ((tuning.Flags & VRInteractionKinematicBridgeConstants.TuningFlagSocketSnapEnabled) != 0u) &&
+                TrySnapToSocket(resolvedAup, sockets, socketCount, tuning, out double3 snappedAup, out socketId, out float3 socketNormal))
+            {
+                resolvedAup = snappedAup;
+                surfaceNormal = socketNormal;
+                result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagSocketSnapped;
+            }
+
+            return FinalizeResolvedHand(input, previous, result, resolvedAup, deltaTime, in tuning);
+        }
+
+        public static VRHandStateDTO ResolveHand(
+            VRHandStateDTO input,
+            VRHandStateDTO previous,
+            NativeArray<byte>.ReadOnly encodedSdf,
+            ReadOnlySpan<VRInteractionSocketDTO> sockets,
+            int socketCount,
+            in VRInteractionTuningDTO tuning,
+            int handIndex,
+            float deltaTime,
+            out float maxPenetration,
+            out float3 surfaceNormal,
+            out uint socketId,
+            out int iterations)
+        {
+            socketId = 0u;
+            VRHandStateDTO result = ResolveHandBase(
+                input,
+                previous,
+                encodedSdf,
+                in tuning,
+                handIndex,
+                out double3 resolvedAup,
+                out maxPenetration,
+                out surfaceNormal,
+                out iterations,
+                out bool canSnap);
+
+            if (canSnap &&
+                ((tuning.Flags & VRInteractionKinematicBridgeConstants.TuningFlagSocketSnapEnabled) != 0u) &&
+                TrySnapToSocket(resolvedAup, sockets, socketCount, tuning, out double3 snappedAup, out socketId, out float3 socketNormal))
+            {
+                resolvedAup = snappedAup;
+                surfaceNormal = socketNormal;
+                result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagSocketSnapped;
+            }
+
+            return FinalizeResolvedHand(input, previous, result, resolvedAup, deltaTime, in tuning);
+        }
+
+        private static VRHandStateDTO ResolveHandBase(
+            VRHandStateDTO input,
+            VRHandStateDTO previous,
+            NativeArray<byte>.ReadOnly encodedSdf,
+            in VRInteractionTuningDTO tuning,
+            int handIndex,
+            out double3 resolvedAup,
+            out float maxPenetration,
+            out float3 surfaceNormal,
+            out int iterations,
+            out bool canSnap)
+        {
             maxPenetration = 0f;
             surfaceNormal = new float3(0f, 1f, 0f);
-            socketId = 0u;
             iterations = ResolveIterationCount(tuning.GlobalQualityWeight);
+            canSnap = false;
 
             VRHandStateDTO result = input;
             result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagNoPhysicsProxy;
@@ -669,11 +942,12 @@ namespace Hecton8.Interaction
                 result.ResolvedHandAUP = IsFinite(previous.ResolvedHandAUP) ? previous.ResolvedHandAUP : double3.zero;
                 result.Velocity = float3.zero;
                 result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagNonFinite;
+                resolvedAup = result.ResolvedHandAUP;
                 return result;
             }
 
             double3 rootAup = IsFinite(tuning.PlayerRootAUP) ? tuning.PlayerRootAUP : double3.zero;
-            double3 resolvedAup = input.RawControllerAUP;
+            resolvedAup = input.RawControllerAUP;
             float3 rootLocal = ToLocalFloat3(resolvedAup, rootAup);
             float3 shoulderLocal = IsFinite(tuning.ShoulderAUP) ? ToLocalFloat3(tuning.ShoulderAUP, rootAup) : float3.zero;
             float maxArm = math.max(0.05f, tuning.MaxArmLengthMeters);
@@ -716,14 +990,18 @@ namespace Hecton8.Interaction
                 result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagSdfUnavailable;
             }
 
-            if (((tuning.Flags & VRInteractionKinematicBridgeConstants.TuningFlagSocketSnapEnabled) != 0u) &&
-                TrySnapToSocket(resolvedAup, sockets, socketCount, tuning, out double3 snappedAup, out socketId, out float3 socketNormal))
-            {
-                resolvedAup = snappedAup;
-                surfaceNormal = socketNormal;
-                result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagSocketSnapped;
-            }
+            canSnap = true;
+            return result;
+        }
 
+        private static VRHandStateDTO FinalizeResolvedHand(
+            VRHandStateDTO input,
+            VRHandStateDTO previous,
+            VRHandStateDTO result,
+            double3 resolvedAup,
+            float deltaTime,
+            in VRInteractionTuningDTO tuning)
+        {
             result.ResolvedHandAUP = IsFinite(resolvedAup) ? resolvedAup : input.RawControllerAUP;
             result.Velocity = ResolveVelocity(previous.ResolvedHandAUP, result.ResolvedHandAUP, deltaTime);
             result.InteractionFlags |= VRInteractionKinematicBridgeConstants.StateFlagValid;
@@ -950,6 +1228,58 @@ namespace Hecton8.Interaction
             socketId = 0u;
             socketNormal = new float3(0f, 1f, 0f);
             if (!sockets.IsCreated || socketCount <= 0 || !IsFinite(resolvedAup))
+                return false;
+
+            int limit = math.min(socketCount, sockets.Length);
+            float scale = math.max(0.05f, tuning.SnapRadiusScale);
+            float bestSq = float.MaxValue;
+            int bestIndex = -1;
+
+            for (int i = 0; i < limit; i++)
+            {
+                VRInteractionSocketDTO socket = sockets[i];
+                if ((socket.Flags & VRInteractionKinematicBridgeConstants.SocketFlagActive) == 0u ||
+                    !IsFinite(socket.SocketAUP))
+                {
+                    continue;
+                }
+
+                float radius = math.max(0.005f, socket.SnapRadiusMeters * scale);
+                double3 delta = resolvedAup - socket.SocketAUP;
+                float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+                float distSq = math.lengthsq(local);
+                if (math.isfinite(distSq) && distSq <= radius * radius && distSq < bestSq)
+                {
+                    bestSq = distSq;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex < 0)
+                return false;
+
+            VRInteractionSocketDTO best = sockets[bestIndex];
+            snappedAup = best.SocketAUP;
+            socketId = best.SocketId;
+            socketNormal = IsFinite(best.Normal) && math.lengthsq(best.Normal) > 0.000001f
+                ? math.normalize(best.Normal)
+                : new float3(0f, 1f, 0f);
+            return true;
+        }
+
+        private static bool TrySnapToSocket(
+            double3 resolvedAup,
+            ReadOnlySpan<VRInteractionSocketDTO> sockets,
+            int socketCount,
+            in VRInteractionTuningDTO tuning,
+            out double3 snappedAup,
+            out uint socketId,
+            out float3 socketNormal)
+        {
+            snappedAup = resolvedAup;
+            socketId = 0u;
+            socketNormal = new float3(0f, 1f, 0f);
+            if (sockets.Length == 0 || socketCount <= 0 || !IsFinite(resolvedAup))
                 return false;
 
             int limit = math.min(socketCount, sockets.Length);

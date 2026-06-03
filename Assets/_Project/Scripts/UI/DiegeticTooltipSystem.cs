@@ -80,21 +80,6 @@ namespace Hecton8.UI
         {
             'O', 'P', 'E', 'N', ' ', 'H', 'A', 'T', 'C', 'H'
         };
-        private static readonly Vector3[] s_quadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f)
-        };
-        private static readonly Vector2[] s_quadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(0f, 1f),
-            new Vector2(1f, 1f),
-            new Vector2(1f, 0f)
-        };
-        private static readonly int[] s_quadIndices = { 0, 1, 2, 0, 2, 3 };
 
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit readable SDF font used for diegetic tooltip glyphs.")]
@@ -105,6 +90,8 @@ namespace Hecton8.UI
         private Material glyphMaterial;
         [SerializeField, Tooltip("Required authored icon material for diegetic tooltip binding icons.")]
         private Material iconMaterial;
+        [SerializeField, Tooltip("Required authored quad mesh for tooltip glyph and icon indirect draws. Runtime mesh generation is forbidden.")]
+        private Mesh glyphQuadMesh;
         [SerializeField, Tooltip("Optional tooltip shader contract reference. Runtime uses authored material assets only.")]
         private Shader glyphShader;
         [SerializeField, Tooltip("Optional explicit interaction camera. When null, the owner resolves the active player camera.")]
@@ -153,8 +140,8 @@ namespace Hecton8.UI
         private readonly TMP_Character[] _asciiCharacters = new TMP_Character[AsciiCacheSize];
         private readonly char[] _promptBuffer = new char[PromptBufferCapacity];
 
-        private Material _runtimeGlyphMaterial;
-        private Material _runtimeIconMaterial;
+        private Material _resolvedGlyphMaterial;
+        private Material _resolvedIconMaterial;
         private MaterialPropertyBlock _textPropertyBlock;
         private MaterialPropertyBlock _iconPropertyBlock;
         private Texture _boundTextTexture;
@@ -163,7 +150,7 @@ namespace Hecton8.UI
         private GraphicsBuffer _boundIconInstanceBuffer;
         private GraphicsBuffer _boundTextUvBuffer;
         private GraphicsBuffer _boundIconUvBuffer;
-        private Mesh _runtimeQuadMesh;
+        private Mesh _resolvedQuadMesh;
         private GraphicsBuffer _textInstanceBuffer;
         private GraphicsBuffer _iconInstanceBuffer;
         private GraphicsBuffer _textArgsBuffer;
@@ -247,7 +234,7 @@ namespace Hecton8.UI
             if (_visibleAlpha <= 0.0001f || (_textGlyphCount == 0 && _iconCount == 0))
                 return;
 
-            if (!_resourceObjectsReady || !_materialsReady || _runtimeQuadMesh == null)
+            if (!_resourceObjectsReady || !_materialsReady || _resolvedQuadMesh == null)
                 return;
 
             Camera camera = ResolveRenderCamera();
@@ -286,7 +273,7 @@ namespace Hecton8.UI
             Bounds bounds = new Bounds(anchorPosition, _cachedBoundsSize);
             UploadUvTablesIfDirty();
 
-            if (_iconCount > 0 && _runtimeIconMaterial != null)
+            if (_iconCount > 0 && _resolvedIconMaterial != null)
             {
                 DrawBatch(
                     anchorPosition,
@@ -298,7 +285,7 @@ namespace Hecton8.UI
                     _iconLocalCenters,
                     _iconLocalScales,
                     _iconGlyphIndices,
-                    _runtimeIconMaterial,
+                    _resolvedIconMaterial,
                     _iconInstanceBuffer,
                     _iconArgsBuffer,
                     _spriteUvBuffer,
@@ -317,7 +304,7 @@ namespace Hecton8.UI
                     ditherEnabled);
             }
 
-            if (_textGlyphCount > 0 && _runtimeGlyphMaterial != null)
+            if (_textGlyphCount > 0 && _resolvedGlyphMaterial != null)
             {
                 DrawBatch(
                     anchorPosition,
@@ -329,7 +316,7 @@ namespace Hecton8.UI
                     _textGlyphLocalCenters,
                     _textGlyphLocalScales,
                     _textGlyphIndices,
-                    _runtimeGlyphMaterial,
+                    _resolvedGlyphMaterial,
                     _textInstanceBuffer,
                     _textArgsBuffer,
                     _fontUvBuffer,
@@ -853,18 +840,30 @@ namespace Hecton8.UI
 
             Array.Clear(_asciiCharacters, 0, _asciiCharacters.Length);
             _cachedAsciiFont = font;
-            if (font == null || font.characterLookupTable == null)
+            if (font == null || font.characterTable == null)
                 return;
 
-            font.characterLookupTable.TryGetValue('?', out TMP_Character fallback);
-            font.characterLookupTable.TryGetValue(' ', out TMP_Character space);
+            List<TMP_Character> characterTable = font.characterTable;
+            for (int i = 0; i < characterTable.Count; i++)
+            {
+                TMP_Character character = characterTable[i];
+                if (character == null || character.unicode >= AsciiCacheSize)
+                    continue;
+
+                _asciiCharacters[(int)character.unicode] = character;
+            }
+
+            TMP_Character fallback = _asciiCharacters['?'];
+            TMP_Character space = _asciiCharacters[' '];
+            if (fallback == null)
+                fallback = space;
+
             for (int i = 0; i < AsciiCacheSize; i++)
             {
-                char c = (char)i;
-                if (font.characterLookupTable.TryGetValue(c, out TMP_Character character))
-                    _asciiCharacters[i] = character;
-                else
-                    _asciiCharacters[i] = c == ' ' ? space : fallback;
+                if (_asciiCharacters[i] != null)
+                    continue;
+
+                _asciiCharacters[i] = i == ' ' ? space : fallback;
             }
         }
 
@@ -891,9 +890,20 @@ namespace Hecton8.UI
         private void EnsureResourceObjects()
         {
             bool argsDirty = false;
-            if (_runtimeQuadMesh == null)
+            if (_resolvedQuadMesh == null)
             {
-                _runtimeQuadMesh = CreateQuadMesh();
+                UnityEngine.Assertions.Assert.IsNotNull(
+                    glyphQuadMesh,
+                    "Fatal: DiegeticTooltipSystem requires an authored quad mesh. Runtime mesh generation is forbidden.");
+                _resolvedQuadMesh = glyphQuadMesh;
+                bool authoredQuadValid = _resolvedQuadMesh != null &&
+                    _resolvedQuadMesh.subMeshCount > 0 &&
+                    _resolvedQuadMesh.GetIndexCount(0) > 0u;
+                UnityEngine.Assertions.Assert.IsTrue(
+                    authoredQuadValid,
+                    "Fatal: DiegeticTooltipSystem authored quad mesh must provide indexed submesh 0.");
+                if (!authoredQuadValid)
+                    _resolvedQuadMesh = null;
                 argsDirty = true;
             }
 
@@ -961,7 +971,7 @@ namespace Hecton8.UI
                 RefreshIndirectArgs(_iconArgsBuffer);
             }
 
-            _resourceObjectsReady = _runtimeQuadMesh != null
+            _resourceObjectsReady = _resolvedQuadMesh != null
                 && _textInstanceBuffer != null
                 && _iconInstanceBuffer != null
                 && _textArgsBuffer != null
@@ -974,23 +984,23 @@ namespace Hecton8.UI
         {
             if (!_materialResolveAttempted)
             {
-                if (_runtimeGlyphMaterial == null)
-                    _runtimeGlyphMaterial = glyphMaterial;
+                if (_resolvedGlyphMaterial == null)
+                    _resolvedGlyphMaterial = glyphMaterial;
 
-                if (_runtimeIconMaterial == null)
-                    _runtimeIconMaterial = iconMaterial;
+                if (_resolvedIconMaterial == null)
+                    _resolvedIconMaterial = iconMaterial;
 
                 _materialResolveAttempted = true;
             }
 
-            if (_runtimeGlyphMaterial == null || _runtimeIconMaterial == null)
+            if (_resolvedGlyphMaterial == null || _resolvedIconMaterial == null)
             {
                 _materialResolveFailed = true;
                 return;
             }
 
-            Shader resolvedShader = glyphShader != null ? glyphShader : _runtimeGlyphMaterial.shader;
-            if (resolvedShader == null || _runtimeGlyphMaterial.shader != resolvedShader || _runtimeIconMaterial.shader != resolvedShader)
+            Shader resolvedShader = glyphShader != null ? glyphShader : _resolvedGlyphMaterial.shader;
+            if (resolvedShader == null || _resolvedGlyphMaterial.shader != resolvedShader || _resolvedIconMaterial.shader != resolvedShader)
             {
                 _materialResolveFailed = true;
                 return;
@@ -1028,13 +1038,13 @@ namespace Hecton8.UI
 
         private void RefreshIndirectArgs(GraphicsBuffer argsBuffer)
         {
-            if (_runtimeQuadMesh == null || argsBuffer == null)
+            if (_resolvedQuadMesh == null || argsBuffer == null)
                 return;
 
-            _indirectArgs[0] = _runtimeQuadMesh.GetIndexCount(0);
+            _indirectArgs[0] = _resolvedQuadMesh.GetIndexCount(0);
             _indirectArgs[1] = 0u;
-            _indirectArgs[2] = _runtimeQuadMesh.GetIndexStart(0);
-            _indirectArgs[3] = _runtimeQuadMesh.GetBaseVertex(0);
+            _indirectArgs[2] = _resolvedQuadMesh.GetIndexStart(0);
+            _indirectArgs[3] = _resolvedQuadMesh.GetBaseVertex(0);
             _indirectArgs[4] = 0u;
             GraphicsBufferUploadUtility.UploadArray(argsBuffer, _indirectArgs, _indirectArgs.Length);
         }
@@ -1106,7 +1116,7 @@ namespace Hecton8.UI
                 ref boundDitherEnabled);
 
             UnityEngine.Graphics.DrawMeshInstancedIndirect(
-                _runtimeQuadMesh,
+                _resolvedQuadMesh,
                 0,
                 material,
                 bounds,
@@ -1673,8 +1683,8 @@ namespace Hecton8.UI
 
         private void ReleaseResources()
         {
-            _runtimeGlyphMaterial = null;
-            _runtimeIconMaterial = null;
+            _resolvedGlyphMaterial = null;
+            _resolvedIconMaterial = null;
             _textPropertyBlock = null;
             _iconPropertyBlock = null;
             _boundTextTexture = null;
@@ -1695,11 +1705,7 @@ namespace Hecton8.UI
             _materialResolveFailed = false;
             _materialsReady = false;
 
-            if (_runtimeQuadMesh != null)
-            {
-                Destroy(_runtimeQuadMesh);
-                _runtimeQuadMesh = null;
-            }
+            _resolvedQuadMesh = null;
 
             if (_textInstanceBuffer != null)
             {
@@ -1769,21 +1775,6 @@ namespace Hecton8.UI
             return math.isfinite(value.x)
                 && math.isfinite(value.y)
                 && math.isfinite(value.z);
-        }
-
-        private static Mesh CreateQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "DiegeticTooltipGlyphQuad",
-                hideFlags = HideFlags.DontSave
-            };
-
-            mesh.SetVertices(s_quadVertices);
-            mesh.SetUVs(0, s_quadUvs);
-            mesh.SetTriangles(s_quadIndices, 0, true);
-            mesh.RecalculateBounds();
-            return mesh;
         }
 
         private static Matrix4x4 BuildBillboardMatrix(

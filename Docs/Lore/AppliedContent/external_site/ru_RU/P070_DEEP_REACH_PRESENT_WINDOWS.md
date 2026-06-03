@@ -1,10 +1,17 @@
 ---
 packet_id: P070_DEEP_REACH_PRESENT_WINDOWS
+release_set_id: RS014_COLONY_RETURN_WINDOWS
 article_id: hecton8.deep_reach_present_windows
+unlock_id: unlock.first_deep_reach_present_windows
+poi_tags: poi.live_window_queue;poi.proxy_ai_notice
+biome_tags: biome.relay_spine;biome.surface_relay
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Текущие окна Deep Reach

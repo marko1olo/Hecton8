@@ -1,0 +1,21 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+  "title": "Dossier Save Presentation Rules",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS036_DOSSIER_SAVE_PRESENTATION_RULES.packets.json"
+  ],
+  "packets": [
+    "P176_DOSSIER_SELECTION_UI_RULE",
+    "P177_RISK_WEIGHT_CONTRACT_CARD",
+    "P178_ENDING_RECORD_PRESENTATION",
+    "P179_SAVE_PROFILE_KNOWLEDGE_FLAGS",
+    "P180_WEBSITE_WIKI_SPOILER_TIERING"
+  ],
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  }
+}

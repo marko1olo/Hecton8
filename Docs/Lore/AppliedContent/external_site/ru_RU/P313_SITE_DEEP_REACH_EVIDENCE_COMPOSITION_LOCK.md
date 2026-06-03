@@ -1,0 +1,37 @@
+---
+packet_id: P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK
+release_set_id: RS063_PUBLICATION_COMPOSITION_PROOF_PACK
+article_id: applied_lore.site_deep_reach_evidence_composition_lock
+unlock_id: unlock.site_deep_reach_evidence_composition_lock
+poi_tags: poi.site_deep_reach_evidence_pair;poi.sanitized_memo_image
+biome_tags: biome.publication;biome.deep_reach
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Lock композиции Deep Reach evidence
+
+Deep Reach не нужна злодейская речь. Нужны risk memo, delayed rescue и waterline, который ломает memo.
+
+## Scanner
+
+Deep Reach site lock: procedure, memo, damage, not cartoon villainy.
+
+## Terminal
+
+PUBLIC EVIDENCE: Deep Reach pages show sanitized wording beside physical contradiction and liability chain fragments.
+
+## Audio
+
+Мемо чистое, потому что комната грязная.
+
+## Field Note
+
+Public page can state accountability without final payload spoilers.
+
+<!-- External Site; generated from P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK/ru_RU. -->

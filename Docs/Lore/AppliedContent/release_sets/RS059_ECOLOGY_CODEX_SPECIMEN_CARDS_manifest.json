@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS059_ECOLOGY_CODEX_SPECIMEN_CARDS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P291_PHOTIC_MAT_CODEX_CARD",
+    "P292_GLASS_GRAZER_CODEX_CARD",
+    "P293_LANTERN_DRIFT_CODEX_CARD",
+    "P294_BRINE_VANE_CODEX_CARD",
+    "P295_SENSOR_TAGGED_FAUNA_CODEX_CARD"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS059_ECOLOGY_CODEX_SPECIMEN_CARDS.packets.json"
+  ]
+}

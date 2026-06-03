@@ -56,11 +56,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            // COLD ALLOC: GameObject[1] - runtime debug overlay fallback when the scene instance is missing - owner: HectonSystemsDebugUI
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // COLD ALLOC: GameObject[1] - development-only runtime debug overlay fallback when the scene instance is missing - owner: HectonSystemsDebugUI
             GameObject runtimeRoot = new GameObject("HectonSystemsDebugUI_Auto");
             HectonSystemsDebugUI runtimeOverlay = runtimeRoot.AddComponent<HectonSystemsDebugUI>();
             runtimeOverlay.QueueRuntimeBootstrap(forceManagerResolve: true);
             runtimeOverlay.ProcessPendingBootstrap();
+#endif
         }
 
         private static bool ShouldAutoCreateRuntimeOverlay(Scene scene)
@@ -216,6 +218,13 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            if (Application.isPlaying)
+            {
+                enabled = false;
+                return;
+            }
+#endif
             if (Application.isPlaying)
             {
                 if (s_activeRuntimeInstance != null && s_activeRuntimeInstance != this)

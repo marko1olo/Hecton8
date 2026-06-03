@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P336_MATERIAL_EXIT_RECEIPT_AUDIT",
+    "P337_PARTIAL_RETURN_LIEN_EXTENSION",
+    "P338_QUARANTINE_HOLD_INTERROGATION_RECORD",
+    "P339_CORPORATE_COORDINATE_CAPTURE_RECORD",
+    "P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS068_FALSE_EXIT_AFTER_ACTION_RECORDS.packets.json"
+  ]
+}

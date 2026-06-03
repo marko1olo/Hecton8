@@ -104,11 +104,13 @@ namespace Hecton8.World.ProceduralWreckage
 
     public static unsafe class ProceduralWreckageVault
     {
+        private const SystemID WreckageVaultOwner = SystemID.WorldStreaming;
         private const int DumpVersion = 1;
+        private const int EmergencyRuleCount = 8;
         private const string BinaryRulesFileName = "wreckage_module_rules.h8bin";
         private const string CsvRulesFileName = "wreckage_adjacency_rules.csv";
         private const string DumpFileName = "Dump_WRECKAGE_ASSEMBLER.bin";
-        private const string AgentDumpFileName = "Dump_SHINOBU_121.bin";
+        private const string AgentDumpFileName = "Dump_1717.bin";
 
         public static bool TryEnsure(IDataVault vault, out ProceduralWreckageVaultHandles handles)
         {
@@ -121,8 +123,8 @@ namespace Hecton8.World.ProceduralWreckage
                 if (!TryResolveExisting(vault, out handles))
                     return false;
 
-                if (TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers lockedBuffers))
-                    HydrateDefaultsIfNeeded(lockedBuffers);
+                if (!HydrateDefaultsIfNeeded(vault, ref handles))
+                    return false;
 
                 return handles.IsCreated();
             }
@@ -221,8 +223,8 @@ namespace Hecton8.World.ProceduralWreckage
             if (!handles.IsCreated())
                 return false;
 
-            if (TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers))
-                HydrateDefaultsIfNeeded(buffers);
+            if (!HydrateDefaultsIfNeeded(vault, ref handles))
+                return false;
 
             return true;
         }
@@ -399,29 +401,13 @@ namespace Hecton8.World.ProceduralWreckage
 
         public static bool TryGetTuning(IDataVault vault, ref ProceduralWreckageVaultHandles handles, out WreckageTuningDTO tuning)
         {
-            tuning = default;
-            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
-            {
-                return false;
-            }
-
-            tuning = buffers.Tuning[0];
-            return true;
+            return TryReadOne(vault, in handles.Tuning, 0, out tuning);
         }
 
         public static bool TrySetTuning(IDataVault vault, ref ProceduralWreckageVaultHandles handles, in WreckageTuningDTO tuning)
         {
-            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
-            {
-                return false;
-            }
-
-            buffers.Tuning[0] = SanitizeTuning(in tuning);
-            return true;
+            WreckageTuningDTO sanitized = SanitizeTuning(in tuning);
+            return TryWriteOne(vault, in handles.Tuning, 0, in sanitized);
         }
 
         public static bool TryFindLegacyRuleBinary(string projectRoot, out string path)
@@ -482,129 +468,121 @@ namespace Hecton8.World.ProceduralWreckage
 
         public static bool TryLoadBinaryRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
         {
-            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
-                !buffers.CsvScratch.IsCreated ||
-                !buffers.Rules.IsCreated)
-            {
+            int scratchCapacity = ResolveBufferLength(vault, in handles.CsvScratch);
+            int ruleCapacity = ResolveBufferLength(vault, in handles.Rules);
+            if (scratchCapacity <= 0 || ruleCapacity <= 1)
                 return false;
-            }
 
             if (!TryFindLegacyRuleBinary(projectRoot, out string path) || !File.Exists(path))
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            NativeArray<byte> ruleScratch = buffers.CsvScratch;
-            int length = ReadFileIntoNativeScratch(path, ruleScratch);
+            Span<byte> fileBytes = stackalloc byte[ProceduralWreckageConstants.CsvScratchBytes];
+            int length = ReadFileIntoSpan(path, fileBytes.Slice(0, math.min(fileBytes.Length, scratchCapacity)));
             if (length <= 0)
                 return false;
 
-            int activeRuleCount = TryApplyBinaryRules(ruleScratch, length, buffers.Rules, out uint version, out bool swappedEndian);
-            if (activeRuleCount <= 1)
+            if (!TryCopyBytesToVault(vault, in handles.CsvScratch, fileBytes, length))
                 return false;
 
-            if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
+            int activeRuleCount = 0;
+            uint version = 0u;
+            bool swappedEndian = false;
+            NativeArray<WreckageRuleDTO> parsedRules = new NativeArray<WreckageRuleDTO>(ruleCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                WreckageTuningDTO tuning = buffers.Tuning[0];
-                tuning.LastRulePayloadHash = HashBytes(buffers.CsvScratch, length) ^ version ^ (swappedEndian ? 0xB16B00B5u : 0u);
-                tuning.LastRulePayloadWriteTicks = writeTicks;
-                tuning.Flags |= swappedEndian ? 1u : 0u;
-                tuning.Version++;
-                buffers.Tuning[0] = SanitizeTuning(in tuning);
+                activeRuleCount = TryApplyBinaryRules(fileBytes.Slice(0, length), parsedRules, out version, out swappedEndian);
+                if (activeRuleCount <= 1)
+                    return false;
+
+                if (!TryCopyRulesToVault(vault, in handles.Rules, parsedRules, activeRuleCount))
+                    return false;
+            }
+            finally
+            {
+                if (parsedRules.IsCreated)
+                    parsedRules.Dispose();
             }
 
-            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
-            {
-                WreckagePaddedCounterDTO counter = buffers.Counters[0];
-                counter.CsvRuleCount = 0u;
-                counter.BinaryRuleCount = (uint)(activeRuleCount - 1);
-                counter.ActiveRuleCount = (uint)activeRuleCount;
-                buffers.Counters[0] = counter;
-            }
-
-            return true;
+            uint payloadHash = HashBytesFromSpan(fileBytes.Slice(0, length)) ^ version ^ (swappedEndian ? 0xB16B00B5u : 0u);
+            return TryUpdateTuningAfterRuleImport(vault, in handles.Tuning, payloadHash, writeTicks, swappedEndian ? 1u : 0u) &&
+                   TryUpdateCountersAfterRuleImport(vault, in handles.Counters, 0u, (uint)(activeRuleCount - 1), (uint)activeRuleCount);
         }
 
 #if UNITY_EDITOR
         public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
         {
-            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
-                !buffers.CsvScratch.IsCreated ||
-                !buffers.Rules.IsCreated)
-            {
+            int scratchCapacity = ResolveBufferLength(vault, in handles.CsvScratch);
+            int ruleCapacity = ResolveBufferLength(vault, in handles.Rules);
+            if (scratchCapacity <= 0 || ruleCapacity <= 1)
                 return false;
-            }
 
             string path = ResolveCsvPath(projectRoot);
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            int length = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
+            Span<byte> fileBytes = stackalloc byte[ProceduralWreckageConstants.CsvScratchBytes];
+            int length = ReadFileIntoSpan(path, fileBytes.Slice(0, math.min(fileBytes.Length, scratchCapacity)));
             if (length <= 0)
                 return false;
 
-            int ruleCount = TryApplyCsvRules(buffers.CsvScratch, length, buffers.Rules);
-            if (ruleCount <= 0)
+            if (!TryCopyBytesToVault(vault, in handles.CsvScratch, fileBytes, length))
                 return false;
 
-            if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
+            int ruleCount = 0;
+            NativeArray<WreckageRuleDTO> parsedRules = new NativeArray<WreckageRuleDTO>(ruleCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                WreckageTuningDTO tuning = buffers.Tuning[0];
-                tuning.LastRulePayloadHash = HashBytes(buffers.CsvScratch, length);
-                tuning.LastRulePayloadWriteTicks = writeTicks;
-                tuning.Version++;
-                buffers.Tuning[0] = SanitizeTuning(in tuning);
+                ruleCount = TryApplyCsvRules(fileBytes.Slice(0, length), parsedRules);
+                if (ruleCount <= 0)
+                    return false;
+
+                if (!TryCopyRulesToVault(vault, in handles.Rules, parsedRules, ruleCount))
+                    return false;
+            }
+            finally
+            {
+                if (parsedRules.IsCreated)
+                    parsedRules.Dispose();
             }
 
-            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
-            {
-                WreckagePaddedCounterDTO counter = buffers.Counters[0];
-                counter.CsvRuleCount = (uint)ruleCount;
-                counter.BinaryRuleCount = 0u;
-                counter.ActiveRuleCount = (uint)math.max(ruleCount, 1);
-                buffers.Counters[0] = counter;
-            }
-
-            return true;
+            uint payloadHash = HashBytesFromSpan(fileBytes.Slice(0, length));
+            return TryUpdateTuningAfterRuleImport(vault, in handles.Tuning, payloadHash, writeTicks, 0u) &&
+                   TryUpdateCountersAfterRuleImport(vault, in handles.Counters, (uint)ruleCount, 0u, (uint)math.max(ruleCount, 1));
         }
 
         public static bool TryPollCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
         {
-            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
-            {
+            if (!TryReadOne(vault, in handles.Tuning, 0, out WreckageTuningDTO tuning))
                 return false;
-            }
 
             string path = ResolveCsvPath(projectRoot);
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            return buffers.Tuning[0].LastRulePayloadWriteTicks != writeTicks &&
+            return tuning.LastRulePayloadWriteTicks != writeTicks &&
                    TryLoadCsvRules(vault, ref handles, projectRoot);
         }
 #endif
 
         public static int TryApplyBinaryRules(
-            NativeArray<byte> bytes,
-            int length,
+            ReadOnlySpan<byte> bytes,
             NativeArray<WreckageRuleDTO> rules,
             out uint version,
             out bool swappedEndian)
         {
             version = 0u;
             swappedEndian = false;
-            if (!bytes.IsCreated ||
-                !rules.IsCreated ||
-                length < ProceduralWreckageConstants.RuleBinaryHeaderBytes + ProceduralWreckageConstants.RuleBinaryRecordBytes ||
+            if (!rules.IsCreated ||
+                bytes.Length < ProceduralWreckageConstants.RuleBinaryHeaderBytes + ProceduralWreckageConstants.RuleBinaryRecordBytes ||
                 rules.Length <= 1)
             {
                 return 0;
             }
 
-            uint magic = ReadUInt32Little(bytes, 0);
+            uint magic = ReadUInt32LittleFromSpan(bytes, 0);
             if (magic != ProceduralWreckageConstants.RuleBinaryMagic)
             {
                 uint swappedMagic = ReverseBytes(magic);
@@ -614,17 +592,17 @@ namespace Hecton8.World.ProceduralWreckage
                 swappedEndian = true;
             }
 
-            uint endianMarker = ReadUInt32(bytes, 4, swappedEndian);
+            uint endianMarker = ReadUInt32FromSpan(bytes, 4, swappedEndian);
             if (endianMarker != ProceduralWreckageConstants.DumpEndianMarker)
                 return 0;
 
-            version = ReadUInt32(bytes, 8, swappedEndian);
+            version = ReadUInt32FromSpan(bytes, 8, swappedEndian);
             if (version == 0u)
                 return 0;
 
-            uint declaredCountRaw = ReadUInt32(bytes, 12, swappedEndian);
+            uint declaredCountRaw = ReadUInt32FromSpan(bytes, 12, swappedEndian);
             int declaredCount = declaredCountRaw > int.MaxValue ? int.MaxValue : (int)declaredCountRaw;
-            int availableCount = (math.min(length, bytes.Length) - ProceduralWreckageConstants.RuleBinaryHeaderBytes) /
+            int availableCount = (bytes.Length - ProceduralWreckageConstants.RuleBinaryHeaderBytes) /
                                  ProceduralWreckageConstants.RuleBinaryRecordBytes;
             int readCount = math.clamp(Math.Min(declaredCount, availableCount), 0, rules.Length - 1);
             if (readCount <= 0)
@@ -636,7 +614,7 @@ namespace Hecton8.World.ProceduralWreckage
             {
                 int rowOffset = ProceduralWreckageConstants.RuleBinaryHeaderBytes +
                                 i * ProceduralWreckageConstants.RuleBinaryRecordBytes;
-                if (!TryReadBinaryRule(bytes, rowOffset, swappedEndian, out WreckageRuleDTO rule))
+                if (!TryReadBinaryRuleFromSpan(bytes, rowOffset, swappedEndian, out WreckageRuleDTO rule))
                     continue;
 
                 int slot = written + 1;
@@ -649,56 +627,56 @@ namespace Hecton8.World.ProceduralWreckage
         }
 
 #if UNITY_EDITOR
-        public static int TryApplyCsvRules(NativeArray<byte> bytes, int length, NativeArray<WreckageRuleDTO> rules)
+        public static int TryApplyCsvRules(ReadOnlySpan<byte> bytes, NativeArray<WreckageRuleDTO> rules)
         {
-            if (!bytes.IsCreated || !rules.IsCreated || length <= 0 || rules.Length <= 1)
+            if (bytes.Length <= 0 || !rules.IsCreated || rules.Length <= 1)
                 return 0;
 
             GenerateEmergencyMockWreckRules(rules);
             int index = 0;
-            int limit = math.min(length, bytes.Length);
+            int limit = bytes.Length;
             int ruleIndex = 1;
             int written = 0;
             while (index < limit && ruleIndex < rules.Length)
             {
-                SkipWhitespace(bytes, limit, ref index);
+                SkipWhitespaceFromSpan(bytes, limit, ref index);
                 if (index >= limit)
                     break;
 
                 if (bytes[index] == (byte)'#')
                 {
-                    SkipLine(bytes, limit, ref index);
+                    SkipLineFromSpan(bytes, limit, ref index);
                     continue;
                 }
 
-                uint moduleHash = ReadKeyHash(bytes, limit, ref index);
+                uint moduleHash = ReadKeyHashFromSpan(bytes, limit, ref index);
                 if (index < limit && bytes[index] == (byte)',')
                     index++;
 
-                if (!TryReadUInt(bytes, limit, ref index, out uint north) ||
-                    !ConsumeComma(bytes, limit, ref index) ||
-                    !TryReadUInt(bytes, limit, ref index, out uint east) ||
-                    !ConsumeComma(bytes, limit, ref index) ||
-                    !TryReadUInt(bytes, limit, ref index, out uint south) ||
-                    !ConsumeComma(bytes, limit, ref index) ||
-                    !TryReadUInt(bytes, limit, ref index, out uint west) ||
-                    !ConsumeComma(bytes, limit, ref index) ||
-                    !TryReadUInt(bytes, limit, ref index, out uint top) ||
-                    !ConsumeComma(bytes, limit, ref index) ||
-                    !TryReadUInt(bytes, limit, ref index, out uint bottom))
+                if (!TryReadUIntFromSpan(bytes, limit, ref index, out uint north) ||
+                    !ConsumeCommaFromSpan(bytes, limit, ref index) ||
+                    !TryReadUIntFromSpan(bytes, limit, ref index, out uint east) ||
+                    !ConsumeCommaFromSpan(bytes, limit, ref index) ||
+                    !TryReadUIntFromSpan(bytes, limit, ref index, out uint south) ||
+                    !ConsumeCommaFromSpan(bytes, limit, ref index) ||
+                    !TryReadUIntFromSpan(bytes, limit, ref index, out uint west) ||
+                    !ConsumeCommaFromSpan(bytes, limit, ref index) ||
+                    !TryReadUIntFromSpan(bytes, limit, ref index, out uint top) ||
+                    !ConsumeCommaFromSpan(bytes, limit, ref index) ||
+                    !TryReadUIntFromSpan(bytes, limit, ref index, out uint bottom))
                 {
-                    SkipLine(bytes, limit, ref index);
+                    SkipLineFromSpan(bytes, limit, ref index);
                     continue;
                 }
 
                 float weight = 1f;
                 byte priority = 0;
                 uint flags = WreckageRuleFlags.Structural;
-                if (ConsumeComma(bytes, limit, ref index) && TryReadFloat(bytes, limit, ref index, out float parsedWeight))
+                if (ConsumeCommaFromSpan(bytes, limit, ref index) && TryReadFloatFromSpan(bytes, limit, ref index, out float parsedWeight))
                     weight = math.max(parsedWeight, ProceduralWreckageConstants.Epsilon);
-                if (ConsumeComma(bytes, limit, ref index) && TryReadUInt(bytes, limit, ref index, out uint parsedPriority))
+                if (ConsumeCommaFromSpan(bytes, limit, ref index) && TryReadUIntFromSpan(bytes, limit, ref index, out uint parsedPriority))
                     priority = (byte)math.min(parsedPriority, 3u);
-                if (ConsumeComma(bytes, limit, ref index) && TryReadUInt(bytes, limit, ref index, out uint parsedFlags))
+                if (ConsumeCommaFromSpan(bytes, limit, ref index) && TryReadUIntFromSpan(bytes, limit, ref index, out uint parsedFlags))
                     flags = parsedFlags;
 
                 WreckageRuleDTO rule = default;
@@ -717,7 +695,7 @@ namespace Hecton8.World.ProceduralWreckage
                 rule.DrawPriority = priority;
                 rules[ruleIndex++] = rule;
                 written++;
-                SkipLine(bytes, limit, ref index);
+                SkipLineFromSpan(bytes, limit, ref index);
             }
 
             return written > 0 ? ruleIndex : 0;
@@ -745,8 +723,9 @@ namespace Hecton8.World.ProceduralWreckage
             if (!buffers.TelemetryRing.IsCreated || string.IsNullOrEmpty(projectRoot))
                 return false;
 
-            bool primary = TryWriteDumpFile("Docs/AgentLogs/" + DumpFileName, in buffers, reason);
-            bool agent = TryWriteDumpFile("Docs/AgentLogs/" + AgentDumpFileName, in buffers, reason);
+            string logRoot = Path.Combine(projectRoot, "Docs", "AgentLogs");
+            bool primary = TryWriteDumpFile(Path.Combine(logRoot, DumpFileName), in buffers, reason);
+            bool agent = TryWriteDumpFile(Path.Combine(logRoot, AgentDumpFileName), in buffers, reason);
             return primary && agent;
         }
 
@@ -776,35 +755,267 @@ namespace Hecton8.World.ProceduralWreckage
             return ProceduralWreckageMath.HashDouble3(rootAup);
         }
 
-        private static void HydrateDefaultsIfNeeded(ProceduralWreckageVaultBuffers buffers)
+        private static bool HydrateDefaultsIfNeeded(IDataVault vault, ref ProceduralWreckageVaultHandles handles)
         {
-            bool firstHydration = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0 && buffers.Tuning[0].Version == 0u;
-            if (!firstHydration)
-                return;
+            if (!TryReadOne(vault, in handles.Tuning, 0, out WreckageTuningDTO tuning))
+                return false;
 
-            ClearArray(buffers.Grid);
-            ClearArray(buffers.Nodes);
-            ClearArray(buffers.DebrisNodes);
-            ClearArray(buffers.RenderMatrices);
-            ClearArray(buffers.IndirectArgs);
-            ClearArray(buffers.SectorTriggers);
-            ClearArray(buffers.LootRequests);
-            ClearArray(buffers.CollisionProxies);
-            ClearArray(buffers.TelemetryRing);
-            ClearArray(buffers.TelemetryCursor);
-            ClearArray(buffers.CsvScratch);
-            ClearArray(buffers.Counters);
-            ClearArray(buffers.DebugCells);
-            ClearArray(buffers.GpuScalars);
-            ClearArray(buffers.SelfAudit);
-            ClearArray(buffers.HzbTiles);
-            GenerateEmergencyMockWreckRules(buffers.Rules);
-            buffers.Tuning[0] = BuildDefaultTuning();
-            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
+            if (tuning.Version != 0u)
+                return true;
+
+            WreckagePaddedCounterDTO counter = default;
+            counter.ActiveRuleCount = EmergencyRuleCount;
+            WreckageTuningDTO defaultTuning = BuildDefaultTuning();
+
+            return ClearVaultBuffer(vault, in handles.Grid) &&
+                   ClearVaultBuffer(vault, in handles.Nodes) &&
+                   ClearVaultBuffer(vault, in handles.DebrisNodes) &&
+                   ClearVaultBuffer(vault, in handles.RenderMatrices) &&
+                   ClearVaultBuffer(vault, in handles.IndirectArgs) &&
+                   ClearVaultBuffer(vault, in handles.SectorTriggers) &&
+                   ClearVaultBuffer(vault, in handles.LootRequests) &&
+                   ClearVaultBuffer(vault, in handles.CollisionProxies) &&
+                   ClearVaultBuffer(vault, in handles.TelemetryRing) &&
+                   ClearVaultBuffer(vault, in handles.TelemetryCursor) &&
+                   ClearVaultBuffer(vault, in handles.CsvScratch) &&
+                   ClearVaultBuffer(vault, in handles.Counters) &&
+                   ClearVaultBuffer(vault, in handles.DebugCells) &&
+                   ClearVaultBuffer(vault, in handles.GpuScalars) &&
+                   ClearVaultBuffer(vault, in handles.SelfAudit) &&
+                   ClearVaultBuffer(vault, in handles.HzbTiles) &&
+                   TryGenerateEmergencyRules(vault, in handles.Rules) &&
+                   TryWriteOne(vault, in handles.Tuning, 0, in defaultTuning) &&
+                   TryWriteOne(vault, in handles.Counters, 0, in counter);
+        }
+
+        private static int ResolveBufferLength<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                   buffer.IsCreated
+                ? buffer.Length
+                : 0;
+        }
+
+        private static bool TryReadOne<T>(IDataVault vault, in VaultGenerationHandle<T> handle, int index, out T value)
+            where T : struct
+        {
+            value = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) ||
+                !buffer.IsCreated ||
+                (uint)index >= (uint)buffer.Length)
             {
-                WreckagePaddedCounterDTO counter = default;
-                counter.ActiveRuleCount = 8u;
-                buffers.Counters[0] = counter;
+                return false;
+            }
+
+            value = buffer[index];
+            return true;
+        }
+
+        private static bool TryWriteOne<T>(IDataVault vault, in VaultGenerationHandle<T> handle, int index, in T value)
+            where T : struct
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, WreckageVaultOwner, out NativeArray<T> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!buffer.IsCreated || (uint)index >= (uint)buffer.Length)
+                    return false;
+
+                buffer[index] = value;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, WreckageVaultOwner);
+            }
+        }
+
+        private static bool ClearVaultBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : unmanaged
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, WreckageVaultOwner, out NativeArray<T> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                ClearArray(buffer);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, WreckageVaultOwner);
+            }
+        }
+
+        private static bool TryGenerateEmergencyRules(IDataVault vault, in VaultGenerationHandle<WreckageRuleDTO> handle)
+        {
+            if (vault == null || handle.BufferID == 0u)
+                return false;
+
+            NativeArray<WreckageRuleDTO> scratch = new NativeArray<WreckageRuleDTO>(
+                ProceduralWreckageConstants.MaxModuleRules,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                GenerateEmergencyMockWreckRules(scratch);
+                int activeRuleCount = math.min(EmergencyRuleCount, scratch.Length);
+                return TryCopyRulesToVault(vault, in handle, scratch, activeRuleCount);
+            }
+            finally
+            {
+                if (scratch.IsCreated)
+                    scratch.Dispose();
+            }
+        }
+
+        private static bool TryCopyBytesToVault(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> handle,
+            ReadOnlySpan<byte> source,
+            int length)
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                length <= 0 ||
+                length > source.Length ||
+                !vault.TryAcquireWriteLock(in handle, WreckageVaultOwner, out NativeArray<byte> target))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!target.IsCreated || length > target.Length)
+                    return false;
+
+                void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(target);
+                fixed (byte* sourcePtr = source)
+                {
+                    UnsafeUtility.MemCpy(targetPtr, sourcePtr, length);
+                }
+
+                if (length < target.Length)
+                    target[length] = 0;
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, WreckageVaultOwner);
+            }
+        }
+
+        private static bool TryCopyRulesToVault(
+            IDataVault vault,
+            in VaultGenerationHandle<WreckageRuleDTO> handle,
+            NativeArray<WreckageRuleDTO> source,
+            int activeRuleCount)
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !source.IsCreated ||
+                activeRuleCount <= 0 ||
+                !vault.TryAcquireWriteLock(in handle, WreckageVaultOwner, out NativeArray<WreckageRuleDTO> target))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!target.IsCreated)
+                    return false;
+
+                int copyCount = math.min(activeRuleCount, math.min(source.Length, target.Length));
+                if (copyCount <= 0)
+                    return false;
+
+                ClearArray(target);
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(target);
+                UnsafeUtility.MemCpy(targetPtr, sourcePtr, copyCount * UnsafeUtility.SizeOf<WreckageRuleDTO>());
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, WreckageVaultOwner);
+            }
+        }
+
+        private static bool TryUpdateTuningAfterRuleImport(
+            IDataVault vault,
+            in VaultGenerationHandle<WreckageTuningDTO> handle,
+            uint payloadHash,
+            ulong writeTicks,
+            uint flags)
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, WreckageVaultOwner, out NativeArray<WreckageTuningDTO> tuningBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
+                WreckageTuningDTO tuning = tuningBuffer[0];
+                tuning.LastRulePayloadHash = payloadHash;
+                tuning.LastRulePayloadWriteTicks = writeTicks;
+                tuning.Flags |= flags;
+                tuning.Version++;
+                tuningBuffer[0] = SanitizeTuning(in tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, WreckageVaultOwner);
+            }
+        }
+
+        private static bool TryUpdateCountersAfterRuleImport(
+            IDataVault vault,
+            in VaultGenerationHandle<WreckagePaddedCounterDTO> handle,
+            uint csvRuleCount,
+            uint binaryRuleCount,
+            uint activeRuleCount)
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, WreckageVaultOwner, out NativeArray<WreckagePaddedCounterDTO> counters))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!counters.IsCreated || counters.Length <= 0)
+                    return false;
+
+                WreckagePaddedCounterDTO counter = counters[0];
+                counter.CsvRuleCount = csvRuleCount;
+                counter.BinaryRuleCount = binaryRuleCount;
+                counter.ActiveRuleCount = activeRuleCount;
+                counters[0] = counter;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, WreckageVaultOwner);
             }
         }
 
@@ -885,57 +1096,54 @@ namespace Hecton8.World.ProceduralWreckage
             return string.IsNullOrEmpty(projectRoot) ? null : Path.Combine(projectRoot, CsvRulesFileName);
         }
 
-        private static bool TryReadBinaryRule(NativeArray<byte> bytes, int offset, bool swapEndian, out WreckageRuleDTO rule)
+        private static bool TryReadBinaryRuleFromSpan(ReadOnlySpan<byte> bytes, int offset, bool swapEndian, out WreckageRuleDTO rule)
         {
             rule = default;
-            if (!bytes.IsCreated ||
-                offset < 0 ||
+            if (offset < 0 ||
                 offset + ProceduralWreckageConstants.RuleBinaryRecordBytes > bytes.Length)
             {
                 return false;
             }
 
-            uint moduleHash = ReadUInt32(bytes, offset, swapEndian);
+            uint moduleHash = ReadUInt32FromSpan(bytes, offset, swapEndian);
             if (moduleHash == 0u)
                 return false;
 
             float3 extents = new float3(
-                ReadFloat32(bytes, offset + 16, swapEndian),
-                ReadFloat32(bytes, offset + 20, swapEndian),
-                ReadFloat32(bytes, offset + 24, swapEndian));
-            float weight = ReadFloat32(bytes, offset + 28, swapEndian);
+                ReadFloat32FromSpan(bytes, offset + 16, swapEndian),
+                ReadFloat32FromSpan(bytes, offset + 20, swapEndian),
+                ReadFloat32FromSpan(bytes, offset + 24, swapEndian));
+            float weight = ReadFloat32FromSpan(bytes, offset + 28, swapEndian);
             if (!math.all(math.isfinite(extents)) || !math.isfinite(weight))
                 return false;
 
             rule.ModuleHash = moduleHash;
-            rule.SocketNorth = ReadUInt16(bytes, offset + 4, swapEndian);
-            rule.SocketEast = ReadUInt16(bytes, offset + 6, swapEndian);
-            rule.SocketSouth = ReadUInt16(bytes, offset + 8, swapEndian);
-            rule.SocketWest = ReadUInt16(bytes, offset + 10, swapEndian);
-            rule.SocketTop = ReadUInt16(bytes, offset + 12, swapEndian);
-            rule.SocketBottom = ReadUInt16(bytes, offset + 14, swapEndian);
+            rule.SocketNorth = ReadUInt16FromSpan(bytes, offset + 4, swapEndian);
+            rule.SocketEast = ReadUInt16FromSpan(bytes, offset + 6, swapEndian);
+            rule.SocketSouth = ReadUInt16FromSpan(bytes, offset + 8, swapEndian);
+            rule.SocketWest = ReadUInt16FromSpan(bytes, offset + 10, swapEndian);
+            rule.SocketTop = ReadUInt16FromSpan(bytes, offset + 12, swapEndian);
+            rule.SocketBottom = ReadUInt16FromSpan(bytes, offset + 14, swapEndian);
             rule.BoundsExtents = math.max(math.abs(extents), new float3(0.25f));
             rule.Weight = math.max(weight, ProceduralWreckageConstants.Epsilon);
-            uint prefabHash = ReadUInt32(bytes, offset + 32, swapEndian);
+            uint prefabHash = ReadUInt32FromSpan(bytes, offset + 32, swapEndian);
             rule.PrefabHash = prefabHash == 0u ? moduleHash : prefabHash;
-            uint flags = ReadUInt32(bytes, offset + 36, swapEndian);
+            uint flags = ReadUInt32FromSpan(bytes, offset + 36, swapEndian);
             rule.Flags = flags == 0u ? WreckageRuleFlags.Structural : flags;
             byte priority = bytes[offset + 41];
             rule.DrawPriority = priority > 3 ? (byte)3 : priority;
             return true;
         }
 
-        private static int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)
+        private static int ReadFileIntoSpan(string path, Span<byte> destination)
         {
-            if (!scratch.IsCreated || string.IsNullOrEmpty(path))
+            if (destination.Length <= 0 || string.IsNullOrEmpty(path))
                 return 0;
 
             using (FileStream stream = File.OpenRead(path))
             {
-                int length = (int)math.min(stream.Length, scratch.Length);
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                Span<byte> span = new Span<byte>(ptr, length);
-                return stream.Read(span);
+                int length = (int)math.min(stream.Length, destination.Length);
+                return stream.Read(destination.Slice(0, length));
             }
         }
 
@@ -948,7 +1156,7 @@ namespace Hecton8.World.ProceduralWreckage
             UnsafeUtility.MemClear(ptr, array.Length * UnsafeUtility.SizeOf<T>());
         }
 
-        private static void SkipWhitespace(NativeArray<byte> bytes, int limit, ref int index)
+        private static void SkipWhitespaceFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             while (index < limit)
             {
@@ -960,7 +1168,7 @@ namespace Hecton8.World.ProceduralWreckage
             }
         }
 
-        private static void SkipLine(NativeArray<byte> bytes, int limit, ref int index)
+        private static void SkipLineFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             while (index < limit && bytes[index] != (byte)'\n')
                 index++;
@@ -969,9 +1177,9 @@ namespace Hecton8.World.ProceduralWreckage
                 index++;
         }
 
-        private static bool ConsumeComma(NativeArray<byte> bytes, int limit, ref int index)
+        private static bool ConsumeCommaFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
-            SkipValueWhitespace(bytes, limit, ref index);
+            SkipValueWhitespaceFromSpan(bytes, limit, ref index);
             if (index >= limit || bytes[index] != (byte)',')
                 return false;
 
@@ -979,7 +1187,7 @@ namespace Hecton8.World.ProceduralWreckage
             return true;
         }
 
-        private static uint ReadKeyHash(NativeArray<byte> bytes, int limit, ref int index)
+        private static uint ReadKeyHashFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             uint hash = 2166136261u;
             while (index < limit)
@@ -995,10 +1203,10 @@ namespace Hecton8.World.ProceduralWreckage
             return hash;
         }
 
-        private static bool TryReadUInt(NativeArray<byte> bytes, int limit, ref int index, out uint value)
+        private static bool TryReadUIntFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index, out uint value)
         {
             value = 0u;
-            SkipValueWhitespace(bytes, limit, ref index);
+            SkipValueWhitespaceFromSpan(bytes, limit, ref index);
             if (index >= limit)
                 return false;
 
@@ -1031,10 +1239,10 @@ namespace Hecton8.World.ProceduralWreckage
             return readAny;
         }
 
-        private static bool TryReadFloat(NativeArray<byte> bytes, int limit, ref int index, out float value)
+        private static bool TryReadFloatFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index, out float value)
         {
             value = 0f;
-            SkipValueWhitespace(bytes, limit, ref index);
+            SkipValueWhitespaceFromSpan(bytes, limit, ref index);
             if (index >= limit)
                 return false;
 
@@ -1084,7 +1292,7 @@ namespace Hecton8.World.ProceduralWreckage
             return readAny && math.isfinite(value);
         }
 
-        private static void SkipValueWhitespace(NativeArray<byte> bytes, int limit, ref int index)
+        private static void SkipValueWhitespaceFromSpan(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             while (index < limit)
             {
@@ -1096,11 +1304,10 @@ namespace Hecton8.World.ProceduralWreckage
             }
         }
 
-        private static uint HashBytes(NativeArray<byte> bytes, int length)
+        private static uint HashBytesFromSpan(ReadOnlySpan<byte> bytes)
         {
             uint hash = 2166136261u;
-            int limit = math.min(length, bytes.Length);
-            for (int i = 0; i < limit; i++)
+            for (int i = 0; i < bytes.Length; i++)
             {
                 hash ^= bytes[i];
                 hash *= 16777619u;
@@ -1174,7 +1381,7 @@ namespace Hecton8.World.ProceduralWreckage
             target[offset + 3] = (byte)(value >> 24);
         }
 
-        private static uint ReadUInt32Little(NativeArray<byte> bytes, int offset)
+        private static uint ReadUInt32LittleFromSpan(ReadOnlySpan<byte> bytes, int offset)
         {
             return (uint)bytes[offset] |
                    ((uint)bytes[offset + 1] << 8) |
@@ -1182,9 +1389,9 @@ namespace Hecton8.World.ProceduralWreckage
                    ((uint)bytes[offset + 3] << 24);
         }
 
-        private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
+        private static uint ReadUInt32FromSpan(ReadOnlySpan<byte> bytes, int offset, bool swapEndian)
         {
-            uint value = ReadUInt32Little(bytes, offset);
+            uint value = ReadUInt32LittleFromSpan(bytes, offset);
             return swapEndian ? ReverseBytes(value) : value;
         }
 
@@ -1196,24 +1403,17 @@ namespace Hecton8.World.ProceduralWreckage
                    ((value & 0xFF000000u) >> 24);
         }
 
-        private static ushort ReadUInt16(NativeArray<byte> bytes, int offset, bool swapEndian)
+        private static ushort ReadUInt16FromSpan(ReadOnlySpan<byte> bytes, int offset, bool swapEndian)
         {
             return swapEndian
                 ? (ushort)(((uint)bytes[offset] << 8) | (uint)bytes[offset + 1])
                 : (ushort)((uint)bytes[offset] | ((uint)bytes[offset + 1] << 8));
         }
 
-        private static float ReadFloat32(NativeArray<byte> bytes, int offset, bool swapEndian)
+        private static float ReadFloat32FromSpan(ReadOnlySpan<byte> bytes, int offset, bool swapEndian)
         {
-            return math.asfloat(ReadUInt32(bytes, offset, swapEndian));
+            return math.asfloat(ReadUInt32FromSpan(bytes, offset, swapEndian));
         }
 
-        private static void WriteUInt32(Span<byte> target, int offset, uint value)
-        {
-            target[offset] = (byte)(value & 0xFFu);
-            target[offset + 1] = (byte)((value >> 8) & 0xFFu);
-            target[offset + 2] = (byte)((value >> 16) & 0xFFu);
-            target[offset + 3] = (byte)((value >> 24) & 0xFFu);
-        }
     }
 }

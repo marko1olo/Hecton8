@@ -37,6 +37,8 @@ namespace Hecton8.VFX.Parasites
         [SerializeField] private Material parasiteMaterial;
         [SerializeField] private Camera renderCamera;
         [SerializeField] private Texture3D abyssalFlowField;
+        [SerializeField, Tooltip("Authored 1x1x1 clear Texture3D bound when parasite flow is inactive. Runtime Texture3D synthesis is forbidden.")]
+        private Texture3D emptyFlowTexture;
 
         [Header("Runtime")]
         [SerializeField] private int configuredMaxParticles = 500000;
@@ -145,6 +147,13 @@ namespace Hecton8.VFX.Parasites
             _targetBufferParity = 0;
             _drawParamsBufferParity = 0;
             _frameParamsBufferParity = 0;
+            if (emptyFlowTexture == null)
+            {
+                UnityEngine.Assertions.Assert.IsNotNull(emptyFlowTexture, "Fatal: Missing authored neutral ParasiteSwarm flow Texture3D.");
+                enabled = false;
+                return;
+            }
+
             CreateGpuResources();
             ResolveComputeKernels();
             InitializeGpuParticles();
@@ -444,17 +453,7 @@ namespace Hecton8.VFX.Parasites
                 1,
                 UnsafeUtility.SizeOf<ParasiteIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - compute-written parasite indirect args - owner: SHINOBU_313
 
-            if (_emptyFlowTexture == null)
-            {
-                _emptyFlowTexture = new Texture3D(1, 1, 1, TextureFormat.RGBAFloat, false)
-                {
-                    name = "H8 Empty Parasite Flow Texture",
-                    wrapMode = TextureWrapMode.Clamp,
-                    filterMode = FilterMode.Point
-                }; // COLD ALLOC: Texture3D[1] - zero flow fallback - owner: SHINOBU_313
-                _emptyFlowTexture.SetPixel(0, 0, 0, Color.clear);
-                _emptyFlowTexture.Apply(false, true);
-            }
+            _emptyFlowTexture = emptyFlowTexture;
 
             if (_commandBuffer == null)
                 _commandBuffer = new CommandBuffer { name = "H8 Parasite Swarm" }; // COLD ALLOC: command buffer reused every frame - owner: SHINOBU_313
@@ -1588,10 +1587,7 @@ namespace Hecton8.VFX.Parasites
             }
 
             if (_emptyFlowTexture != null)
-            {
-                Destroy(_emptyFlowTexture);
                 _emptyFlowTexture = null;
-            }
 
             _boundMaterial = null;
         }

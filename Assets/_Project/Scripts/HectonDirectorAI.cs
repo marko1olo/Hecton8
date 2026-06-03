@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
@@ -235,13 +236,14 @@ namespace Hecton8.Systems.AI
         /// <summary>Queues a predator threat spike.</summary>
         public static bool TryRaiseThreatSpike(Vector3 position, float intensity)
         {
-            float clampedIntensity = math.saturate(intensity);
-            bool musicPublished = PublishMusicSignal(ThreatSpikeEventType, position, clampedIntensity, false);
+            Vector3 safePosition = SanitizeEventPosition(position);
+            float clampedIntensity = SanitizeEvent01(intensity);
+            bool musicPublished = PublishMusicSignal(ThreatSpikeEventType, safePosition, clampedIntensity, false);
 
             bool eventQueued = Enqueue(new DirectorAIEventPayload
             {
                 EventType = ThreatSpikeEventType,
-                Position = position,
+                Position = safePosition,
                 Value = clampedIntensity
             });
             return musicPublished || eventQueued;
@@ -295,7 +297,7 @@ namespace Hecton8.Systems.AI
             return Enqueue(new DirectorAIEventPayload
             {
                 EventType = eventType,
-                Position = position
+                Position = SanitizeEventPosition(position)
             });
         }
 
@@ -304,15 +306,31 @@ namespace Hecton8.Systems.AI
             return Enqueue(new DirectorAIEventPayload
             {
                 EventType = eventType,
-                Value = value
+                Value = SanitizeEvent01(value)
             });
         }
 
         private static bool PublishMusicSignal(byte eventType, Vector3 position, float value, bool boolValue)
         {
             SignalBus<DirectorAIMusicSignal>.EnsureInitialized();
-            DirectorAIMusicSignal signal = new DirectorAIMusicSignal(eventType, position, value, boolValue);
+            DirectorAIMusicSignal signal = new DirectorAIMusicSignal(
+                eventType,
+                SanitizeEventPosition(position),
+                SanitizeEvent01(value),
+                boolValue);
             return SignalBus<DirectorAIMusicSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HectonDirectorAI);
+        }
+
+        private static float SanitizeEvent01(float value)
+        {
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
+        }
+
+        private static Vector3 SanitizeEventPosition(Vector3 position)
+        {
+            return float.IsFinite(position.x) && float.IsFinite(position.y) && float.IsFinite(position.z)
+                ? position
+                : Vector3.zero;
         }
 
         private static bool Enqueue(in DirectorAIEventPayload payload)
@@ -350,30 +368,20 @@ namespace Hecton8.Systems.AI
                 if (listener == null)
                     continue;
 
-                switch (payload.EventType)
-                {
-                    case SpawnHordeEventType:
-                        listener.OnDirectorSpawnHordeRequested(payload.Position);
-                        break;
-                    case EquipmentGlitchEventType:
-                        listener.OnDirectorEquipmentGlitchRequested(payload.Value);
-                        break;
-                    case RareDiscoveryEventType:
-                        listener.OnDirectorRareDiscoveryRequested(payload.Position);
-                        break;
-                    case WeatherShiftEventType:
-                        listener.OnDirectorWeatherShiftRequested(payload.Value);
-                        break;
-                    case MissionTriggerEventType:
-                        listener.OnDirectorMissionTriggerRequested(payload.Position);
-                        break;
-                    case PredatorPressureEventType:
-                        listener.OnDirectorPredatorPressureChanged(payload.BoolValue != 0);
-                        break;
-                    case ThreatSpikeEventType:
-                        listener.OnDirectorThreatSpike(payload.Position, payload.Value);
-                        break;
-                }
+                if (payload.EventType == SpawnHordeEventType)
+                    listener.OnDirectorSpawnHordeRequested(payload.Position);
+                else if (payload.EventType == EquipmentGlitchEventType)
+                    listener.OnDirectorEquipmentGlitchRequested(payload.Value);
+                else if (payload.EventType == RareDiscoveryEventType)
+                    listener.OnDirectorRareDiscoveryRequested(payload.Position);
+                else if (payload.EventType == WeatherShiftEventType)
+                    listener.OnDirectorWeatherShiftRequested(payload.Value);
+                else if (payload.EventType == MissionTriggerEventType)
+                    listener.OnDirectorMissionTriggerRequested(payload.Position);
+                else if (payload.EventType == PredatorPressureEventType)
+                    listener.OnDirectorPredatorPressureChanged(payload.BoolValue != 0);
+                else if (payload.EventType == ThreatSpikeEventType)
+                    listener.OnDirectorThreatSpike(payload.Position, payload.Value);
             }
         }
 
@@ -663,9 +671,21 @@ namespace Hecton8.Systems.AI
         private float _recentSonarStress;
         private float _externalPeakPressure01;
         private float _externalPeakHoldSeconds;
+        private float _lastPlayerStress01;
+        private float _lastPlayerStressRaw01;
+        private float _lastDirectorClutchFactor01;
+        private int _lastPlayerStressSignalSequence;
+        private int _lastPlayerStressSignalSeenFrame = int.MinValue;
         private const float HunterSquadHostilityThreshold = 0.8f;
         private const float HunterSquadCooldownSeconds = 9f;
         private const int HunterSquadSize = 3;
+        private const int DirectorPlayerStressSignalFadeFrames = 45;
+        private const float DirectorPlayerStressSignalFadeFrameRcp = 1f / DirectorPlayerStressSignalFadeFrames;
+        private const float DirectorClutchFullHealth01 = 0.10f;
+        private const float DirectorClutchHealthRamp01 = 0.15f;
+        private const float DirectorClutchFullStress01 = 0.85f;
+        private const float DirectorClutchStressRamp01 = 0.20f;
+        private const byte DirectorDefaultPlayerArmorClass = (byte)CombatArmorClass.Suit;
 
         /// <summary>
         /// Current normalized director tension score in the legacy 0..100 presentation range.
@@ -694,7 +714,8 @@ namespace Hecton8.Systems.AI
         /// <summary>
         /// True once the encounter director is registered in the global registry.
         /// </summary>
-        public bool IsInitialized => ReferenceEquals(GlobalRegistry.EncounterDirector, this);
+        public bool IsInitialized => _encounterDirectorServiceRegistered &&
+                                     ReferenceEquals(s_activeRuntimeInstance, this);
 
         /// <inheritdoc />
         public bool TryGetPredatorAupGpuBuffer(out GraphicsBuffer buffer, out int count)
@@ -717,7 +738,6 @@ namespace Hecton8.Systems.AI
             EnsureEncounterDirectorServiceRegistered();
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
-            RefreshMetaCampaignService();
             TryRegisterDispatcherLanes();
             _encounterDirector.EnsureGpuResources();
             _encounterDirector.Reset();
@@ -726,6 +746,11 @@ namespace Hecton8.Systems.AI
             _recentSonarStress = 0f;
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
+            _lastPlayerStress01 = 0f;
+            _lastPlayerStressRaw01 = 0f;
+            _lastDirectorClutchFactor01 = 0f;
+            _lastPlayerStressSignalSequence = 0;
+            _lastPlayerStressSignalSeenFrame = int.MinValue;
             _hunterSquadCooldown = 0f;
             _predatorSightCooldown = 0f;
             _activeSonarPingDebounceTimer = 0f;
@@ -745,7 +770,6 @@ namespace Hecton8.Systems.AI
             EnsureEncounterDirectorServiceRegistered();
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
-            RefreshMetaCampaignService();
             TryRegisterDispatcherLanes();
         }
 
@@ -755,9 +779,8 @@ namespace Hecton8.Systems.AI
                 return;
 
             GlobalRegistry.RegisterEncounterDirectorService(this);
-            _encounterDirectorServiceRegistered = ReferenceEquals(GlobalRegistry.EncounterDirector, this);
-            if (_encounterDirectorServiceRegistered)
-                s_activeRuntimeInstance = this;
+            _encounterDirectorServiceRegistered = true;
+            s_activeRuntimeInstance = this;
         }
 
         private void TryRegisterDispatcherLanes()
@@ -813,6 +836,7 @@ namespace Hecton8.Systems.AI
             _recentSonarStress = 0f;
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
+            ResetPredatorSteeringControl();
             _hunterSquadCooldown = 0f;
             _predatorSightCooldown = 0f;
             _activeSonarPingDebounceTimer = 0f;
@@ -843,7 +867,7 @@ namespace Hecton8.Systems.AI
             _sargassumMicroFauna = null;
             TryUnregisterHotSwapListener();
 
-            if (_encounterDirectorServiceRegistered && ReferenceEquals(GlobalRegistry.EncounterDirector, this))
+            if (_encounterDirectorServiceRegistered)
             {
                 GlobalRegistry.UnregisterEncounterDirectorService(this);
                 if (ReferenceEquals(s_activeRuntimeInstance, this))
@@ -860,6 +884,7 @@ namespace Hecton8.Systems.AI
             _encounterDirector.ForceCompleteActiveJobForTeardown();
             _encounterDirector.ClearPredatorAupPublication();
             _encounterDirector.FlushPredatorAupVisualSync();
+            ResetPredatorSteeringControl();
             _encounterDirector.Dispose();
             _dataVault = null;
             _nextDirectorSolveWarningTime = 0f;
@@ -873,14 +898,20 @@ namespace Hecton8.Systems.AI
         /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
         public void Tick(float deltaTime)
         {
-            if (deltaTime <= 0f)
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+            {
+                ResetPredatorSteeringControl();
                 return;
+            }
 
             long solveStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             RefreshRuntimeReferencesHot();
             DrainEntityDeathSignals();
             if (playerTransform == null)
+            {
+                ResetPredatorSteeringControl();
                 return;
+            }
 
             FrameTimingManager.CaptureFrameTimings();
             float averageFrameTimeMs = UpdateFrameTimeAverage(deltaTime);
@@ -891,20 +922,27 @@ namespace Hecton8.Systems.AI
                     out Vector3 playerForward,
                     out AbsoluteUniversePosition playerAup))
             {
+                ResetPredatorSteeringControl();
                 return;
             }
 
             float surfaceWorldY = ResolveSurfaceWorldY(playerPosition);
-            float healthNormalized = survivalSystem != null ? math.saturate(survivalSystem.IntegrityNormalized) : 1f;
-            float oxygenNormalized = survivalSystem != null ? math.saturate(survivalSystem.OxygenNormalized) : 1f;
+            ReadDirectorSurvivalStressInputs(
+                out float healthNormalized,
+                out float oxygenNormalized,
+                out float pressureStress,
+                out float thermalStress);
             float sonarStress = UpdateSonarStress(deltaTime);
             UpdateActiveSonarPingDebounce(deltaTime);
-            float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized, sonarStress);
+            float playerStress01 = ResolveLatestPlayerStress01();
+            float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized, sonarStress, pressureStress, thermalStress);
+            float clutchFactor01 = ResolveDirectorClutchFactor(healthNormalized, math.max(playerStress01, internalStress));
+            PublishPredatorSteeringControl(clutchFactor01);
             float acousticThreatLevel = 0f;
             HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge != null)
-                acousticThreatLevel = math.saturate(vegetationBridge.GetThreatLevel(playerPosition));
-            acousticThreatLevel = math.max(acousticThreatLevel, sonarStress);
+                acousticThreatLevel = SanitizeDirector01(vegetationBridge.GetThreatLevel(playerPosition), 0f);
+            acousticThreatLevel = math.max(SanitizeDirector01(acousticThreatLevel, 0f), sonarStress);
             ApplyExternalPeakPressure(deltaTime, ref internalStress, ref acousticThreatLevel);
             UpdateHunterSquadPressure(deltaTime);
 
@@ -988,10 +1026,13 @@ namespace Hecton8.Systems.AI
                 }
                 else if (eventType == PhysicsEventTypeElectromagneticPulse)
                 {
+                    float safeDuration = math.max(
+                        PredatorAcousticDeafenedDurationSeconds,
+                        math.max(0f, math.select(0f, payload.Scalar0, math.isfinite(payload.Scalar0))));
                     HandlePredatorAcousticDeafening(
                         payload.RuntimePosition,
                         payload.RadiusMeters,
-                        math.max(PredatorAcousticDeafenedDurationSeconds, payload.Scalar0));
+                        safeDuration);
                 }
                 else if (eventType == PhysicsEventTypeAcousticImpulse)
                 {
@@ -1002,21 +1043,23 @@ namespace Hecton8.Systems.AI
 
         private void HandleAcousticImpulsePayload(in PhysicsEventPayload impulseEvent)
         {
+            float safeRadiusMeters = math.max(0f, math.select(0f, impulseEvent.RadiusMeters, math.isfinite(impulseEvent.RadiusMeters)));
+            float safeEnergyJoules = math.max(0f, math.select(0f, impulseEvent.Scalar0, math.isfinite(impulseEvent.Scalar0)));
             bool isLargeAcousticImpulse = (impulseEvent.StatusBits & AcousticImpulseFlagLarge) != 0u;
             if (isLargeAcousticImpulse)
             {
-                float rangeVisibility01 = math.saturate(impulseEvent.RadiusMeters * ActiveSonarLeviathanAggroInvRadiusMeters);
-                HandleSonarPingSent(math.max(impulseEvent.Scalar1, rangeVisibility01));
+                float rangeVisibility01 = SanitizeDirector01(safeRadiusMeters * ActiveSonarLeviathanAggroInvRadiusMeters, 0f);
+                HandleSonarPingSent(math.max(SanitizeDirector01(impulseEvent.Scalar1, 0f), rangeVisibility01));
                 if ((impulseEvent.StatusBits & AcousticImpulseFlagCritical) == 0u)
                     return;
             }
 
-            if (impulseEvent.Scalar0 < PredatorAcousticDeafeningImpulseEnergyJoules)
+            if (safeEnergyJoules < PredatorAcousticDeafeningImpulseEnergyJoules)
                 return;
 
             HandlePredatorAcousticDeafening(
                 impulseEvent.RuntimePosition,
-                impulseEvent.RadiusMeters,
+                safeRadiusMeters,
                 PredatorAcousticDeafenedDurationSeconds);
         }
 
@@ -1039,9 +1082,13 @@ namespace Hecton8.Systems.AI
 
         private void HandleAcousticPingPayload(in PhysicsEventPayload pingEvent)
         {
-            if (pingEvent.RadiusMeters <= 0f || pingEvent.Scalar0 <= 0f)
+            float safeRadiusMeters = math.max(0f, math.select(0f, pingEvent.RadiusMeters, math.isfinite(pingEvent.RadiusMeters)));
+            float safeIntensity01 = SanitizeDirector01(pingEvent.Scalar0, 0f);
+            float safeEnergyJoules = math.max(0f, math.select(0f, pingEvent.Scalar2, math.isfinite(pingEvent.Scalar2)));
+            if (safeRadiusMeters <= 0f || safeIntensity01 <= 0f)
                 return;
 
+            _activeSonarPingDebounceTimer = math.max(0f, math.select(0f, _activeSonarPingDebounceTimer, math.isfinite(_activeSonarPingDebounceTimer)));
             if (_activeSonarPingDebounceTimer > 0f)
                 return;
 
@@ -1070,12 +1117,12 @@ namespace Hecton8.Systems.AI
                 if (AbsoluteUniversePosition.DistanceSq(in brainAup, in pingAup) > ActiveSonarLeviathanAggroRadiusMetersSqr)
                     continue;
 
-                if (faunaCue.ShouldIgnoreAcousticPing(pingEvent.Scalar2, pingEvent.Scalar0))
+                if (faunaCue.ShouldIgnoreAcousticPing(safeEnergyJoules, safeIntensity01))
                     continue;
 
                 faunaCue.ApplyAcousticPingAggro(
                     pingEvent.RuntimePosition,
-                    pingEvent.Scalar0,
+                    safeIntensity01,
                     ActiveSonarLeviathanAggroDurationSeconds);
 
                 SargassumMicroFaunaBoids boidSystem = _sargassumMicroFauna;
@@ -1096,7 +1143,7 @@ namespace Hecton8.Systems.AI
 
                 if (!raisedThreatSpike)
                 {
-                    DirectorAIEvents.TryRaiseThreatSpike(_acousticPingPredatorContacts[i].Position, pingEvent.Scalar0);
+                    DirectorAIEvents.TryRaiseThreatSpike(_acousticPingPredatorContacts[i].Position, safeIntensity01);
                     raisedThreatSpike = true;
                 }
             }
@@ -1104,7 +1151,9 @@ namespace Hecton8.Systems.AI
 
         private void HandlePredatorAcousticDeafening(Vector3 runtimePosition, float radiusMeters, float durationSeconds)
         {
-            if (radiusMeters <= 0f || durationSeconds <= 0f)
+            float safeRadiusMeters = math.max(0f, math.select(0f, radiusMeters, math.isfinite(radiusMeters)));
+            float safeDurationSeconds = math.max(0f, math.select(0f, durationSeconds, math.isfinite(durationSeconds)));
+            if (safeRadiusMeters <= 0f || safeDurationSeconds <= 0f)
                 return;
 
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition pulseAup))
@@ -1112,11 +1161,11 @@ namespace Hecton8.Systems.AI
 
             int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
                 in pulseAup,
-                radiusMeters,
+                safeRadiusMeters,
                 SpatialTargetKind.Bioform,
                 _acousticPingPredatorContacts);
 
-            double radiusSq = (double)radiusMeters * radiusMeters;
+            double radiusSq = (double)safeRadiusMeters * safeRadiusMeters;
             for (int i = 0; i < contactCount; i++)
             {
                 IFaunaDirectorCueSink faunaCue = _acousticPingPredatorContacts[i].Owner as IFaunaDirectorCueSink;
@@ -1131,16 +1180,18 @@ namespace Hecton8.Systems.AI
                 if (AbsoluteUniversePosition.DistanceSq(in brainAup, in pulseAup) > radiusSq)
                     continue;
 
-                faunaCue.ApplyPredatorDeafening(runtimePosition, durationSeconds);
+                faunaCue.ApplyPredatorDeafening(runtimePosition, safeDurationSeconds);
             }
         }
 
         private void UpdateActiveSonarPingDebounce(float deltaTime)
         {
+            _activeSonarPingDebounceTimer = math.max(0f, math.select(0f, _activeSonarPingDebounceTimer, math.isfinite(_activeSonarPingDebounceTimer)));
             if (_activeSonarPingDebounceTimer <= 0f)
                 return;
 
-            _activeSonarPingDebounceTimer = math.max(0f, _activeSonarPingDebounceTimer - deltaTime);
+            float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+            _activeSonarPingDebounceTimer = math.max(0f, _activeSonarPingDebounceTimer - safeDeltaTime);
         }
 
         private void SchedulePredatorSightBatch(
@@ -1152,9 +1203,11 @@ namespace Hecton8.Systems.AI
         {
             CompletePredatorSpatialHashBuild(forceComplete: false);
 
+            _predatorSightCooldown = math.max(0f, math.select(0f, _predatorSightCooldown, math.isfinite(_predatorSightCooldown)));
             if (_predatorSightCooldown > 0f)
             {
-                _predatorSightCooldown = math.max(0f, _predatorSightCooldown - deltaTime);
+                float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+                _predatorSightCooldown = math.max(0f, _predatorSightCooldown - safeDeltaTime);
                 return;
             }
 
@@ -1633,7 +1686,10 @@ namespace Hecton8.Systems.AI
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - solveStartTicks;
             double elapsedMilliseconds = elapsedTicks * _StopwatchTickToMilliseconds;
-            _directorSolveWarningClockSeconds += math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+            _directorSolveWarningClockSeconds = math.max(
+                0f,
+                math.select(0f, _directorSolveWarningClockSeconds, math.isfinite(_directorSolveWarningClockSeconds)));
+            _directorSolveWarningClockSeconds += ResolveSafeCurrentFrameUnscaledDeltaTime();
             if (elapsedMilliseconds <= DirectorSolveBudgetMilliseconds)
                 return;
 
@@ -1677,12 +1733,13 @@ namespace Hecton8.Systems.AI
         /// </summary>
         public void ApplyExternalPeakPressure(float pressure01, float holdSeconds)
         {
-            float clampedPressure = math.saturate(pressure01);
-            if (clampedPressure <= 0f || holdSeconds <= 0f)
+            float clampedPressure = SanitizeDirector01(pressure01, 0f);
+            float safeHoldSeconds = math.select(0f, holdSeconds, math.isfinite(holdSeconds) & (holdSeconds > 0f));
+            if (clampedPressure <= 0f || safeHoldSeconds <= 0f)
                 return;
 
-            _externalPeakPressure01 = math.max(_externalPeakPressure01, clampedPressure);
-            _externalPeakHoldSeconds = math.max(_externalPeakHoldSeconds, holdSeconds);
+            _externalPeakPressure01 = math.max(SanitizeDirector01(_externalPeakPressure01, 0f), clampedPressure);
+            _externalPeakHoldSeconds = math.max(math.select(0f, _externalPeakHoldSeconds, math.isfinite(_externalPeakHoldSeconds)), safeHoldSeconds);
         }
 
         /// <summary>
@@ -1718,20 +1775,18 @@ namespace Hecton8.Systems.AI
             uint seed = EncounterDirector.BuildDeterministicSeed(playerPosition, _encounterDirector.FrameIndex, (int)newPhase, _encounterDirector.ActiveEnemyCount);
             Vector3 eventPosition = ResolveDeterministicOffsetPosition(playerPosition, seed, eventOffsetRadius);
 
-            switch (newPhase)
+            if (newPhase == EncounterPhase.Peak)
             {
-                case EncounterPhase.Peak:
-                    DirectorAIEvents.TryRaiseEquipmentGlitchRequested(math.lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
-                    DirectorAIEvents.TryRaiseMissionTriggerRequested(eventPosition);
-                    break;
-
-                case EncounterPhase.Decay:
-                    DirectorAIEvents.TryRaiseWeatherShiftRequested(math.lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
-                    break;
-
-                case EncounterPhase.Relax:
-                    DirectorAIEvents.TryRaiseRareDiscoveryRequested(eventPosition);
-                    break;
+                DirectorAIEvents.TryRaiseEquipmentGlitchRequested(math.lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
+                DirectorAIEvents.TryRaiseMissionTriggerRequested(eventPosition);
+            }
+            else if (newPhase == EncounterPhase.Decay)
+            {
+                DirectorAIEvents.TryRaiseWeatherShiftRequested(math.lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
+            }
+            else if (newPhase == EncounterPhase.Relax)
+            {
+                DirectorAIEvents.TryRaiseRareDiscoveryRequested(eventPosition);
             }
         }
 
@@ -1748,9 +1803,10 @@ namespace Hecton8.Systems.AI
 
         private void RefreshRuntimeReferences(bool force)
         {
+            _resolveRetryTimer = math.max(0f, math.select(0f, _resolveRetryTimer, math.isfinite(_resolveRetryTimer)));
             if (!force && _resolveRetryTimer > 0f)
             {
-                _resolveRetryTimer -= SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+                _resolveRetryTimer = math.max(0f, _resolveRetryTimer - ResolveSafeCurrentFrameUnscaledDeltaTime());
                 return;
             }
 
@@ -1758,10 +1814,7 @@ namespace Hecton8.Systems.AI
             ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: false);
 
             if (!force)
-            {
-                RefreshMetaCampaignService();
                 return;
-            }
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -1783,21 +1836,19 @@ namespace Hecton8.Systems.AI
                 else
                     playerTransform.TryGetComponent(out playerCamera);
             }
-
-            RefreshMetaCampaignService();
         }
 
         private void RefreshRuntimeReferencesHot()
         {
+            _resolveRetryTimer = math.max(0f, math.select(0f, _resolveRetryTimer, math.isfinite(_resolveRetryTimer)));
             if (_resolveRetryTimer > 0f)
             {
-                _resolveRetryTimer -= SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+                _resolveRetryTimer = math.max(0f, _resolveRetryTimer - ResolveSafeCurrentFrameUnscaledDeltaTime());
                 return;
             }
 
             _resolveRetryTimer = 1f;
             ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: false);
-            RefreshMetaCampaignService();
         }
 
         private void ApplyPlayerRuntimeContextReferences(IPlayerRuntimeContext playerContext, bool replaceExisting)
@@ -1828,14 +1879,12 @@ namespace Hecton8.Systems.AI
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
             _dataVault = GlobalRegistry.DataVault;
+            PredatorCognitionDomain.InjectDataVault(_dataVault);
             _terrainProvider = GlobalRegistry.Terrain;
             _vegetationBridge = GlobalRegistry.MapMagicVegetation;
             BindMetaCampaignService(GlobalRegistry.MetaCampaign);
-        }
-
-        private void RefreshMetaCampaignService()
-        {
-            BindMetaCampaignService(_metaCampaignService);
+            if (Application.isPlaying)
+                CameraJuiceSignals.EnsurePrewarmed();
         }
 
         private void BindMetaCampaignService(IMetaCampaignService service)
@@ -1852,49 +1901,69 @@ namespace Hecton8.Systems.AI
             object previousService,
             object currentService)
         {
-            switch (serviceSlot)
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                case GlobalRegistryServiceSlot.Player:
-                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: true);
-                    break;
-                case GlobalRegistryServiceSlot.EcosystemDirector:
-                    _ecosystemDirector = currentService as IEcosystemDirectorService;
-                    break;
-                case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
-                    _sargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
-                    break;
-                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
-                    _terrainProvider = currentService as ITerrainProvider;
-                    break;
-                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
-                    _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
-                    break;
-                case GlobalRegistryServiceSlot.DataVault:
-                    CompletePredatorSightBatch(forceComplete: true);
-                    CompletePredatorSpatialHashBuild(forceComplete: true);
-                    ReleasePredatorSightBuffers(_dataVault ?? (previousService as IDataVault));
-                    ReleasePredatorSpatialHashBuffers(_dataVault ?? (previousService as IDataVault));
-                    _dataVault = currentService as IDataVault;
-                    EnsurePredatorSpatialHashBuffersAllocated(out _, out _);
-                    break;
-                case GlobalRegistryServiceSlot.MetaCampaignRuntime:
-                    BindMetaCampaignService(currentService as IMetaCampaignService);
-                    break;
-                case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _dispatcherRegistered = false;
-                        _lateFrameRegistered = false;
-                        break;
-                    }
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: true);
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
+            {
+                _ecosystemDirector = currentService as IEcosystemDirectorService;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime)
+            {
+                _sargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime)
+            {
+                _terrainProvider = currentService as ITerrainProvider;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
+            {
+                _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompletePredatorSightBatch(forceComplete: true);
+                CompletePredatorSpatialHashBuild(forceComplete: true);
+                ReleasePredatorSightBuffers(_dataVault ?? (previousService as IDataVault));
+                ReleasePredatorSpatialHashBuffers(_dataVault ?? (previousService as IDataVault));
+                _dataVault = currentService as IDataVault;
+                PredatorCognitionDomain.InjectDataVault(_dataVault);
+                EnsurePredatorSpatialHashBuffersAllocated(out _, out _);
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.MetaCampaignRuntime)
+            {
+                BindMetaCampaignService(currentService as IMetaCampaignService);
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.EncounterDirector)
+            {
+                if (ReferenceEquals(currentService, this))
+                {
+                    _encounterDirectorServiceRegistered = true;
+                    s_activeRuntimeInstance = this;
+                }
+                else if (ReferenceEquals(previousService, this))
+                {
+                    _encounterDirectorServiceRegistered = false;
+                    if (ReferenceEquals(s_activeRuntimeInstance, this))
+                        s_activeRuntimeInstance = null;
+                }
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _dispatcherRegistered = false;
+                    _lateFrameRegistered = false;
+                    return;
+                }
 
-                    if (!isActiveAndEnabled)
-                        break;
+                if (!isActiveAndEnabled)
+                    return;
 
-                    TryUnregisterDispatcherLanes();
-                    TryRegisterDispatcherLanes();
-                    break;
+                TryUnregisterDispatcherLanes();
+                TryRegisterDispatcherLanes();
             }
         }
 
@@ -1917,10 +1986,12 @@ namespace Hecton8.Systems.AI
 
         private float UpdateFrameTimeAverage(float deltaTime)
         {
+            float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+            float fallbackSampleMs = safeDeltaTime * 1000f;
             uint timingCount = FrameTimingManager.GetLatestTimings(1u, _frameTimingScratch);
-            float sampleMs = timingCount > 0u ? (float)_frameTimingScratch[0].cpuFrameTime : deltaTime * 1000f;
-            if (sampleMs <= 0f)
-                sampleMs = deltaTime * 1000f;
+            float sampleMs = timingCount > 0u ? (float)_frameTimingScratch[0].cpuFrameTime : fallbackSampleMs;
+            if (!math.isfinite(sampleMs) || sampleMs <= 0f)
+                sampleMs = fallbackSampleMs;
 
             _frameTimeHistory[_frameTimeHistoryIndex] = sampleMs;
             _frameTimeHistoryIndex++;
@@ -1932,7 +2003,10 @@ namespace Hecton8.Systems.AI
 
             float sum = 0f;
             for (int i = 0; i < _frameTimeHistoryCount; i++)
-                sum += _frameTimeHistory[i];
+            {
+                float historySample = _frameTimeHistory[i];
+                sum += math.select(0f, historySample, math.isfinite(historySample) & (historySample > 0f));
+            }
 
             return _frameTimeHistoryCount > 0 ? sum * math.rcp((float)_frameTimeHistoryCount) : sampleMs;
         }
@@ -1941,7 +2015,11 @@ namespace Hecton8.Systems.AI
         {
             if (_frustumPlanesInitialized)
             {
-                _frustumPlaneRefreshTimer = math.max(0f, _frustumPlaneRefreshTimer - math.max(0f, deltaTime));
+                float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+                _frustumPlaneRefreshTimer = math.max(
+                    0f,
+                    math.select(0f, _frustumPlaneRefreshTimer, math.isfinite(_frustumPlaneRefreshTimer)));
+                _frustumPlaneRefreshTimer = math.max(0f, _frustumPlaneRefreshTimer - safeDeltaTime);
                 if (_frustumPlaneRefreshTimer > 0f)
                     return false;
             }
@@ -2065,36 +2143,169 @@ namespace Hecton8.Systems.AI
             return math.max(0f, surfaceWorldY - playerPosition.y);
         }
 
-        private float ResolveInternalStress(float healthNormalized, float oxygenNormalized, float sonarStress)
+        private void ReadDirectorSurvivalStressInputs(
+            out float healthNormalized,
+            out float oxygenNormalized,
+            out float pressureStress,
+            out float thermalStress)
         {
-            if (survivalSystem == null)
-                return math.saturate(math.max(math.max(1f - healthNormalized, 1f - oxygenNormalized), sonarStress));
+            healthNormalized = 1f;
+            oxygenNormalized = 1f;
+            pressureStress = 0f;
+            thermalStress = 0f;
 
-            float pressureStress = math.saturate(survivalSystem.PressureExposureSeverity01);
-            float thermalStress = math.saturate(survivalSystem.ThermalStressSeverity01);
-            float healthStress = 1f - healthNormalized;
-            float oxygenStress = 1f - oxygenNormalized;
-            return math.saturate(math.max(math.max(pressureStress, thermalStress), math.max(math.max(healthStress, oxygenStress), sonarStress)));
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState))
+            {
+                healthNormalized = SanitizeDirector01(survivalState.IntegrityNormalized, 1f);
+                oxygenNormalized = SanitizeDirector01(survivalState.OxygenNormalized, 1f);
+                pressureStress = SanitizeDirector01(survivalState.PressureExposureSeverity01, 0f);
+                thermalStress = math.max(
+                    SanitizeDirector01(survivalState.ThermalStressSeverity01, 0f),
+                    math.max(
+                        SanitizeDirector01(survivalState.ColdStressSeverity01, 0f),
+                        SanitizeDirector01(survivalState.HeatStressSeverity01, 0f)));
+                return;
+            }
+
+            if (survivalSystem == null)
+                return;
+
+            healthNormalized = SanitizeDirector01(survivalSystem.IntegrityNormalized, 1f);
+            oxygenNormalized = SanitizeDirector01(survivalSystem.OxygenNormalized, 1f);
+            pressureStress = SanitizeDirector01(survivalSystem.PressureExposureSeverity01, 0f);
+            thermalStress = math.max(
+                SanitizeDirector01(survivalSystem.ThermalStressSeverity01, 0f),
+                math.max(
+                    SanitizeDirector01(survivalSystem.ColdStressSeverity01, 0f),
+                    SanitizeDirector01(survivalSystem.HeatStressSeverity01, 0f)));
+        }
+
+        private float ResolveLatestPlayerStress01()
+        {
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            float rawStress01 = _lastPlayerStressRaw01;
+            if (SignalBus<PlayerStressSignal>.TryGetLatest(out PlayerStressSignal signal, out int sequence) &&
+                math.isfinite(signal.Stress01))
+            {
+                rawStress01 = SanitizeDirector01(signal.Stress01, rawStress01);
+                if (_lastPlayerStressSignalSeenFrame == int.MinValue ||
+                    sequence != _lastPlayerStressSignalSequence ||
+                    frame < _lastPlayerStressSignalSeenFrame)
+                {
+                    _lastPlayerStressSignalSequence = sequence;
+                    _lastPlayerStressSignalSeenFrame = frame;
+                }
+            }
+
+            _lastPlayerStressRaw01 = rawStress01;
+            float stress01 = rawStress01;
+            if (_lastPlayerStressSignalSeenFrame != int.MinValue)
+            {
+                int age = math.max(0, frame - _lastPlayerStressSignalSeenFrame);
+                float freshness01 = SanitizeDirector01(
+                    (DirectorPlayerStressSignalFadeFrames - age) * DirectorPlayerStressSignalFadeFrameRcp,
+                    0f);
+                stress01 *= freshness01;
+            }
+            else
+            {
+                stress01 = 0f;
+            }
+
+            _lastPlayerStress01 = stress01;
+            return stress01;
+        }
+
+        private float ResolveInternalStress(
+            float healthNormalized,
+            float oxygenNormalized,
+            float sonarStress,
+            float pressureStress,
+            float thermalStress)
+        {
+            float healthStress = 1f - SanitizeDirector01(healthNormalized, 1f);
+            float oxygenStress = 1f - SanitizeDirector01(oxygenNormalized, 1f);
+            return SanitizeDirector01(math.max(
+                math.max(SanitizeDirector01(pressureStress, 0f), SanitizeDirector01(thermalStress, 0f)),
+                math.max(math.max(healthStress, oxygenStress), SanitizeDirector01(sonarStress, 0f))), 0f);
+        }
+
+        private float ResolveDirectorClutchFactor(float healthNormalized, float playerStress01)
+        {
+            float healthWindow = SanitizeDirector01(
+                (DirectorClutchFullHealth01 + DirectorClutchHealthRamp01 - SanitizeDirector01(healthNormalized, 1f)) *
+                math.rcp(DirectorClutchHealthRamp01),
+                0f);
+            float stressWindow = SanitizeDirector01(
+                (SanitizeDirector01(playerStress01, 0f) - (DirectorClutchFullStress01 - DirectorClutchStressRamp01)) *
+                math.rcp(DirectorClutchStressRamp01),
+                0f);
+            return healthWindow * stressWindow;
+        }
+
+        private void PublishPredatorSteeringControl(float clutchFactor01)
+        {
+            float quality = SanitizeDirector01(HomeostasisBrain.GlobalQualityWeight, 0f);
+            int maxTokens = (int)math.max(1f, math.round(math.lerp(1f, 4f, quality)));
+            _lastDirectorClutchFactor01 = SanitizeDirector01(clutchFactor01, 0f);
+            PredatorCognitionDomain.SetDirectorSteeringControl(
+                _lastDirectorClutchFactor01,
+                maxTokens,
+                DirectorDefaultPlayerArmorClass,
+                ResolveDirectorFrameU32());
+        }
+
+        private void ResetPredatorSteeringControl()
+        {
+            _lastDirectorClutchFactor01 = 0f;
+            PredatorCognitionDomain.SetDirectorSteeringControl(
+                0f,
+                1,
+                DirectorDefaultPlayerArmorClass,
+                ResolveDirectorFrameU32());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeDirector01(float value, float fallback)
+        {
+            return math.saturate(math.select(fallback, value, math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveDirectorFrameU32()
+        {
+            return unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSafeCurrentFrameUnscaledDeltaTime()
+        {
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            return math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
         }
 
         private float UpdateSonarStress(float deltaTime)
         {
+            _recentSonarStress = SanitizeDirector01(_recentSonarStress, 0f);
             if (_recentSonarStress <= 0f)
                 return 0f;
 
+            float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+            float safeDecay = math.max(0f, math.select(0f, SonarStressDecayPerSecond, math.isfinite(SonarStressDecayPerSecond)));
             _recentSonarStress = math.max(
                 0f,
-                _recentSonarStress - (math.max(0f, SonarStressDecayPerSecond) * math.max(0f, deltaTime)));
+                _recentSonarStress - (safeDecay * safeDeltaTime));
             return _recentSonarStress;
         }
 
         private void HandleSonarPingSent(float intensity)
         {
-            float clampedIntensity = math.saturate(intensity);
+            float clampedIntensity = SanitizeDirector01(intensity, 0f);
             if (clampedIntensity <= 0f)
                 return;
 
-            _recentSonarStress = math.max(_recentSonarStress, clampedIntensity);
+            _recentSonarStress = math.max(SanitizeDirector01(_recentSonarStress, 0f), clampedIntensity);
         }
 
         void ISonarPingEventListener.OnSonarPingSent(float intensity)
@@ -2104,12 +2315,15 @@ namespace Hecton8.Systems.AI
 
         private void ApplyExternalPeakPressure(float deltaTime, ref float internalStress, ref float acousticThreatLevel)
         {
+            _externalPeakPressure01 = SanitizeDirector01(_externalPeakPressure01, 0f);
+            _externalPeakHoldSeconds = math.select(0f, _externalPeakHoldSeconds, math.isfinite(_externalPeakHoldSeconds));
             if (_externalPeakHoldSeconds <= 0f || _externalPeakPressure01 <= 0f)
                 return;
 
-            _externalPeakHoldSeconds = math.max(0f, _externalPeakHoldSeconds - deltaTime);
-            internalStress = math.max(internalStress, _externalPeakPressure01);
-            acousticThreatLevel = math.max(acousticThreatLevel, _externalPeakPressure01);
+            float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+            _externalPeakHoldSeconds = math.max(0f, _externalPeakHoldSeconds - safeDeltaTime);
+            internalStress = math.max(SanitizeDirector01(internalStress, 0f), _externalPeakPressure01);
+            acousticThreatLevel = math.max(SanitizeDirector01(acousticThreatLevel, 0f), _externalPeakPressure01);
 
             if (_encounterDirector.CurrentPhase != EncounterPhase.Peak)
                 _encounterDirector.RequestPhaseOverride(EncounterPhase.Peak);
@@ -2122,11 +2336,18 @@ namespace Hecton8.Systems.AI
 
         private void UpdateHunterSquadPressure(float deltaTime)
         {
+            _hunterSquadCooldown = math.max(0f, math.select(0f, _hunterSquadCooldown, math.isfinite(_hunterSquadCooldown)));
             if (_hunterSquadCooldown > 0f)
-                _hunterSquadCooldown = math.max(0f, _hunterSquadCooldown - deltaTime);
+            {
+                float safeDeltaTime = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+                _hunterSquadCooldown = math.max(0f, _hunterSquadCooldown - safeDeltaTime);
+            }
 
             IEcosystemDirectorService ecosystemDirector = _ecosystemDirector;
-            if (ecosystemDirector == null || ecosystemDirector.BiomeHostility01 < HunterSquadHostilityThreshold)
+            float biomeHostility01 = ecosystemDirector != null
+                ? SanitizeDirector01(ecosystemDirector.BiomeHostility01, 0f)
+                : 0f;
+            if (biomeHostility01 < HunterSquadHostilityThreshold)
                 return;
 
             if (_hunterSquadCooldown > 0f)
@@ -2162,25 +2383,14 @@ namespace Hecton8.Systems.AI
 
         private static Vector2 ResolveOctantDirection(int slot)
         {
-            switch (slot & 0x7)
-            {
-                case 0:
-                    return new Vector2(1f, 0f);
-                case 1:
-                    return new Vector2(0.70710678f, 0.70710678f);
-                case 2:
-                    return new Vector2(0f, 1f);
-                case 3:
-                    return new Vector2(-0.70710678f, 0.70710678f);
-                case 4:
-                    return new Vector2(-1f, 0f);
-                case 5:
-                    return new Vector2(-0.70710678f, -0.70710678f);
-                case 6:
-                    return new Vector2(0f, -1f);
-                default:
-                    return new Vector2(0.70710678f, -0.70710678f);
-            }
+            int index = slot & 0x7;
+            bool diagonal = (index & 1) != 0;
+            float axis = math.select(1f, 0.70710678f, diagonal);
+            float x = math.select(0f, axis, index == 0 || index == 1 || index == 7);
+            x = math.select(x, -axis, index == 3 || index == 4 || index == 5);
+            float y = math.select(0f, axis, index == 1 || index == 2 || index == 3);
+            y = math.select(y, -axis, index == 5 || index == 6 || index == 7);
+            return new Vector2(x, y);
         }
 
         private Vector3 ResolveDeterministicOffsetPosition(Vector3 origin, uint seed, float radius)

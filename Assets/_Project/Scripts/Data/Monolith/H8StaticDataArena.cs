@@ -881,14 +881,30 @@ namespace Hecton8.Data
         {
             records = ReadOnlySpan<T>.Empty;
             if (!IsLoaded ||
-                !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) ||
-                !TryGetSectionFromArena(arena, sectionId, out H8DataSectionEntry section))
+                !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena))
+            {
+                return false;
+            }
+
+            return TryGetSectionSpanInArena(arena, sectionId, out records);
+        }
+
+        private static unsafe bool TryGetSectionSpanInArena<T>(
+            NativeArray<byte>.ReadOnly arena,
+            H8DataSectionId sectionId,
+            out ReadOnlySpan<T> records) where T : unmanaged
+        {
+            records = ReadOnlySpan<T>.Empty;
+            if (!arena.IsCreated ||
+                !TryGetSectionFromArena(arena, sectionId, out H8DataSectionEntry section) ||
+                section.Count == 0u ||
+                section.Count > (uint)int.MaxValue)
             {
                 return false;
             }
 
             int recordSize = UnsafeUtility.SizeOf<T>();
-            if (section.RecordSize != (uint)recordSize || section.Count == 0u)
+            if (section.RecordSize != (uint)recordSize)
                 return false;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
@@ -2998,6 +3014,12 @@ namespace Hecton8.Data
                 return false;
             }
 
+            if (!H8DataLayoutAudit.ValidateBlittableSizes())
+            {
+                status = H8DataBlobLoadStatus.HeaderMismatch;
+                return false;
+            }
+
             if (!TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) || _residentBlobBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
                 status = H8DataBlobLoadStatus.FileTooSmall;
@@ -3073,6 +3095,12 @@ namespace Hecton8.Data
             }
 
             if (!IsDirectoryValid())
+            {
+                status = H8DataBlobLoadStatus.InvalidSectionTable;
+                return false;
+            }
+
+            if (!IsAppliedLoreContractValid())
             {
                 status = H8DataBlobLoadStatus.InvalidSectionTable;
                 return false;
@@ -3168,6 +3196,109 @@ namespace Hecton8.Data
             }
 
             return _directory.LocalizationBytes == 0u || sawLocalization;
+        }
+
+        private static bool IsAppliedLoreContractValid()
+        {
+            if (!TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena))
+                return false;
+
+            if (!TryGetSectionSpanInArena(arena, H8DataSectionId.AppliedLorePackets, out ReadOnlySpan<H8AppliedLorePacketRecord> packets) ||
+                !TryGetSectionSpanInArena(arena, H8DataSectionId.AppliedLoreRoutes, out ReadOnlySpan<H8AppliedLoreRouteRecord> routes))
+            {
+                return false;
+            }
+
+            if (packets.Length <= 0 || routes.Length <= 0)
+                return false;
+
+            H8AppliedLorePacketRecord previousPacket = default;
+            for (int i = 0; i < packets.Length; i++)
+            {
+                H8AppliedLorePacketRecord packet = packets[i];
+                if (packet.PacketHash == 0u ||
+                    packet.LocaleHash == 0u ||
+                    !AreAppliedLorePacketTextRangesValid(in packet))
+                {
+                    return false;
+                }
+
+                if (i > 0 &&
+                    CompareAppliedLoreKey(
+                        previousPacket.PacketHash,
+                        previousPacket.LocaleHash,
+                        packet.PacketHash,
+                        packet.LocaleHash) >= 0)
+                {
+                    return false;
+                }
+
+                previousPacket = packet;
+            }
+
+            uint previousRouteHash = 0u;
+            for (int i = 0; i < routes.Length; i++)
+            {
+                H8AppliedLoreRouteRecord route = routes[i];
+                if (route.RouteCardHash == 0u ||
+                    route.RouteCardHash <= previousRouteHash ||
+                    route.PacketCount > H8DataLayoutConstants.AppliedLoreRoutePacketCapacity ||
+                    route.RequiredPacketCount > H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity ||
+                    !AreAppliedLoreRouteHashesValid(in route))
+                {
+                    return false;
+                }
+
+                previousRouteHash = route.RouteCardHash;
+            }
+
+            return true;
+        }
+
+        private static bool AreAppliedLorePacketTextRangesValid(in H8AppliedLorePacketRecord packet)
+        {
+            return IsLocalizedRangeValid(packet.TitleUtf8Offset, packet.TitleUtf8ByteLength) &&
+                   IsLocalizedRangeValid(packet.ScannerUtf8Offset, packet.ScannerUtf8ByteLength) &&
+                   IsLocalizedRangeValid(packet.TerminalUtf8Offset, packet.TerminalUtf8ByteLength) &&
+                   IsLocalizedRangeValid(packet.AudioUtf8Offset, packet.AudioUtf8ByteLength) &&
+                   IsLocalizedRangeValid(packet.WikiUtf8Offset, packet.WikiUtf8ByteLength) &&
+                   IsLocalizedRangeValid(packet.SiteUtf8Offset, packet.SiteUtf8ByteLength) &&
+                   IsLocalizedRangeValid(packet.FieldNoteUtf8Offset, packet.FieldNoteUtf8ByteLength);
+        }
+
+        private static bool IsLocalizedRangeValid(uint utf8Offset, uint byteLength)
+        {
+            if (byteLength == 0u)
+                return true;
+
+            if (utf8Offset == MissingUtf8Offset ||
+                byteLength > int.MaxValue ||
+                _directory.LocalizationBytes == 0u ||
+                utf8Offset >= _directory.LocalizationBytes)
+            {
+                return false;
+            }
+
+            return byteLength <= _directory.LocalizationBytes - utf8Offset;
+        }
+
+        private static bool AreAppliedLoreRouteHashesValid(in H8AppliedLoreRouteRecord route)
+        {
+            uint packetCount = math.min(route.PacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePacketCapacity);
+            for (uint i = 0u; i < packetCount; i++)
+            {
+                if (GetAppliedLoreRoutePacketHash(in route, i) == 0u)
+                    return false;
+            }
+
+            uint requiredCount = math.min(route.RequiredPacketCount, (uint)H8DataLayoutConstants.AppliedLoreRoutePrerequisiteCapacity);
+            for (uint i = 0u; i < requiredCount; i++)
+            {
+                if (GetAppliedLoreRouteRequiredPacketHash(in route, i) == 0u)
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool IsSectionRangeValid(in H8DataSectionEntry section)

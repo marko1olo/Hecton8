@@ -759,6 +759,41 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MarauderOutpostExtraction_FailsClosedWithoutHeightmapPayload()
+        {
+            string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "Logistics", "Grid", "Contracts", "WfcOutpostGridContracts.cs");
+            string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostJobs.cs");
+            string service = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs");
+            string scheduleBody = ExtractMethodBody(service, "private void ScheduleMatrixExtraction()");
+            string extractionJob = ExtractTypeBody(jobs, "internal struct MarauderOutpostMatrixExtractionJob");
+            string sampleBody = ExtractMethodBody(extractionJob, "private float SampleHeight(");
+            string oldHeightmapFlag = "Heightmap" + "FallbackFlag";
+            string oldHeightFallback = "fallback" + "Height";
+            string oldFlatTerrain = "OriginMeters.y - " + "StiltClearanceMeters";
+            string oldFlatTerrainSize = "new float3(32f, " + "8f, 32f)";
+            int heightPayloadIndex = scheduleBody.IndexOf("ResolveHeightmapPayload()");
+            int scratchPrepareIndex = scheduleBody.IndexOf("TryPrepareExtractionScratch(");
+
+            Assert.That(scheduleBody, Does.Contain("if (!hasHeightmapPayload)"));
+            Assert.That(scheduleBody, Does.Contain("_missingHeightmap = true;"));
+            Assert.That(scheduleBody, Does.Contain("MarauderOutpostConstants.MissingHeightmapFlag"));
+            Assert.That(scheduleBody, Does.Contain("DumpBlackBox();"));
+            Assert.That(heightPayloadIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(scratchPrepareIndex, Is.GreaterThan(heightPayloadIndex));
+            Assert.That(scheduleBody, Does.Not.Contain(oldFlatTerrain));
+            Assert.That(scheduleBody, Does.Not.Contain(oldFlatTerrainSize));
+            Assert.That(extractionJob, Does.Contain("if (!hasHeightmap)"));
+            Assert.That(extractionJob, Does.Contain("Counters[4] = 1;"));
+            Assert.That(extractionJob, Does.Not.Contain(oldHeightFallback));
+            Assert.That(sampleBody, Does.Not.Contain("if (!hasHeightmap)"));
+            Assert.That(service, Does.Not.Contain("_heightmap" + "Fallback"));
+            Assert.That(service, Does.Not.Contain(oldHeightmapFlag));
+            Assert.That(jobs, Does.Not.Contain(oldHeightmapFlag));
+            Assert.That(contracts, Does.Contain("DescriptorFlagMissingHeightmap = 1 << 1"));
+            Assert.That(contracts, Does.Not.Contain("DescriptorFlag" + "HeightmapFallback"));
+        }
+
+        [Test]
         public void FloraGenomeJobs_ConsumeContinuousQualityWeightInsteadOfHardwareTierSwitches()
         {
             string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "World", "FloraGenomics", "FloraGenomeContracts.cs");
@@ -2645,45 +2680,55 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void CelestialEngine_AtmosphereLutResourceRepairIsSlowPhaseOnly()
+        public void CelestialEngine_AtmosphereLutUsesSampleArrayWithoutRuntimeTextureUpload()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
             string slowBody = ExtractMethodBody(source, "public void SlowTick()");
             string visualBody = ExtractMethodBody(source, "private void FlushCelestialVisualSync()");
             string visualUpdateBody = ExtractMethodBody(source, "private void TryUpdateDynamicCelestialAtmosphereVisualSync(");
-            string slowRepairBody = ExtractMethodBody(source, "private void FlushCelestialAtmosphereLutRepairSlow()");
-            string textureBody = ExtractMethodBody(source, "private void EnsureCelestialAtmosphereTexture()");
+            string rebuildBody = ExtractMethodBody(source, "private void RebuildCelestialAtmosphereLut(");
+            string publishBody = ExtractMethodBody(source, "private void PublishCelestialAtmosphereLut(");
 
             Assert.That(slowBody, Does.Contain("FlushCelestialAtmosphereLutRepairSlow();"));
             Assert.That(visualBody, Does.Contain("TryUpdateDynamicCelestialAtmosphereVisualSync(sunElevation);"));
             Assert.That(visualBody, Does.Not.Contain("EnsureCelestialAtmosphereLutReady("));
-            Assert.That(visualBody, Does.Not.Contain("EnsureCelestialAtmosphereTexture("));
+            Assert.That(visualBody, Does.Not.Contain("new Texture2D("));
             Assert.That(visualUpdateBody, Does.Contain("QueueCelestialAtmosphereLutRepair();"));
-            Assert.That(visualUpdateBody, Does.Not.Contain("EnsureCelestialAtmosphereTexture("));
             Assert.That(visualUpdateBody, Does.Not.Contain("EnsureCelestialAtmosphereAuthoring("));
-            Assert.That(slowRepairBody, Does.Contain("EnsureCelestialAtmosphereLutReady(publishOnRebuild: false);"));
-            Assert.That(textureBody, Does.Contain("new Texture2D("));
+            Assert.That(rebuildBody, Does.Contain("_celestialAtmosphereLutSamples[i]"));
+            Assert.That(rebuildBody, Does.Not.Contain("SetPixels("));
+            Assert.That(rebuildBody, Does.Not.Contain("Apply("));
+            Assert.That(publishBody, Does.Contain("Shader.SetGlobalColorArray(_ID_CelestialAtmosphereLutSamples, _celestialAtmosphereLutSamples);"));
+            Assert.That(publishBody, Does.Not.Contain("Shader.SetGlobalTexture(_ID_CelestialAtmosphereLut"));
+            Assert.That(source, Does.Not.Contain("new Texture2D("));
+            Assert.That(source, Does.Not.Contain("SetPixels("));
             Assert.That(source, Does.Not.Contain("allowResourceRepair"));
         }
 
         [Test]
-        public void GlobalWeatherDirector_NoirFogLutResourceRepairIsSlowPhaseOnly()
+        public void GlobalWeatherDirector_NoirFogLutUsesSampleArrayWithoutRuntimeTextureUpload()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Environment", "GlobalWeatherDirector.cs");
             string slowBody = ExtractMethodBody(source, "public void SlowTick()");
             string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
-            string flushBody = ExtractMethodBody(source, "private void FlushNoirFogLutTexture()");
+            string flushBody = ExtractMethodBody(source, "private void FlushNoirFogLutSamples()");
             string slowRepairBody = ExtractMethodBody(source, "private void FlushNoirFogLutRepairSlow()");
             string ensureBody = ExtractMethodBody(source, "private void EnsureNoirFogLutResources()");
+            string publishBody = ExtractMethodBody(source, "private void PublishNoirFogShaderState()");
 
             Assert.That(slowBody, Does.Contain("FlushNoirFogLutRepairSlow();"));
             Assert.That(lateFrameBody, Does.Not.Contain("EnsureNoirFogLutResources("));
-            Assert.That(flushBody, Does.Contain("QueueNoirFogLutRepair();"));
+            Assert.That(flushBody, Does.Contain("RebuildNoirFogLutSamples("));
             Assert.That(flushBody, Does.Not.Contain("EnsureNoirFogLutResources("));
             Assert.That(slowRepairBody, Does.Contain("EnsureNoirFogLutResources();"));
             Assert.That(slowRepairBody, Does.Contain("_weatherShaderDirty = true;"));
-            Assert.That(ensureBody, Does.Contain("new Texture2D("));
-            Assert.That(ensureBody, Does.Contain("new Color[resolution * NoirFogLutRowCount]"));
+            Assert.That(ensureBody, Does.Not.Contain("new Texture2D("));
+            Assert.That(ensureBody, Does.Not.Contain("new Color["));
+            Assert.That(publishBody, Does.Contain("Shader.SetGlobalColorArray(_NoirFogLutSamplesId, _noirFogLutSamples);"));
+            Assert.That(source, Does.Contain("private readonly Color[] _noirFogLutSamples = new Color[NoirFogLutSampleCount];"));
+            Assert.That(source, Does.Not.Contain("_noirFogLutTexture"));
+            Assert.That(source, Does.Not.Contain("SetPixels("));
+            Assert.That(source, Does.Not.Contain("Apply("));
         }
 
         [Test]

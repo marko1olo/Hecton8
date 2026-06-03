@@ -1,0 +1,215 @@
+{
+  "schema_id": "hecton8.first20_balance_monte_carlo.v1",
+  "agent_id": "17-B",
+  "evidence": "OFFLINE_PYTHON_STATIC_DATA",
+  "runtime_proof_status": "PENDING_VERIFICATION",
+  "parameters": {
+    "runs": 1000000,
+    "duration_seconds": 1200.0,
+    "baseline_seed": 1212498744,
+    "validation_seed": 397507351,
+    "tuning_passes": 1,
+    "tuning_runs": 10000,
+    "apply": false
+  },
+  "authority": {
+    "ore_distribution": "C:/hades/Hecton8/Data/Economy/Ore_Distribution.json",
+    "survival_asset": "C:/hades/Hecton8/Assets/_Project/Data/Survival/Standard_Suit_V1.asset",
+    "economy_survival_json": "C:/hades/Hecton8/Data/Economy/Survival_Stats.json",
+    "tool_heat_csv": "C:/hades/Hecton8/Data/Balance/ToolHeat.csv",
+    "runtime_oxygen_asset_max": 139.24,
+    "runtime_oxygen_asset_rate": 0.015,
+    "economy_json_oxygen_capacity": 835.44,
+    "economy_json_oxygen_base_rate": 0.09
+  },
+  "model_notes": [
+    "Oxygen authority uses Standard_Suit_V1.asset because HectonSurvivalSystem reads SurvivalStats at runtime.",
+    "Surface loop uses HectonSurvivalSystem surfaceOxygenRefillRate=15 units/sec.",
+    "Pressure factor mirrors ResolveOxygenPressureScale: clamp(1 + depth*0.1, 1, 16).",
+    "Copper clump bias mirrors ProceduralOreSpawner 85 percent repeat chance after copper, approximated as a short local-search streak."
+  ],
+  "baseline": {
+    "summary": {
+      "runs": 1000000,
+      "outcomes": {
+        "suffocated_after_wire": 599317,
+        "suffocated_before_wire": 38378,
+        "survival_devalued_excess": 153006,
+        "wire_starved_alive": 1816,
+        "wire_success": 207483
+      },
+      "prob_suffocated_before_wire": 0.038378,
+      "prob_suffocated_after_wire": 0.599317,
+      "prob_wire_starved_alive": 0.001816,
+      "prob_survival_devalued_excess": 0.153006,
+      "prob_wire_collected": 0.959806,
+      "wire_time_seconds": {
+        "p50": 161.41902594324625,
+        "p75": 269.0730134133389,
+        "p90": 410.1347209571268,
+        "p95": 543.061375389035,
+        "p99": 842.8153591252382
+      },
+      "copper_count": {
+        "p50": 6.0,
+        "p90": 9.0,
+        "p95": 10.0,
+        "p99": 13.0
+      },
+      "total_tier1_count": {
+        "p50": 27.0,
+        "p90": 38.0,
+        "p95": 40.0,
+        "p99": 45.0
+      },
+      "oxygen_remaining01": {
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.9095747670969175
+      },
+      "longest_reward_gap_seconds": {
+        "p90": 459.2553315842547,
+        "p95": 539.107396157899,
+        "p99": 721.4753106498631
+      },
+      "deepest_depth_m": {
+        "p50": 252.4223693885121,
+        "p95": 343.99078477121554
+      },
+      "nodes_mined": {
+        "p50": 29.0,
+        "p95": 42.0
+      },
+      "sim_wall_seconds": 477.45140209999954,
+      "sim_microseconds_per_session": 477.45140209999954
+    }
+  },
+  "tuning_passes": [
+    {
+      "pass": 1,
+      "notes": [
+        "no_change"
+      ],
+      "summary": {
+        "runs": 1000000,
+        "outcomes": {
+          "suffocated_after_wire": 599317,
+          "suffocated_before_wire": 38378,
+          "survival_devalued_excess": 153006,
+          "wire_starved_alive": 1816,
+          "wire_success": 207483
+        },
+        "prob_suffocated_before_wire": 0.038378,
+        "prob_suffocated_after_wire": 0.599317,
+        "prob_wire_starved_alive": 0.001816,
+        "prob_survival_devalued_excess": 0.153006,
+        "prob_wire_collected": 0.959806,
+        "wire_time_seconds": {
+          "p50": 161.41902594324625,
+          "p75": 269.0730134133389,
+          "p90": 410.1347209571268,
+          "p95": 543.061375389035,
+          "p99": 842.8153591252382
+        },
+        "copper_count": {
+          "p50": 6.0,
+          "p90": 9.0,
+          "p95": 10.0,
+          "p99": 13.0
+        },
+        "total_tier1_count": {
+          "p50": 27.0,
+          "p90": 38.0,
+          "p95": 40.0,
+          "p99": 45.0
+        },
+        "oxygen_remaining01": {
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.9095747670969175
+        },
+        "longest_reward_gap_seconds": {
+          "p90": 459.2553315842547,
+          "p95": 539.107396157899,
+          "p99": 721.4753106498631
+        },
+        "deepest_depth_m": {
+          "p50": 252.4223693885121,
+          "p95": 343.99078477121554
+        },
+        "nodes_mined": {
+          "p50": 29.0,
+          "p95": 42.0
+        },
+        "sim_wall_seconds": 477.45140209999954,
+        "sim_microseconds_per_session": 477.45140209999954
+      }
+    }
+  ],
+  "final_tuning_state": {
+    "max_oxygen": 139.24,
+    "oxygen_rate": 0.015,
+    "csv_weight_delta": {},
+    "hunger_rate_scale": 1.0,
+    "thirst_rate_scale": 1.0,
+    "tool_heat_scale": 1.0
+  },
+  "applied_changes": [],
+  "ore_baker": null,
+  "final": {
+    "summary": {
+      "runs": 1000000,
+      "outcomes": {
+        "suffocated_after_wire": 597566,
+        "suffocated_before_wire": 38783,
+        "survival_devalued_excess": 153756,
+        "wire_starved_alive": 1807,
+        "wire_success": 208088
+      },
+      "prob_suffocated_before_wire": 0.038783,
+      "prob_suffocated_after_wire": 0.597566,
+      "prob_wire_starved_alive": 0.001807,
+      "prob_survival_devalued_excess": 0.153756,
+      "prob_wire_collected": 0.95941,
+      "wire_time_seconds": {
+        "p50": 161.93345436557175,
+        "p75": 269.53667756263116,
+        "p90": 410.57913380887646,
+        "p95": 541.7027898970425,
+        "p99": 842.2627588397474
+      },
+      "copper_count": {
+        "p50": 6.0,
+        "p90": 9.0,
+        "p95": 10.0,
+        "p99": 13.0
+      },
+      "total_tier1_count": {
+        "p50": 27.0,
+        "p90": 38.0,
+        "p95": 40.0,
+        "p99": 45.0
+      },
+      "oxygen_remaining01": {
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.9118564359548673
+      },
+      "longest_reward_gap_seconds": {
+        "p90": 459.81608896486193,
+        "p95": 539.7327356321701,
+        "p99": 723.3013176661924
+      },
+      "deepest_depth_m": {
+        "p50": 252.1937816727902,
+        "p95": 343.92035917219636
+      },
+      "nodes_mined": {
+        "p50": 29.0,
+        "p95": 42.0
+      },
+      "sim_wall_seconds": 342.6384302999977,
+      "sim_microseconds_per_session": 342.6384302999977
+    }
+  }
+}

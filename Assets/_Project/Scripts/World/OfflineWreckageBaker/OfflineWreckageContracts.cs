@@ -22,11 +22,13 @@ namespace Hecton8.World.OfflineWreckageBaker
         public const int SupportHullPointCount = 8;
         public const int TelemetryFrames = 300;
         public const uint MappingLayoutVersion = 1u;
-        public const uint BakeReportVersion = 1u;
+        public const uint BakeArtifactVersion = 1u;
         public const uint WarningHullBudgetExceeded = 1u << 0;
         public const uint WarningDegenerateTriangles = 1u << 1;
         public const uint WarningNonFiniteFallback = 1u << 2;
         public const uint WarningHullBoundsExpanded = 1u << 3;
+        public const uint WarningFractureHolesGenerated = 1u << 4;
+        public const uint WarningPrefabSerializationFailed = 1u << 5;
     }
 
     /// <summary>
@@ -50,8 +52,9 @@ namespace Hecton8.World.OfflineWreckageBaker
         [FieldOffset(4)] public uint StressedMeshHash;
         [FieldOffset(8)] public uint RupturedMeshHash;
         [FieldOffset(12)] public uint CollapsedMeshHash;
-        [FieldOffset(16)] public ulong _pad0;
-        [FieldOffset(24)] public ulong _pad1;
+        [FieldOffset(16)] public uint MappingVersion;
+        [FieldOffset(20)] public uint ArtifactVersion;
+        [FieldOffset(24)] public ulong _pad0;
     }
 
     /// <summary>
@@ -99,8 +102,9 @@ namespace Hecton8.World.OfflineWreckageBaker
         [FieldOffset(8)] public int DegenerateTriangleCount;
         [FieldOffset(12)] public int HullVertexCount;
         [FieldOffset(16)] public uint WarningFlags;
-        [FieldOffset(20)] public uint _pad0;
-        [FieldOffset(24)] public ulong _pad1;
+        [FieldOffset(20)] public int ActiveIndexCount;
+        [FieldOffset(24)] public int FractureHoleTriangleCount;
+        [FieldOffset(28)] public uint _pad0;
         [FieldOffset(32)] public ulong _pad2;
         [FieldOffset(40)] public ulong _pad3;
         [FieldOffset(48)] public ulong _pad4;

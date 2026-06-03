@@ -23,6 +23,7 @@ namespace Hecton8.EditorTools
         private const byte ChannelDifferenceThreshold = 3;
         private static readonly string[] MaterialRoots = { "Assets/_Project/Art/Materials", "Assets/_Project/Materials", "Assets/_Project/Prefabs" };
         private static readonly string[] PackedMaskPropertyNames = { "_MaskMap", "_Mask_Map" };
+        private static readonly string[] SupplementalPackedMaskPropertyNames = { "_GeologyStrataMraoMap" };
         private static readonly HashSet<string> TargetShaders = new HashSet<string>(8, StringComparer.Ordinal)
         {
             "Hecton8/Rendering/UberNoir",
@@ -122,6 +123,7 @@ namespace Hecton8.EditorTools
                 {
                     anyImporterChanged |= TryFixMaskImporter(material, "_MaskMap", result);
                     anyImporterChanged |= TryFixMaskImporter(material, "_Mask_Map", result);
+                    anyImporterChanged |= TryFixSupplementalPackedMaskImporters(material, result);
                 }
 
                 InspectMaterial(materialPath, material, issueBuffer, result);
@@ -173,6 +175,7 @@ namespace Hecton8.EditorTools
                         {
                             anyImporterChanged |= TryFixMaskImporter(material, "_MaskMap", result);
                             anyImporterChanged |= TryFixMaskImporter(material, "_Mask_Map", result);
+                            anyImporterChanged |= TryFixSupplementalPackedMaskImporters(material, result);
                         }
 
                         InspectMaterial(materialPath, material, issueBuffer, result);
@@ -252,6 +255,23 @@ namespace Hecton8.EditorTools
 
             if (hasMaskMap && ShouldValidatePackedMask(shaderName))
                 ValidatePackedMask(materialPath, material, packedMaskPropertyName, issueBuffer, result);
+
+            if (ShouldValidatePackedMask(shaderName))
+                ValidateSupplementalPackedMasks(materialPath, material, issueBuffer, result);
+        }
+
+        private static void ValidateSupplementalPackedMasks(
+            string materialPath,
+            Material material,
+            List<string> issueBuffer,
+            AuditResult result)
+        {
+            for (int i = 0; i < SupplementalPackedMaskPropertyNames.Length; i++)
+            {
+                string propertyName = SupplementalPackedMaskPropertyNames[i];
+                if (HasTexture(material, propertyName))
+                    ValidatePackedMask(materialPath, material, propertyName, issueBuffer, result);
+            }
         }
 
         private static void ValidatePackedMask(
@@ -357,6 +377,15 @@ namespace Hecton8.EditorTools
             result.FixedImporterCount++;
             result.FixedImporters.Add(texturePath);
             return true;
+        }
+
+        private static bool TryFixSupplementalPackedMaskImporters(Material material, AuditResult result)
+        {
+            bool changed = false;
+            for (int i = 0; i < SupplementalPackedMaskPropertyNames.Length; i++)
+                changed |= TryFixMaskImporter(material, SupplementalPackedMaskPropertyNames[i], result);
+
+            return changed;
         }
 
         private static bool ValidatePackedTextureAsset(

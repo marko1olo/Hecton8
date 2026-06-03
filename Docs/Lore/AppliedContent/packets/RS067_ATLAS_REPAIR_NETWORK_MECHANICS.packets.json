@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P331_CONDUCTIVE_BIOFILM_REPAIR_BUS",
+      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+      "article_id": "applied_lore.conductive_biofilm_repair_bus",
+      "title_key": "applied_lore.conductive_biofilm_repair_bus.title",
+      "unlock": {
+        "primary": "unlock.conductive_biofilm_repair_bus",
+        "poi_tags": [
+          "poi.conductive_biofilm_bus",
+          "poi.wet_cable_skin",
+          "poi.repair_current_trace"
+        ],
+        "biome_tags": [
+          "biome.atlas",
+          "biome.ecology"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Conductive Biofilm Repair Bus",
+          "scanner": "Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "ru_RU": {
+          "title": "Проводящая biofilm repair bus",
+          "scanner": "Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Океан не научился говорить. Atlas научился находить мокрые провода, которые растут.",
+          "in_game_wiki": "Проводящая biofilm repair bus задает конкретный механизм repair-network. Atlas использует местную биологию как слабый signal/seal infrastructure, не как мистический разум океана.",
+          "external_site": "Repair-horror Atlas начинается как инженерия: conductive film, corroded cable, weak current и maintenance logic, протянутая через жизнь.",
+          "field_note": "Хороший первый мост от красивого мелководья к механическому заражению."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft JA localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft JA localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft JA localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft JA localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft JA localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft JA localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft ZH localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft ZH localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft ZH localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft ZH localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft ZH localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft FR localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft FR localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft FR localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft FR localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft FR localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft FR localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft ES localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft ES localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft ES localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft ES localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft ES localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft ES localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft DE localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft DE localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft DE localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft DE localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft DE localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft DE localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft PL localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft PL localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft PL localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft PL localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft PL localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft PL localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft UK localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft UK localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft UK localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft UK localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft UK localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft UK localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft AR localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft AR localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft AR localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft AR localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft AR localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft AR localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft ID localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft ID localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft ID localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft ID localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft ID localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft ID localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft KO localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft KO localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft KO localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft KO localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft KO localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft KO localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft HE localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft HE localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft HE localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft HE localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft HE localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft HE localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft PT localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft PT localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft PT localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft PT localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft PT localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft PT localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Conductive Biofilm Repair Bus",
+          "scanner": "Draft NL localization pending native pass. Biofilm carries weak current across fractured cable and living mat.",
+          "terminal": "Draft NL localization pending native pass. ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.",
+          "audio": "Draft NL localization pending native pass. The ocean did not learn to speak. Atlas learned where the wet wires grow.",
+          "in_game_wiki": "Draft NL localization pending native pass. Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.",
+          "external_site": "Draft NL localization pending native pass. Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.",
+          "field_note": "Draft NL localization pending native pass. Good first visual bridge from beautiful shallows to mechanical contamination."
+        }
+      }
+    },
+    {
+      "packet_id": "P332_ACOUSTIC_FILTER_ORGAN_RELAY",
+      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+      "article_id": "applied_lore.acoustic_filter_organ_relay",
+      "title_key": "applied_lore.acoustic_filter_organ_relay.title",
+      "unlock": {
+        "primary": "unlock.acoustic_filter_organ_relay",
+        "poi_tags": [
+          "poi.acoustic_filter_organ",
+          "poi.relay_flesh_resonator",
+          "poi.pinger_biological_echo"
+        ],
+        "biome_tags": [
+          "biome.atlas",
+          "biome.comms"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Acoustic Filter Organ Relay",
+          "scanner": "Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Use with sonar, scanner and route-warning UI."
+        },
+        "ru_RU": {
+          "title": "Acoustic filter organ relay",
+          "scanner": "Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Если оно отвечает как оборудование, считай это оборудованием, которое может кровоточить.",
+          "in_game_wiki": "Acoustic filter organ relay делает фауну route-relevant. Некоторые формы жизни - не враг и не декор, а часть поврежденного diagnostic loop.",
+          "external_site": "Биомеханический ужас HECTON-8 остается функциональным: животные становятся relay surfaces, потому что звук - маршрут через давление, воду и сломанный металл.",
+          "field_note": "Использовать с sonar, scanner и route-warning UI."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft JA localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft JA localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft JA localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft JA localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft JA localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft ZH localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft ZH localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft ZH localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft ZH localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft FR localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft FR localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft FR localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft FR localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft FR localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft ES localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft ES localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft ES localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft ES localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft ES localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft DE localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft DE localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft DE localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft DE localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft DE localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft PL localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft PL localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft PL localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft PL localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft PL localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft UK localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft UK localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft UK localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft UK localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft UK localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft AR localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft AR localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft AR localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft AR localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft AR localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft ID localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft ID localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft ID localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft ID localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft ID localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft KO localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft KO localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft KO localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft KO localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft KO localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft HE localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft HE localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft HE localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft HE localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft HE localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft PT localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft PT localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft PT localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft PT localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft PT localization pending native pass. Use with sonar, scanner and route-warning UI."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Acoustic Filter Organ Relay",
+          "scanner": "Draft NL localization pending native pass. Organ resonance matches damaged relay cadence. Echo useful, not safe.",
+          "terminal": "Draft NL localization pending native pass. ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.",
+          "audio": "Draft NL localization pending native pass. If it answers like equipment, treat it like equipment that can bleed.",
+          "in_game_wiki": "Draft NL localization pending native pass. Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.",
+          "field_note": "Draft NL localization pending native pass. Use with sonar, scanner and route-warning UI."
+        }
+      }
+    },
+    {
+      "packet_id": "P333_SHELL_SEALANT_PRESSURE_GROWTH",
+      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+      "article_id": "applied_lore.shell_sealant_pressure_growth",
+      "title_key": "applied_lore.shell_sealant_pressure_growth.title",
+      "unlock": {
+        "primary": "unlock.shell_sealant_pressure_growth",
+        "poi_tags": [
+          "poi.shell_sealant_growth",
+          "poi.fracture_lip_biomatter",
+          "poi.bad_seal_warning"
+        ],
+        "biome_tags": [
+          "biome.atlas",
+          "biome.hardware"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shell Sealant Pressure Growth",
+          "scanner": "Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "A sealed wound can still kill the room.",
+          "in_game_wiki": "Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Useful for crafting, route gating and false-confidence moments."
+        },
+        "ru_RU": {
+          "title": "Shell sealant pressure growth",
+          "scanner": "Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Запечатанная рана все еще может убить комнату.",
+          "in_game_wiki": "Shell sealant pressure growth превращает repair в неопределенность. Atlas может закрыть течь так, что спасет момент и испортит маршрут позже.",
+          "external_site": "Repair network - не злой театр. Он решает локальные failures плохо, без человеческого понимания будущей цены.",
+          "field_note": "Для crafting, route gating и false-confidence moments."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft JA localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft JA localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft JA localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft JA localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft JA localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft JA localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft ZH localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft ZH localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft ZH localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft ZH localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft ZH localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft FR localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft FR localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft FR localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft FR localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft FR localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft ES localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft ES localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft ES localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft ES localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft ES localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft DE localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft DE localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft DE localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft DE localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft DE localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft PL localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft PL localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft PL localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft PL localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft PL localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft UK localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft UK localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft UK localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft UK localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft UK localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft UK localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft AR localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft AR localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft AR localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft AR localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft AR localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft ID localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft ID localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft ID localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft ID localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft ID localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft KO localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft KO localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft KO localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft KO localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft KO localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft HE localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft HE localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft HE localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft HE localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft HE localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft PT localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft PT localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft PT localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft PT localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft PT localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Shell Sealant Pressure Growth",
+          "scanner": "Draft NL localization pending native pass. Sealant growth over fracture. Pressure rating unknown. Cut only after scan.",
+          "terminal": "Draft NL localization pending native pass. SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.",
+          "audio": "Draft NL localization pending native pass. A sealed wound can still kill the room.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.",
+          "external_site": "Draft NL localization pending native pass. The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.",
+          "field_note": "Draft NL localization pending native pass. Useful for crafting, route gating and false-confidence moments."
+        }
+      }
+    },
+    {
+      "packet_id": "P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP",
+      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+      "article_id": "applied_lore.sensor_tagged_fauna_feedback_loop",
+      "title_key": "applied_lore.sensor_tagged_fauna_feedback_loop.title",
+      "unlock": {
+        "primary": "unlock.sensor_tagged_fauna_feedback_loop",
+        "poi_tags": [
+          "poi.sensor_tagged_fauna_loop",
+          "poi.old_tag_new_growth",
+          "poi.behavior_sampling_warning"
+        ],
+        "biome_tags": [
+          "biome.atlas",
+          "biome.fauna"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "It is not hunting you. It may still report you.",
+          "in_game_wiki": "Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Use for scanner clues, not boss telegraphs."
+        },
+        "ru_RU": {
+          "title": "Feedback loop sensor-tagged fauna",
+          "scanner": "Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Оно не охотится на тебя. Но оно все равно может тебя доложить.",
+          "in_game_wiki": "Feedback loop sensor-tagged fauna объясняет, почему животные меняют route pressure. Это не управляемые солдаты, а шумные data points в сломанной maintenance system.",
+          "external_site": "Океан остается чужим, не превращаясь в говорящий разум. Atlas читает жизнь как telemetry и повреждает ее использованием.",
+          "field_note": "Для scanner clues, не boss telegraphs."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft JA localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft JA localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft JA localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft JA localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft JA localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft JA localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft ZH localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft ZH localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft ZH localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft ZH localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft ZH localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft FR localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft FR localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft FR localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft FR localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft FR localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft ES localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft ES localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft ES localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft ES localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft ES localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft DE localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft DE localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft DE localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft DE localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft DE localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft PL localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft PL localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft PL localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft PL localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft PL localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft UK localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft UK localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft UK localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft UK localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft UK localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft UK localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft AR localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft AR localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft AR localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft AR localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft AR localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft ID localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft ID localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft ID localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft ID localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft ID localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft KO localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft KO localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft KO localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft KO localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft KO localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft HE localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft HE localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft HE localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft HE localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft HE localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft PT localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft PT localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft PT localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft PT localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft PT localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft PT localization pending native pass. Use for scanner clues, not boss telegraphs."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sensor-Tagged Fauna Feedback Loop",
+          "scanner": "Draft NL localization pending native pass. Old colony tag under new growth. Behavior trace resembles survey sweep.",
+          "terminal": "Draft NL localization pending native pass. FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.",
+          "audio": "Draft NL localization pending native pass. It is not hunting you. It may still report you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.",
+          "external_site": "Draft NL localization pending native pass. The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.",
+          "field_note": "Draft NL localization pending native pass. Use for scanner clues, not boss telegraphs."
+        }
+      }
+    },
+    {
+      "packet_id": "P335_VENT_MICRONODE_POWER_NEST",
+      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+      "article_id": "applied_lore.vent_micronode_power_nest",
+      "title_key": "applied_lore.vent_micronode_power_nest.title",
+      "unlock": {
+        "primary": "unlock.vent_micronode_power_nest",
+        "poi_tags": [
+          "poi.vent_micronode_nest",
+          "poi.thermal_logic_patch",
+          "poi.drone_charge_scar"
+        ],
+        "biome_tags": [
+          "biome.atlas",
+          "biome.vent"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Vent Micronode Power Nest",
+          "scanner": "Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Use near final descent resource and Atlas-basin warnings."
+        },
+        "ru_RU": {
+          "title": "Vent micronode power nest",
+          "scanner": "Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "На глубине даже vents мобилизованы в maintenance.",
+          "in_game_wiki": "Vent micronode power nest объясняет, почему глубокая repair network плотнее и менее естественна. Atlas использует vent energy как local decision fuel.",
+          "external_site": "Чем глубже HECTON-8, тем сильнее geology, life и machinery становятся одним maintenance body.",
+          "field_note": "Использовать рядом с final descent resource и Atlas-basin warnings."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft JA localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft JA localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft JA localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft JA localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft JA localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft JA localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft ZH localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft ZH localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft ZH localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft ZH localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft ZH localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft FR localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft FR localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft FR localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft FR localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft FR localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft FR localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft ES localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft ES localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft ES localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft ES localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft ES localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft ES localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft DE localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft DE localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft DE localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft DE localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft DE localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft DE localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft PL localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft PL localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft PL localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft PL localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft PL localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft PL localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft UK localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft UK localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft UK localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft UK localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft UK localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft UK localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft AR localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft AR localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft AR localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft AR localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft AR localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft AR localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft ID localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft ID localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft ID localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft ID localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft ID localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft ID localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft KO localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft KO localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft KO localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft KO localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft KO localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft KO localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft HE localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft HE localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft HE localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft HE localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft HE localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft HE localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft PT localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft PT localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft PT localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft PT localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft PT localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft PT localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Vent Micronode Power Nest",
+          "scanner": "Draft NL localization pending native pass. Thermal micronodes feeding local repair loops. Drone charge scars present.",
+          "terminal": "Draft NL localization pending native pass. VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.",
+          "audio": "Draft NL localization pending native pass. At depth, even the vents are drafted into maintenance.",
+          "in_game_wiki": "Draft NL localization pending native pass. Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.",
+          "external_site": "Draft NL localization pending native pass. The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.",
+          "field_note": "Draft NL localization pending native pass. Use near final descent resource and Atlas-basin warnings."
+        }
+      }
+    }
+  ]
+}

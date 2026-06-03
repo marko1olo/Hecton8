@@ -74,7 +74,6 @@ namespace Hecton8.Tools
         private float _currentFrameTimeAverage;
         private float _currentPerformanceLevel = 1f;
         private float _budgetPressure01;
-        private float _nextBudgetStatusLogTime;
         private bool _registeredToTickManager;
         private bool _hotSwapRegistered;
 
@@ -82,8 +81,6 @@ namespace Hecton8.Tools
         private readonly StringBuilder _statusLogBuilder = new StringBuilder(256); // COLD ALLOC: reused development-only status builder
 #endif
 
-        private const float BudgetStatusLogIntervalSeconds = 5f;
-        private const float OverBudgetLogIntervalSeconds = 5f;
         private const float PerformanceApplyEpsilon = 0.0025f;
         private const float RestoredPerformanceThreshold = 0.995f;
         private const float MaxSmoothingDeltaSeconds = 0.1f;
@@ -174,16 +171,6 @@ namespace Hecton8.Tools
             {
                 ApplyPerformanceLevel(1f);
             }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // Log budget status periodically
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            if (now >= _nextBudgetStatusLogTime)
-            {
-                LogBudgetStatus();
-                _nextBudgetStatusLogTime = now + BudgetStatusLogIntervalSeconds;
-            }
-#endif
         }
 
         /// <summary>
@@ -264,15 +251,7 @@ namespace Hecton8.Tools
 
             // Check if system is over budget
             if (timeUsedMs > budget.BudgetMs)
-            {
                 budget.OverBudgetCount++;
-                float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-                if (now >= budget.NextOverBudgetLogTime)
-                {
-                    budget.NextOverBudgetLogTime = now + OverBudgetLogIntervalSeconds;
-                    LogSystemOverBudget(systemName, timeUsedMs, budget.BudgetMs);
-                }
-            }
 
             _systemBudgets[index] = budget;
             UpdateBudgetStatusSnapshot(in budget);
@@ -445,7 +424,6 @@ namespace Hecton8.Tools
             for (int i = 0; i < budgetCount; i++)
             {
                 SystemBudget budget = _systemBudgets[i];
-                bool wasReduced = budget.IsThrottled != 0;
                 if (math.abs(budget.PerformanceLevel - safeLevel) > PerformanceApplyEpsilon)
                 {
                     budget.System?.SetPerformanceLevel(safeLevel);
@@ -453,11 +431,6 @@ namespace Hecton8.Tools
                 }
 
                 budget.IsThrottled = reduced;
-                if (!wasReduced && reduced != 0)
-                    LogSystemThrottled(budget.SystemName, _currentFrameTimeAverage, _maxFrameTimeMs, safeLevel);
-                else if (wasReduced && reduced == 0)
-                    LogSystemRestored(budget.SystemName);
-
                 _systemBudgets[i] = budget;
                 UpdateBudgetStatusSnapshot(in budget);
             }
@@ -487,11 +460,6 @@ namespace Hecton8.Tools
                 return 0f;
 
             return math.min(deltaTime, MaxSmoothingDeltaSeconds);
-        }
-
-        private void LogBudgetStatus()
-        {
-            LogBudgetStatusInternal();
         }
 
         private void RemoveBudgetAtIndex(int index)
@@ -671,42 +639,12 @@ namespace Hecton8.Tools
             Hecton8.Core.H8Debug.Log($"[PerformanceBudgetController] Unregistered system '{systemName}'");
         }
 
-        private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs)
-        {
-            Hecton8.Core.H8Debug.LogWarning("[PerformanceBudgetController] System '" + systemName + "' over budget: " +
-                timeUsedMs.ToString("F2", CultureInfo.InvariantCulture) + "ms > " +
-                budgetMs.ToString("F2", CultureInfo.InvariantCulture) + "ms");
-        }
-
-        private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs, float performanceLevel)
-        {
-            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Reducing system '" + systemName +
-                "' performance to " +
-                performanceLevel.ToString("F2", CultureInfo.InvariantCulture) +
-                " (avg frame " +
-                frameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms, max " +
-                maxFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms)");
-        }
-
-        private void LogSystemRestored(string systemName)
-        {
-            Hecton8.Core.H8Debug.Log($"[PerformanceBudgetController] Restoring system '{systemName}' performance");
-        }
-
-        private void LogBudgetStatusInternal()
-        {
-            Hecton8.Core.H8Debug.Log(DescribeStatus());
-        }
 #else
         private void LogDuplicateRegistration(string systemName) { }
         private void LogInvalidRegistration(string systemName) { }
         private void LogRegistrationCapacityExceeded(string systemName) { }
         private void LogSystemRegistered(string systemName, float budgetMs) { }
         private void LogSystemUnregistered(string systemName) { }
-        private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs) { }
-        private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs, float performanceLevel) { }
-        private void LogSystemRestored(string systemName) { }
-        private void LogBudgetStatusInternal() { }
 #endif
 
         private void OnValidate()
@@ -750,7 +688,6 @@ namespace Hecton8.Tools
         public int FrameCount;
         public int OverBudgetCount;
         public byte IsThrottled;
-        public float NextOverBudgetLogTime;
     }
 
     /// <summary>

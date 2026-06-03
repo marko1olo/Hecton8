@@ -17,6 +17,11 @@ namespace Hecton8.Tests.Editor.Bakers
         private const string BakerPath = "Assets/_Project/Editor/Bakers/ProceduralTextureBaker.cs";
         private const string PackerPath = "Assets/_Project/Editor/Bakers/TextureAtlasPacker.cs";
         private const string ProfilePath = "Assets/_Project/Editor/Bakers/BakeProfileDTO.cs";
+        private const string ParticleFlipbookPath = "Assets/_Project/Editor/Bakers/ParticleFlipbookBaker1718.cs";
+        private const string ParticulateFlipbookPath1728 = "Assets/_Project/Editor/Bakers/ParticulateFlipbookBaker.cs";
+        private const string MarineSnowShaderPath = "Assets/_Project/Art/Shaders/Hecton_MarineSnow.shader";
+        private const string FlashlightConeSiltShaderPath = "Assets/_Project/Art/Shaders/Hecton_FlashlightConeSilt.shader";
+        private const string MarineSnowRendererPath = "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs";
 
         [Test]
         public void BakeProfileSchema_ContainsRequiredPbrControls()
@@ -128,10 +133,18 @@ namespace Hecton8.Tests.Editor.Bakers
             Assert.That(baker, Does.Contain("importer.textureCompression = TextureImporterCompression.CompressedHQ"));
             Assert.That(baker, Does.Not.Contain("textureCompression = TextureImporterCompression.CompressedHQ,"));
             Assert.That(baker, Does.Contain("importer.sRGBTexture = role == TextureRole.Albedo"));
+            Assert.That(baker, Does.Contain("importer.alphaIsTransparency = role == TextureRole.Mask"));
+            Assert.That(baker, Does.Contain("importer.wrapMode = TextureWrapMode.Clamp"));
+            Assert.That(baker, Does.Contain("importer.filterMode = FilterMode.Bilinear"));
+            Assert.That(baker, Does.Contain("importer.anisoLevel = role == TextureRole.Normal ? 2 : 1"));
             Assert.That(baker, Does.Contain("TryEnforceTextureImportSettings"));
             Assert.That(baker, Does.Contain("texture import settings failed"));
             Assert.That(baker, Does.Contain("AuditTextureImporterSettings"));
             Assert.That(baker, Does.Contain("texture importer audit failed"));
+            Assert.That(baker, Does.Contain("alphaTransparencyCorrect"));
+            Assert.That(baker, Does.Contain("wrapCorrect"));
+            Assert.That(baker, Does.Contain("filterCorrect"));
+            Assert.That(baker, Does.Contain("anisoCorrect"));
             Assert.That(baker, Does.Contain("GetPlatformTextureSettings(\"Standalone\")"));
             Assert.That(baker, Does.Contain("GetPlatformTextureSettings(\"Android\")"));
             Assert.That(baker, Does.Contain("GetPlatformTextureSettings(\"iPhone\")"));
@@ -180,6 +193,119 @@ namespace Hecton8.Tests.Editor.Bakers
         }
 
         [Test]
+        public void ParticleFlipbookBaker1718_ExtendsSharedBakerAndAvoidsRuntimeDependencies()
+        {
+            string particle = File.ReadAllText(ParticleFlipbookPath);
+            string particulate = File.ReadAllText(ParticulateFlipbookPath1728);
+            string baker = File.ReadAllText(BakerPath);
+
+            Assert.That(particle, Does.Contain("public static partial class ProceduralTextureBaker"));
+            Assert.That(particle, Does.Not.Contain("class ParticleFlipbookBaker1718"));
+            Assert.That(particle, Does.Contain("[MenuItem(\"HECTON-8/Bakers/1718/Bake Default Silt And Marine Snow Flipbooks\""));
+            Assert.That(particle, Does.Contain("PeriodicSimplex"));
+            Assert.That(particle, Does.Contain("EvaluateWorley"));
+            Assert.That(particle, Does.Contain("new float4("));
+            Assert.That(particle, Does.Contain("math.cos(phase)"));
+            Assert.That(particle, Does.Contain("math.sin(phase)"));
+            Assert.That(particle, Does.Contain("math.normalizesafe"));
+            Assert.That(particle, Does.Contain("float dx = FiniteOrZero(EvaluateDensity"));
+            Assert.That(particle, Does.Contain("float dy = FiniteOrZero(EvaluateDensity"));
+            Assert.That(particle, Does.Contain("normal = math.normalizesafe(normal"));
+            Assert.That(particle, Does.Contain("float highFreq = FiniteOrZero(PeriodicSimplex"));
+            Assert.That(particle, Does.Contain("float flow = math.saturate(FiniteOrZero(PeriodicSimplex"));
+            Assert.That(particle, Does.Contain("return FiniteOrZero(density)"));
+            Assert.That(particle, Does.Contain("RequiredFrameGridSize = 8"));
+            Assert.That(particle, Does.Contain("FrameCount = frameGridSize * frameGridSize"));
+            Assert.That(particle, Does.Contain("forceRequiredFrameGrid"));
+            Assert.That(particle, Does.Contain("ResolveFrameGridSize"));
+            Assert.That(particle, Does.Contain("globalQualityWeight >= 0.5f ? RequiredFrameGridSize : 4"));
+            Assert.That(particle, Does.Contain("ValidatePadding(in settings, packedMask, normalMap"));
+            Assert.That(particle, Does.Contain("Color32 n = normalMap[index]"));
+            Assert.That(particle, Does.Contain("n.r != 128 || n.g != 128 || n.b != 255 || n.a != 0"));
+            Assert.That(particle, Does.Contain("TryCaptureAssetFileRollbackSnapshots(transactionalPaths"));
+            Assert.That(particle, Does.Contain("TryResolveParticleBakeAssetPaths1718"));
+            Assert.That(particle, Does.Contain("siltPaths.MaterialPath"));
+            Assert.That(particle, Does.Contain("snowPaths.MaterialPath"));
+            Assert.That(particle, Does.Contain("using Unity.Collections.LowLevel.Unsafe"));
+            Assert.That(particle, Does.Contain("ValidateUnmanagedLayouts1718"));
+            Assert.That(particle, Does.Contain("UnsafeUtility.SizeOf<ResolvedBakeSettings>()"));
+            Assert.That(particle, Does.Contain("UnsafeUtility.SizeOf<ParticleFlipbookBakeJob>()"));
+            Assert.That(particle, Does.Contain("TryEnforceTextureImportSettings(paths.MaskPath, ProceduralTextureBaker.TextureRole.Mask"));
+            Assert.That(particle, Does.Contain("TryEnforceTextureImportSettings(paths.NormalPath, ProceduralTextureBaker.TextureRole.Normal"));
+            Assert.That(particle, Does.Contain("TryCreateOrUpdateParticleMaterial1718"));
+            Assert.That(particle, Does.Contain("MAT_Flipbook_"));
+            Assert.That(particle, Does.Contain("Hecton8/VFX/MarineSnow"));
+            Assert.That(particle, Does.Contain("Hecton8/VFX/FlashlightConeSilt"));
+            Assert.That(particle, Does.Contain("ResolveSafeTextureSize(MaximumAtlasSize, q"));
+            Assert.That(particulate, Does.Contain("TryBakeNeutralVolumeTexture1728"));
+            Assert.That(particulate, Does.Contain("TX_MarineSnow_EmptyCaveSdf_1x1x1.asset"));
+            Assert.That(particulate, Does.Contain("TX_MarineSnow_EmptyAbyssalFlow_1x1x1.asset"));
+            Assert.That(particulate, Does.Contain("new Texture3D(1, 1, 1, TextureFormat.RGBA32, false)"));
+            Assert.AreEqual(3, CountSourceOccurrences(particulate, "forceRequiredFrameGrid: true"));
+            Assert.That(baker, Does.Contain("string[] assetPaths"));
+            Assert.That(baker, Does.Contain("new AssetFileRollbackSnapshot[assetPaths.Length]"));
+            Assert.That(baker, Does.Contain("BuildSeedFallbackName(profile.Seed)"));
+            Assert.That(baker, Does.Not.Contain("profile.Seed.ToString"));
+            Assert.That(particle, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(particle, Does.Not.Contain("GetComponent("));
+            Assert.That(particle, Does.Not.Contain("System.Linq"));
+            Assert.That(particle, Does.Not.Contain("WaitForCompletion"));
+            Assert.That(particle, Does.Not.Contain("WriteStaticReport"));
+            Assert.That(particle, Does.Not.Contain("File.WriteAllText"));
+            Assert.That(particle, Does.Not.Contain("Stopwatch"));
+        }
+
+        [Test]
+        public void ParticleFlipbookConsumers_UseBakedAtlasContractWithoutHotDependencies()
+        {
+            string marineSnowShader = File.ReadAllText(MarineSnowShaderPath);
+            string flashlightShader = File.ReadAllText(FlashlightConeSiltShaderPath);
+            string renderer = File.ReadAllText(MarineSnowRendererPath);
+
+            Assert.That(marineSnowShader, Does.Contain("_MarineSnowMaskAtlas"));
+            Assert.That(marineSnowShader, Does.Contain("_MarineSnowNormalAtlas"));
+            Assert.That(marineSnowShader, Does.Contain("ResolveMarineSnowFlipbookUV"));
+            Assert.That(marineSnowShader, Does.Contain("SAMPLE_TEXTURE2D(_MarineSnowMaskAtlas"));
+            Assert.That(marineSnowShader, Does.Contain("SAMPLE_TEXTURE2D(_MarineSnowNormalAtlas"));
+            Assert.That(marineSnowShader, Does.Contain("_MarineSnowMaskAtlas_TexelSize"));
+            Assert.That(marineSnowShader, Does.Contain("ResolveMarineSnowFrameLocalUv"));
+            Assert.That(marineSnowShader, Does.Contain("maskPacked.b * 2.0 - 1.0"));
+            Assert.That(marineSnowShader, Does.Contain("UnpackNormal(normalPacked)"));
+            Assert.That(marineSnowShader, Does.Contain("lerp(radialShape, saturate(maskPacked.r), maskWeight)"));
+            Assert.That(marineSnowShader, Does.Contain("maskPacked.g * maskWeight * saturate(input.headlightBoost)"));
+
+            Assert.That(flashlightShader, Does.Contain("_SiltMaskAtlas"));
+            Assert.That(flashlightShader, Does.Contain("_SiltNormalAtlas"));
+            Assert.That(flashlightShader, Does.Contain("ResolveSiltFlipbookUV"));
+            Assert.That(flashlightShader, Does.Contain("_SiltMaskAtlas_TexelSize"));
+            Assert.That(flashlightShader, Does.Contain("ResolveSiltFrameLocalUv"));
+            Assert.That(flashlightShader, Does.Contain("maskPacked.b * 2.0 - 1.0"));
+            Assert.That(flashlightShader, Does.Contain("UnpackNormal(normalPacked)"));
+            Assert.That(flashlightShader, Does.Contain("lerp(hashSilt, saturate(maskPacked.r), maskWeight)"));
+
+            Assert.That(renderer, Does.Contain("MaskAtlasId = Shader.PropertyToID(\"_MarineSnowMaskAtlas\")"));
+            Assert.That(renderer, Does.Contain("NormalAtlasId = Shader.PropertyToID(\"_MarineSnowNormalAtlas\")"));
+            Assert.That(renderer, Does.Contain("BindMaterialFlipbookAtlasIfNeeded"));
+            Assert.That(renderer, Does.Contain("SetMaterialTextureHotIfChanged"));
+            Assert.That(renderer, Does.Contain("RefreshMaterialFlipbookAtlasFallbackCold"));
+            Assert.That(renderer, Does.Contain("marineSnowMaterial.GetTexture(ShaderIds.MaskAtlasId) as Texture2D"));
+            Assert.That(renderer, Does.Contain("marineSnowMaterial.GetTexture(ShaderIds.NormalAtlasId) as Texture2D"));
+            Assert.That(renderer, Does.Contain("RefreshAuthoredNeutralVolumeFallbacksColdEditor"));
+            Assert.That(renderer, Does.Contain("[System.Diagnostics.Conditional(\"UNITY_EDITOR\")]"));
+            Assert.That(renderer, Does.Contain("AssetDatabase.LoadAssetAtPath<Texture3D>(DefaultEmptyCaveSdfTexturePath1728)"));
+            Assert.That(renderer, Does.Contain("AssetDatabase.LoadAssetAtPath<Texture3D>(DefaultEmptyAbyssalFlowTexturePath1728)"));
+            Assert.That(renderer, Does.Not.Contain("new Texture3D(1, 1, 1"));
+            Assert.That(renderer, Does.Contain("marineSnowMaskAtlas != null ? math.saturate(marineSnowMaskAtlasWeight) : 0f"));
+            Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void EnsureCsvProfileBackgroundReader("));
+            Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void StopCsvProfileBackgroundReader("));
+            Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void RefreshSiltProfileCsv("));
+            Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void RefreshPropwashWakeProfileCsv("));
+            Assert.That(renderer, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(renderer, Does.Not.Contain("WaitForCompletion"));
+            Assert.That(renderer, Does.Not.Contain("System.Linq"));
+        }
+
+        [Test]
         public void GlobalQualityWeight_ScalesBakeResolutionContinuously()
         {
             int low = ProceduralTextureBaker.ResolveSafeTextureSize(4096, 0f);
@@ -190,6 +316,23 @@ namespace Hecton8.Tests.Editor.Bakers
             Assert.AreEqual(2048, mid);
             Assert.GreaterOrEqual(mid, low);
             Assert.GreaterOrEqual(high, mid);
+        }
+
+        private static int CountSourceOccurrences(string source, string needle)
+        {
+            int count = 0;
+            int offset = 0;
+            while (offset < source.Length)
+            {
+                int index = source.IndexOf(needle, offset, System.StringComparison.Ordinal);
+                if (index < 0)
+                    break;
+
+                count++;
+                offset = index + needle.Length;
+            }
+
+            return count;
         }
 
         [Test]

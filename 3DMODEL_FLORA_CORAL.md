@@ -9,6 +9,8 @@ Flora and coral are not primitive cylinders, spheres, ribbons, or cones. Those s
 
 Every flora/coral generator must output a stable LOD chain, vertex color masks, tangents, UVs or approved triplanar coordinates, material slots, and optional interaction proxies. Runtime shaders may bend, pulse, and shade using baked streams. Runtime scripts must not calculate mesh deformation weights.
 
+Surface and photic-zone flora/coral must not be authored as dark abyss leftovers. They need light-facing growth, visible pigment variation, clear shallow silhouettes, wet tissue response, reef color, and predator/food/cover logic. Biolum-only darkness is reserved for depth, caves, contaminated pockets, or special route events.
+
 ## 2. Vertex Color Contract
 
 Mandatory for every flora and coral mesh:
@@ -138,6 +140,7 @@ Flora and coral generation must output:
 - collision/interaction proxy report or explicit no-collision justification;
 - flat-material screenshot proving the silhouette is biological before texture detail;
 - final-material screenshot proving wetness, translucency, bioluminescence, scars, pores, and abyssal coloration support the organism.
+- final-material screenshot proving wetness, translucency, pigment or bioluminescence, scars, pores, and biome-correct coloration support the organism.
 
 ## 11. Acceptance Sentence
 

@@ -1,10 +1,17 @@
 ---
 packet_id: P023_DEEP_REACH_RETURN_CLAIM
+release_set_id: RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE
 article_id: factions.deep_reach_return_claim
+unlock_id: unlock.first_deep_reach_return_claim
+poi_tags: poi.deep_reach_contract;poi.relay_instruction
+biome_tags: biome.drowned_colony;biome.deep_relay
 locale: ja_JP
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Deep Reach帰還請求

@@ -142,8 +142,10 @@ namespace Hecton8.Gameplay.Loot
             if (_bootstrapRuntime != null)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - scene-owned loot magnet scheduler - owner: LootMagnetSystem
             _bootstrapRuntime = runtimeRoot.AddComponent<LootMagnetSystem>();
+#endif
         }
 
         private static void EnsureSceneLoadedHook()

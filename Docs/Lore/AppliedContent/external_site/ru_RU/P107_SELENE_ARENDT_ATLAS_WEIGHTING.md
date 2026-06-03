@@ -1,10 +1,17 @@
 ---
 packet_id: P107_SELENE_ARENDT_ATLAS_WEIGHTING
+release_set_id: RS022_DEEP_REACH_SIGNOFF_CHAIN
 article_id: deep_reach.selene_arendt_atlas_weighting
+unlock_id: unlock.first_selene_arendt_atlas_weighting
+poi_tags: poi.atlas_weighting_memo;poi.continuity_lab_panel
+biome_tags: biome.cable_reef;biome.factory_temple
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Selene Arendt: вес Atlas

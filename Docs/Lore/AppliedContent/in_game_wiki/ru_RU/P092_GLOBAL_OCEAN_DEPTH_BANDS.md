@@ -1,10 +1,17 @@
 ---
 packet_id: P092_GLOBAL_OCEAN_DEPTH_BANDS
+release_set_id: RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS
 article_id: hecton8.global_ocean_depth_bands
+unlock_id: unlock.first_global_ocean_depth_bands
+poi_tags: poi.depth_band_chart;poi.suit_rating_panel
+biome_tags: biome.photic_shelf;biome.cable_reef
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Глубинные зоны глобального океана

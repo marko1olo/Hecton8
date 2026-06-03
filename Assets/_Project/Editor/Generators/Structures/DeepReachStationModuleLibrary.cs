@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Hecton8.Building;
+using Hecton8.Construction;
+using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
@@ -462,10 +464,30 @@ namespace Hecton8.Editor.Structures
             out uint ledgerMask)
         {
             var result = new ushort[DeepReachStationConstants.DirectionCount];
-            ModuleSocket[] sockets = prefab.GetComponentsInChildren<ModuleSocket>(true);
             socketCount = 0;
             ledgerMask = 0u;
 
+            if (TryResolveModuleTemplate(prefab, out BaseModuleTemplate template))
+            {
+                BaseModuleTemplate.SocketDefinition[] definitions = template.SocketDefinitions;
+                if (definitions != null && definitions.Length > 0)
+                {
+                    for (int i = 0; i < definitions.Length; i++)
+                    {
+                        BaseModuleTemplate.SocketDefinition definition = definitions[i];
+                        int direction = ConvertDirection(definition.Direction);
+                        ushort connector = ConnectorMaskFromType(definition.CompatibleType, connectorMasks);
+                        result[direction] |= connector;
+                        ledgerMask |= connector;
+                        socketContracts.Add(BuildSocketDTO(prefab, definition, moduleId, direction, connector, socketCount));
+                        socketCount++;
+                    }
+
+                    return result;
+                }
+            }
+
+            ModuleSocket[] sockets = prefab.GetComponentsInChildren<ModuleSocket>(true);
             for (int i = 0; i < sockets.Length; i++)
             {
                 ModuleSocket socket = sockets[i];
@@ -482,6 +504,29 @@ namespace Hecton8.Editor.Structures
             }
 
             return result;
+        }
+
+        private static bool TryResolveModuleTemplate(GameObject prefab, out BaseModuleTemplate template)
+        {
+            template = null;
+            if (prefab == null)
+                return false;
+
+            if (prefab.TryGetComponent(out ModuleMarker marker) &&
+                marker.Data != null &&
+                marker.Data.ModuleTemplate != null)
+            {
+                template = marker.Data.ModuleTemplate;
+                return true;
+            }
+
+            if (prefab.TryGetComponent(out BaseModule baseModule) && baseModule.ModuleTemplate != null)
+            {
+                template = baseModule.ModuleTemplate;
+                return true;
+            }
+
+            return false;
         }
 
         private static StationSocketDTO BuildSocketDTO(
@@ -503,6 +548,33 @@ namespace Hecton8.Editor.Structures
             dto.LocalRotation = math.normalize(rotation);
             dto.ConnectorMask = connector;
             dto.StableHash = DeepReachStationMath.Hash(HashString(prefab.name) ^ HashString(socket.name) ^ (uint)(ordinal * 16777619));
+            dto.ModuleId = (ushort)moduleId;
+            dto.Direction = (byte)direction;
+            dto.Flags = 1;
+            return dto;
+        }
+
+        private static StationSocketDTO BuildSocketDTO(
+            GameObject prefab,
+            BaseModuleTemplate.SocketDefinition definition,
+            int moduleId,
+            int direction,
+            ushort connector,
+            int ordinal)
+        {
+            Vector3 localPositionVector = definition.LocalPosition;
+            float3 position = new float3(localPositionVector.x, localPositionVector.y, localPositionVector.z);
+            quaternion rotation = ResolveSocketRotation(definition.Direction);
+            if (!DeepReachStationMath.IsFinite(position) || !DeepReachStationMath.IsFinite(rotation) || math.lengthsq(rotation.value) <= 0.000001f)
+                throw new InvalidOperationException($"Station template socket is invalid on {prefab.name}/{definition.Direction}.");
+
+            StationSocketDTO dto = default;
+            dto.LocalPosition = position;
+            dto.LocalRotation = math.normalize(rotation);
+            dto.ConnectorMask = connector;
+            uint directionHash = unchecked((uint)(direction + 1) * 2166136261u);
+            uint ordinalHash = unchecked((uint)ordinal * 16777619u);
+            dto.StableHash = DeepReachStationMath.Hash(HashString(prefab.name) ^ HashString(definition.CompatibleType) ^ directionHash ^ ordinalHash);
             dto.ModuleId = (ushort)moduleId;
             dto.Direction = (byte)direction;
             dto.Flags = 1;
@@ -533,6 +605,38 @@ namespace Hecton8.Editor.Structures
             if (normalized.y >= normalized.x && normalized.y >= normalized.z)
                 return relative.y >= 0f ? DeepReachStationDirections.Top : DeepReachStationDirections.Bottom;
             return relative.z >= 0f ? DeepReachStationDirections.North : DeepReachStationDirections.South;
+        }
+
+        private static quaternion ResolveSocketRotation(ModuleSocketDirection direction)
+        {
+            Vector3 forward;
+            Vector3 up = Vector3.up;
+            switch (direction)
+            {
+                case ModuleSocketDirection.South:
+                    forward = Vector3.back;
+                    break;
+                case ModuleSocketDirection.East:
+                    forward = Vector3.right;
+                    break;
+                case ModuleSocketDirection.West:
+                    forward = Vector3.left;
+                    break;
+                case ModuleSocketDirection.Top:
+                    forward = Vector3.up;
+                    up = Vector3.forward;
+                    break;
+                case ModuleSocketDirection.Bottom:
+                    forward = Vector3.down;
+                    up = Vector3.forward;
+                    break;
+                default:
+                    forward = Vector3.forward;
+                    break;
+            }
+
+            Quaternion rotation = Quaternion.LookRotation(forward, up);
+            return new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
         }
 
         private static Dictionary<Transform, MeshRenderer> BuildRendererMap(GameObject prefab)

@@ -52,7 +52,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             ok &= ValidateSize<LootSpawnRequestDTO>(LootSpawnRequestStrideBytes);
 
             if (ok && logSuccess)
-                Debug.Log("[SHINOBU_121] Procedural wreckage DTO layout validated.");
+                Debug.Log("[WRECKAGE_1717] Procedural wreckage DTO layout validated.");
 
             return ok;
         }
@@ -63,7 +63,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             if (observed == expected)
                 return true;
 
-            Debug.LogError("[SHINOBU_121] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+            Debug.LogError("[WRECKAGE_1717] Layout size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
             return false;
         }
 
@@ -74,7 +74,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             if (observed == expected)
                 return true;
 
-            Debug.LogError("[SHINOBU_121] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+            Debug.LogError("[WRECKAGE_1717] Layout offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
             return false;
         }
     }

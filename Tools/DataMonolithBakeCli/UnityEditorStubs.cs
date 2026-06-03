@@ -129,6 +129,8 @@ namespace Hecton8.Data
 {
     public static class H8StaticDataArena
     {
+        public static bool IsLoaded => false;
+
         public static bool EditorHotReloadFromFile(string path, out H8DataBlobLoadStatus status)
         {
             status = H8DataBlobLoadStatus.None;
@@ -180,6 +182,7 @@ namespace UnityEditor
     {
         public static bool isCompiling;
         public static bool isPlaying;
+        public static bool isPlayingOrWillChangePlaymode;
 #pragma warning disable CS0067
         public static event Action update;
         public static event Action quitting;

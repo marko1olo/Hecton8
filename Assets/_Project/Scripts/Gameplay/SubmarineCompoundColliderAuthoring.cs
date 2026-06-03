@@ -12,9 +12,10 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Compound Collider Authoring")]
-    public sealed class SubmarineCompoundColliderAuthoring : MonoBehaviour, ISlowTickable, IPhysicsColliderLodHysteresisSink, IGlobalRegistryHotSwapListener
+    public sealed class SubmarineCompoundColliderAuthoring : MonoBehaviour, ISlowTickable, IPhysicsColliderLodTransitionSink, IPhysicsCullingColliderCache, IGlobalRegistryHotSwapListener
     {
         private const int ColliderLodOverlapCapacity = 32;
+        private const int PhysicsCullingColliderCapacity = 4;
 
         [Serializable]
         public struct BoxShape
@@ -88,7 +89,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Seconds with zero nearby threats required before swapping from compound colliders to the simplified sphere.")]
         [SerializeField, Min(0f)] private float colliderLodSimplifyHysteresisSeconds = 5f;
 
-        [Tooltip("Simplified collision sphere used when no nearby threats are detected. Created cold if omitted.")]
+        [Tooltip("Simplified collision sphere used when no nearby threats are detected. Editor/Development may repair it; shipping requires an authored collider.")]
         [SerializeField] private SphereCollider simplifiedCollider;
 
         [Tooltip("Local center for the simplified collision sphere when the component has to create it.")]
@@ -97,11 +98,18 @@ namespace Hecton8.Gameplay
         [Tooltip("Radius for the simplified collision sphere when the component has to create it.")]
         [SerializeField, Min(0.1f)] private float simplifiedColliderRadius = 4.5f;
 
+        [Tooltip("Editor-authored compound collider cache for runtime collider LOD. Rebuilt by OnValidate.")]
+        [SerializeField] private Collider[] generatedCompoundColliders = Array.Empty<Collider>();
+
+        [Tooltip("Editor-authored collider refs consumed by GlobalPhysicsStateManager registration gates.")]
+        [SerializeField] private Collider[] physicsCullingColliders = Array.Empty<Collider>();
+
         private Transform _cachedTransform;
         private GameTickManager _tickManager;
         private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private bool _usingSimplifiedCollider;
+        private bool _colliderLodStateApplied;
         private bool _ownsSimplifiedCollider;
         private bool _distanceColliderLodGateOpen;
         private float _colliderLodNoThreatSeconds;
@@ -137,6 +145,7 @@ namespace Hecton8.Gameplay
             CacheTickManagerCold();
             EnsureSimplifiedCollider();
             RebuildRuntimeColliderCache();
+            ApplyColliderLodState(false);
             TryRegisterHotSwapListener();
             _distanceColliderLodGateOpen = false;
             TryRegisterSlowTickable();
@@ -242,15 +251,29 @@ namespace Hecton8.Gameplay
 
         void IPhysicsColliderLodHysteresisSink.SetColliderLodDistanceGate(bool allowSimplifiedColliderLod)
         {
+            ((IPhysicsColliderLodTransitionSink)this).SetColliderLodDistanceGateAndCountTransitions(allowSimplifiedColliderLod);
+        }
+
+        int IPhysicsColliderLodTransitionSink.SetColliderLodDistanceGateAndCountTransitions(bool allowSimplifiedColliderLod)
+        {
             if (_distanceColliderLodGateOpen == allowSimplifiedColliderLod)
-                return;
+                return 0;
 
             _distanceColliderLodGateOpen = allowSimplifiedColliderLod;
             if (!allowSimplifiedColliderLod)
             {
                 _colliderLodNoThreatSeconds = 0f;
-                ApplyColliderLodState(false);
+                return ApplyColliderLodState(false);
             }
+
+            return 0;
+        }
+
+        bool IPhysicsCullingColliderCache.TryGetPhysicsCullingColliders(out Collider[] colliders, out int count)
+        {
+            colliders = physicsCullingColliders;
+            count = colliders != null ? colliders.Length : 0;
+            return count > 0;
         }
 
         private void TryRegisterSlowTickable()
@@ -297,6 +320,7 @@ namespace Hecton8.Gameplay
             if (simplifiedCollider != null)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             // COLD ALLOC: SphereCollider[1] - simplified submarine physics LOD collider - owner: SubmarineCompoundColliderAuthoring
             simplifiedCollider = gameObject.AddComponent<SphereCollider>();
             _ownsSimplifiedCollider = true;
@@ -304,45 +328,65 @@ namespace Hecton8.Gameplay
             simplifiedCollider.radius = Mathf.Max(0.1f, simplifiedColliderRadius);
             simplifiedCollider.isTrigger = false;
             simplifiedCollider.enabled = false;
+            _colliderLodStateApplied = false;
+#else
+            enableRuntimeColliderLod = false;
+            _ownsSimplifiedCollider = false;
+            _colliderLodStateApplied = false;
+#endif
         }
 
         private void RebuildRuntimeColliderCache()
         {
             _compoundColliderCache.Clear();
-            Transform generatedRoot = _cachedTransform != null ? _cachedTransform.Find(GeneratedRootName) : null;
-            if (generatedRoot == null)
+            _colliderLodStateApplied = false;
+            Collider[] colliders = generatedCompoundColliders;
+            int count = colliders != null ? colliders.Length : 0;
+            if (count <= 0)
                 return;
 
-            generatedRoot.GetComponentsInChildren(true, _compoundColliderCache);
-            for (int i = _compoundColliderCache.Count - 1; i >= 0; i--)
+            for (int i = 0; i < count && _compoundColliderCache.Count < ColliderLodOverlapCapacity; i++)
             {
-                Collider cachedCollider = _compoundColliderCache[i];
-                if (cachedCollider == null || cachedCollider == simplifiedCollider)
-                    _compoundColliderCache.RemoveAt(i);
+                Collider collider = colliders[i];
+                if (collider != null && collider != simplifiedCollider && !(collider is MeshCollider))
+                    _compoundColliderCache.Add(collider);
             }
         }
 
-        private void ApplyColliderLodState(bool useSimplifiedCollider)
+        private int ApplyColliderLodState(bool useSimplifiedCollider)
         {
-            if (_usingSimplifiedCollider == useSimplifiedCollider && simplifiedCollider != null)
-                return;
+            if (_colliderLodStateApplied && _usingSimplifiedCollider == useSimplifiedCollider && simplifiedCollider != null)
+                return 0;
 
+            _colliderLodStateApplied = true;
             _usingSimplifiedCollider = useSimplifiedCollider;
             if (!useSimplifiedCollider)
                 _colliderLodNoThreatSeconds = 0f;
+
+            int transitionCount = 0;
             if (simplifiedCollider != null)
             {
                 simplifiedCollider.center = simplifiedColliderCenter;
                 simplifiedCollider.radius = Mathf.Max(0.1f, simplifiedColliderRadius);
-                simplifiedCollider.enabled = useSimplifiedCollider;
+                if (simplifiedCollider.enabled != useSimplifiedCollider)
+                {
+                    simplifiedCollider.enabled = useSimplifiedCollider;
+                    transitionCount++;
+                }
             }
 
             for (int i = 0; i < _compoundColliderCache.Count; i++)
             {
                 Collider cachedCollider = _compoundColliderCache[i];
-                if (cachedCollider != null)
+                bool compoundColliderEnabled = !useSimplifiedCollider;
+                if (cachedCollider != null && cachedCollider.enabled != compoundColliderEnabled)
+                {
                     cachedCollider.enabled = !useSimplifiedCollider;
+                    transitionCount++;
+                }
             }
+
+            return transitionCount;
         }
 
         private float ResolveSlowTickIntervalSeconds()
@@ -369,6 +413,69 @@ namespace Hecton8.Gameplay
                 simplifiedCollider.center = simplifiedColliderCenter;
                 simplifiedCollider.radius = simplifiedColliderRadius;
             }
+
+            RebuildSerializedColliderCachesEditor();
+        }
+
+        private void RebuildSerializedColliderCachesEditor()
+        {
+            _compoundColliderCache.Clear();
+            Transform rootTransform = transform;
+            Transform generatedRoot = rootTransform != null ? rootTransform.Find(GeneratedRootName) : null;
+            if (generatedRoot == null)
+            {
+                generatedCompoundColliders = Array.Empty<Collider>();
+                physicsCullingColliders = Array.Empty<Collider>();
+                return;
+            }
+
+            generatedRoot.GetComponentsInChildren(true, _compoundColliderCache);
+            int writeCount = 0;
+            for (int i = 0; i < _compoundColliderCache.Count; i++)
+            {
+                Collider collider = _compoundColliderCache[i];
+                if (collider != null && collider != simplifiedCollider && !(collider is MeshCollider))
+                    _compoundColliderCache[writeCount++] = collider;
+            }
+
+            if (writeCount == 0)
+            {
+                generatedCompoundColliders = Array.Empty<Collider>();
+                physicsCullingColliders = Array.Empty<Collider>();
+                return;
+            }
+
+            generatedCompoundColliders = CopyColliderCacheIfChanged(generatedCompoundColliders, _compoundColliderCache, writeCount);
+
+            int cullingCount = Math.Min(writeCount, PhysicsCullingColliderCapacity);
+            physicsCullingColliders = CopyColliderCacheIfChanged(physicsCullingColliders, _compoundColliderCache, cullingCount);
+        }
+
+        private static Collider[] CopyColliderCacheIfChanged(Collider[] existing, List<Collider> source, int count)
+        {
+            if (count <= 0)
+                return Array.Empty<Collider>();
+
+            if (existing != null && existing.Length == count)
+            {
+                bool unchanged = true;
+                for (int i = 0; i < count; i++)
+                {
+                    if (existing[i] != source[i])
+                    {
+                        unchanged = false;
+                        break;
+                    }
+                }
+
+                if (unchanged)
+                    return existing;
+            }
+
+            Collider[] next = new Collider[count];
+            for (int i = 0; i < count; i++)
+                next[i] = source[i];
+            return next;
         }
 #endif
     }

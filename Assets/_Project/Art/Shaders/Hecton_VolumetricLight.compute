@@ -15,6 +15,7 @@
 TEXTURE2D_X(_HectonVolumetricSourceColor);
 TEXTURE2D_X(_HectonVolumetricSourceDepth);
 TEXTURE2D_X(_HectonVolumetricHalfInput);
+Texture3D<float4> _HectonBakedFogDensityFlowTexture;
 RW_TEXTURE2D(float4, _HectonVolumetricHalfResult);
 RW_TEXTURE2D(float4, _HectonVolumetricCompositeResult);
 
@@ -33,6 +34,8 @@ CBUFFER_START(HectonVolumetricLightParams)
     float4 _HectonVolumetricMarchParams;
     float4 _HectonVolumetricShadowParams;
     float4 _HectonVolumetricCompositeParams;
+    float4 _HectonBakedFogDensityFlowCenter;
+    float4 _HectonBakedFogDensityFlowParams;
     float _FogScatteringCoeff;
     float _HectonFlashlightActive;
     float _HectonFlashlightVolumetricOpacity;
@@ -47,6 +50,21 @@ float4 _MeteorFogShadowParams;
 float SafeRcp(float value)
 {
     return abs(value) > 1e-5 ? rcp(value) : 0.0;
+}
+
+bool SafeFinite1(float value)
+{
+    return value == value && abs(value) < 3.402823e37;
+}
+
+bool SafeFinite2(float2 value)
+{
+    return all(value == value) && all(abs(value) < float2(3.402823e37, 3.402823e37));
+}
+
+bool SafeFinite3(float3 value)
+{
+    return all(value == value) && all(abs(value) < float3(3.402823e37, 3.402823e37, 3.402823e37));
 }
 
 float FastNegativeExp(float x)
@@ -111,54 +129,6 @@ void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, 
     }
 }
 
-float Hash31(float3 value)
-{
-    float3 hash = frac(value * float3(0.1031, 0.1030, 0.0973));
-    hash += dot(hash, hash.yzx + 33.33);
-    return frac((hash.x + hash.y) * hash.z);
-}
-
-float ValueNoise3(float3 samplePosition)
-{
-    float3 cell = floor(samplePosition);
-    float3 fracPart = frac(samplePosition);
-    float3 smoothFrac = fracPart * fracPart * (3.0 - 2.0 * fracPart);
-
-    float n000 = Hash31(cell + float3(0.0, 0.0, 0.0));
-    float n100 = Hash31(cell + float3(1.0, 0.0, 0.0));
-    float n010 = Hash31(cell + float3(0.0, 1.0, 0.0));
-    float n110 = Hash31(cell + float3(1.0, 1.0, 0.0));
-    float n001 = Hash31(cell + float3(0.0, 0.0, 1.0));
-    float n101 = Hash31(cell + float3(1.0, 0.0, 1.0));
-    float n011 = Hash31(cell + float3(0.0, 1.0, 1.0));
-    float n111 = Hash31(cell + float3(1.0, 1.0, 1.0));
-
-    float nx00 = lerp(n000, n100, smoothFrac.x);
-    float nx10 = lerp(n010, n110, smoothFrac.x);
-    float nx01 = lerp(n001, n101, smoothFrac.x);
-    float nx11 = lerp(n011, n111, smoothFrac.x);
-    float nxy0 = lerp(nx00, nx10, smoothFrac.y);
-    float nxy1 = lerp(nx01, nx11, smoothFrac.y);
-    return lerp(nxy0, nxy1, smoothFrac.z);
-}
-
-float Fbm3(float3 samplePosition)
-{
-    float amplitude = 0.5;
-    float frequency = 1.0;
-    float sum = 0.0;
-
-    [unroll]
-    for (int octave = 0; octave < 3; octave++)
-    {
-        sum += ValueNoise3(samplePosition * frequency) * amplitude;
-        frequency *= 2.13;
-        amplitude *= 0.48;
-    }
-
-    return sum;
-}
-
 float ResolveInterleavedGradientNoise(float2 screenUv)
 {
     float2 pixel = floor(screenUv * _HectonVolumetricFullSize.xy);
@@ -175,17 +145,38 @@ float PhaseHG(float cosTheta, float anisotropy)
     return (1.0 - gSq) * SafeRcp(4.0 * PI) * SafeRcp(denominator) * rsqrt(denominator);
 }
 
+float4 SampleBakedFogDensityFlow(float3 positionWS)
+{
+    float textureResolution = SafeFinite1(_HectonBakedFogDensityFlowParams.x) ? _HectonBakedFogDensityFlowParams.x : 0.0;
+    float worldSize = SafeFinite1(_HectonBakedFogDensityFlowParams.y) ? _HectonBakedFogDensityFlowParams.y : 0.0;
+    if (_HectonBakedFogDensityFlowParams.z <= 0.5 || textureResolution <= 1.0 || worldSize <= 0.001 || !SafeFinite3(positionWS))
+        return float4(1.0, 0.5, 0.5, 0.0);
+
+    float invWorldSize = rcp(max(worldSize, 0.001));
+    float3 volumeCenter = SafeFinite3(_HectonBakedFogDensityFlowCenter.xyz) ? _HectonBakedFogDensityFlowCenter.xyz : float3(0.0, 0.0, 0.0);
+    float3 volumeUv = (positionWS - volumeCenter) * invWorldSize + 0.5;
+    float inBounds = step(0.0, min(min(volumeUv.x, volumeUv.y), volumeUv.z)) * step(max(max(volumeUv.x, volumeUv.y), volumeUv.z), 1.0);
+    float4 packed = SAMPLE_TEXTURE3D_LOD(_HectonBakedFogDensityFlowTexture, sampler_LinearClamp, saturate(volumeUv), 0);
+    float density = SafeFinite1(packed.r) ? saturate(packed.r) : 1.0;
+    float2 flow = SafeFinite2(packed.gb) ? saturate(packed.gb) : float2(0.5, 0.5);
+    return float4(lerp(1.0, density, inBounds), lerp(float2(0.5, 0.5), flow, inBounds), inBounds);
+}
+
 float SampleFogDensity(float3 samplePositionWS, float normalizedTravel)
 {
     float density = max(_HectonVolumetricScatteringParams.x, 0.0);
-    float timePhase = _Time.y * 0.12;
-    float3 noisePosition = samplePositionWS * 0.045;
-    noisePosition += float3(timePhase, -timePhase * 0.73, timePhase * 0.51);
-    float coarse = Fbm3(noisePosition);
-    float fine = Fbm3(noisePosition * 1.87 + 13.0);
     float stratification = lerp(1.0, 0.32, saturate(normalizedTravel));
-    float noiseValue = saturate(coarse * 0.68 + fine * 0.32);
-    return density * noiseValue * stratification;
+    float4 densityFlow = SampleBakedFogDensityFlow(samplePositionWS);
+    float densitySample = densityFlow.x;
+    float flowWeight = saturate(_HectonBakedFogDensityFlowParams.w);
+    if (flowWeight > 0.001 && densityFlow.w > 0.5)
+    {
+        float2 decodedFlow = densityFlow.yz * 2.0 - 1.0;
+        float3 flowPositionWS = samplePositionWS + float3(decodedFlow.x, 0.0, decodedFlow.y) * (_Time.y * lerp(0.015, 0.12, flowWeight));
+        densitySample = lerp(densitySample, SampleBakedFogDensityFlow(flowPositionWS).x, flowWeight);
+    }
+
+    return density * saturate(densitySample) * stratification;
 }
 
 float ResolveMainLightShadow(float3 samplePositionWS)

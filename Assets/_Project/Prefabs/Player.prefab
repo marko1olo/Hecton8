@@ -90,85 +90,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &2069897344838356199
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3756683997080362042}
-  m_Layer: 18
-  m_Name: Swim_LeftGuide
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3756683997080362042
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2069897344838356199}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.11, y: -0.02, z: 0.08}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 122226659804208616}
-  - {fileID: 7056199296721419562}
-  m_Father: {fileID: 5991790254714940880}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2193605564943894971
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 198848781283951679}
-  - component: {fileID: 2887721374667799330}
-  - component: {fileID: 5380700518078914826}
-  - component: {fileID: 6846099205482869597}
-  - component: {fileID: 7348103083027130801}
-  - component: {fileID: 3941918104802718226}
-  m_Layer: 0
-  m_Name: Main Camera
-  m_TagString: MainCamera
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &198848781283951679
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.8, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 8195025464374568172}
-  - {fileID: 4682786218128819181}
-  - {fileID: 8691835576943467737}
-  - {fileID: 2150405457493290273}
-  - {fileID: 2150405457493290295}
-  - {fileID: 3818963519139679328}
-  - {fileID: 5991790254714940880}
-  - {fileID: 8037551639533757188}
-  - {fileID: 8549916880801952558}
-  - {fileID: 1428000000000000002}
-  m_Father: {fileID: 2516292804375615598}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1428000000000000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -202,110 +123,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 198848781283951679}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!20 &2887721374667799330
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.027604025, g: 0.09790464, b: 0.116257206, a: 1}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_Iso: 200
-  m_ShutterSpeed: 0.005
-  m_Aperture: 16
-  m_FocusDistance: 10
-  m_FocalLength: 20.78461
-  m_BladeCount: 5
-  m_Curvature: {x: 2, y: 11}
-  m_BarrelClipping: 0.25
-  m_Anamorphism: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  near clip plane: 0.3
-  far clip plane: 20000
-  field of view: 60.000004
-  orthographic: 0
-  orthographic size: 5
-  m_Depth: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 32959
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 0
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 0
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!81 &5380700518078914826
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 1
---- !u!114 &6846099205482869597
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: 
-  m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 1
-  m_RequiresOpaqueTextureOption: 1
-  m_CameraType: 0
-  m_Cameras:
-  - {fileID: 1552401664862053575}
-  m_RendererIndex: -1
-  m_VolumeLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_VolumeTrigger: {fileID: 0}
-  m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
-  m_Antialiasing: 0
-  m_AntialiasingQuality: 2
-  m_StopNaN: 0
-  m_Dithering: 0
-  m_ClearDepth: 1
-  m_AllowXRRendering: 0
-  m_AllowHDROutput: 0
-  m_UseScreenCoordOverride: 0
-  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 1
-  m_RequiresColorTexture: 1
-  m_TaaSettings:
-    m_Quality: 3
-    m_FrameInfluence: 0.1
-    m_JitterScale: 1
-    m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 0
-  m_Version: 2
 --- !u!82 &3265406370731010970
 AudioSource:
   m_ObjectHideFlags: 0
@@ -403,22 +220,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &7348103083027130801
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: acfd32c0ce821314fbd470b2ff615f5d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  _autoBindToSceneAudioListener: 1
-  _mixIntoExistingAudioGraph: 1
-  _mockQualityBias01: 1
-  _useMockBankWhenFileMissing: 1
 --- !u!114 &7348103083027130802
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,14 +230,214 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 265100ac4b374295a6b78bb7a4753f2e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   _csvRelativePath: Docs/Audio/synth_presets.csv
   _mockTensionBias01: 0
   _mockDepthMeters: 900
   _mockQualityBias01: 1
   _driverClip: {fileID: 8300000, guid: 0d1a03d1d70c9dd448ad1fbab16de520, type: 3}
   _autoCreateRuntimeInstance: 1
+--- !u!1 &2069897344838356199
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3756683997080362042}
+  m_Layer: 18
+  m_Name: Swim_LeftGuide
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3756683997080362042
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2069897344838356199}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.11, y: -0.02, z: 0.08}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 122226659804208616}
+  - {fileID: 7056199296721419562}
+  m_Father: {fileID: 5991790254714940880}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2193605564943894971
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 198848781283951679}
+  - component: {fileID: 2887721374667799330}
+  - component: {fileID: 5380700518078914826}
+  - component: {fileID: 6846099205482869597}
+  - component: {fileID: 7348103083027130801}
+  - component: {fileID: 3941918104802718226}
+  - component: {fileID: 7705209447405768870}
+  m_Layer: 0
+  m_Name: Main Camera
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &198848781283951679
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.8, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8195025464374568172}
+  - {fileID: 4682786218128819181}
+  - {fileID: 8691835576943467737}
+  - {fileID: 2150405457493290273}
+  - {fileID: 2150405457493290295}
+  - {fileID: 3818963519139679328}
+  - {fileID: 5991790254714940880}
+  - {fileID: 8037551639533757188}
+  - {fileID: 8549916880801952558}
+  - {fileID: 1428000000000000002}
+  m_Father: {fileID: 2516292804375615598}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &2887721374667799330
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.027604025, g: 0.09790464, b: 0.116257206, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 20.78461
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 20000
+  field of view: 60.000004
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 32959
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 0
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 0
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!81 &5380700518078914826
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+--- !u!114 &6846099205482869597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 1
+  m_RequiresOpaqueTextureOption: 1
+  m_CameraType: 0
+  m_Cameras:
+  - {fileID: 1552401664862053575}
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 1
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 0
+  m_AllowHDROutput: 0
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 1
+  m_RequiresColorTexture: 1
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
+--- !u!114 &7348103083027130801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acfd32c0ce821314fbd470b2ff615f5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _autoBindToSceneAudioListener: 1
+  _mixIntoExistingAudioGraph: 1
+  _mockQualityBias01: 1
+  _useMockBankWhenFileMissing: 1
 --- !u!114 &3941918104802718226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -471,6 +472,23 @@ MonoBehaviour:
   underwaterStressVignetteSmoothness: 0.72
   dryInteriorImpactMultiplier: 0.82
   shallowWadeImpactMultiplier: 0.48
+--- !u!114 &7705209447405768870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 0}
 --- !u!1 &2340452029704280060
 GameObject:
   m_ObjectHideFlags: 0
@@ -890,6 +908,9 @@ GameObject:
   - component: {fileID: 7467141657224279663}
   - component: {fileID: 136713600000000136}
   - component: {fileID: 6473731280857570575}
+  - component: {fileID: 6525092991912998543}
+  - component: {fileID: 2093098117304842073}
+  - component: {fileID: 6128109529109140998}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -947,7 +968,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.PlayerInteraction
   reachDistance: 3.5
-  raycastInterval: 0.1
+  targetProbeInterval: 0.1
   interactableMask:
     serializedVersion: 2
     m_Bits: 8
@@ -1025,6 +1046,12 @@ MonoBehaviour:
   surfaceHeadReattachDepth: 0.05
   surfaceBreachReleaseVelocity: 3.25
   surfaceBreachLockDuration: 0.24
+  surfaceBreachArcVelocity: 5
+  surfaceBreachFluidDragBypassDuration: 0.8
+  surfaceBreachGravitySpikeDelay: 0.5
+  surfaceBreachGravitySpikeAcceleration: 32
+  surfaceBreachGravitySpikeDuration: 0.8
+  surfaceBreachSplashEnergyScale: 4
   surfaceDiveResistanceDamping: 4.5
   surfaceWaveVelocityInfluence: 0.75
   shoreWalkFootDepth: 1.05
@@ -1125,9 +1152,14 @@ MonoBehaviour:
   abyssalCounterDriveFlowThreshold: 0.85
   abyssalCounterDriveOppositionAngleDegrees: 125
   abyssalCounterDriveEnergyOverstrainMultiplier: 2
+  abyssalCurrentShearMaxSpeedMultiplier: 0.5
+  abyssalCurrentShearDrainExponent: 2
+  abyssalCurrentShearOxygenDrainPerSecond: 3
+  abyssalCurrentShearEnergyDrainPerSecond: 4
   abyssalFlowNoiseBoundaryThreshold: 1.1
   abyssalFlowNoiseBoundaryVelocityChange: 0.9
   abyssalFlowNoiseBoundaryCooldown: 0.18
+  abyssalFlowAdvectionSharpness: 2.6
   abyssalFlowNoiseBoundaryRollImpulse: 2.8
   abyssalTransportTurbulenceTorqueVelocityChange: 0.7
   abyssalTransportTurbulencePitchDegrees: 2.8
@@ -1178,6 +1210,7 @@ MonoBehaviour:
   wipeoutBailoutVisorRecovery: 4.2
   externalEnvironmentalDragHoldTime: 0.12
   externalEnvironmentalDragBlendSpeed: 9
+  brineViscosityDragMultiplier: 4
   parasiteLatchInfluenceHoldTime: 0.14
   parasiteLatchInfluenceBlendSpeed: 8.5
   parasiteCenterOfMassForce: 18
@@ -1244,11 +1277,48 @@ MonoBehaviour:
   impactBubbleMaxCount: 32
   underwaterImpactMinVolume: 0.42
   underwaterImpactMaxVolume: 0.88
+  underwaterSomaticHeadbobFrequency: 0.68
+  underwaterSomaticPitchDegrees: 0.72
+  underwaterSomaticYawDegrees: 0.48
+  underwaterSomaticReferenceSpeed: 3.4
+  underwaterSomaticResponseSharpness: 3.6
+  underwaterSomaticFatigueStaminaThreshold01: 0.2
+  underwaterSomaticFatigueCadenceMultiplier: 1.85
+  underwaterSomaticFatigueSwayMultiplier: 2.25
+  underwaterSomaticFatigueBreathCooldown: 1.1
+  underwaterSomaticFatigueBreathVolumeScale: 0.45
+  wallKickVelocityChange: 7.5
+  wallKickResourceCost01: 0.15
+  wallKickContactFrameGrace: 3
+  wallKickCooldown: 0.28
+  wallKickTangentFriction: 0.78
+  suitScrapeSlideAngleThresholdDegrees: 45
+  suitScrapeMinBlockedSpeed: 0.45
+  suitScrapeImpactBusSpeedScale: 0.38
+  suitScrapeAcousticRadiusMeters: 5
+  suitScrapeCameraSpeedScale: 0.32
   gravityFadeRate: 1.4
   snapFadeRate: 2.5
   mouseSensitivity: 0.06
   pitchMin: -85
   pitchMax: 85
+  vrComfortAllowDesktopPreview: 0
+  vrComfortModeDefaultEnabled: 1
+  vrSnapTurnDefaultEnabled: 1
+  vrSnapTurnDegrees: 30
+  vrSnapTurnThreshold: 0.72
+  vrSnapTurnRearmThreshold: 0.28
+  vrSnapTurnFadeSeconds: 0.1
+  vrSmoothTurnDegreesPerSecond: 90
+  vrSmoothTurnDeadzone: 0.08
+  vrHeadRelativeSwimBiasDefault: 0.55
+  vrHorizonLockDefaultEnabled: 1
+  vrManualRollInputThreshold: 0.65
+  vrCameraLocalMotionSuppression: 1
+  vrComfortVignetteSharpness: 8
+  vrComfortVisualDecaySharpness: 10
+  vrComfortHighSpeedMetersPerSecond: 15
+  vrComfortYawRateReference: 120
   groundCheckRadius: 0.3
   groundCheckDistance: 0.4
   maxGroundAngle: 60
@@ -1264,6 +1334,7 @@ MonoBehaviour:
   stepAssistForwardDistance: 0.28
   stepAssistClearance: 0.04
   stepAssistCooldownTime: 0.06
+  stepAssistVerticalVelocityPulse: 1.15
   jumpHeadClearanceDistance: 0.18
   surfaceBreachDepthWindow: 0.12
   surfaceBreachMinImmersion: 0.45
@@ -1275,6 +1346,8 @@ MonoBehaviour:
   dryInteriorFootProbeForwardOffset: 0.05
   dryInteriorFootProbeHeight: 0.24
   dryInteriorFootProbeDistance: 0.7
+  kinematicRepairTargetProbeRange: 1.65
+  kinematicRepairTargetSurfaceOffset: 0.06
   exosuitWalkForceMultiplier: 1.4
   exosuitWalkSpeedMultiplier: 0.82
   exosuitJumpJetForce: 42
@@ -1299,6 +1372,9 @@ MonoBehaviour:
   exosuitFootstepSonarRevealDuration: 0.75
   exosuitFootstepThreatStrength: 0.9
   exosuitFootstepThreatHoldDuration: 0.65
+  baseFloorMetalFootstepClip: {fileID: 0}
+  baseFloorMetalFootstepVolume: 0.38
+  baseFloorMetalFootstepPitch: 1
   exosuitGrappleRestLength: 1.4
   exosuitGrappleReelForce: 56
   exosuitGrappleSpring: 34
@@ -1306,6 +1382,14 @@ MonoBehaviour:
   exosuitGrappleMaxForce: 88
   exosuitGrappleHoldTime: 0.1
   baseFov: 70
+  cinematicFocusEnabled: 1
+  cinematicFocusPullStrength: 3.5
+  cinematicFocusInputBreakThreshold: 8
+  cinematicFocusYieldRecoverySharpness: 6
+  cinematicFocusFov: 75
+  cinematicFocusFovSharpness: 4
+  cinematicFocusDefaultDuration: 3.5
+  cinematicFocusSubtitleFadeDistance: 40
   maxHeavyCarryBodyYawSpringMultiplier: 0.58
   heavyTowCameraPitchDegrees: 5.5
   heavyTowCameraRollDegrees: 8.5
@@ -1420,6 +1504,10 @@ MonoBehaviour:
   handAnchor: {fileID: 4682786218128819181}
   playerInventory: {fileID: 8889624962428220854}
   playerTransportCoordinator: {fileID: 0}
+  fieldLoadoutAdviceRange: 18
+  fieldLoadoutAdviceMask:
+    serializedVersion: 2
+    m_Bits: 1792
   toolPrefabs:
   - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}
   - {fileID: 3486443233350383320, guid: 5d922653eb929b94e9882b6e241eefa9, type: 3}
@@ -1440,7 +1528,6 @@ MonoBehaviour:
   - {fileID: 4612592341407459497, guid: 5d4c7102c6623d842a18e690fd88ea2e, type: 3}
   warmupAssignedToolPoolsOnEnable: 1
   toolPoolWarmupCount: 1
-  constructionGhostWarmupCount: 1
   swapSpeed: 8
   lowerOffset: {x: 0, y: -0.5, z: 0}
   _debugCurrentSlot: -1
@@ -1460,6 +1547,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Inventory.PlayerInventory
   columns: 8
   rows: 6
+  maxWeightKg: 200
+  maxVolumeLiters: 160
   survival: {fileID: 9217988090672240742}
   itemCatalog: {fileID: 11400000, guid: e3e4f9b6922abcc44b85e1d8a6d8f46c, type: 2}
   radiationTraumaThresholdSv: 0.5
@@ -1509,10 +1598,11 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  controlsRebindUI: {fileID: 0}
   survivalSystem: {fileID: 9217988090672240742}
-  pdaSonarPointCloudShader: {fileID: 4800000, guid: 534bedadf69d41343b2dcf2900bbc44c, type: 3}
+  pdaSonarPointCloudMaterial: {fileID: 2100000, guid: a0d041b321954a20aef5ab60529ec06a, type: 2}
   pdaSonarMapCompute: {fileID: 7200000, guid: a3f2b5e8d9a74c34aa4fba2a5ce18277, type: 3}
-  pdaHologramMapShader: {fileID: 4800000, guid: 008170efd67158d4c99647a8518cdba7, type: 3}
+  pdaHologramMapMaterial: {fileID: 2100000, guid: 990064a0a779411fa7ac1f1535116031, type: 2}
   defaultTab: 0
   fadeSpeed: 5
   enableBatteryDrain: 1
@@ -1560,7 +1650,7 @@ MonoBehaviour:
   lowBatterySound: {fileID: 0}
   overheatSound: {fileID: 0}
   audioVolume: 0.5
-  volumetricBeam: {fileID: 5473218901234567891}
+  legacyVolumetricBeamSource: {fileID: 5473218901234567891}
   enableUnderwaterBeamResponse: 1
   underwaterBeamFullDepth: 8
   underwaterBeamMaxMultiplier: 1.35
@@ -1572,8 +1662,8 @@ MonoBehaviour:
   _debugIsFlickering: 0
   _debugIsOverheated: 0
   _debugCooldownRemaining: 0
-  _debugVolumetricMultiplier: 0
-  _debugVolumetricDepth: 0
+  _debugLightShaftMultiplier: 0
+  _debugLightShaftDepth: 0
 --- !u!114 &5504917601675018705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1741,7 +1831,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.BuilderRuntimeSmokeTester
   playerBuilder: {fileID: 1539808072678103349}
-  constructionManager: {fileID: 0}
+  constructionManagerProvider: {fileID: 0}
   playerInventory: {fileID: 8889624962428220854}
   loadoutProvisioner: {fileID: 5504917601675018705}
   runOnStart: 0
@@ -1825,7 +1915,7 @@ MonoBehaviour:
   toolManager: {fileID: 3954223694506301739}
   playerInventory: {fileID: 8889624962428220854}
   playerBuilder: {fileID: 1539808072678103349}
-  constructionManager: {fileID: 0}
+  constructionManagerProvider: {fileID: 0}
   loadoutProvisioner: {fileID: 5504917601675018705}
   salvageProbeItem: {fileID: 11400000, guid: b7348927f9bf50f49a10a940fad34081, type: 2}
   runOnStart: 0
@@ -1924,7 +2014,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.ToolTrialRangeRuntimeSmokeTester
   toolManager: {fileID: 3954223694506301739}
-  beaconNetwork: {fileID: 1023361912689161536}
+  beaconNetworkProvider: {fileID: 1023361912689161536}
   playerRoot: {fileID: 2516292804375615598}
   runOnStart: 0
   startupDelay: 0.75
@@ -2141,7 +2231,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bd250538668144e4888c05624ddbaf9f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Animation.KineticCharacter.KineticCharacterAnimatorRuntime
   _boneCapacity: 32
   _gpuSkinningMaterial: {fileID: 0}
@@ -2279,6 +2369,87 @@ MonoBehaviour:
   _debugRenderersVisible: 0
   _debugAttachmentsResolved: 1
   _debugLastDrivenFrame: -1
+--- !u!114 &6525092991912998543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ea5a244e6d46b74191231eb834f113e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.FakeRadarBlipController
+  radarRangeMeters: 100
+  radarRadiusPixels: 74
+  blipSizePixels: 7
+  radarCenterInsetPixels: {x: 142, y: 132}
+  radarBlipMesh: {fileID: 4300000, guid: e3c0ca1bd90ba584b9f54e07368cc80e, type: 2}
+  radarBlipMaterial: {fileID: 2100000, guid: 8fc0bd2bb75d4019a5c6c2ae30f897d6, type: 2}
+  blipColor: {r: 1, g: 0.24, b: 0.28, a: 0.92}
+--- !u!114 &2093098117304842073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 051e0be7522aa884e86dca335ef500f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.DeepPsychosisController
+  whisperClips: []
+  depthThreshold: 500
+  oxygenThreshold: 0.3
+  pollutionThreshold: 140
+  cueIntervalMinSeconds: 5.5
+  cueIntervalMaxSeconds: 16
+  cueRadiusMin: 7
+  cueRadiusMax: 18
+  cueVolumeMin: 0.18
+  cueVolumeMax: 0.42
+  helmetWhisperChance: 0.34
+  _debugPsychosisIntensity01: 0
+  _debugDepthMeters: 0
+  _debugOxygenNormalized: 1
+  _debugPollution01: 0
+--- !u!114 &6128109529109140998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcdfbee4081e38344a833fa70b6cf457, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.PlayerStressVFX
+  heartbeatClip: {fileID: 0}
+  heartbeatVolumeMin: 0.08
+  heartbeatVolumeMax: 0.34
+  heartbeatIntervalMaxSeconds: 1.2
+  heartbeatIntervalMinSeconds: 0.36
+  shaderVignetteMaximum: 0.42
+  traumaChromaticPulseDecayPerSecond: 2.6
+  shaderFogCondensationMaximum: 0.35
+  shaderFrostMaximum: 0.5
+  oxygenFogThreshold: 0.24
+  thermalShockDeltaThreshold: 11
+  frostStartTemperatureCelsius: -6
+  frostMaxTemperatureCelsius: -30
+  oxygenCriticalThreshold: 0.3
+  integrityCriticalThreshold: 0.35
+  _debugStress01: 0
+  _debugPulse01: 0
+  _debugOxygenNormalized: 1
+  _debugIntegrityNormalized: 1
+  _debugFatalPressure01: 0
+  _debugFog01: 0
+  _debugFrost01: 0
+  _debugTemperatureShock01: 0
 --- !u!1 &6552089467813511200
 GameObject:
   m_ObjectHideFlags: 0
@@ -2733,6 +2904,7 @@ MonoBehaviour:
   _baseStackCamera: {fileID: 523194245477129767}
   _referenceCamera: {fileID: 2887721374667799330}
   _sharedRenderTexture: {fileID: 8400000, guid: ae454dcdcf2d1d345b19ab0dd944183c, type: 2}
+  _strongestSceneLightSource: {fileID: 0}
   _projectionMode: 0
   _matchScreenResolution: 1
   _renderScale: 0.5
@@ -2771,6 +2943,9 @@ MonoBehaviour:
   _condensationShockHoldDuration: 0.22
   _condensationShockRecoverySpeed: 1.3
   _criticalPressureCondensationBlendSpeed: 2.2
+  _coldCondensationStartTemperature: 4
+  _coldCondensationFullTemperature: -6
+  _coldCondensationMaximum: 0.42
   _screenFrostMaximum: 0.78
   _frostStartTemperature: -6
   _frostFullTemperature: -24
@@ -2784,8 +2959,16 @@ MonoBehaviour:
   _hypoxiaBlendSharpness: 5.6
   _pressureFlickerMaximum: 0.42
   _pressureFlickerBlendSharpness: 4.2
+  _pressureLensCrackStartDepthMeters: 4000
+  _pressureLensCrackFullDepthRangeMeters: 900
+  _pressureLensCrackBlendSharpness: 2.6
   _biosRecoveryHudTint: {r: 0.16, g: 1, b: 0.22, a: 0.18}
   _biosRecoveryHudIntensity: 2.2
+  _terminalBiosFont: {fileID: 0}
+  _enableBiosFontSwap: 1
+  _thermalShockBiosRecoveryTemperature: 80
+  _thermalShockBiosRecoverySpike: 80
+  _thermalShockBiosRecoveryHoldSeconds: 2
   _syncToReferenceCamera: 1
   _syncPoseInEditMode: 1
   _visorLocalOffset: {x: 0, y: 0, z: 0.45}

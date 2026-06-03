@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3842955158494721495}
   - component: {fileID: 6376320141158605439}
+  - component: {fileID: 2537417235187733105}
   m_Layer: 0
   m_Name: GEN_family_coral_massive__porous
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8082805423186771928}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.042143464, y: 0.47346422, z: -0.006380677}
-  m_Size: 2.576898
+  m_LocalReferencePoint: {x: 0.041974306, y: 0.47338548, z: -0.006514311}
+  m_Size: 2.57578
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 2681390434552023796}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &2537417235187733105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8082805423186771928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: bde80f2cf51fd5a419e2b4e075351fbc, type: 2}

@@ -26,6 +26,11 @@ namespace Hecton8.Core
         public int Count => _count;
 
         /// <summary>
+        /// Fixed cold capacity of the dense backing store.
+        /// </summary>
+        public int Capacity => _capacity;
+
+        /// <summary>
         /// Raw contiguous backing array for zero-allocation linear scans.
         /// </summary>
         public T[] RawArray => _items;

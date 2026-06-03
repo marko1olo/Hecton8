@@ -30,13 +30,29 @@ namespace Hecton8.Tools.ToolKinematics
         private const int DumpStateSnapshotting = 1;
         private const int DumpStatePending = 2;
         private const int DumpStateWriting = 3;
+        private static readonly ulong FrameMutationGuardMask =
+            ToolMutationGuardBit(BufferID.ToolKinematicsStates) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsFrameInputs) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsHitResults) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsIkOutputs) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsRecoilStates) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsTuning) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsScreenExports) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsTelemetryRing) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsTriggerSignals) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsCarveRequests) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsHeatSignals) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsSparkRequests) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsBeamVertices) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsBeamVertexCounts) |
+            ToolMutationGuardBit(BufferID.ToolKinematicsPoseOutputs);
 
         [SerializeField] private int toolCapacity = 2;
         [SerializeField] private Transform cameraAnchor;
         [SerializeField] private Transform[] controllerSources;
         [SerializeField] private Transform[] shoulderAnchors;
-        [SerializeField] private bool useMockInput = true;
-        [SerializeField] private bool mockTriggerHeld = true;
+        [SerializeField] private bool useSyntheticInputFallback = true;
+        [SerializeField] private bool syntheticTriggerHeld = true;
         [SerializeField, Range(0f, 1f)] private float systemHealthIndex;
         [SerializeField] private float laserRange = 18f;
         [SerializeField] private float heatRampRate = 0.62f;
@@ -51,6 +67,7 @@ namespace Hecton8.Tools.ToolKinematics
         private readonly ToolKinematicsTelemetryEntry[] _blackBoxDumpEntries = new ToolKinematicsTelemetryEntry[MaxBlackBoxDumpEntries]; // COLD ALLOC: ToolKinematicsTelemetryEntry[2400] - fault snapshot handoff buffer - owner: ToolKinematicsRuntime
 
         private IDataVault _dataVault;
+        private IInputService _inputService;
         private VaultGenerationHandle<ToolStateDTO> _statesHandle;
         private VaultGenerationHandle<ToolKinematicsFrameInputDTO> _frameInputsHandle;
         private VaultGenerationHandle<ToolHitResultDTO> _hitResultsHandle;
@@ -59,8 +76,8 @@ namespace Hecton8.Tools.ToolKinematics
         private VaultGenerationHandle<ToolKinematicsTuningDTO> _tuningHandle;
         private VaultGenerationHandle<ToolScreenExportDTO> _screenExportsHandle;
         private VaultGenerationHandle<ToolKinematicsTelemetryEntry> _telemetryHandle;
-        private VaultGenerationHandle<MockTriggerPullSignal> _mockTriggerSignalsHandle;
-        private VaultGenerationHandle<MockCarveRequestSignal> _carveRequestsHandle;
+        private VaultGenerationHandle<ToolTriggerPullSignal> _triggerSignalsHandle;
+        private VaultGenerationHandle<ToolCarveRequestSignal> _carveRequestsHandle;
         private VaultGenerationHandle<ToolHeatSignal> _heatSignalsHandle;
         private VaultGenerationHandle<VfxSparkRequestSignal> _sparkRequestsHandle;
         private VaultGenerationHandle<ToolBeamVertexDTO> _beamVerticesHandle;
@@ -164,62 +181,73 @@ namespace Hecton8.Tools.ToolKinematics
                 return;
 
             float safeDeltaTime = math.clamp(ToolKinematicsMath.ClampPositiveFinite(fixedDeltaTime, 0.0166667f), 0.001f, 0.05f);
-            if (!TryResolveAllBuffers(false, out ToolKinematicsBufferSet buffers))
+            IDataVault frameGuardVault = _dataVault;
+            if (!TryAcquireFrameMutationGuard(frameGuardVault))
                 return;
 
-            _frameIndex = _frameIndex == uint.MaxValue ? 1u : _frameIndex + 1u;
-            WriteTuning(buffers.Tuning);
-            PrepareFrameInputs(buffers, safeDeltaTime);
-
-            TwoBoneIKJob ikJob = new TwoBoneIKJob
+            try
             {
-                ToolStates = buffers.States,
-                FrameInputs = buffers.FrameInputs,
-                IkOutputs = buffers.IkOutputs
-            };
+                if (!TryResolveAllBuffers(false, out ToolKinematicsBufferSet buffers))
+                    return;
 
-            SdfRaymarchJob raymarchJob = new SdfRaymarchJob
+                _frameIndex = _frameIndex == uint.MaxValue ? 1u : _frameIndex + 1u;
+                WriteTuning(buffers.Tuning);
+                PrepareFrameInputs(buffers, safeDeltaTime);
+
+                TwoBoneIKJob ikJob = new TwoBoneIKJob
+                {
+                    ToolStates = buffers.States,
+                    FrameInputs = buffers.FrameInputs,
+                    IkOutputs = buffers.IkOutputs
+                };
+
+                SdfRaymarchJob raymarchJob = new SdfRaymarchJob
+                {
+                    ToolStates = buffers.States,
+                    RecoilStates = buffers.RecoilStates,
+                    FrameInputs = buffers.FrameInputs,
+                    Tuning = buffers.Tuning,
+                    HitResults = buffers.HitResults,
+                    ScreenExports = buffers.ScreenExports,
+                    PoseOutputs = buffers.PoseOutputs,
+                    HeatSignals = buffers.HeatSignals,
+                    SparkRequests = buffers.SparkRequests,
+                    TelemetryRing = buffers.TelemetryRing,
+                    TelemetryCursor = _telemetryCursor
+                };
+
+                ToolCarveRequestJob carveJob = new ToolCarveRequestJob
+                {
+                    HitResults = buffers.HitResults,
+                    ToolStates = buffers.States,
+                    FrameInputs = buffers.FrameInputs,
+                    ScreenExports = buffers.ScreenExports,
+                    CarveRequests = buffers.CarveRequests
+                };
+
+                ProceduralBeamMeshJob beamJob = new ProceduralBeamMeshJob
+                {
+                    HitResults = buffers.HitResults,
+                    ToolStates = buffers.States,
+                    FrameInputs = buffers.FrameInputs,
+                    ScreenExports = buffers.ScreenExports,
+                    Tuning = buffers.Tuning,
+                    BeamVertices = buffers.BeamVertices,
+                    BeamVertexCounts = buffers.BeamVertexCounts,
+                    VerticesPerTool = BeamVerticesPerTool
+                };
+
+                JobHandle ikHandle = ikJob.Schedule(_activeToolCapacity, 1);
+                JobHandle rayHandle = raymarchJob.Schedule(_activeToolCapacity, 1, ikHandle);
+                JobHandle carveHandle = carveJob.Schedule(_activeToolCapacity, 1, rayHandle);
+                _pendingHandle = beamJob.Schedule(_activeToolCapacity, 1, carveHandle);
+                _frameScheduled = true;
+                H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle);
+            }
+            finally
             {
-                ToolStates = buffers.States,
-                RecoilStates = buffers.RecoilStates,
-                FrameInputs = buffers.FrameInputs,
-                Tuning = buffers.Tuning,
-                HitResults = buffers.HitResults,
-                ScreenExports = buffers.ScreenExports,
-                PoseOutputs = buffers.PoseOutputs,
-                HeatSignals = buffers.HeatSignals,
-                SparkRequests = buffers.SparkRequests,
-                TelemetryRing = buffers.TelemetryRing,
-                TelemetryCursor = _telemetryCursor
-            };
-
-            MockCarveRequestJob carveJob = new MockCarveRequestJob
-            {
-                HitResults = buffers.HitResults,
-                ToolStates = buffers.States,
-                FrameInputs = buffers.FrameInputs,
-                ScreenExports = buffers.ScreenExports,
-                CarveRequests = buffers.CarveRequests
-            };
-
-            ProceduralBeamMeshJob beamJob = new ProceduralBeamMeshJob
-            {
-                HitResults = buffers.HitResults,
-                ToolStates = buffers.States,
-                FrameInputs = buffers.FrameInputs,
-                ScreenExports = buffers.ScreenExports,
-                Tuning = buffers.Tuning,
-                BeamVertices = buffers.BeamVertices,
-                BeamVertexCounts = buffers.BeamVertexCounts,
-                VerticesPerTool = BeamVerticesPerTool
-            };
-
-            JobHandle ikHandle = ikJob.Schedule(_activeToolCapacity, 1);
-            JobHandle rayHandle = raymarchJob.Schedule(_activeToolCapacity, 1, ikHandle);
-            JobHandle carveHandle = carveJob.Schedule(_activeToolCapacity, 1, rayHandle);
-            _pendingHandle = beamJob.Schedule(_activeToolCapacity, 1, carveHandle);
-            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle);
-            _frameScheduled = true;
+                ReleaseFrameMutationGuard(frameGuardVault);
+            }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -304,6 +332,7 @@ namespace Hecton8.Tools.ToolKinematics
         {
             double3 cameraAup = ResolveCameraAup();
             float stress = ResolveSystemStress(buffers);
+            uint frameTriggerFlags = ResolveFrameTriggerFlags();
             for (int i = 0; i < _activeToolCapacity; i++)
             {
                 ToolStateDTO state = buffers.States[i];
@@ -313,12 +342,15 @@ namespace Hecton8.Tools.ToolKinematics
                 float3 controllerLocal = ResolveControllerLocal(i);
                 quaternion controllerRotation = ResolveControllerRotation(i);
                 float3 shoulderLocal = ResolveShoulderLocal(i);
-                uint triggerFlags = mockTriggerHeld || !useMockInput ? ToolKinematicsMath.TriggerPressed : 0u;
+                uint triggerFlags = frameTriggerFlags;
                 triggerFlags |= ResolveToolModeFlag(state.ToolTypeHash);
 
                 state.AUP = cameraAup + ToolKinematicsMath.ToDouble3(controllerLocal);
+                if (!math.isfinite(state.MaxEnergyCapacity) || state.MaxEnergyCapacity <= 0.0001f)
+                    state.MaxEnergyCapacity = 1f;
+                state.EnergyRemaining = math.clamp(math.select(0f, state.EnergyRemaining, math.isfinite(state.EnergyRemaining)), 0f, state.MaxEnergyCapacity);
+                state.LastOutputPower01 = 0f;
                 state._pad0 = 0u;
-                state._pad1 = 0u;
                 buffers.States[i] = state;
                 buffers.FrameInputs[i] = new ToolKinematicsFrameInputDTO
                 {
@@ -334,7 +366,7 @@ namespace Hecton8.Tools.ToolKinematics
                     _pad0 = 0u
                 };
 
-                buffers.MockTriggerSignals[i] = new MockTriggerPullSignal
+                buffers.TriggerSignals[i] = new ToolTriggerPullSignal
                 {
                     ToolSlot = (uint)i,
                     ToolHash = state.ToolTypeHash,
@@ -342,6 +374,23 @@ namespace Hecton8.Tools.ToolKinematics
                     Frame = _frameIndex
                 };
             }
+        }
+
+        private uint ResolveFrameTriggerFlags()
+        {
+            IInputService inputService = _inputService;
+            bool inputInitialized = inputService != null && inputService.IsInitialized;
+            bool liveInputAvailable = inputInitialized && inputService.IsPlayerInputEnabled;
+
+            uint liveFlags = 0u;
+            if (liveInputAvailable)
+            {
+                PlayerInputState inputState = inputService.GetState();
+                liveFlags = math.select(0u, ToolKinematicsMath.TriggerPressed, inputState.HasAction(PlayerInputAction.PrimaryFire));
+            }
+
+            uint syntheticFlags = math.select(0u, ToolKinematicsMath.TriggerPressed, !inputInitialized & useSyntheticInputFallback & syntheticTriggerHeld);
+            return math.select(syntheticFlags, liveFlags, liveInputAvailable);
         }
 
         private float ResolveSystemStress(in ToolKinematicsBufferSet buffers)
@@ -358,10 +407,10 @@ namespace Hecton8.Tools.ToolKinematics
             int count = _activeToolCapacity;
             for (int i = 0; i < count; i++)
             {
-                MockTriggerPullSignal trigger = buffers.MockTriggerSignals[i];
+                ToolTriggerPullSignal trigger = buffers.TriggerSignals[i];
                 if (trigger.Frame != 0u && trigger.Trigger01 > 0f)
                 {
-                    SignalBus<MockTriggerPullSignal>.TryPushTracked(in trigger, ref _signalPushDropCount);
+                    SignalBus<ToolTriggerPullSignal>.TryPushTracked(in trigger, ref _signalPushDropCount);
                     PublishGlobalTriggerBridge(in trigger);
                 }
 
@@ -369,6 +418,7 @@ namespace Hecton8.Tools.ToolKinematics
                 if (heat.Frame != 0u)
                 {
                     SignalBus<ToolHeatSignal>.TryPushTracked(in heat, ref _signalPushDropCount);
+                    PublishToolPowerAndHaptics(in heat);
                     ToolScreenExportDTO screen = (uint)i < (uint)buffers.ScreenExports.Length ? buffers.ScreenExports[i] : default;
                     PublishGlobalToolStateBridge(in heat, in screen);
                     PublishGlobalToolAcousticBridge(in heat, in screen);
@@ -378,20 +428,20 @@ namespace Hecton8.Tools.ToolKinematics
                 if (spark.Frame != 0u && spark.Intensity01 > 0f)
                     SignalBus<VfxSparkRequestSignal>.TryPushTracked(in spark, ref _signalPushDropCount);
 
-                MockCarveRequestSignal carve = buffers.CarveRequests[i];
+                ToolCarveRequestSignal carve = buffers.CarveRequests[i];
                 if (carve.Frame != 0u && carve.MaterialHash != 0u)
-                    SignalBus<MockCarveRequestSignal>.TryPushTracked(in carve, ref _signalPushDropCount);
+                    SignalBus<ToolCarveRequestSignal>.TryPushTracked(in carve, ref _signalPushDropCount);
             }
         }
 
         private static void EnsureSignalLanesReady()
         {
-            SignalBus<MockTriggerPullSignal>.Configure(
-                MockTriggerPullSignal.ExpectedCapacity,
-                maxFrameSignals: MockTriggerPullSignal.MaxFrameSignals,
-                lowTierFrameSignals: MockTriggerPullSignal.LowTierFrameSignals,
-                laneHash: MockTriggerPullSignal.LaneHash);
-            SignalBus<MockTriggerPullSignal>.EnsureInitialized();
+            SignalBus<ToolTriggerPullSignal>.Configure(
+                ToolTriggerPullSignal.ExpectedCapacity,
+                maxFrameSignals: ToolTriggerPullSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToolTriggerPullSignal.LowTierFrameSignals,
+                laneHash: ToolTriggerPullSignal.LaneHash);
+            SignalBus<ToolTriggerPullSignal>.EnsureInitialized();
 
             SignalBus<ToolHeatSignal>.Configure(
                 ToolHeatSignal.ExpectedCapacity,
@@ -407,15 +457,56 @@ namespace Hecton8.Tools.ToolKinematics
                 laneHash: VfxSparkRequestSignal.LaneHash);
             SignalBus<VfxSparkRequestSignal>.EnsureInitialized();
 
-            SignalBus<MockCarveRequestSignal>.Configure(
-                MockCarveRequestSignal.ExpectedCapacity,
-                maxFrameSignals: MockCarveRequestSignal.MaxFrameSignals,
-                lowTierFrameSignals: MockCarveRequestSignal.LowTierFrameSignals,
-                laneHash: MockCarveRequestSignal.LaneHash);
-            SignalBus<MockCarveRequestSignal>.EnsureInitialized();
+            SignalBus<ToolCarveRequestSignal>.Configure(
+                ToolCarveRequestSignal.ExpectedCapacity,
+                maxFrameSignals: ToolCarveRequestSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToolCarveRequestSignal.LowTierFrameSignals,
+                laneHash: ToolCarveRequestSignal.LaneHash);
+            SignalBus<ToolCarveRequestSignal>.EnsureInitialized();
+
+            SignalBus<ToolPowerDepletedSignal>.Configure(
+                ToolPowerDepletedSignal.ExpectedCapacity,
+                maxFrameSignals: ToolPowerDepletedSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToolPowerDepletedSignal.LowTierFrameSignals,
+                laneHash: ToolPowerDepletedSignal.LaneHash);
+            SignalBus<ToolPowerDepletedSignal>.EnsureInitialized();
+
+            SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
         }
 
-        private static void PublishGlobalTriggerBridge(in MockTriggerPullSignal trigger)
+        private static void PublishToolPowerAndHaptics(in ToolHeatSignal heat)
+        {
+            if ((heat.Flags & (uint)ToolKinematicsFlags.PowerDepletedSignalQueued) != 0u)
+            {
+                ToolPowerDepletedSignal depleted = new ToolPowerDepletedSignal
+                {
+                    ToolHash = heat.ToolHash,
+                    Frame = heat.Frame,
+                    Energy01 = heat.Energy01,
+                    Flags = heat.Flags,
+                    _pad0 = 0u,
+                    _pad1 = 0u
+                };
+                SignalBus<ToolPowerDepletedSignal>.TryPushTracked(in depleted, ref _signalPushDropCount);
+            }
+
+            if ((heat.Flags & (uint)ToolKinematicsFlags.Active) == 0u)
+                return;
+
+            bool lastCharge = (heat.Flags & (uint)ToolKinematicsFlags.LastChargeClutch) != 0u;
+            HapticPulseSignal pulse = new HapticPulseSignal
+            {
+                LowFrequencyMotor01 = lastCharge ? 0.24f : 0.08f,
+                HighFrequencyMotor01 = lastCharge ? 0.38f : 0.16f,
+                DurationSeconds = lastCharge ? 0.035f : 0.018f,
+                PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                    HapticPulseSignal.PriorityTool,
+                    heat.ToolHash)
+            };
+            SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref _signalPushDropCount);
+        }
+
+        private static void PublishGlobalTriggerBridge(in ToolTriggerPullSignal trigger)
         {
             ToolTriggerSignal globalTrigger = new ToolTriggerSignal
             {
@@ -615,8 +706,8 @@ namespace Hecton8.Tools.ToolKinematics
                 TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, allowCreate, out buffers.Tuning) &&
                 TryResolveVaultView(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.ScreenExports) &&
                 TryResolveVaultView(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing, telemetryLength, NativeArrayOptions.ClearMemory, allowCreate, out buffers.TelemetryRing) &&
-                TryResolveVaultView(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.MockTriggerSignals) &&
-                TryResolveVaultView(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.CarveRequests) &&
+                TryResolveVaultView(vault, ref _triggerSignalsHandle, BufferID.ToolKinematicsTriggerSignals, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.TriggerSignals) &&
+                TryResolveVaultView(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsCarveRequests, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.CarveRequests) &&
                 TryResolveVaultView(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.HeatSignals) &&
                 TryResolveVaultView(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.SparkRequests) &&
                 TryResolveVaultView(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, beamVertexLength, NativeArrayOptions.ClearMemory, allowCreate, out buffers.BeamVertices) &&
@@ -648,6 +739,8 @@ namespace Hecton8.Tools.ToolKinematics
         {
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+
+            _inputService = GlobalRegistry.Input;
         }
 
         private bool TryBootstrapRuntime()
@@ -659,7 +752,7 @@ namespace Hecton8.Tools.ToolKinematics
             TryApplyEquipmentStatsCsvCold();
 #endif
             WriteTuning(buffers.Tuning);
-            SeedEmergencyMockTools(buffers.States, buffers.RecoilStates);
+            SeedEmergencyToolStates(buffers.States, buffers.RecoilStates);
             EnsureSignalLanesReady();
             EnsureBlackBoxDumpWorkerCold();
             TryRegisterFixed();
@@ -713,6 +806,9 @@ namespace Hecton8.Tools.ToolKinematics
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Input:
+                    _inputService = currentService is IInputService currentInput ? currentInput : GlobalRegistry.Input;
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     QueueDataVaultRebind(currentService is IDataVault currentVault ? currentVault : null);
                     break;
@@ -751,10 +847,11 @@ namespace Hecton8.Tools.ToolKinematics
             where T : struct
         {
             buffer = default;
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
                 return false;
 
             if (IsOwnedVaultHandle(in handle, bufferId) &&
+                !vault.IsCompactionFenceActive &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -772,7 +869,8 @@ namespace Hecton8.Tools.ToolKinematics
             if (!IsOwnedVaultHandle(in acquired, bufferId))
                 return false;
 
-            if (!vault.TryResolveHandle(in acquired, out buffer) ||
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -827,7 +925,7 @@ namespace Hecton8.Tools.ToolKinematics
             Volatile.Write(ref _tuningDirty, 0);
         }
 
-        private static void SeedEmergencyMockTools(NativeArray<ToolStateDTO> states, NativeArray<ToolRecoilStateDTO> recoilStates)
+        private static void SeedEmergencyToolStates(NativeArray<ToolStateDTO> states, NativeArray<ToolRecoilStateDTO> recoilStates)
         {
             if (!states.IsCreated)
                 return;
@@ -840,10 +938,12 @@ namespace Hecton8.Tools.ToolKinematics
                     state.AUP = default;
                     state.Forward = new float3(0f, 0f, 1f);
                     state.HeatLevel = 0f;
-                    state.ToolTypeHash = ResolveMockToolHash(i);
+                    state.ToolTypeHash = ResolveSeedToolHash(i);
                     state.EnergyRemaining = 1f;
+                    state.MaxEnergyCapacity = 1f;
+                    state.StateFlags = 0u;
+                    state.LastOutputPower01 = 0f;
                     state._pad0 = 0u;
-                    state._pad1 = 0u;
                     states[i] = state;
                 }
 
@@ -856,7 +956,7 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private static uint ResolveMockToolHash(int index)
+        private static uint ResolveSeedToolHash(int index)
         {
             switch (index & 3)
             {
@@ -891,7 +991,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private float3 ResolveControllerLocal(int index)
         {
-            if (!useMockInput &&
+            if (!useSyntheticInputFallback &&
                 controllerSources != null &&
                 (uint)index < (uint)controllerSources.Length &&
                 controllerSources[index] != null)
@@ -909,7 +1009,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private quaternion ResolveControllerRotation(int index)
         {
-            if (!useMockInput &&
+            if (!useSyntheticInputFallback &&
                 controllerSources != null &&
                 (uint)index < (uint)controllerSources.Length &&
                 controllerSources[index] != null)
@@ -924,7 +1024,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private float3 ResolveShoulderLocal(int index)
         {
-            if (!useMockInput &&
+            if (!useSyntheticInputFallback &&
                 shoulderAnchors != null &&
                 (uint)index < (uint)shoulderAnchors.Length &&
                 shoulderAnchors[index] != null)
@@ -1209,7 +1309,7 @@ namespace Hecton8.Tools.ToolKinematics
         private static bool ValidateAbiLayout()
         {
             bool valid =
-                UnsafeUtility.SizeOf<ToolStateDTO>() == 56 &&
+                UnsafeUtility.SizeOf<ToolStateDTO>() == 64 &&
                 UnsafeUtility.SizeOf<ToolHitResultDTO>() == 32 &&
                 UnsafeUtility.SizeOf<ToolScreenExportDTO>() == 16 &&
                 UnsafeUtility.SizeOf<ToolKinematicsTuningDTO>() == 48 &&
@@ -1219,7 +1319,9 @@ namespace Hecton8.Tools.ToolKinematics
                 UnsafeUtility.SizeOf<ToolBeamVertexDTO>() == 32 &&
                 UnsafeUtility.SizeOf<ToolPoseOutputDTO>() == 96 &&
                 UnsafeUtility.SizeOf<ToolKinematicsTelemetryEntry>() == 64 &&
-                UnsafeUtility.SizeOf<MockSdfSample>() == 8;
+                UnsafeUtility.SizeOf<ToolPowerDepletedSignal>() == 32 &&
+                UnsafeUtility.SizeOf<HapticPulseSignal>() == 16 &&
+                UnsafeUtility.SizeOf<ToolProceduralSdfSample>() == 8;
 
             if (!valid)
                 Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
@@ -1258,8 +1360,8 @@ namespace Hecton8.Tools.ToolKinematics
             ReleaseVaultHandle(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning);
             ReleaseVaultHandle(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports);
             ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing);
-            ReleaseVaultHandle(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals);
-            ReleaseVaultHandle(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests);
+            ReleaseVaultHandle(vault, ref _triggerSignalsHandle, BufferID.ToolKinematicsTriggerSignals);
+            ReleaseVaultHandle(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsCarveRequests);
             ReleaseVaultHandle(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals);
             ReleaseVaultHandle(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests);
             ReleaseVaultHandle(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices);
@@ -1282,6 +1384,23 @@ namespace Hecton8.Tools.ToolKinematics
             handle = default;
         }
 
+        private bool TryAcquireFrameMutationGuard(IDataVault vault)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(FrameMutationGuardMask))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private static void ReleaseFrameMutationGuard(IDataVault vault)
+        {
+            if (vault != null)
+                vault.ReleaseMutationGuard(FrameMutationGuardMask);
+        }
+
         private void ClearHandles()
         {
             _statesHandle = default;
@@ -1292,7 +1411,7 @@ namespace Hecton8.Tools.ToolKinematics
             _tuningHandle = default;
             _screenExportsHandle = default;
             _telemetryHandle = default;
-            _mockTriggerSignalsHandle = default;
+            _triggerSignalsHandle = default;
             _carveRequestsHandle = default;
             _heatSignalsHandle = default;
             _sparkRequestsHandle = default;
@@ -1302,6 +1421,11 @@ namespace Hecton8.Tools.ToolKinematics
             _dataVault = null;
             _pendingDataVaultRebind = false;
             _pendingDataVault = null;
+        }
+
+        private static ulong ToolMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private ref struct ToolKinematicsBufferSet
@@ -1314,8 +1438,8 @@ namespace Hecton8.Tools.ToolKinematics
             public NativeArray<ToolKinematicsTuningDTO> Tuning;
             public NativeArray<ToolScreenExportDTO> ScreenExports;
             public NativeArray<ToolKinematicsTelemetryEntry> TelemetryRing;
-            public NativeArray<MockTriggerPullSignal> MockTriggerSignals;
-            public NativeArray<MockCarveRequestSignal> CarveRequests;
+            public NativeArray<ToolTriggerPullSignal> TriggerSignals;
+            public NativeArray<ToolCarveRequestSignal> CarveRequests;
             public NativeArray<ToolHeatSignal> HeatSignals;
             public NativeArray<VfxSparkRequestSignal> SparkRequests;
             public NativeArray<ToolBeamVertexDTO> BeamVertices;

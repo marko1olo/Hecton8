@@ -9,13 +9,13 @@ These counts are derived from `_scans/*_runtime_risks.txt`. A single line can ma
 |---|---:|---|
 | Mandate Registry Currency and Routing | 0 | none in configured scan |
 | Project Routes, Taste, Quality, Agent Entry | 0 | none in configured scan |
-| Generated Meshes, Textures, Materials, LOD, Collision | 249 | Native allocation or persistent lifetime: 177; Runtime debug logging: 104; Runtime mesh/material mutation: 13; Unity scene lookup: 10; Hot Unity phase method: 2 |
-| UI, Menus, HUD, Terminals, Localization, Settings | 241 | Runtime debug logging: 121; Runtime mesh/material mutation: 59; Native allocation or persistent lifetime: 49; Unity scene lookup: 31 |
+| Generated Meshes, Textures, Materials, LOD, Collision | 250 | Native allocation or persistent lifetime: 175; Runtime debug logging: 108; Unity scene lookup: 11; Runtime mesh/material mutation: 11; Hot Unity phase method: 2 |
+| UI, Menus, HUD, Terminals, Localization, Settings | 240 | Runtime debug logging: 121; Runtime mesh/material mutation: 58; Native allocation or persistent lifetime: 49; Unity scene lookup: 31 |
 | Rendering, Shaders, Lighting, VFX, Water Presentation | 109 | Native allocation or persistent lifetime: 92; Runtime debug logging: 51; Runtime mesh/material mutation: 1 |
 | Runtime Architecture, Data, Bootstrap, Telemetry, Performance | 275 | Runtime debug logging: 178; Native allocation or persistent lifetime: 98; Unity scene lookup: 10; Job fence / sync wait: 3; Hot Unity phase method: 1 |
-| Physics, Vehicles, Pressure, Water Truth, Survival Physiology | 281 | Native allocation or persistent lifetime: 181; Runtime debug logging: 95; Runtime mesh/material mutation: 39; Unity scene lookup: 8; Hot Unity phase method: 3 |
-| World, Terrain, Voxels, Geology, Ecosystem, Celestial | 254 | Native allocation or persistent lifetime: 170; Runtime debug logging: 102; Unity scene lookup: 14; Runtime mesh/material mutation: 13; Hot Unity phase method: 2 |
-| Gameplay, Tools, Construction, Inventory, Combat, Economy | 193 | Runtime debug logging: 99; Native allocation or persistent lifetime: 82; Unity scene lookup: 22; Coroutine / managed timing: 2; Runtime mesh/material mutation: 1 |
+| Physics, Vehicles, Pressure, Water Truth, Survival Physiology | 280 | Native allocation or persistent lifetime: 179; Runtime debug logging: 99; Runtime mesh/material mutation: 35; Unity scene lookup: 9; Hot Unity phase method: 3 |
+| World, Terrain, Voxels, Geology, Ecosystem, Celestial | 255 | Native allocation or persistent lifetime: 168; Runtime debug logging: 106; Unity scene lookup: 15; Runtime mesh/material mutation: 11; Hot Unity phase method: 2 |
+| Gameplay, Tools, Construction, Inventory, Combat, Economy | 198 | Runtime debug logging: 104; Native allocation or persistent lifetime: 82; Unity scene lookup: 22; Coroutine / managed timing: 2; Runtime mesh/material mutation: 1 |
 | AI, Creatures, Sonar, Drones, Navigation | 70 | Runtime debug logging: 43; Native allocation or persistent lifetime: 23; Unity scene lookup: 9; Runtime mesh/material mutation: 3 |
 | Audio, Narrative, PDA, Cinematics, Public Text | 149 | Runtime debug logging: 75; Native allocation or persistent lifetime: 70; Runtime mesh/material mutation: 23; Unity scene lookup: 7 |
 | Persistence, Streaming, Release, Platform, Modding, Testing | 126 | Native allocation or persistent lifetime: 85; Runtime debug logging: 76 |

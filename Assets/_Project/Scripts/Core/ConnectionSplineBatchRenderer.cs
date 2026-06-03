@@ -17,9 +17,6 @@ namespace Hecton8.Core
     {
         private const int DefaultBatchCapacity = 100;
         private const int MaxRenderedLinksPerBatch = 64;
-        private const string FlexiblePipeShaderName = "Hecton/FlexiblePipe";
-        private const string FallbackShaderName = "Universal Render Pipeline/Lit";
-        private const string BuiltinCylinderMeshName = "Cylinder.fbx";
         private const float FarPipeSpanThresholdMetersSq = 40f * 40f;
         private const float RelayRadiusMeters = 0.028f;
 
@@ -29,7 +26,6 @@ namespace Hecton8.Core
         private static readonly int s_SmoothnessId = Shader.PropertyToID("_Smoothness");
         private static readonly int s_MetallicId = Shader.PropertyToID("_Metallic");
         private static readonly int s_LogisticsPathHighlightId = Shader.PropertyToID("_HectonLogisticsPathHighlight");
-        private static Mesh s_staticCylinderMesh;
         private static IConnectionSplineBatchRendererService s_activeService;
         private static ConnectionSplineBatchRenderer s_activeRuntimeInstance;
         private static bool s_pendingLogisticsPathHighlightActive;
@@ -103,6 +99,7 @@ namespace Hecton8.Core
             internal NativeArray<SplineDescriptor> Descriptors;
             internal NativeArray<FlexiblePipeInstanceGpuData> InstanceData;
             internal GraphicsBuffer InstanceBuffer;
+            internal MaterialPropertyBlock MaterialProperties;
             internal Bounds WorldBounds;
             internal bool Dirty;
             internal bool MaterialColorDirty;
@@ -132,6 +129,12 @@ namespace Hecton8.Core
         private readonly Dictionary<uint, float> _pipeNodeFlow01 = new Dictionary<uint, float>(DefaultBatchCapacity);
         // COLD ALLOC: List<long>[100] - shared dictionary-key scratch for rupture and origin-shift rebases - owner: ConnectionSplineBatchRenderer
         private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
+
+        [Header("Authored Pipe Rendering")]
+        [SerializeField, Tooltip("Required authored cylinder-like pipe segment mesh. Runtime primitive fallback is forbidden.")]
+        private Mesh pipeSegmentMesh;
+        [SerializeField, Tooltip("Required authored flexible pipe material. Per-batch color and instance buffers are supplied through MaterialPropertyBlock.")]
+        private Material pipeBatchMaterial;
 
         public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
 
@@ -511,12 +514,12 @@ namespace Hecton8.Core
             {
                 Kind = kind,
                 Color = color,
-                AppliedColor = color,
+                AppliedColor = default,
                 Radius = radius,
-                Mesh = AcquireStaticCylinderMeshCold(),
-                Material = CreateRuntimeMaterial(color),
+                Mesh = ResolveAuthoredPipeMeshCold(),
+                Material = ResolveAuthoredPipeMaterialCold(),
                 Dirty = false,
-                MaterialColorDirty = false
+                MaterialColorDirty = true
             };
 
             EnsureBatchCapacityCold(batch, MaxRenderedLinksPerBatch);
@@ -551,44 +554,14 @@ namespace Hecton8.Core
             RemoveLink(lineBatch, linkId);
         }
 
-        private static Material CreateRuntimeMaterial(Color color)
+        private Mesh ResolveAuthoredPipeMeshCold()
         {
-            Shader shader = null;
-            RuntimeShaderReferenceCatalog.TryGetFlexiblePipeShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find(FlexiblePipeShaderName);
-            if (shader == null)
-                shader = Shader.Find(FallbackShaderName);
-#endif
-
-            if (shader == null)
-                return null;
-
-            Material material = new Material(shader)
-            {
-                name = "MAT_Runtime_FlexiblePipeBatch",
-                hideFlags = HideFlags.DontSave
-            };
-            ApplyMaterialColor(material, color);
-            if (material.HasProperty(s_SmoothnessId))
-                material.SetFloat(s_SmoothnessId, 0.22f);
-            if (material.HasProperty(s_MetallicId))
-                material.SetFloat(s_MetallicId, 0f);
-
-            return material;
+            return pipeSegmentMesh;
         }
 
-        private static void ApplyMaterialColor(Material material, Color color)
+        private Material ResolveAuthoredPipeMaterialCold()
         {
-            if (material == null)
-                return;
-
-            material.color = color;
-            if (material.HasProperty(s_BaseColorId))
-                material.SetColor(s_BaseColorId, color);
-            if (material.HasProperty(s_ColorId))
-                material.SetColor(s_ColorId, color);
+            return pipeBatchMaterial;
         }
 
         private void UpsertPipeLink(long linkId, SplineDescriptor descriptor, Color color)
@@ -800,14 +773,17 @@ namespace Hecton8.Core
 
         private static void ApplyBatchMaterialState(BatchState batch)
         {
-            if (batch.Material == null)
+            if (batch.Material == null || batch.MaterialProperties == null)
                 return;
 
-            batch.Material.SetBuffer(s_FlexiblePipeInstancesId, batch.InstanceBuffer);
+            batch.MaterialProperties.SetBuffer(s_FlexiblePipeInstancesId, batch.InstanceBuffer);
             if (!batch.MaterialColorDirty && ColorsMatch(batch.AppliedColor, batch.Color))
                 return;
 
-            ApplyMaterialColor(batch.Material, batch.Color);
+            batch.MaterialProperties.SetColor(s_BaseColorId, batch.Color);
+            batch.MaterialProperties.SetColor(s_ColorId, batch.Color);
+            batch.MaterialProperties.SetFloat(s_SmoothnessId, 0.22f);
+            batch.MaterialProperties.SetFloat(s_MetallicId, 0f);
             batch.AppliedColor = batch.Color;
             batch.MaterialColorDirty = false;
         }
@@ -869,36 +845,10 @@ namespace Hecton8.Core
                 worldBounds = batch.WorldBounds,
                 shadowCastingMode = ShadowCastingMode.Off,
                 receiveShadows = false,
-                layer = gameObject.layer
+                layer = gameObject.layer,
+                matProps = batch.MaterialProperties
             };
             UnityEngine.Graphics.RenderMeshPrimitives(renderParams, batch.Mesh, 0, batch.InstanceCount);
-        }
-
-        private static Mesh AcquireStaticCylinderMeshCold()
-        {
-            if (s_staticCylinderMesh != null)
-                return s_staticCylinderMesh;
-
-            s_staticCylinderMesh = Resources.GetBuiltinResource<Mesh>(BuiltinCylinderMeshName);
-            if (s_staticCylinderMesh != null)
-                return s_staticCylinderMesh;
-
-            GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            primitive.SetActive(false);
-            primitive.hideFlags = HideFlags.HideAndDontSave;
-            s_staticCylinderMesh = primitive.TryGetComponent(out MeshFilter meshFilter)
-                ? meshFilter.sharedMesh
-                : null;
-            if (Application.isPlaying)
-                UnityEngine.Object.Destroy(primitive);
-            else
-                UnityEngine.Object.DestroyImmediate(primitive);
-            return s_staticCylinderMesh;
-        }
-
-        private static bool IsSharedStaticMesh(Mesh mesh)
-        {
-            return mesh != null && ReferenceEquals(mesh, s_staticCylinderMesh);
         }
 
         private void RebaseRegistrationDictionary(Dictionary<long, SplineDescriptor> registrations, float3 shiftOffset)
@@ -954,10 +904,19 @@ namespace Hecton8.Core
         private static bool EnsureBatchCapacityCold(BatchState batch, int linkCapacity)
         {
             int safeLinkCapacity = math.max(1, linkCapacity);
+            EnsureBatchMaterialPropertiesCold(batch);
             EnsureArrayCapacityCold(ref batch.Descriptors, safeLinkCapacity);
             EnsureArrayCapacityCold(ref batch.InstanceData, safeLinkCapacity);
             EnsureInstanceBufferCapacityCold(batch, safeLinkCapacity);
             return HasBatchCapacity(batch, safeLinkCapacity);
+        }
+
+        private static void EnsureBatchMaterialPropertiesCold(BatchState batch)
+        {
+            if (batch.MaterialProperties != null)
+                return;
+
+            batch.MaterialProperties = new MaterialPropertyBlock();
         }
 
         private static void EnsureArrayCapacityCold(ref NativeArray<SplineDescriptor> array, int requiredLength)
@@ -1011,12 +970,10 @@ namespace Hecton8.Core
             batch.InstanceCount = 0;
             batch.Dirty = false;
 
-            if (batch.Mesh != null && !IsSharedStaticMesh(batch.Mesh))
-                Destroy(batch.Mesh);
             batch.Mesh = null;
 
-            if (batch.Material != null)
-                Destroy(batch.Material);
+            if (batch.MaterialProperties != null)
+                batch.MaterialProperties.Clear();
             batch.Material = null;
         }
 

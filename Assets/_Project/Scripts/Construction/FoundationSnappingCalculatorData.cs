@@ -23,9 +23,8 @@ namespace Hecton8.Construction
         public const uint NonFinite = 1u << 4;
         public const uint RollbackExcluded = 1u << 5;
         public const uint PresentationOnly = 1u << 6;
-        public const uint MockSdfFallback = 1u << 7;
+        public const uint SnapFailed_NoSubstrate = 1u << 7;
         public const uint RealVoxelSdf = 1u << 8;
-        public const uint ApproximateSdf = 1u << 9;
         public const uint ProfileEditContention = 1u << 10;
     }
 
@@ -68,9 +67,9 @@ namespace Hecton8.Construction
         [FieldOffset(36)] public int SizeZ;
         [FieldOffset(40)] public float SdfRangeMeters;
         [FieldOffset(44)] public float IsoSurface;
-        [FieldOffset(48)] public float MockSlopeX;
-        [FieldOffset(52)] public float MockSlopeZ;
-        [FieldOffset(56)] public float MockBaseY;
+        [FieldOffset(48)] public float Reserved0;
+        [FieldOffset(52)] public float Reserved1;
+        [FieldOffset(56)] public float Reserved2;
         [FieldOffset(60)] public uint Flags;
     }
 
@@ -239,7 +238,6 @@ namespace Hecton8.Construction
         public NativeArray<FoundationTelemetryEntry> Telemetry;
         public NativeArray<int> TelemetryCursor;
         public NativeArray<FoundationTuningDTO> Tuning;
-        public NativeArray<float> MockSdfDistances;
         public NativeArray<FoundationSdfConfigDTO> SdfConfig;
         public NativeArray<FoundationRayOriginDTO> RayOrigins;
         public NativeArray<FoundationProfileRangeDTO> ProfileRanges;
@@ -249,14 +247,10 @@ namespace Hecton8.Construction
 
     public static class FoundationSnappingCalculatorRuntime
     {
-        public const int ModuleCapacity = ShinobuSocketConstructionRuntime.MockModuleCount;
+        public const int ModuleCapacity = ShinobuSocketConstructionRuntime.ModuleCapacity;
         public const int MaxRaysPerModule = 4;
         public const int PylonCapacity = ModuleCapacity * MaxRaysPerModule;
         public const int TelemetryCapacity = 300;
-        public const int MockSdfSizeX = 64;
-        public const int MockSdfSizeY = 64;
-        public const int MockSdfSizeZ = 64;
-        public const int MockSdfSampleCount = MockSdfSizeX * MockSdfSizeY * MockSdfSizeZ;
         public const int ProfileCapacity = 256;
         public const int RayProfileCapacity = ProfileCapacity * MaxRaysPerModule;
         public const int CsvScratchCapacity = 32 * 1024;
@@ -272,6 +266,7 @@ namespace Hecton8.Construction
         public const int FoundationRayOriginSizeBytes = 32;
         public const int FoundationProfileRangeSizeBytes = 16;
         public const int FoundationDebugRaySizeBytes = 64;
+        public const int FoundationStructuralWarningSignalSizeBytes = 64;
         public const BufferID ModuleBufferId = BufferID.FoundationSnappingModules;
         public const BufferID PylonMatrixBufferId = BufferID.FoundationSnappingPylonMatrices;
         public const BufferID PylonSurfaceBufferId = BufferID.FoundationSnappingPylonSurfaces;
@@ -280,7 +275,6 @@ namespace Hecton8.Construction
         public const BufferID TelemetryBufferId = BufferID.FoundationSnappingTelemetryRing;
         public const BufferID TelemetryCursorBufferId = BufferID.FoundationSnappingTelemetryCursor;
         public const BufferID TuningBufferId = BufferID.FoundationSnappingTuning;
-        public const BufferID MockSdfDistanceBufferId = BufferID.FoundationSnappingMockSdfDistances;
         public const BufferID SdfConfigBufferId = BufferID.FoundationSnappingSdfConfig;
         public const BufferID RayOriginBufferId = BufferID.FoundationSnappingRayOrigins;
         public const BufferID ProfileRangeBufferId = BufferID.FoundationSnappingProfileRanges;
@@ -294,7 +288,7 @@ namespace Hecton8.Construction
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
         private static FoundationTuningDTO s_Tuning = CreateDefaultTuning(1f);
-        private static FoundationSdfConfigDTO s_SdfConfig = CreateDefaultMockSdfConfig(double3.zero);
+        private static FoundationSdfConfigDTO s_SdfConfig = CreateEmptySdfConfig();
         private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
         private static int s_TelemetryDumpInFlight;
@@ -311,7 +305,6 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<FoundationTelemetryEntry> s_TelemetryHandle;
         private static VaultGenerationHandle<int> s_TelemetryCursorHandle;
         private static VaultGenerationHandle<FoundationTuningDTO> s_TuningHandle;
-        private static VaultGenerationHandle<float> s_MockSdfDistanceHandle;
         private static VaultGenerationHandle<FoundationSdfConfigDTO> s_SdfConfigHandle;
         private static VaultGenerationHandle<FoundationRayOriginDTO> s_RayOriginHandle;
         private static VaultGenerationHandle<FoundationProfileRangeDTO> s_ProfileRangeHandle;
@@ -332,7 +325,8 @@ namespace Hecton8.Construction
                 UnsafeUtility.SizeOf<FoundationPylonIndirectArgsDTO>() != FoundationIndirectArgsSizeBytes ||
                 UnsafeUtility.SizeOf<FoundationRayOriginDTO>() != FoundationRayOriginSizeBytes ||
                 UnsafeUtility.SizeOf<FoundationProfileRangeDTO>() != FoundationProfileRangeSizeBytes ||
-                UnsafeUtility.SizeOf<FoundationDebugRayDTO>() != FoundationDebugRaySizeBytes)
+                UnsafeUtility.SizeOf<FoundationDebugRayDTO>() != FoundationDebugRaySizeBytes ||
+                UnsafeUtility.SizeOf<FoundationStructuralWarningSignal>() != FoundationStructuralWarningSignalSizeBytes)
             {
                 return false;
             }
@@ -350,7 +344,10 @@ namespace Hecton8.Construction
                    ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.Rotation)) == 24 &&
                    ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.BoundsExtents)) == 40 &&
                    ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.ActivePylonCount)) == 0 &&
-                   ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.Flags)) == 28;
+                   ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.Flags)) == 28 &&
+                   ResolveOffset<FoundationStructuralWarningSignal>(nameof(FoundationStructuralWarningSignal.ModuleAup)) == 0 &&
+                   ResolveOffset<FoundationStructuralWarningSignal>(nameof(FoundationStructuralWarningSignal.WarningFlags)) == 28 &&
+                   ResolveOffset<FoundationStructuralWarningSignal>(nameof(FoundationStructuralWarningSignal.ResultHash)) == 44;
 #else
             return true;
 #endif
@@ -363,14 +360,14 @@ namespace Hecton8.Construction
         }
 #endif
 
-        public static bool InitializeVault(IDataVault vault, double3 mockOriginAup)
+        public static bool InitializeVault(IDataVault vault, double3 originAup)
         {
             if (vault == null)
                 return false;
 
             ResetVaultDescriptorsIfOwnerChanged(vault);
             s_Tuning = SanitizeTuning(s_Tuning, ResolveGlobalQualityWeight());
-            s_SdfConfig = SanitizeSdfConfig(CreateDefaultMockSdfConfig(mockOriginAup));
+            s_SdfConfig = SanitizeSdfConfig(CreateEmptySdfConfig(originAup));
             s_ModuleHandle = EnsureVaultHandle(vault, ModuleBufferId, ModuleCapacity, ref s_ModuleHandle);
             s_PylonMatrixHandle = EnsureVaultHandle(vault, PylonMatrixBufferId, PylonCapacity, ref s_PylonMatrixHandle);
             s_PylonSurfaceHandle = EnsureVaultHandle(vault, PylonSurfaceBufferId, PylonCapacity, ref s_PylonSurfaceHandle);
@@ -379,7 +376,6 @@ namespace Hecton8.Construction
             s_TelemetryHandle = EnsureVaultHandle(vault, TelemetryBufferId, TelemetryCapacity, ref s_TelemetryHandle);
             s_TelemetryCursorHandle = EnsureVaultHandle(vault, TelemetryCursorBufferId, 1, ref s_TelemetryCursorHandle);
             s_TuningHandle = EnsureVaultHandle(vault, TuningBufferId, 1, ref s_TuningHandle);
-            s_MockSdfDistanceHandle = EnsureVaultHandle(vault, MockSdfDistanceBufferId, MockSdfSampleCount, ref s_MockSdfDistanceHandle);
             s_SdfConfigHandle = EnsureVaultHandle(vault, SdfConfigBufferId, 1, ref s_SdfConfigHandle);
             s_RayOriginHandle = EnsureVaultHandle(vault, RayOriginBufferId, RayProfileCapacity, ref s_RayOriginHandle);
             s_ProfileRangeHandle = EnsureVaultHandle(vault, ProfileRangeBufferId, ProfileCapacity, ref s_ProfileRangeHandle);
@@ -400,7 +396,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                    ReleaseFoundationWrite(vault, in s_TelemetryCursorHandle, TelemetryCursorBufferId);
+                ReleaseFoundationWrite(vault, in s_TelemetryCursorHandle, TelemetryCursorBufferId);
             }
 
             if (!TryAcquireWriteLane(vault, in s_TuningHandle, TuningBufferId, 1, out NativeArray<FoundationTuningDTO> tuning))
@@ -453,7 +449,6 @@ namespace Hecton8.Construction
             s_TelemetryHandle = default;
             s_TelemetryCursorHandle = default;
             s_TuningHandle = default;
-            s_MockSdfDistanceHandle = default;
             s_SdfConfigHandle = default;
             s_RayOriginHandle = default;
             s_ProfileRangeHandle = default;
@@ -480,7 +475,6 @@ namespace Hecton8.Construction
                    TryReadFoundationBuffer(vault, in s_TelemetryHandle, TelemetryBufferId, out views.Telemetry) &&
                    TryReadFoundationBuffer(vault, in s_TelemetryCursorHandle, TelemetryCursorBufferId, out views.TelemetryCursor) &&
                    TryReadFoundationBuffer(vault, in s_TuningHandle, TuningBufferId, out views.Tuning) &&
-                   TryReadFoundationBuffer(vault, in s_MockSdfDistanceHandle, MockSdfDistanceBufferId, out views.MockSdfDistances) &&
                    TryReadFoundationBuffer(vault, in s_SdfConfigHandle, SdfConfigBufferId, out views.SdfConfig) &&
                    TryReadFoundationBuffer(vault, in s_RayOriginHandle, RayOriginBufferId, out views.RayOrigins) &&
                    TryReadFoundationBuffer(vault, in s_ProfileRangeHandle, ProfileRangeBufferId, out views.ProfileRanges) &&
@@ -510,23 +504,25 @@ namespace Hecton8.Construction
             return tuning;
         }
 
-        public static FoundationSdfConfigDTO CreateDefaultMockSdfConfig(double3 originAup)
+        public static FoundationSdfConfigDTO CreateEmptySdfConfig()
+        {
+            return CreateEmptySdfConfig(double3.zero);
+        }
+
+        public static FoundationSdfConfigDTO CreateEmptySdfConfig(double3 originAup)
         {
             FoundationSdfConfigDTO config;
-            config.OriginAup = originAup - new double3(
-                MockSdfSizeX * 0.5d,
-                MockSdfSizeY * 0.45d,
-                MockSdfSizeZ * 0.5d);
+            config.OriginAup = originAup;
             config.VoxelSizeMeters = 1f;
-            config.SizeX = MockSdfSizeX;
-            config.SizeY = MockSdfSizeY;
-            config.SizeZ = MockSdfSizeZ;
-            config.SdfRangeMeters = 32f;
+            config.SizeX = 0;
+            config.SizeY = 0;
+            config.SizeZ = 0;
+            config.SdfRangeMeters = 0f;
             config.IsoSurface = 0f;
-            config.MockSlopeX = 0.08f;
-            config.MockSlopeZ = -0.05f;
-            config.MockBaseY = MockSdfSizeY * 0.24f;
-            config.Flags = FoundationPylonFlags.MockSdfFallback;
+            config.Reserved0 = 0f;
+            config.Reserved1 = 0f;
+            config.Reserved2 = 0f;
+            config.Flags = FoundationPylonFlags.SnapFailed_NoSubstrate;
             return config;
         }
 
@@ -1034,7 +1030,7 @@ namespace Hecton8.Construction
         {
             int min = math.clamp(tuning.MinRaysPerModule, 1, MaxRaysPerModule);
             int max = math.clamp(tuning.MaxRaysPerModule, min, MaxRaysPerModule);
-            return max;
+            return math.lerp(min, max, SanitizeQuality(tuning.GlobalQualityWeight));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1042,13 +1038,13 @@ namespace Hecton8.Construction
         {
             int low = math.clamp(tuning.MaxMarchStepsLow, 1, 512);
             int high = math.max(low, math.clamp(tuning.MaxMarchStepsUltra, 1, 512));
-            return high;
+            return math.max(1, (int)math.round(math.lerp(low, high, SanitizeQuality(tuning.GlobalQualityWeight))));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSdfInterpolationWeight(FoundationTuningDTO tuning)
         {
-            return 1f;
+            return SanitizeQuality(tuning.GlobalQualityWeight);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1117,15 +1113,57 @@ namespace Hecton8.Construction
 
         public static FoundationSdfConfigDTO SanitizeSdfConfig(FoundationSdfConfigDTO config)
         {
-            config.VoxelSizeMeters = SanitizePositive(config.VoxelSizeMeters, 1f);
-            config.SizeX = math.max(2, config.SizeX);
-            config.SizeY = math.max(2, config.SizeY);
-            config.SizeZ = math.max(2, config.SizeZ);
-            config.SdfRangeMeters = SanitizePositive(config.SdfRangeMeters, 32f);
+            bool requestedRealSdf = (config.Flags & FoundationPylonFlags.RealVoxelSdf) != 0u;
+            bool requestedNoSubstrate = (config.Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u;
+            if (!requestedRealSdf && requestedNoSubstrate)
+            {
+                config.Flags = FoundationPylonFlags.SnapFailed_NoSubstrate;
+                config.OriginAup = math.all(math.isfinite(config.OriginAup)) ? config.OriginAup : double3.zero;
+                config.VoxelSizeMeters = 0f;
+                config.SizeX = 0;
+                config.SizeY = 0;
+                config.SizeZ = 0;
+                config.SdfRangeMeters = 0f;
+                config.IsoSurface = math.isfinite(config.IsoSurface) ? config.IsoSurface : 0f;
+                config.Reserved0 = 0f;
+                config.Reserved1 = 0f;
+                config.Reserved2 = 0f;
+                return config;
+            }
+
+            bool invalidRealSdf = requestedRealSdf &&
+                                  (!math.all(math.isfinite(config.OriginAup)) ||
+                                   !math.isfinite(config.VoxelSizeMeters) ||
+                                   !math.isfinite(config.SdfRangeMeters) ||
+                                   config.VoxelSizeMeters <= 0.0001f ||
+                                   config.SdfRangeMeters <= 0.0001f ||
+                                   config.SizeX <= 1 ||
+                                   config.SizeY <= 1 ||
+                                   config.SizeZ <= 1);
+            if (invalidRealSdf)
+            {
+                config.Flags = (config.Flags & ~FoundationPylonFlags.RealVoxelSdf) | FoundationPylonFlags.SnapFailed_NoSubstrate;
+                config.OriginAup = double3.zero;
+                config.VoxelSizeMeters = 0f;
+                config.SizeX = 0;
+                config.SizeY = 0;
+                config.SizeZ = 0;
+                config.SdfRangeMeters = 0f;
+            }
+            else
+            {
+                config.VoxelSizeMeters = SanitizePositive(config.VoxelSizeMeters, 1f);
+                config.SizeX = math.max(2, config.SizeX);
+                config.SizeY = math.max(2, config.SizeY);
+                config.SizeZ = math.max(2, config.SizeZ);
+                config.SdfRangeMeters = SanitizePositive(config.SdfRangeMeters, 32f);
+            }
+
+            config.OriginAup = math.all(math.isfinite(config.OriginAup)) ? config.OriginAup : double3.zero;
             config.IsoSurface = math.isfinite(config.IsoSurface) ? config.IsoSurface : 0f;
-            config.MockSlopeX = math.isfinite(config.MockSlopeX) ? config.MockSlopeX : 0.08f;
-            config.MockSlopeZ = math.isfinite(config.MockSlopeZ) ? config.MockSlopeZ : -0.05f;
-            config.MockBaseY = math.isfinite(config.MockBaseY) ? config.MockBaseY : config.SizeY * 0.24f;
+            config.Reserved0 = math.isfinite(config.Reserved0) ? config.Reserved0 : 0f;
+            config.Reserved1 = math.isfinite(config.Reserved1) ? config.Reserved1 : 0f;
+            config.Reserved2 = math.isfinite(config.Reserved2) ? config.Reserved2 : 0f;
             return config;
         }
 

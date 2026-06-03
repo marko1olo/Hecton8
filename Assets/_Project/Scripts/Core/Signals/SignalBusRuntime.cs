@@ -2275,12 +2275,12 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
-            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal))
+            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.ToolTriggerPullSignal))
             {
-                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.ExpectedCapacity;
-                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.MaxFrameSignals;
-                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.LowTierFrameSignals;
-                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.LaneHash;
+                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.ToolTriggerPullSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.ToolTriggerPullSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.ToolTriggerPullSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.ToolTriggerPullSignal.LaneHash;
                 return true;
             }
 
@@ -2302,12 +2302,12 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
-            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal))
+            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.ToolCarveRequestSignal))
             {
-                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.ExpectedCapacity;
-                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.MaxFrameSignals;
-                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.LowTierFrameSignals;
-                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.LaneHash;
+                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.ToolCarveRequestSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.ToolCarveRequestSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.ToolCarveRequestSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.ToolCarveRequestSignal.LaneHash;
                 return true;
             }
 

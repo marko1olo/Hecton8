@@ -1,10 +1,17 @@
 ---
 packet_id: P068_AYA_MORITA_REPAIR_MEDICINE
+release_set_id: RS014_COLONY_RETURN_WINDOWS
 article_id: hecton8.aya_morita_repair_medicine
+unlock_id: unlock.first_aya_morita_repair_medicine
+poi_tags: poi.medical_bay;poi.repair_tissue_record
+biome_tags: biome.medical_lock;biome.repair_fauna
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Ремонтная медицина Аи Мориты

@@ -124,6 +124,10 @@ namespace Hecton8.AI.Ecosystem
     public static class ShinobuSpatialGridMath
     {
         private const double QuantizationEpsilon = 0.00000000025d;
+        private const double LengthEpsilonSq = 0.000000000001d;
+        internal const double InverseUInt24Max = 0.00000005960464832810486d;
+        internal const double TwoOverUInt24Max = 0.00000011920929665620972d;
+        internal const double TauOverUInt16Max = 0.00009587526217725548d;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SpatialGridTuningDTO CreateDefaultTuning()
@@ -193,7 +197,8 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveAdjacentCellRadius(float neighborRadiusMeters, float cellSizeMeters, float globalQualityWeight)
         {
-            int geometricRadius = math.max(1, (int)math.ceil(math.max(0.001f, neighborRadiusMeters) / math.max(0.25f, cellSizeMeters)));
+            float invCellSize = math.rcp(math.max(0.25f, cellSizeMeters));
+            int geometricRadius = math.max(1, (int)math.ceil(math.max(0.001f, neighborRadiusMeters) * invCellSize));
             float q = ShinobuEcosystemBalancer.Smooth01(math.saturate(globalQualityWeight));
             int qualityRadius = math.clamp((int)math.round(math.lerp(1f, 3f, q)), 1, 3);
             return math.clamp(geometricRadius, 1, qualityRadius);
@@ -202,7 +207,8 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolvePublicQueryCellRadius(float radiusMeters, float cellSizeMeters, int maxVisitedCells)
         {
-            int geometricRadius = math.max(1, (int)math.ceil(math.max(0.001f, radiusMeters) / math.max(0.25f, cellSizeMeters)));
+            float invCellSize = math.rcp(math.max(0.25f, cellSizeMeters));
+            int geometricRadius = math.max(1, (int)math.ceil(math.max(0.001f, radiusMeters) * invCellSize));
             int safeVisited = math.clamp(maxVisitedCells <= 0 ? 27 : maxVisitedCells, 1, 343);
             int budgetRadius = 1 + math.select(0, 1, safeVisited >= 125) + math.select(0, 1, safeVisited >= 343);
             return math.clamp(geometricRadius, 1, budgetRadius);
@@ -211,7 +217,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SpatialGridCell64 QuantizeCell(double3 absoluteAup, double cellSizeMeters)
         {
-            double inv = 1.0d / math.max(0.0001d, cellSizeMeters);
+            double inv = math.rcp(math.max(0.0001d, cellSizeMeters));
             return new SpatialGridCell64
             {
                 X = QuantizeAxis(absoluteAup.x, inv),
@@ -282,6 +288,15 @@ namespace Hecton8.AI.Ecosystem
                 hash ^= hash >> 15;
                 return hash != 0u ? hash : 2166136261u;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double FastLengthFromSq(double lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return double.NaN;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, LengthEpsilonSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -740,9 +755,9 @@ namespace Hecton8.AI.Ecosystem
             double denseRadius = math.lerp(7.5f, 42f, q);
             double sparseRadius = math.lerp(120.0f, 800.0f, q);
             double radius = (cluster & 7) == 0 ? sparseRadius : denseRadius;
-            double angle = (seed & 65535u) * (6.28318530717958647692d / 65535.0d);
+            double angle = (seed & 65535u) * ShinobuSpatialGridMath.TauOverUInt16Max;
             double height = ResolveSigned01(Hash32(seed ^ 0x48454947u)) * math.lerp(5.0d, 35.0d, q);
-            double spread = math.sqrt(math.saturate((seed >> 8) * (1.0d / 16777215.0d))) * radius;
+            double spread = ShinobuSpatialGridMath.FastLengthFromSq(math.saturate((seed >> 8) * ShinobuSpatialGridMath.InverseUInt24Max)) * radius;
             float angleF = (float)angle;
             MathLodApproximation.ApproxSinCosBhaskara(angleF, out float angleSin, out float angleCos);
             double3 absolute = CenterAbsolute + clusterCenter + new double3(angleCos * spread, height, angleSin * spread);
@@ -785,7 +800,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double ResolveSigned01(uint value)
         {
-            return ((value & 0xFFFFFFu) * (2.0d / 16777215.0d)) - 1.0d;
+            return ((value & 0xFFFFFFu) * ShinobuSpatialGridMath.TwoOverUInt24Max) - 1.0d;
         }
     }
 

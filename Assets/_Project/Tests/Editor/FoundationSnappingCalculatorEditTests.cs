@@ -17,11 +17,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(UnsafeUtility.SizeOf<PylonMatrixDTO>(), Is.EqualTo(64));
             Assert.That(UnsafeUtility.SizeOf<FoundationPylonSurfaceDTO>(), Is.EqualTo(64));
             Assert.That(UnsafeUtility.SizeOf<FoundationPylonFrameCounters>(), Is.EqualTo(64));
+            Assert.That(UnsafeUtility.SizeOf<FoundationStructuralWarningSignal>(), Is.EqualTo(64));
             Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<PylonMatrixDTO>(nameof(PylonMatrixDTO.LocalToWorld)), Is.EqualTo(0));
             Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.Flags)), Is.EqualTo(48));
             Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.ModuleHash)), Is.EqualTo(52));
             Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.RayIndex)), Is.EqualTo(56));
             Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.ResultHash)), Is.EqualTo(60));
+            Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<FoundationStructuralWarningSignal>(nameof(FoundationStructuralWarningSignal.WarningFlags)), Is.EqualTo(28));
+            Assert.That(FoundationSnappingCalculatorRuntime.ResolveOffset<FoundationStructuralWarningSignal>(nameof(FoundationStructuralWarningSignal.ResultHash)), Is.EqualTo(44));
             Assert.That(FoundationSnappingCalculatorRuntime.ValidateStructLayout(), Is.True);
         }
 
@@ -46,10 +49,14 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void MockSdfRaymarch_BuildsGpuMatrixWithoutPhysx()
+        public void EncodedVoxelSdfRaymarch_BuildsGpuMatrixWithoutPhysx()
         {
             using NativeArray<FoundationModuleAupDTO> modules = new NativeArray<FoundationModuleAupDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            using NativeArray<float> sdf = new NativeArray<float>(FoundationSnappingCalculatorRuntime.MockSdfSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            const int sizeX = 16;
+            const int sizeY = 32;
+            const int sizeZ = 16;
+            const float sdfRange = 32f;
+            using NativeArray<byte> sdf = new NativeArray<byte>(sizeX * sizeY * sizeZ, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             using NativeArray<PylonMatrixDTO> matrices = new NativeArray<PylonMatrixDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             using NativeArray<FoundationPylonSurfaceDTO> surfaces = new NativeArray<FoundationPylonSurfaceDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             using NativeArray<FoundationPylonFrameCounters> perModule = new NativeArray<FoundationPylonFrameCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -57,11 +64,37 @@ namespace Hecton8.Tests.Editor
             using NativeArray<FoundationDebugRayDTO> debug = new NativeArray<FoundationDebugRayDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             using NativeArray<FoundationPylonIndirectArgsDTO> args = new NativeArray<FoundationPylonIndirectArgsDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<FoundationModuleAupDTO> writableModules = modules;
+            NativeArray<byte> writableSdf = sdf;
 
-            FoundationSdfConfigDTO config = FoundationSnappingCalculatorRuntime.CreateDefaultMockSdfConfig(new double3(32d, 32d, 32d));
+            for (int z = 0; z < sizeZ; z++)
+            {
+                for (int y = 0; y < sizeY; y++)
+                {
+                    for (int x = 0; x < sizeX; x++)
+                    {
+                        int index = x + sizeX * (y + sizeY * z);
+                        float signedDistance = y - 8f;
+                        float normalized = math.clamp((signedDistance / sdfRange) * 0.5f + 0.5f, 0f, 1f);
+                        writableSdf[index] = (byte)math.clamp((int)math.round(normalized * 255f), 0, 255);
+                    }
+                }
+            }
+
+            FoundationSdfConfigDTO config;
+            config.OriginAup = new double3(24d, 0d, 24d);
+            config.VoxelSizeMeters = 1f;
+            config.SizeX = sizeX;
+            config.SizeY = sizeY;
+            config.SizeZ = sizeZ;
+            config.SdfRangeMeters = sdfRange;
+            config.IsoSurface = 0f;
+            config.Reserved0 = 0f;
+            config.Reserved1 = 0f;
+            config.Reserved2 = 0f;
+            config.Flags = FoundationPylonFlags.RealVoxelSdf;
             writableModules[0] = new FoundationModuleAupDTO
             {
-                CenterAup = new double3(32d, 32d, 32d),
+                CenterAup = new double3(32d, 16d, 32d),
                 Rotation = quaternion.identity,
                 BoundsExtents = new float3(2f, 1f, 2f),
                 GroundClearanceMeters = 0.05f,
@@ -70,16 +103,10 @@ namespace Hecton8.Tests.Editor
             };
 
             FoundationTuningDTO tuning = FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f);
-            JobHandle handle = new GenerateMockSeafloorSDFJob
-            {
-                Distances = sdf,
-                Config = config
-            }.Schedule(sdf.Length, 128);
-
-            handle = new CalculateFoundationPylonsJob
+            JobHandle handle = new CalculateFoundationPylonsJob
             {
                 Modules = modules,
-                MockSdfDistances = sdf,
+                EncodedVoxelSdfTexture3D = sdf,
                 PylonMatrices = matrices,
                 PylonSurfaces = surfaces,
                 PerModuleCounters = perModule,
@@ -89,9 +116,8 @@ namespace Hecton8.Tests.Editor
                 CameraAup = double3.zero,
                 ModuleCount = 1,
                 ProfileCount = 0,
-                RayOriginCount = 0,
-                UseEncodedByteSdf = 0
-            }.Schedule(1, 1, handle);
+                RayOriginCount = 0
+            }.Schedule(1, 1);
 
             handle = new ReduceFoundationPylonCountersJob
             {
@@ -117,11 +143,235 @@ namespace Hecton8.Tests.Editor
             handle.Complete();
 
             Assert.That((surfaces[0].Flags & FoundationPylonFlags.Active) != 0u, Is.True);
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.RealVoxelSdf) != 0u, Is.True);
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) == 0u, Is.True);
             Assert.That(frame[0].HitCount, Is.GreaterThanOrEqualTo(1));
             Assert.That(frame[0].SlotCount, Is.EqualTo(frame[0].ActivePylonCount));
             Assert.That(args[0].InstanceCount, Is.EqualTo((uint)frame[0].ActivePylonCount));
             Assert.That(matrices[0].LocalToWorld.c1.y, Is.GreaterThan(0f));
             Assert.That(math.abs(matrices[0].LocalToWorld.c0.x), Is.EqualTo(surfaces[0].AxisRadius.w * 2f).Within(0.0001f));
+        }
+
+        [Test]
+        public void BoundaryVoxelSdfNormal_DoesNotUseOutOfBoundsSentinel()
+        {
+            using NativeArray<FoundationModuleAupDTO> modules = new NativeArray<FoundationModuleAupDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            const int sizeX = 8;
+            const int sizeY = 16;
+            const int sizeZ = 8;
+            const float sdfRange = 16f;
+            using NativeArray<byte> sdf = new NativeArray<byte>(sizeX * sizeY * sizeZ, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            using NativeArray<PylonMatrixDTO> matrices = new NativeArray<PylonMatrixDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationPylonSurfaceDTO> surfaces = new NativeArray<FoundationPylonSurfaceDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationPylonFrameCounters> perModule = new NativeArray<FoundationPylonFrameCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationDebugRayDTO> debug = new NativeArray<FoundationDebugRayDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<FoundationModuleAupDTO> writableModules = modules;
+            NativeArray<byte> writableSdf = sdf;
+
+            for (int z = 0; z < sizeZ; z++)
+            {
+                for (int y = 0; y < sizeY; y++)
+                {
+                    for (int x = 0; x < sizeX; x++)
+                    {
+                        int index = x + sizeX * (y + sizeY * z);
+                        float signedDistance = y - 4f;
+                        float normalized = math.clamp((signedDistance / sdfRange) * 0.5f + 0.5f, 0f, 1f);
+                        writableSdf[index] = (byte)math.clamp((int)math.round(normalized * 255f), 0, 255);
+                    }
+                }
+            }
+
+            FoundationSdfConfigDTO config;
+            config.OriginAup = double3.zero;
+            config.VoxelSizeMeters = 1f;
+            config.SizeX = sizeX;
+            config.SizeY = sizeY;
+            config.SizeZ = sizeZ;
+            config.SdfRangeMeters = sdfRange;
+            config.IsoSurface = 0f;
+            config.Reserved0 = 0f;
+            config.Reserved1 = 0f;
+            config.Reserved2 = 0f;
+            config.Flags = FoundationPylonFlags.RealVoxelSdf;
+            writableModules[0] = new FoundationModuleAupDTO
+            {
+                CenterAup = new double3(0.05d, 6d, 4d),
+                Rotation = quaternion.identity,
+                BoundsExtents = new float3(0.1f),
+                GroundClearanceMeters = 0.05f,
+                ModuleHash = 0xF0252003u,
+                Flags = FoundationPylonFlags.Active
+            };
+
+            FoundationTuningDTO tuning = FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f);
+            tuning.SdfHitEpsilonMeters = 0.08f;
+            JobHandle handle = new CalculateFoundationPylonsJob
+            {
+                Modules = modules,
+                EncodedVoxelSdfTexture3D = sdf,
+                PylonMatrices = matrices,
+                PylonSurfaces = surfaces,
+                PerModuleCounters = perModule,
+                DebugRays = debug,
+                SdfConfig = config,
+                Tuning = tuning,
+                CameraAup = double3.zero,
+                ModuleCount = 1,
+                ProfileCount = 0,
+                RayOriginCount = 0
+            }.Schedule(1, 1);
+            handle.Complete();
+
+            float3 normal = surfaces[0].SurfaceNormalFlare.xyz;
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.Active) != 0u, Is.True);
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.OutOfSdfBounds) == 0u, Is.True);
+            Assert.That(math.abs(normal.x), Is.LessThan(0.15f));
+            Assert.That(normal.y, Is.GreaterThan(0.95f));
+            Assert.That(math.abs(normal.z), Is.LessThan(0.15f));
+        }
+
+        [Test]
+        public void MissingVoxelSdf_FailsClosedWithNoSubstrateFlag()
+        {
+            using NativeArray<FoundationModuleAupDTO> modules = new NativeArray<FoundationModuleAupDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<PylonMatrixDTO> matrices = new NativeArray<PylonMatrixDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationPylonSurfaceDTO> surfaces = new NativeArray<FoundationPylonSurfaceDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationPylonFrameCounters> perModule = new NativeArray<FoundationPylonFrameCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationDebugRayDTO> debug = new NativeArray<FoundationDebugRayDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<FoundationModuleAupDTO> writableModules = modules;
+            writableModules[0] = new FoundationModuleAupDTO
+            {
+                CenterAup = new double3(32d, 16d, 32d),
+                Rotation = quaternion.identity,
+                BoundsExtents = new float3(2f, 1f, 2f),
+                GroundClearanceMeters = 0.05f,
+                ModuleHash = 0xF0252001u,
+                Flags = FoundationPylonFlags.Active
+            };
+
+            JobHandle handle = new CalculateFoundationPylonsJob
+            {
+                Modules = modules,
+                EncodedVoxelSdfTexture3D = default,
+                PylonMatrices = matrices,
+                PylonSurfaces = surfaces,
+                PerModuleCounters = perModule,
+                DebugRays = debug,
+                SdfConfig = FoundationSnappingCalculatorRuntime.CreateEmptySdfConfig(double3.zero),
+                Tuning = FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f),
+                CameraAup = double3.zero,
+                ModuleCount = 1,
+                ProfileCount = 0,
+                RayOriginCount = 0
+            }.Schedule(1, 1);
+            handle.Complete();
+
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.Active) == 0u, Is.True);
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u, Is.True);
+            Assert.That((perModule[0].Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u, Is.True);
+            Assert.That(perModule[0].HitCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void CorruptVoxelSdfRange_FailsClosedWithNoSubstrateFlag()
+        {
+            using NativeArray<FoundationModuleAupDTO> modules = new NativeArray<FoundationModuleAupDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<byte> sdf = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<PylonMatrixDTO> matrices = new NativeArray<PylonMatrixDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationPylonSurfaceDTO> surfaces = new NativeArray<FoundationPylonSurfaceDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationPylonFrameCounters> perModule = new NativeArray<FoundationPylonFrameCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            using NativeArray<FoundationDebugRayDTO> debug = new NativeArray<FoundationDebugRayDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<FoundationModuleAupDTO> writableModules = modules;
+            writableModules[0] = new FoundationModuleAupDTO
+            {
+                CenterAup = new double3(1d, 1d, 1d),
+                Rotation = quaternion.identity,
+                BoundsExtents = new float3(1f),
+                GroundClearanceMeters = 0.05f,
+                ModuleHash = 0xF0252002u,
+                Flags = FoundationPylonFlags.Active
+            };
+
+            FoundationSdfConfigDTO config;
+            config.OriginAup = double3.zero;
+            config.VoxelSizeMeters = 1f;
+            config.SizeX = 2;
+            config.SizeY = 2;
+            config.SizeZ = 2;
+            config.SdfRangeMeters = 0f;
+            config.IsoSurface = 0f;
+            config.Reserved0 = 0f;
+            config.Reserved1 = 0f;
+            config.Reserved2 = 0f;
+            config.Flags = FoundationPylonFlags.RealVoxelSdf;
+
+            JobHandle handle = new CalculateFoundationPylonsJob
+            {
+                Modules = modules,
+                EncodedVoxelSdfTexture3D = sdf,
+                PylonMatrices = matrices,
+                PylonSurfaces = surfaces,
+                PerModuleCounters = perModule,
+                DebugRays = debug,
+                SdfConfig = config,
+                Tuning = FoundationSnappingCalculatorRuntime.CreateDefaultTuning(1f),
+                CameraAup = double3.zero,
+                ModuleCount = 1,
+                ProfileCount = 0,
+                RayOriginCount = 0
+            }.Schedule(1, 1);
+            handle.Complete();
+
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.Active) == 0u, Is.True);
+            Assert.That((surfaces[0].Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u, Is.True);
+            Assert.That((perModule[0].Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u, Is.True);
+            Assert.That(perModule[0].HitCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void SanitizeSdfConfig_DoesNotPromoteCorruptRealPayload()
+        {
+            FoundationSdfConfigDTO config;
+            config.OriginAup = new double3(double.NaN, double.PositiveInfinity, double.NegativeInfinity);
+            config.VoxelSizeMeters = 0f;
+            config.SizeX = 0;
+            config.SizeY = 0;
+            config.SizeZ = 0;
+            config.SdfRangeMeters = 0f;
+            config.IsoSurface = float.NaN;
+            config.Reserved0 = float.NaN;
+            config.Reserved1 = float.NaN;
+            config.Reserved2 = float.NaN;
+            config.Flags = FoundationPylonFlags.RealVoxelSdf;
+
+            FoundationSdfConfigDTO sanitized = FoundationSnappingCalculatorRuntime.SanitizeSdfConfig(config);
+
+            Assert.That((sanitized.Flags & FoundationPylonFlags.RealVoxelSdf) == 0u, Is.True);
+            Assert.That((sanitized.Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u, Is.True);
+            Assert.That(sanitized.VoxelSizeMeters, Is.EqualTo(0f));
+            Assert.That(sanitized.SizeX, Is.EqualTo(0));
+            Assert.That(sanitized.SizeY, Is.EqualTo(0));
+            Assert.That(sanitized.SizeZ, Is.EqualTo(0));
+            Assert.That(sanitized.SdfRangeMeters, Is.EqualTo(0f));
+            Assert.That(math.all(sanitized.OriginAup == double3.zero), Is.True);
+            Assert.That(sanitized.IsoSurface, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void SanitizeSdfConfig_PreservesNoSubstrateEmptyPayload()
+        {
+            FoundationSdfConfigDTO sanitized = FoundationSnappingCalculatorRuntime.SanitizeSdfConfig(
+                FoundationSnappingCalculatorRuntime.CreateEmptySdfConfig(new double3(12d, -4d, 7d)));
+
+            Assert.That((sanitized.Flags & FoundationPylonFlags.RealVoxelSdf) == 0u, Is.True);
+            Assert.That((sanitized.Flags & FoundationPylonFlags.SnapFailed_NoSubstrate) != 0u, Is.True);
+            Assert.That(sanitized.VoxelSizeMeters, Is.EqualTo(0f));
+            Assert.That(sanitized.SizeX, Is.EqualTo(0));
+            Assert.That(sanitized.SizeY, Is.EqualTo(0));
+            Assert.That(sanitized.SizeZ, Is.EqualTo(0));
+            Assert.That(sanitized.SdfRangeMeters, Is.EqualTo(0f));
+            Assert.That(math.all(sanitized.OriginAup == new double3(12d, -4d, 7d)), Is.True);
         }
 
         [Test]
@@ -272,6 +522,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(combined.Contains("Raycast" + "Command"), Is.False);
             Assert.That(combined.Contains("Instantiate" + "("), Is.False);
             Assert.That(combined.Contains("List" + "<Transform>"), Is.False);
+            Assert.That(combined.Contains("TryPopulatePreview" + "Fallback"), Is.False);
+            Assert.That(combined.Contains("Construction" + "PreviewSignal"), Is.False);
         }
 
         [Test]

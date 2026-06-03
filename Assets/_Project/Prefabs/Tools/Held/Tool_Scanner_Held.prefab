@@ -62,7 +62,8 @@ MonoBehaviour:
   cooldownFeedbackInterval: 0.75
   resultFeedbackInterval: 0.5
   modeFeedbackInterval: 0.4
-  scannerMarkerShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
+  scannerMarkerMesh: {fileID: 4300000, guid: 17f1ed7ac819d334982c9f9eac9c16a6, type: 2}
+  scannerMarkerMaterial: {fileID: 2100000, guid: a8512bd7412f4b46903d53022b9a0c1e, type: 2}
 --- !u!114 &4225272727249172183
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -79,9 +79,12 @@ namespace Hecton8.Editor
             string scCharacters = BuildLocalizedCharacterSeed(ChineseLocalizationPath, PrimeScCharacters);
             string jpCharacters = BuildLocalizedCharacterSeed(JapaneseLocalizationPath, PrimeJpCharacters);
             string arabicCharacters = BuildLocalizedCharacterSeed(ArabicLocalizationPath, PrimeArabicCharacters);
-            PrimeAtlas(scAsset, scCharacters);
-            PrimeAtlas(jpAsset, jpCharacters);
-            PrimeAtlas(arabicAsset, arabicCharacters);
+            if (!PrimeAtlas(scAsset, scCharacters, out string failure))
+                throw new System.InvalidOperationException(failure);
+            if (!PrimeAtlas(jpAsset, jpCharacters, out failure))
+                throw new System.InvalidOperationException(failure);
+            if (!PrimeAtlas(arabicAsset, arabicCharacters, out failure))
+                throw new System.InvalidOperationException(failure);
 
             EnsureGlobalFallback(scAsset);
             EnsureGlobalFallback(jpAsset);
@@ -134,17 +137,17 @@ namespace Hecton8.Editor
                     AtlasWidth,
                     AtlasHeight,
                     AtlasPopulationMode.Dynamic,
-                    true);
+                    false);
 
                 fontAsset.name = assetName;
-                fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-                fontAsset.isMultiAtlasTexturesEnabled = true;
+                fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
+                fontAsset.isMultiAtlasTexturesEnabled = false;
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
             }
             else
             {
-                fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-                fontAsset.isMultiAtlasTexturesEnabled = true;
+                fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
+                fontAsset.isMultiAtlasTexturesEnabled = false;
                 EditorUtility.SetDirty(fontAsset);
             }
 
@@ -196,8 +199,6 @@ namespace Hecton8.Editor
             if (fontAsset == null)
                 return;
 
-            EnsureDynamicAtlasReady(fontAsset);
-
             Material material = fontAsset.material;
             if (material == null)
             {
@@ -224,9 +225,12 @@ namespace Hecton8.Editor
                 AssetDatabase.AddObjectToAsset(material, fontAsset);
             }
 
-            material.SetTexture(ShaderUtilities.ID_MainTex, ResolveAtlasTexture(fontAsset));
-            material.SetFloat(ShaderUtilities.ID_TextureWidth, fontAsset.atlasWidth);
-            material.SetFloat(ShaderUtilities.ID_TextureHeight, fontAsset.atlasHeight);
+            Texture atlasTexture = ResolveAtlasTexture(fontAsset);
+            if (atlasTexture != null)
+                material.SetTexture(ShaderUtilities.ID_MainTex, atlasTexture);
+
+            material.SetFloat(ShaderUtilities.ID_TextureWidth, atlasTexture != null ? atlasTexture.width : fontAsset.atlasWidth);
+            material.SetFloat(ShaderUtilities.ID_TextureHeight, atlasTexture != null ? atlasTexture.height : fontAsset.atlasHeight);
             material.SetFloat(ShaderUtilities.ID_GradientScale, 10f);
 
             SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
@@ -265,24 +269,48 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void PrimeAtlas(TMP_FontAsset fontAsset, string authoredCharacters)
+        private static bool PrimeAtlas(TMP_FontAsset fontAsset, string authoredCharacters, out string failure)
         {
+            failure = string.Empty;
             if (fontAsset == null || string.IsNullOrEmpty(authoredCharacters))
-                return;
+            {
+                failure = "cannot prime localization font atlas: missing font asset or glyph seed";
+                return false;
+            }
 
             fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-            EnsureDynamicAtlasReady(fontAsset);
-            fontAsset.TryAddCharacters(authoredCharacters, out _);
-            SetClearDynamicDataOnBuild(fontAsset, false);
-            EnsureAtlasReadable(fontAsset);
-            ApplyStaticRuntimePolicy(fontAsset);
+            fontAsset.isMultiAtlasTexturesEnabled = false;
+            bool primeSucceeded = false;
+            try
+            {
+                EnsureDynamicAtlasReady(fontAsset);
+                string missingCharacters;
+                bool glyphsAdded = fontAsset.TryAddCharacters(authoredCharacters, out missingCharacters);
+                if (!glyphsAdded || !string.IsNullOrEmpty(missingCharacters))
+                {
+                    failure = "missing glyphs while priming " + fontAsset.name +
+                              " count=" + (missingCharacters == null ? 0 : missingCharacters.Length).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    return false;
+                }
 
-            if (fontAsset.material != null)
-                fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, ResolveAtlasTexture(fontAsset));
+                primeSucceeded = true;
+                return true;
+            }
+            finally
+            {
+                ApplyStaticRuntimePolicy(fontAsset);
 
-            EditorUtility.SetDirty(fontAsset);
-            if (fontAsset.material != null)
-                EditorUtility.SetDirty(fontAsset.material);
+                if (fontAsset.material != null)
+                {
+                    fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, ResolveAtlasTexture(fontAsset));
+                    EditorUtility.SetDirty(fontAsset.material);
+                }
+
+                EditorUtility.SetDirty(fontAsset);
+
+                if (!primeSucceeded && string.IsNullOrEmpty(failure))
+                    failure = "failed to prime localization font atlas for " + fontAsset.name;
+            }
         }
 
         private static void ApplyTargetFontRuntimePolicy(string assetPath, TMP_FontAsset fontAsset)
@@ -330,7 +358,7 @@ namespace Hecton8.Editor
             return builder.ToString();
         }
 
-        private static void AppendSeedCharacters(string source, HashSet<char> characters)
+        internal static void AppendSeedCharacters(string source, HashSet<char> characters)
         {
             if (string.IsNullOrEmpty(source) || characters == null)
                 return;
@@ -426,7 +454,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void SetClearDynamicDataOnBuild(TMP_FontAsset fontAsset, bool clearDynamicDataOnBuild)
+        internal static void SetClearDynamicDataOnBuild(TMP_FontAsset fontAsset, bool clearDynamicDataOnBuild)
         {
             if (fontAsset == null)
                 return;

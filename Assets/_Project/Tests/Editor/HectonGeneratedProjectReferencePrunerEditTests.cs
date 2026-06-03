@@ -42,7 +42,7 @@ namespace Hecton8.Tests.Editor
 
         private static Type ResolvePrunerType()
         {
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
                 Type type = assemblies[i].GetType("Hecton8.Editor.Validation.HectonGeneratedProjectReferencePruner", false);

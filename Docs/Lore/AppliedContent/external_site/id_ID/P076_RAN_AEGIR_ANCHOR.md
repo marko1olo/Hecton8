@@ -1,30 +1,37 @@
 ---
 packet_id: P076_RAN_AEGIR_ANCHOR
+release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.ran_aegir_anchor
+unlock_id: unlock.first_ran_aegir_anchor
+poi_tags: poi.starfield_nav_plate;poi.ran_spectrum_card
+biome_tags: biome.surface_relay;biome.orbital_window
 locale: id_ID
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Ran / Aegir Anchor
 
-Draft ID localization pending native pass. Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
+Ran / Aegir Anchor locks the visual and astrophysical taste of HECTON-8: hard-sci-fi dimmer sunlight, not supernatural darkness. The setting is readable above, hostile below.
 
 ## Scanner
 
-Draft ID localization pending native pass. K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
+K-dwarf spectrum plate. Aegir is dimmer than Sol, not dead. The darkness here is depth, weather and debt.
 
 ## Terminal
 
-Draft ID localization pending native pass. RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
+RAN NAV ANCHOR: orange-dwarf illumination usable for surface operations. Local storm scatter, eclipses and ocean turbidity reduce descent readability below safety margin.
 
 ## Audio
 
-Draft ID localization pending native pass. The star is not absent. It just cannot follow you down.
+The star is not absent. It just cannot follow you down.
 
 ## Field Note
 
-Draft ID localization pending native pass. A real star is enough. The ocean does the rest.
+A real star is enough. The ocean does the rest.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/id_ID. -->

@@ -1,0 +1,37 @@
+---
+packet_id: P430_BLACK_KEEL_PAYOUT_MASS_LEDGER
+release_set_id: RS086_RESOURCE_ECONOMY_ARTIFACTS
+article_id: applied_lore.black_keel_payout_mass_ledger
+unlock_id: unlock.black_keel_payout_mass_ledger
+poi_tags: poi.black_keel_mass_ledger;poi.payout_conversion_note
+biome_tags: biome.claim_admin;biome.black_keel_orbit
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Mass-ledger выплат Black Keel
+
+Payout mass ledger - мост к material endings: выгодные выходы могут сохранить debt logic и потерять truth authority.
+
+## Scanner
+
+Payout ledger: Black Keel отдельно считает mass, custody, receiver risk и evidence suppression.
+
+## Terminal
+
+LEDGER: recoverable mass не равна payout. Transfer window, contamination, legal receiver и player debt превращают mass в consequence.
+
+## Audio
+
+Ledger может заплатить тебе и все равно украсть историю.
+
+## Field Note
+
+Для contract board, false exit records и spoiler-gated ending pages.
+
+<!-- In-Game Wiki; generated from P430_BLACK_KEEL_PAYOUT_MASS_LEDGER/ru_RU. -->

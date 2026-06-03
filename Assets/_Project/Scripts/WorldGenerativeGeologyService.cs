@@ -933,6 +933,13 @@ namespace Hecton8.World
 
         [Header("Fallback Generation")]
         [SerializeField] private bool allowEditorGeneration = true;
+        [SerializeField] private Material authoredRuntimePrimitiveMaterial;
+        [SerializeField] private Mesh authoredRuntimeSphereMesh;
+        [SerializeField] private Mesh authoredRuntimeCapsuleMesh;
+        [SerializeField] private Mesh authoredRuntimeCylinderMesh;
+        [SerializeField] private Mesh authoredRuntimeCubeMesh;
+        [SerializeField] private Mesh authoredRuntimePlaneMesh;
+        [SerializeField] private Mesh authoredRuntimeQuadMesh;
         [SerializeField] private float primitiveThickness = 1.6f;
         [SerializeField] private float debrisScale = 0.28f;
 
@@ -945,6 +952,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            EnsureRuntimePrimitiveMaterialRegistered();
         }
 
         private void OnDestroy()
@@ -957,6 +965,9 @@ namespace Hecton8.World
         {
             generatedRoot = null;
             if (host == null)
+                return false;
+
+            if (ActiveRuntimeInstance == null || !ActiveRuntimeInstance.EnsureRuntimePrimitiveMaterialRegistered())
                 return false;
 
             WorldGeneratedPrimitiveFactory.PrewarmPrimitiveResources();
@@ -1014,6 +1025,9 @@ namespace Hecton8.World
         public bool TryApplyGeneratedGeology(GameObject host, in WorldGenerativeGeologyRequest request)
         {
             if (host == null || request.Profile == null || !request.Profile.IsEnabled)
+                return false;
+
+            if (!EnsureRuntimePrimitiveMaterialRegistered())
                 return false;
 
             if (!Application.isPlaying && !allowEditorGeneration)
@@ -1186,6 +1200,9 @@ namespace Hecton8.World
                 return false;
             }
 
+            if (!EnsureRuntimePrimitiveMaterialRegistered())
+                return false;
+
             bool finalVariantRequested = request.FinalVariantActive != 0;
             float visualQualityWeight = ResolveGlobalQualityWeight();
             string resolvedComposition = ResolveQualityComposition(
@@ -1260,6 +1277,34 @@ namespace Hecton8.World
                 lodCount);
             runtimeState.Configure(buildSignature, totalRendererCount);
             return true;
+        }
+
+        private bool EnsureRuntimePrimitiveMaterialRegistered()
+        {
+            if (authoredRuntimePrimitiveMaterial == null ||
+                !WorldGeneratedPrimitiveFactory.RegisterDefaultPrimitiveMaterialCold(authoredRuntimePrimitiveMaterial))
+            {
+                return false;
+            }
+
+            RegisterAuthoredPrimitiveMeshCold(PrimitiveType.Sphere, authoredRuntimeSphereMesh);
+            RegisterAuthoredPrimitiveMeshCold(PrimitiveType.Capsule, authoredRuntimeCapsuleMesh);
+            RegisterAuthoredPrimitiveMeshCold(PrimitiveType.Cylinder, authoredRuntimeCylinderMesh);
+            RegisterAuthoredPrimitiveMeshCold(PrimitiveType.Cube, authoredRuntimeCubeMesh);
+            RegisterAuthoredPrimitiveMeshCold(PrimitiveType.Plane, authoredRuntimePlaneMesh);
+            RegisterAuthoredPrimitiveMeshCold(PrimitiveType.Quad, authoredRuntimeQuadMesh);
+            return true;
+        }
+
+        private void RegisterAuthoredPrimitiveMeshCold(PrimitiveType primitiveType, Mesh mesh)
+        {
+            if (mesh == null)
+                return;
+
+            WorldGeneratedPrimitiveFactory.RegisterPrimitiveResourcesCold(
+                primitiveType,
+                mesh,
+                authoredRuntimePrimitiveMaterial);
         }
 
         public void ClearGeneratedGeology(GameObject host)

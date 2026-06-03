@@ -85,15 +85,19 @@ namespace Hecton8.UI
         private readonly char[] _statusBuffer = new char[StatusBufferLength]; // COLD ALLOC: char[48] — status render buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _renderBuffer = new char[RenderBufferLength]; // COLD ALLOC: char[1104] — multiline log render buffer — owner: HectonSubmarineOsDisplay
 
-        private RectTransform _root;
-        private TMP_Text _statusLabel;
-        private TMP_Text _metricLabel;
-        private TMP_Text _droneFleetLabel;
-        private TMP_Text _logLabel;
-        private RectTransform _engineHeatBarFill;
-        private Image _engineHeatBarImage;
-        private Image[] _subsystemIconImages;
-        private TMP_Text[] _subsystemIconLabels;
+        [Header("Authored UI")]
+        [SerializeField] private RectTransform _root;
+        [SerializeField] private Image _panelImage;
+        [SerializeField] private TMP_Text _statusLabel;
+        [SerializeField] private TMP_Text _metricLabel;
+        [SerializeField] private TMP_Text _droneFleetLabel;
+        [SerializeField] private TMP_Text _logLabel;
+        [SerializeField] private RectTransform _engineHeatBarRoot;
+        [SerializeField] private Image _engineHeatBarBackImage;
+        [SerializeField] private RectTransform _engineHeatBarFill;
+        [SerializeField] private Image _engineHeatBarImage;
+        [SerializeField] private Image[] _subsystemIconImages = new Image[4]; // COLD ALLOC: Image[4] - fixed authored subsystem icon bindings - owner: HectonSubmarineOsDisplay
+        [SerializeField] private TMP_Text[] _subsystemIconLabels = new TMP_Text[4]; // COLD ALLOC: TMP_Text[4] - fixed authored subsystem label bindings - owner: HectonSubmarineOsDisplay
         private int _pendingEntryCount;
         private int _pendingEntryHead;
         private int _pendingEntryTail;
@@ -113,6 +117,7 @@ namespace Hecton8.UI
         private int _renderedSonarContactCount = InvalidCachedMetric;
         private int _renderedNearestSonarMeters = InvalidCachedMetric;
 
+        private bool _uiBound;
         private bool _typingActive;
         private bool _registeredUpdatable;
         private bool _hotSwapListenerRegistered;
@@ -126,10 +131,13 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 return null;
 
-            if (!targetCanvas.gameObject.TryGetComponent(out HectonSubmarineOsDisplay display))
-                display = targetCanvas.gameObject.AddComponent<HectonSubmarineOsDisplay>(); // COLD ALLOC: HectonSubmarineOsDisplay[1] — HUD-owned submarine OS overlay — owner: HectonSubmarineOsDisplay
+            if (targetCanvas.gameObject.TryGetComponent(out HectonSubmarineOsDisplay display))
+                return display;
 
-            return display;
+            Transform authoredRoot = targetCanvas.transform.Find(RootName);
+            return authoredRoot != null && authoredRoot.TryGetComponent(out display)
+                ? display
+                : null;
         }
 
         private void Awake()
@@ -145,7 +153,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             HectonSubmarineOsEvents.Unregister(this);
             HectonSubmarineOsEvents.Register(this);
             RefreshStatusLabels();
@@ -158,7 +166,7 @@ namespace Hecton8.UI
         private void Start()
         {
             TryRegisterHotSwapListener();
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             TryRegister();
         }
 
@@ -192,7 +200,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (_root == null)
+            if (!_uiBound || _root == null)
                 return;
 
             if (!_typingActive)
@@ -236,7 +244,7 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registeredUpdatable || !Application.isPlaying)
+            if (_registeredUpdatable || !Application.isPlaying || !_uiBound)
                 return;
 
             _registeredUpdatable = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
@@ -508,7 +516,7 @@ namespace Hecton8.UI
 
         private void RefreshSubsystemIcons(SubsystemStatus subsystemStatus)
         {
-            if (_subsystemIconImages == null || _subsystemIconLabels == null)
+            if (!HasBoundIconSlots())
                 return;
 
             ApplyIconState(0, (subsystemStatus & SubsystemStatus.Engines) != 0);
@@ -523,54 +531,75 @@ namespace Hecton8.UI
                 return;
 
             Color color = active ? s_onlineColor : s_offlineColor;
-            _subsystemIconImages[index].color = color;
-            if (_subsystemIconLabels[index] != null)
-                _subsystemIconLabels[index].color = color;
+            Image image = _subsystemIconImages[index];
+            if (image != null)
+                image.color = color;
+
+            if ((uint)index >= (uint)_subsystemIconLabels.Length)
+                return;
+
+            TMP_Text label = _subsystemIconLabels[index];
+            if (label != null)
+                label.color = color;
         }
 
-        private bool EnsureUiBuilt(bool allowCreate)
+        private bool EnsureUiBuilt()
         {
-            if (_root != null)
+            if (_uiBound && HasCompleteUiBindings())
                 return true;
 
-            if (!allowCreate)
+            _uiBound = false;
+            _root = ResolveAuthoredRoot(_root);
+            if (_root == null)
                 return false;
 
-            Canvas targetCanvas = ResolveTargetCanvas();
-            if (targetCanvas == null)
+            if (_panelImage == null && !_root.TryGetComponent(out _panelImage))
                 return false;
 
-            GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] — submarine OS overlay root — owner: HectonSubmarineOsDisplay
-            rootObject.transform.SetParent(targetCanvas.transform, false);
-            rootObject.TryGetComponent(out _root);
-            _root.anchorMin = new Vector2(0f, 1f);
-            _root.anchorMax = new Vector2(0f, 1f);
-            _root.pivot = new Vector2(0f, 1f);
-            _root.anchoredPosition = new Vector2(34f, -128f);
-            _root.sizeDelta = new Vector2(RootWidth, RootHeight);
-            rootObject.TryGetComponent(out Image panelImage);
-            panelImage.color = s_panelColor;
-            panelImage.raycastTarget = false;
+            _panelImage.color = s_panelColor;
+            _panelImage.raycastTarget = false;
 
-            _statusLabel = CreateText("Status", _root, new Vector2(14f, -12f), new Vector2(280f, 24f), 19f);
-            _metricLabel = CreateText("Metrics", _root, new Vector2(14f, -38f), new Vector2(492f, 20f), 13f);
-            CreateEngineHeatBar(_root);
-            _droneFleetLabel = CreateText("DroneFleet", _root, new Vector2(14f, -60f), new Vector2(320f, 20f), 16f);
-            _logLabel = CreateText("Log", _root, new Vector2(14f, -92f), new Vector2(356f, 264f), 15f);
-            _logLabel.alignment = TextAlignmentOptions.TopLeft;
-            _logLabel.textWrappingMode = TextWrappingModes.NoWrap;
-            _logLabel.overflowMode = TextOverflowModes.Overflow;
-            _statusLabel.textWrappingMode = TextWrappingModes.NoWrap;
-            _metricLabel.textWrappingMode = TextWrappingModes.NoWrap;
-            _droneFleetLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            _statusLabel = ResolveChildText(_root, _statusLabel, "Status");
+            _metricLabel = ResolveChildText(_root, _metricLabel, "Metrics");
+            _droneFleetLabel = ResolveChildText(_root, _droneFleetLabel, "DroneFleet");
+            _logLabel = ResolveChildText(_root, _logLabel, "Log");
+            if (_statusLabel == null || _metricLabel == null || _droneFleetLabel == null || _logLabel == null)
+                return false;
 
-            _subsystemIconImages = new Image[4]; // COLD ALLOC: Image[4] — subsystem monochrome icon image refs — owner: HectonSubmarineOsDisplay
-            _subsystemIconLabels = new TMP_Text[4]; // COLD ALLOC: TMP_Text[4] — subsystem icon labels — owner: HectonSubmarineOsDisplay
-            CreateIconSlot(0, IconEngines, new Vector2(-156f, -16f));
-            CreateIconSlot(1, IconLifeSupport, new Vector2(-78f, -16f));
-            CreateIconSlot(2, IconLights, new Vector2(0f, -16f));
-            CreateIconSlot(3, IconSonar, new Vector2(78f, -16f));
+            _engineHeatBarRoot = ResolveChildRect(_root, _engineHeatBarRoot, "EngineHeatBar");
+            if (_engineHeatBarRoot == null)
+                return false;
 
+            if (_engineHeatBarBackImage == null && !_engineHeatBarRoot.TryGetComponent(out _engineHeatBarBackImage))
+                return false;
+
+            _engineHeatBarBackImage.color = s_heatBarBackColor;
+            _engineHeatBarBackImage.raycastTarget = false;
+
+            _engineHeatBarFill = ResolveChildRect(_engineHeatBarRoot, _engineHeatBarFill, "EngineHeatFill");
+            if (_engineHeatBarFill == null)
+                return false;
+
+            if (_engineHeatBarImage == null && !_engineHeatBarFill.TryGetComponent(out _engineHeatBarImage))
+                return false;
+
+            _engineHeatBarImage.color = s_heatBarFillColor;
+            _engineHeatBarImage.raycastTarget = false;
+
+            if (!TryBindSubsystemIcons())
+                return false;
+
+            ConfigureText(_statusLabel, 19f, TextAlignmentOptions.TopLeft, TextWrappingModes.NoWrap, TextOverflowModes.Overflow);
+            ConfigureText(_metricLabel, 13f, TextAlignmentOptions.TopLeft, TextWrappingModes.NoWrap, TextOverflowModes.Overflow);
+            ConfigureText(_droneFleetLabel, 16f, TextAlignmentOptions.TopLeft, TextWrappingModes.NoWrap, TextOverflowModes.Overflow);
+            ConfigureText(_logLabel, 15f, TextAlignmentOptions.TopLeft, TextWrappingModes.NoWrap, TextOverflowModes.Overflow);
+
+            SetIconLabel(0, IconEngines);
+            SetIconLabel(1, IconLifeSupport);
+            SetIconLabel(2, IconLights);
+            SetIconLabel(3, IconSonar);
+
+            _uiBound = true;
             InvalidateSnapshotRenderCaches();
             RefreshStatusLabels();
             RefreshMetricsLabel();
@@ -579,75 +608,13 @@ namespace Hecton8.UI
             return true;
         }
 
-        private void CreateIconSlot(int index, ReadOnlySpan<char> labelChars, Vector2 anchoredPosition)
-        {
-            GameObject iconObject = new GameObject("SubsystemIcon", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] — subsystem icon root — owner: HectonSubmarineOsDisplay
-            iconObject.transform.SetParent(_root, false);
-            iconObject.TryGetComponent(out RectTransform iconRect);
-            iconRect.anchorMin = new Vector2(1f, 1f);
-            iconRect.anchorMax = new Vector2(1f, 1f);
-            iconRect.pivot = new Vector2(1f, 1f);
-            iconRect.anchoredPosition = anchoredPosition;
-            iconRect.sizeDelta = new Vector2(IconWidth, IconHeight);
-            iconObject.TryGetComponent(out Image iconImage);
-            iconImage.color = s_offlineColor;
-            iconImage.raycastTarget = false;
-            _subsystemIconImages[index] = iconImage;
 
-            TMP_Text label = CreateText("Label", iconRect, new Vector2(0f, 0f), new Vector2(IconWidth, IconHeight), 14f);
-            label.alignment = TextAlignmentOptions.Center;
-            int safeLength = CopySpan(_statusBuffer, 0, labelChars);
-            label.SetCharArray(_statusBuffer, 0, safeLength);
-            _subsystemIconLabels[index] = label;
-        }
 
-        private void CreateEngineHeatBar(Transform parent)
-        {
-            GameObject backObject = new GameObject("EngineHeatBar", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] - engine heat 1D opaque bar background - owner: HectonSubmarineOsDisplay
-            backObject.transform.SetParent(parent, false);
-            backObject.TryGetComponent(out RectTransform backRect);
-            backRect.anchorMin = new Vector2(0f, 1f);
-            backRect.anchorMax = new Vector2(0f, 1f);
-            backRect.pivot = new Vector2(0f, 1f);
-            backRect.anchoredPosition = new Vector2(362f, -61f);
-            backRect.sizeDelta = new Vector2(HeatBarWidth, HeatBarHeight);
-            backObject.TryGetComponent(out Image backImage);
-            backImage.color = s_heatBarBackColor;
-            backImage.raycastTarget = false;
 
-            GameObject fillObject = new GameObject("EngineHeatFill", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] - engine heat 1D opaque bar fill - owner: HectonSubmarineOsDisplay
-            fillObject.transform.SetParent(backRect, false);
-            fillObject.TryGetComponent(out _engineHeatBarFill);
-            _engineHeatBarFill.anchorMin = new Vector2(0f, 1f);
-            _engineHeatBarFill.anchorMax = new Vector2(0f, 1f);
-            _engineHeatBarFill.pivot = new Vector2(0f, 1f);
-            _engineHeatBarFill.anchoredPosition = Vector2.zero;
-            _engineHeatBarFill.sizeDelta = new Vector2(0f, HeatBarHeight);
-            fillObject.TryGetComponent(out _engineHeatBarImage);
-            _engineHeatBarImage.color = s_heatBarFillColor;
-            _engineHeatBarImage.raycastTarget = false;
-        }
 
-        private static TMP_Text CreateText(string name, Transform parent, Vector2 anchoredPosition, Vector2 sizeDelta, float fontSize)
-        {
-            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI), typeof(HectonTextNode)); // COLD ALLOC: GameObject[1] — runtime TMP owner for submarine OS display — owner: HectonSubmarineOsDisplay
-            textObject.transform.SetParent(parent, false);
-            textObject.TryGetComponent(out RectTransform rect);
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = sizeDelta;
 
-            textObject.TryGetComponent(out TextMeshProUGUI text);
-            text.font = TMP_Settings.defaultFontAsset;
-            text.fontSize = fontSize;
-            text.color = s_onlineColor;
-            text.raycastTarget = false;
-            text.alignment = TextAlignmentOptions.TopLeft;
-            TMP_TextRegistry.EnsureRegistered(text);
-            return text;
-        }
+
+
 
         private static Canvas ResolveTargetCanvas()
         {
@@ -655,10 +622,10 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+            if (overlay == null)
                 return null;
 
-            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            overlay.TryGetComponent(out Canvas canvas);
             return canvas;
         }
 
@@ -876,5 +843,142 @@ namespace Hecton8.UI
                     sourceBytes);
             }
         }
-    }
+
+
+        private RectTransform ResolveAuthoredRoot(RectTransform configuredRoot)
+        {
+            if (configuredRoot != null)
+                return configuredRoot;
+
+            RectTransform localRoot = transform as RectTransform;
+            if (localRoot != null)
+                return localRoot;
+
+            Canvas targetCanvas = ResolveTargetCanvas();
+            Transform child = targetCanvas != null ? targetCanvas.transform.Find(RootName) : transform.Find(RootName);
+            return child as RectTransform;
+        }
+
+        private static RectTransform ResolveChildRect(Transform root, RectTransform configuredRect, string childName)
+        {
+            if (configuredRect != null)
+                return configuredRect;
+
+            Transform child = root != null ? root.Find(childName) : null;
+            return child as RectTransform;
+        }
+
+        private static TMP_Text ResolveChildText(Transform root, TMP_Text configuredText, string childName)
+        {
+            if (configuredText != null)
+                return configuredText;
+
+            Transform child = root != null ? root.Find(childName) : null;
+            if (child == null)
+                return null;
+
+            return child.TryGetComponent(out TMP_Text text) ? text : null;
+        }
+
+        private bool TryBindSubsystemIcons()
+        {
+            if (_subsystemIconImages == null || _subsystemIconLabels == null)
+                return false;
+
+            if (_subsystemIconImages.Length < 4 || _subsystemIconLabels.Length < 4)
+                return false;
+
+            if (!HasBoundIconSlots())
+            {
+                int slotIndex = 0;
+                int childCount = _root.childCount;
+                for (int i = 0; i < childCount && slotIndex < 4; i++)
+                {
+                    Transform child = _root.GetChild(i);
+                    if (child == null || child.name != "SubsystemIcon")
+                        continue;
+
+                    if (_subsystemIconImages[slotIndex] == null && child.TryGetComponent(out Image image))
+                        _subsystemIconImages[slotIndex] = image;
+
+                    if (_subsystemIconLabels[slotIndex] == null)
+                        _subsystemIconLabels[slotIndex] = ResolveChildText(child, null, "Label");
+
+                    slotIndex++;
+                }
+            }
+
+            if (!HasBoundIconSlots())
+                return false;
+
+            for (int i = 0; i < 4; i++)
+            {
+                _subsystemIconImages[i].raycastTarget = false;
+                ConfigureText(_subsystemIconLabels[i], 14f, TextAlignmentOptions.Center, TextWrappingModes.NoWrap, TextOverflowModes.Overflow);
+            }
+
+            return true;
+        }
+
+        private bool HasCompleteUiBindings()
+        {
+            return _root != null &&
+                _panelImage != null &&
+                _statusLabel != null &&
+                _metricLabel != null &&
+                _droneFleetLabel != null &&
+                _logLabel != null &&
+                _engineHeatBarRoot != null &&
+                _engineHeatBarBackImage != null &&
+                _engineHeatBarFill != null &&
+                _engineHeatBarImage != null &&
+                HasBoundIconSlots();
+        }
+
+        private bool HasBoundIconSlots()
+        {
+            if (_subsystemIconImages == null ||
+                _subsystemIconLabels == null ||
+                _subsystemIconImages.Length < 4 ||
+                _subsystemIconLabels.Length < 4)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (_subsystemIconImages[i] == null || _subsystemIconLabels[i] == null)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void SetIconLabel(int index, ReadOnlySpan<char> labelChars)
+        {
+            if (!HasBoundIconSlots() || (uint)index >= 4u)
+                return;
+
+            TMP_Text label = _subsystemIconLabels[index];
+            int safeLength = CopySpan(_statusBuffer, 0, labelChars);
+            label.SetCharArray(_statusBuffer, 0, safeLength);
+        }
+
+        private static void ConfigureText(TMP_Text text, float fontSize, TextAlignmentOptions alignment, TextWrappingModes wrappingMode, TextOverflowModes overflowMode)
+        {
+            if (text == null)
+                return;
+
+            if (text.font == null)
+                text.font = TMP_Settings.defaultFontAsset;
+
+            text.fontSize = fontSize;
+            text.color = s_onlineColor;
+            text.raycastTarget = false;
+            text.alignment = alignment;
+            text.textWrappingMode = wrappingMode;
+            text.overflowMode = overflowMode;
+            TMP_TextRegistry.EnsureRegistered(text);
+        }
+}
 }

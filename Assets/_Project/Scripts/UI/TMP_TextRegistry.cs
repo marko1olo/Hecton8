@@ -129,30 +129,35 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Ensure the supplied TMP owner has a registry node.
+        /// Ensure the supplied TMP owner uses an authored registry node.
         /// </summary>
         public static void EnsureRegistered(TMP_Text text)
         {
-            if (text == null)
+            if (!TryGetAuthoredNode(text, out HectonTextNode node))
                 return;
 
-            if (!text.TryGetComponent(out HectonTextNode _))
-                text.gameObject.AddComponent<HectonTextNode>(); // COLD ALLOC: HectonTextNode[1] — TMP registry node for staged font swap ownership — owner: TMP_TextRegistry
+            if (node.isActiveAndEnabled && node.RegistryIndex < 0)
+                Register(node);
         }
 
         /// <summary>
-        /// Update registry metadata for a TMP text owner after runtime creation.
+        /// Update registry metadata for an authored TMP text owner.
         /// </summary>
         public static void SetMetadata(TMP_Text text, int localizationKeyHash, LocLayer layer, bool isUserInput = false)
         {
-            if (text == null)
-                return;
-
-            EnsureRegistered(text);
-            if (!text.TryGetComponent(out HectonTextNode node))
+            if (!TryGetAuthoredNode(text, out HectonTextNode node))
                 return;
 
             node.SetMetadata(localizationKeyHash, layer, isUserInput);
+        }
+
+        private static bool TryGetAuthoredNode(TMP_Text text, out HectonTextNode node)
+        {
+            if (text != null && text.TryGetComponent(out node))
+                return true;
+
+            node = null;
+            return false;
         }
 
         internal static void Register(HectonTextNode node)

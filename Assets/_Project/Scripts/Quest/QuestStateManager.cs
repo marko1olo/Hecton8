@@ -17,22 +17,22 @@ namespace Hecton8.Quest
         private const int ProceduralQuestCapacity = 8;
         private const int QuestTitleCharCapacity = 128;
         private const int QuestDescriptionCharCapacity = 512;
-        private const int WordCapacity = 320;
-        private const int WordStride = 32;
-        private const int QuestWordStart = 0;
-        private const int QuestWordCount = 64;
-        private const int ItemWordStart = 64;
-        private const int ItemWordCount = 64;
-        private const int LocationWordStart = 128;
-        private const int LocationWordCount = 64;
-        private const int NarrativeWordStart = 192;
-        private const int NarrativeWordCount = 32;
-        private const int PhaseWordStart = 224;
-        private const int PhaseWordCount = 32;
-        private const int EntityDestroyWordStart = 256;
-        private const int EntityDestroyWordCount = 32;
-        private const int DeadlockWordStart = 288;
-        private const int DeadlockWordCount = 32;
+        private const int WordCapacity = QuestRuntimeLayout.WordCapacity;
+        private const int WordStride = QuestRuntimeLayout.WordStrideBits;
+        private const int QuestWordStart = QuestRuntimeLayout.QuestWordStart;
+        private const int QuestWordCount = QuestRuntimeLayout.QuestWordCount;
+        private const int ItemWordStart = QuestRuntimeLayout.ItemWordStart;
+        private const int ItemWordCount = QuestRuntimeLayout.ItemWordCount;
+        private const int LocationWordStart = QuestRuntimeLayout.LocationWordStart;
+        private const int LocationWordCount = QuestRuntimeLayout.LocationWordCount;
+        private const int NarrativeWordStart = QuestRuntimeLayout.NarrativeWordStart;
+        private const int NarrativeWordCount = QuestRuntimeLayout.NarrativeWordCount;
+        private const int PhaseWordStart = QuestRuntimeLayout.PhaseWordStart;
+        private const int PhaseWordCount = QuestRuntimeLayout.PhaseWordCount;
+        private const int EntityDestroyWordStart = QuestRuntimeLayout.EntityDestroyWordStart;
+        private const int EntityDestroyWordCount = QuestRuntimeLayout.EntityDestroyWordCount;
+        private const int DeadlockWordStart = QuestRuntimeLayout.DeadlockWordStart;
+        private const int DeadlockWordCount = QuestRuntimeLayout.DeadlockWordCount;
         private const uint ActiveFlagSalt = 0xA11F0A11u;
         private const uint CompletedFlagSalt = 0xC0DE0C01u;
         private const uint BiomeFlagSalt = 0xB10F0001u;
@@ -40,7 +40,7 @@ namespace Hecton8.Quest
         private const uint EclipseFlagHash = 0xE011C1E5u;
         private const uint EntityDestroyFlagSalt = 0xD357F1A6u;
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
-        private const int QuestTransitionAuditCapacity = 128;
+        private const int QuestTransitionAuditCapacity = QuestDagRuntimeConstants.TelemetryCapacity;
         private const string NativeMemoryOwner = nameof(QuestStateManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const Allocator DataVaultExemptQuestStateAllocator = Allocator.Persistent;
@@ -49,7 +49,7 @@ namespace Hecton8.Quest
 
         // COLD ALLOC: List<QuestRuntimeResult>[32] - transition handoff from packed runtime to facade - owner: QuestStateManager
         private readonly List<QuestRuntimeResult> _runtimeResults = new List<QuestRuntimeResult>(32);
-        private readonly QuestTransitionAuditEntry[] _transitionAuditRing = new QuestTransitionAuditEntry[QuestTransitionAuditCapacity]; // COLD ALLOC: QuestTransitionAuditEntry[128] - fixed dev transition ring, no file I/O in signal drain - owner: QuestStateManager
+        private readonly QuestTransitionAuditEntry[] _transitionAuditRing = new QuestTransitionAuditEntry[QuestTransitionAuditCapacity]; // COLD ALLOC: QuestTransitionAuditEntry[300] - fixed dev transition ring, no file I/O in signal drain - owner: QuestStateManager
 
         private NativeArray<uint> _globalPrerequisites;
         private NativeArray<QuestNodeDescriptor> _nodes;
@@ -899,6 +899,43 @@ namespace Hecton8.Quest
                     continue;
 
                 destination[count++] = questHash;
+            }
+
+            return count;
+        }
+
+        public int CopyActiveQuestStates(NativeArray<QuestStateDTO> destination, int maxCount)
+        {
+            if (!destination.IsCreated ||
+                maxCount <= 0 ||
+                _questHashesByQuestIndex == null ||
+                _activeAddressesByQuestIndex == null ||
+                _completedAddressesByQuestIndex == null)
+            {
+                return 0;
+            }
+
+            int capacity = math.min(maxCount, destination.Length);
+            int count = 0;
+            for (int questIndex = 0; questIndex < _questHashesByQuestIndex.Length && count < capacity; questIndex++)
+            {
+                uint questHash = _questHashesByQuestIndex[questIndex];
+                if (questHash == 0u)
+                    continue;
+
+                if (!IsBitSet(_activeAddressesByQuestIndex[questIndex]))
+                    continue;
+
+                if (IsBitSet(_completedAddressesByQuestIndex[questIndex]))
+                    continue;
+
+                destination[count++] = new QuestStateDTO
+                {
+                    ActiveQuestHashID = questHash,
+                    CompletionProgress = 0f,
+                    InjectedSubQuestHashID = 0u,
+                    StateFlags = 0u
+                };
             }
 
             return count;

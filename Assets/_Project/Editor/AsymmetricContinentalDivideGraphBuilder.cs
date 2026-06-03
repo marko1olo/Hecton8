@@ -614,7 +614,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
         // Search all loaded assemblies for the type
         Type genType = null;
 
-        foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+        foreach (global::System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
         {
             try
             {

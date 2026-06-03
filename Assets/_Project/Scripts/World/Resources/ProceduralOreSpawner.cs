@@ -123,6 +123,7 @@ namespace Hecton8.World
         private VaultGenerationHandle<GeologyIndirectArgsDTO> _indirectArgsHandle;
         private VaultGenerationHandle<GeologyHzbTileDTO> _hzbTilesHandle;
         private VaultGenerationHandle<GeologyHzbMetaDTO> _hzbMetaHandle;
+        private VaultGenerationHandle<PlayerEcosystemTelemetryDTO> _playerEcosystemTelemetryHandle;
 
         private GraphicsBuffer _matrixBufferA;
         private GraphicsBuffer _matrixBufferB;
@@ -192,6 +193,8 @@ namespace Hecton8.World
             public NativeArray<int> CandidateSlots;
             public NativeArray<GeologyIndirectArgsDTO> IndirectArgs;
             public NativeArray<GeologyTerrainSampleDTO> MockTerrainSdf;
+            public NativeArray<byte> BiomeHeatmap;
+            public NativeArray<long> SectorHashGrid;
 
             public bool IsReady(int oreCapacity, int mockSampleCount)
             {
@@ -208,10 +211,14 @@ namespace Hecton8.World
                        SpawnCounts.Length >= SpawnCounterCount &&
                        CandidateSlots.IsCreated &&
                        CandidateSlots.Length >= oreCapacity &&
-                       IndirectArgs.IsCreated &&
-                       IndirectArgs.Length >= IndirectArgsCount &&
-                       MockTerrainSdf.IsCreated &&
-                       MockTerrainSdf.Length >= mockSampleCount;
+                        IndirectArgs.IsCreated &&
+                        IndirectArgs.Length >= IndirectArgsCount &&
+                        MockTerrainSdf.IsCreated &&
+                        MockTerrainSdf.Length >= mockSampleCount &&
+                        BiomeHeatmap.IsCreated &&
+                        BiomeHeatmap.Length >= BiomeHeatmapResolution * BiomeHeatmapResolution &&
+                        SectorHashGrid.IsCreated &&
+                        SectorHashGrid.Length >= SectorHashGridCount;
             }
 
             public void Allocate(int oreCapacity, int mockSampleCount)
@@ -228,6 +235,8 @@ namespace Hecton8.World
                     CandidateSlots = AllocateArray<int>(oreCapacity, NativeArrayOptions.UninitializedMemory, nameof(CandidateSlots));
                     IndirectArgs = AllocateArray<GeologyIndirectArgsDTO>(IndirectArgsCount, NativeArrayOptions.ClearMemory, nameof(IndirectArgs));
                     MockTerrainSdf = AllocateArray<GeologyTerrainSampleDTO>(mockSampleCount, NativeArrayOptions.UninitializedMemory, nameof(MockTerrainSdf));
+                    BiomeHeatmap = AllocateArray<byte>(BiomeHeatmapResolution * BiomeHeatmapResolution, NativeArrayOptions.UninitializedMemory, nameof(BiomeHeatmap));
+                    SectorHashGrid = AllocateArray<long>(SectorHashGridCount, NativeArrayOptions.UninitializedMemory, nameof(SectorHashGrid));
                 }
                 catch
                 {
@@ -246,6 +255,8 @@ namespace Hecton8.World
                 DisposeArray(ref CandidateSlots);
                 DisposeArray(ref IndirectArgs);
                 DisposeArray(ref MockTerrainSdf);
+                DisposeArray(ref BiomeHeatmap);
+                DisposeArray(ref SectorHashGrid);
             }
 
             private static NativeArray<T> AllocateArray<T>(int length, NativeArrayOptions options, string label)
@@ -418,6 +429,15 @@ namespace Hecton8.World
             if (_spawnJobScheduled || !IsNativeStateReadyHot())
                 return false;
 
+            PlayerEcosystemTelemetryDTO telemetryBefore = ReadPlayerEcosystemTelemetryHot();
+            bool emitPityHaptic = ShouldResetPityWithFeedback(in telemetryBefore);
+            ItemAcquiredSignal acquiredSignal = default;
+            ResourceDepletionDeltaSignal depletionSignal = default;
+            GeologyIndirectArgsDTO indirectArgs = default;
+            Bounds drawBounds = default;
+            float3 firstOrePosition = default;
+            uint firstNodeHash = 0u;
+            bool marked = false;
             if (!TryLockVaultDepletionBuffers())
                 return false;
 
@@ -450,7 +470,16 @@ namespace Hecton8.World
                 oreHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
                 itemHash = unchecked((uint)ResolveItemHash(oreType));
                 depletedPosition = views.OrePositions[oreIndex];
-                if (MarkDepleted(views, oreIndex))
+                marked = MarkDepleted(
+                    views,
+                    oreIndex,
+                    out acquiredSignal,
+                    out depletionSignal,
+                    out indirectArgs,
+                    out drawBounds,
+                    out firstOrePosition,
+                    out firstNodeHash);
+                if (marked)
                     return true;
 
                 oreHash = 0u;
@@ -461,6 +490,56 @@ namespace Hecton8.World
             finally
             {
                 UnlockVaultWriteBuffers();
+                if (marked)
+                {
+                    _drawBounds = drawBounds;
+                    _telemetryFirstOrePosition = firstOrePosition;
+                    _telemetryFirstNodeHash = firstNodeHash;
+                    PublishDepletionSignals(in acquiredSignal, in depletionSignal);
+                    QueueIndirectArgsGpu(in indirectArgs);
+                    _renderUploadDirty = true;
+                    ResetPlayerEcosystemTelemetryAfterOreExtraction(oreHash, itemHash, emitPityHaptic);
+                }
+            }
+        }
+
+        public void ReportScannerSweepResult(int detectedOreCount, float sweptDistanceMeters, uint frame)
+        {
+            IDataVault vault = _dataVault;
+            bool foundOre = detectedOreCount > 0;
+            float safeDistance = math.isfinite(sweptDistanceMeters) ? math.max(0f, sweptDistanceMeters) : 0f;
+            uint threshold = ProceduralGeologyConstants.PityTimerEmptyScanThreshold != 0u
+                ? ProceduralGeologyConstants.PityTimerEmptyScanThreshold
+                : 1u;
+            uint resolvedFrame = frame != 0u ? frame : _simulationFrameCounter;
+
+            if (vault == null ||
+                !TryAcquirePlayerEcosystemTelemetryWrite(vault, out NativeArray<PlayerEcosystemTelemetryDTO> telemetry))
+            {
+                return;
+            }
+
+            try
+            {
+                PlayerEcosystemTelemetryDTO row = telemetry[0];
+                uint nextStreak = foundOre
+                    ? 0u
+                    : row.EmptyScansStreak == uint.MaxValue
+                        ? uint.MaxValue
+                        : row.EmptyScansStreak + 1u;
+                float nextDistance = foundOre
+                    ? 0f
+                    : math.min(row.DistanceSinceLastFind + safeDistance, 65535f);
+
+                row.LastScanFrame = resolvedFrame;
+                row.EmptyScansStreak = nextStreak;
+                row.DistanceSinceLastFind = nextDistance;
+                row.PityTriggerActive = math.select(0u, 1u, !foundOre && nextStreak >= threshold);
+                telemetry[0] = row;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _playerEcosystemTelemetryHandle, OwnerSystemId);
             }
         }
 
@@ -774,7 +853,8 @@ namespace Hecton8.World
             bool capturedPose = TryCapturePlayerPose(
                 playerContext,
                 out AbsoluteUniversePosition _,
-                out float3 runtimePosition);
+                out float3 runtimePosition,
+                out float3 _);
             if (capturedPose)
                 StorePlayerRuntimePosition(runtimePosition);
 
@@ -791,7 +871,7 @@ namespace Hecton8.World
             if (!ProceduralGeologyLayoutAudit.Validate())
                 return false;
 
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             bool vaultChanged = !ReferenceEquals(_dataVault, vault);
@@ -909,6 +989,11 @@ namespace Hecton8.World
             _hzbMetaHandle = vault.EnsureGenerationHandle<GeologyHzbMetaDTO>(
                 ProceduralGeologyVaultBufferIds.HzbMeta,
                 ProceduralGeologyConstants.HzbMetaCapacity,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _playerEcosystemTelemetryHandle = vault.EnsureGenerationHandle<PlayerEcosystemTelemetryDTO>(
+                ProceduralGeologyVaultBufferIds.PlayerEcosystemTelemetry,
+                ProceduralGeologyConstants.PlayerEcosystemTelemetryCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
@@ -1177,7 +1262,7 @@ namespace Hecton8.World
             NativeArrayOptions options,
             out NativeArray<T> view) where T : struct
         {
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
             {
                 view = default;
                 return false;
@@ -1185,18 +1270,32 @@ namespace Hecton8.World
 
             if (!IsVaultHandleCreated(in handle))
             {
+                if (vault.IsCompactionFenceActive)
+                {
+                    view = default;
+                    return false;
+                }
+
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             }
 
             if (vault.TryResolveHandle(in handle, out view) &&
+                !vault.IsCompactionFenceActive &&
                 view.IsCreated &&
                 view.Length >= requiredLength)
             {
                 return true;
             }
 
+            if (vault.IsCompactionFenceActive)
+            {
+                view = default;
+                return false;
+            }
+
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return vault.TryResolveHandle(in handle, out view) &&
+                   !vault.IsCompactionFenceActive &&
                    view.IsCreated &&
                    view.Length >= requiredLength;
         }
@@ -1209,9 +1308,11 @@ namespace Hecton8.World
             view = default;
             IDataVault vault = _dataVault;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsVaultHandleCreated(in handle) &&
                    vault.TryResolveHandle(in handle, out view) &&
+                   !vault.IsCompactionFenceActive &&
                    view.IsCreated &&
                    view.Length >= requiredLength;
         }
@@ -1224,9 +1325,11 @@ namespace Hecton8.World
             view = default;
             IDataVault vault = _dataVault;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsVaultHandleCreated(in handle) &&
                    vault.TryReadOnlyHandle(in handle, out view) &&
+                   !vault.IsCompactionFenceActive &&
                    view.IsCreated &&
                    view.Length >= requiredLength;
         }
@@ -1292,6 +1395,7 @@ namespace Hecton8.World
             _indirectArgsHandle = default;
             _hzbTilesHandle = default;
             _hzbMetaHandle = default;
+            _playerEcosystemTelemetryHandle = default;
             _dataVault = null;
             _lockedVaultBufferMask = 0;
             _lockedVaultGuardVault = null;
@@ -1507,6 +1611,7 @@ namespace Hecton8.World
             audit.BufferMaskLow = 0x001FFFFFUL;
             audit.BufferMaskHigh = 0UL;
             audit.GlobalQualityWeight = ResolveGlobalQualityWeight();
+            audit.PlayerEcosystemTelemetrySize = (uint)UnsafeUtility.SizeOf<PlayerEcosystemTelemetryDTO>();
             selfAudit[0] = audit;
         }
 
@@ -1530,7 +1635,7 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             int locked = 0;
@@ -1610,7 +1715,7 @@ namespace Hecton8.World
             ref int locked) where T : struct
         {
             _ = bit;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             int guardBit = GeologyVaultMutationGuardMask;
@@ -1631,7 +1736,8 @@ namespace Hecton8.World
             bool keepGuard = false;
             try
             {
-                keepGuard = AcquireBuffer(vault, ref handle, bufferId, requiredLength, options, out NativeArray<T> _);
+                keepGuard = !vault.IsCompactionFenceActive &&
+                            AcquireBuffer(vault, ref handle, bufferId, requiredLength, options, out NativeArray<T> _);
                 return keepGuard;
             }
             finally
@@ -1668,15 +1774,25 @@ namespace Hecton8.World
             out NativeArray<T> lockedView) where T : struct
         {
             lockedView = default;
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
                 return false;
 
             bool handleReady = IsVaultHandleCreated(in handle) &&
+                               !vault.IsCompactionFenceActive &&
                                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                               !vault.IsCompactionFenceActive &&
                                resolved.IsCreated &&
                                resolved.Length >= requiredLength;
             if (!handleReady)
+            {
+                if (vault.IsCompactionFenceActive)
+                    return false;
+
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            }
+
+            if (vault.IsCompactionFenceActive)
+                return false;
 
             if (!vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView))
                 return false;
@@ -1684,7 +1800,9 @@ namespace Hecton8.World
             bool keepLock = false;
             try
             {
-                keepLock = lockedView.IsCreated && lockedView.Length >= requiredLength;
+                keepLock = !vault.IsCompactionFenceActive &&
+                           lockedView.IsCreated &&
+                           lockedView.Length >= requiredLength;
                 return keepLock;
             }
             finally
@@ -1733,7 +1851,7 @@ namespace Hecton8.World
 
         private void RefreshSectorAndTerrain()
         {
-            if (!CapturePlayerPose(out AbsoluteUniversePosition playerAup, out float3 playerRuntimePosition))
+            if (!CapturePlayerPose(out AbsoluteUniversePosition playerAup, out float3 playerRuntimePosition, out float3 playerForward))
                 return;
 
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
@@ -1768,20 +1886,21 @@ namespace Hecton8.World
             {
                 RefreshTerrainPayload(playerAbsolute, out heightPayload);
                 _dropPodAnchorRequiresGenerationRefresh = false;
-                ScheduleSpawnJob(playerAbsolute, playerRuntimePosition, heightPayload);
+                ScheduleSpawnJob(playerAbsolute, playerRuntimePosition, playerForward, heightPayload);
             }
         }
 
-        private bool CapturePlayerPose(out AbsoluteUniversePosition playerAup, out float3 runtimePosition)
+        private bool CapturePlayerPose(out AbsoluteUniversePosition playerAup, out float3 runtimePosition, out float3 forward)
         {
             playerAup = default;
             runtimePosition = default;
+            forward = new float3(0f, 0f, 1f);
 
             IPlayerRuntimeContext playerContext = _playerContext;
             if (playerContext == null)
                 return false;
 
-            if (!TryCapturePlayerPose(playerContext, out playerAup, out runtimePosition))
+            if (!TryCapturePlayerPose(playerContext, out playerAup, out runtimePosition, out forward))
                 return false;
 
             StorePlayerRuntimePosition(runtimePosition);
@@ -1791,10 +1910,12 @@ namespace Hecton8.World
         private static bool TryCapturePlayerPose(
             IPlayerRuntimeContext playerContext,
             out AbsoluteUniversePosition playerAup,
-            out float3 runtimePosition)
+            out float3 runtimePosition,
+            out float3 forward)
         {
             playerAup = default;
             runtimePosition = default;
+            forward = new float3(0f, 0f, 1f);
             if (playerContext == null)
                 return false;
 
@@ -1802,6 +1923,7 @@ namespace Hecton8.World
             {
                 playerAup = snapshot.Aup;
                 runtimePosition = snapshot.RuntimePosition;
+                forward = ResolveFiniteForward(snapshot.Forward);
                 return playerAup.IsFinite() && math.all(math.isfinite(runtimePosition));
             }
 
@@ -1814,7 +1936,25 @@ namespace Hecton8.World
                 return false;
 
             runtimePosition = playerAup.ToRuntimeFloat3();
+            Transform cachedTransform = playerContext.PlayerTransform;
+            if (cachedTransform != null)
+            {
+                Vector3 transformForward = cachedTransform.forward;
+                forward = ResolveFiniteForward(new float3(transformForward.x, transformForward.y, transformForward.z));
+            }
             return math.all(math.isfinite(runtimePosition));
+        }
+
+        private static float3 ResolveFiniteForward(float3 forward)
+        {
+            if (!math.all(math.isfinite(forward)))
+                return new float3(0f, 0f, 1f);
+
+            float3 planar = new float3(forward.x, 0f, forward.z);
+            float lengthSq = math.lengthsq(planar);
+            return lengthSq > 0.0001f
+                ? planar * math.rsqrt(lengthSq)
+                : new float3(0f, 0f, 1f);
         }
 
         private void StorePlayerRuntimePosition(float3 runtimePosition)
@@ -1843,35 +1983,28 @@ namespace Hecton8.World
 
         private void WriteAupSectorHashGrid(int2 centerSector)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !TryAcquireVaultBuffer(
-                    vault,
-                    ref _sectorHashGridHandle,
-                    ProceduralGeologyVaultBufferIds.SectorHashGrid,
-                    SectorHashGridCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<long> sectorHashGrid))
+            if (!_spawnScratch.SectorHashGrid.IsCreated ||
+                _spawnScratch.SectorHashGrid.Length < SectorHashGridCount)
             {
                 return;
             }
 
-            try
+            int write = 0;
+            for (int z = -1; z <= 1; z++)
             {
-                int write = 0;
-                for (int z = -1; z <= 1; z++)
+                for (int x = -1; x <= 1; x++)
                 {
-                    for (int x = -1; x <= 1; x++)
-                    {
-                        int2 sector = new int2(centerSector.x + x, centerSector.y + z);
-                        sectorHashGrid[write++] = ComputeAupSectorHash(sector, worldSeed);
-                    }
+                    int2 sector = new int2(centerSector.x + x, centerSector.y + z);
+                    _spawnScratch.SectorHashGrid[write++] = ComputeAupSectorHash(sector, worldSeed);
                 }
             }
-            finally
-            {
-                vault.ReleaseWriteLock(in _sectorHashGridHandle, OwnerSystemId);
-            }
+
+            TryCopySpawnScratchToVault(
+                _spawnScratch.SectorHashGrid,
+                SectorHashGridCount,
+                ref _sectorHashGridHandle,
+                ProceduralGeologyVaultBufferIds.SectorHashGrid,
+                NativeArrayOptions.UninitializedMemory);
         }
 
         private void RefreshTerrainPayload(double3 playerAbsolute, out GeologyHeightPayloadView heightPayload)
@@ -1926,32 +2059,26 @@ namespace Hecton8.World
 
         private void FillBiomeHeatmap(int biomeId)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !TryAcquireVaultBuffer(
-                    vault,
-                    ref _biomeHeatmapHandle,
-                    ProceduralGeologyVaultBufferIds.BiomeHeatmap,
-                    BiomeHeatmapResolution * BiomeHeatmapResolution,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<byte> biomeHeatmap))
+            int heatmapLength = BiomeHeatmapResolution * BiomeHeatmapResolution;
+            if (!_spawnScratch.BiomeHeatmap.IsCreated ||
+                _spawnScratch.BiomeHeatmap.Length < heatmapLength)
             {
                 return;
             }
 
-            try
-            {
-                byte packed = (byte)math.clamp(biomeId, 0, byte.MaxValue);
-                for (int i = 0; i < biomeHeatmap.Length; i++)
-                    biomeHeatmap[i] = packed;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _biomeHeatmapHandle, OwnerSystemId);
-            }
+            byte packed = (byte)math.clamp(biomeId, 0, byte.MaxValue);
+            for (int i = 0; i < heatmapLength; i++)
+                _spawnScratch.BiomeHeatmap[i] = packed;
+
+            TryCopySpawnScratchToVault(
+                _spawnScratch.BiomeHeatmap,
+                heatmapLength,
+                ref _biomeHeatmapHandle,
+                ProceduralGeologyVaultBufferIds.BiomeHeatmap,
+                NativeArrayOptions.UninitializedMemory);
         }
 
-        private void ScheduleSpawnJob(double3 playerAbsolute, float3 playerRuntimePosition, GeologyHeightPayloadView payload)
+        private void ScheduleSpawnJob(double3 playerAbsolute, float3 playerRuntimePosition, float3 playerForward, GeologyHeightPayloadView payload)
         {
             if (!IsNativeStateReadyHot() || !AreSpawnStagingBuffersReadyHot())
                 return;
@@ -1967,6 +2094,7 @@ namespace Hecton8.World
             GeologyTuningDTO tuning = views.GeologyTuning.IsCreated && views.GeologyTuning.Length > 0
                 ? views.GeologyTuning[0]
                 : GeologyTuningDTO.Default(sectorSizeMeters);
+            PlayerEcosystemTelemetryDTO playerTelemetry = ReadPlayerEcosystemTelemetryHot();
             float safeSectorSize = math.max(16f, tuning.SectorSizeMeters);
             double2 sectorOrigin = new double2((double)_currentSector.x * safeSectorSize, (double)_currentSector.y * safeSectorSize);
             float qualityWeight = ResolveGlobalQualityWeight();
@@ -2033,6 +2161,9 @@ namespace Hecton8.World
                 HasDropPodAnchor = _hasDropPodAnchor ? 1 : 0,
                 CameraAbsolutePosition = playerAbsolute,
                 CameraRuntimePosition = playerRuntimePosition,
+                PlayerForward = ResolveFiniteForward(playerForward),
+                EmptyScansStreak = playerTelemetry.EmptyScansStreak,
+                PityTelemetryFlags = playerTelemetry.PityTriggerActive,
                 GlobalQualityWeight = qualityWeight,
                 VisualClusterDensity = math.saturate(tuning.VisualClusterDensity),
                 ClusterSpreadRadius = math.max(0.05f, tuning.ClusterSpreadRadius)
@@ -2041,6 +2172,113 @@ namespace Hecton8.World
             _spawnJob = job.Schedule(dependency);
             H8Memory.RegisterActiveJob(OwnerSystemId, _spawnJob);
             _spawnJobScheduled = true;
+        }
+
+        private PlayerEcosystemTelemetryDTO ReadPlayerEcosystemTelemetryHot()
+        {
+            PlayerEcosystemTelemetryDTO telemetry = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !TryAcquirePlayerEcosystemTelemetryWrite(vault, out NativeArray<PlayerEcosystemTelemetryDTO> telemetryView))
+            {
+                return telemetry;
+            }
+
+            try
+            {
+                telemetry = telemetryView[0];
+                return vault.IsCompactionFenceActive ? default : telemetry;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _playerEcosystemTelemetryHandle, OwnerSystemId);
+            }
+        }
+
+        private static bool ShouldResetPityWithFeedback(in PlayerEcosystemTelemetryDTO telemetry)
+        {
+            uint threshold = ProceduralGeologyConstants.PityTimerEmptyScanThreshold != 0u
+                ? ProceduralGeologyConstants.PityTimerEmptyScanThreshold
+                : 1u;
+            return telemetry.EmptyScansStreak >= threshold || (telemetry.PityTriggerActive & 1u) != 0u;
+        }
+
+        private void ResetPlayerEcosystemTelemetryAfterOreExtraction(uint oreHash, uint itemHash, bool emitHaptic)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !TryAcquirePlayerEcosystemTelemetryWrite(vault, out NativeArray<PlayerEcosystemTelemetryDTO> telemetry))
+            {
+                return;
+            }
+
+            uint frame = _simulationFrameCounter;
+            try
+            {
+                PlayerEcosystemTelemetryDTO row = telemetry[0];
+                row.EmptyScansStreak = 0u;
+                row.TotalOresMined = row.TotalOresMined == uint.MaxValue ? uint.MaxValue : row.TotalOresMined + 1u;
+                row.DistanceSinceLastFind = 0f;
+                row.PityTriggerActive = 0u;
+                row.LastScanFrame = frame;
+                row.LastResolvedOreHash = oreHash;
+                row.LastPityResourceType = itemHash;
+                row.LastPitySpawnFrame = frame;
+                telemetry[0] = row;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _playerEcosystemTelemetryHandle, OwnerSystemId);
+            }
+
+            if (emitHaptic)
+                PushPityTimerResolvedHaptic(frame);
+        }
+
+        private bool TryAcquirePlayerEcosystemTelemetryWrite(
+            IDataVault vault,
+            out NativeArray<PlayerEcosystemTelemetryDTO> telemetry)
+        {
+            telemetry = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsVaultHandleCreated(in _playerEcosystemTelemetryHandle))
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _playerEcosystemTelemetryHandle, OwnerSystemId, out telemetry))
+                return false;
+
+            bool keepLock = false;
+            try
+            {
+                keepLock = !vault.IsCompactionFenceActive &&
+                           telemetry.IsCreated &&
+                           telemetry.Length >= ProceduralGeologyConstants.PlayerEcosystemTelemetryCapacity;
+                return keepLock;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _playerEcosystemTelemetryHandle, OwnerSystemId);
+                    telemetry = default;
+                }
+            }
+        }
+
+        private static void PushPityTimerResolvedHaptic(uint frame)
+        {
+            HapticRequest request = default;
+            request.Intensity01 = 0.18f;
+            request.DurationSeconds = 0.06f;
+            request.Frequency01 = 0.72f;
+            request.SourceHash = 0x50495459u; // PITY
+            request.Frame = frame;
+            request.Channel = HapticRequest.ChannelMicroVibration;
+            request.Flags = HapticRequest.FlagMicroVibration;
+            SignalBus<HapticRequest>.TryPushTracked(in request, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
         }
 
         private static bool HasQuantizedHeightPayload(in GeologyHeightPayloadView payload)
@@ -2255,8 +2493,7 @@ namespace Hecton8.World
                 if (!target.IsCreated || target.Length < requiredLength)
                     return false;
 
-                for (int i = 0; i < requiredLength; i++)
-                    target[i] = source[i];
+                NativeArray<T>.Copy(source, 0, target, 0, requiredLength);
 
                 return true;
             }
@@ -2304,6 +2541,7 @@ namespace Hecton8.World
             if (!TryLockVaultDepletionMaskBuffers())
                 return;
 
+            bool loaded = false;
             try
             {
                 if (!TryOpenExistingDepletionMaskViews(out ProceduralGeologyVaultViews views))
@@ -2319,11 +2557,13 @@ namespace Hecton8.World
                         : ulong.MaxValue;
                 }
 
-                _depletionLoaded = true;
+                loaded = true;
             }
             finally
             {
                 UnlockVaultWriteBuffers();
+                if (loaded)
+                    _depletionLoaded = true;
             }
         }
 
@@ -2378,10 +2618,11 @@ namespace Hecton8.World
             if (capacity <= 0)
                 return -1;
 
-            uint start = ProceduralGeologyHash.Mix64To32(key);
+            int startIndex = MapHashToCapacity(ProceduralGeologyHash.Mix64To32(key), capacity);
             for (int probe = 0; probe < capacity; probe++)
             {
-                int index = (int)((start + (uint)probe) % (uint)capacity);
+                int index = startIndex + probe;
+                index -= math.select(0, capacity, index >= capacity);
                 ulong existing = views.DepletionCacheKeys[index];
                 if (existing == key)
                 {
@@ -2396,14 +2637,35 @@ namespace Hecton8.World
             return -1;
         }
 
+        private static int MapHashToCapacity(uint hash, int capacity)
+        {
+            int safeCapacity = math.max(1, capacity);
+            return (int)(((ulong)hash * (uint)safeCapacity) >> 32);
+        }
+
         private static ulong NormalizeDepletionWordKey(long sectorHash, int wordIndex)
         {
             ulong key = ComputeDepletionWordKey(sectorHash, wordIndex);
             return key == 0UL ? 1UL : key;
         }
 
-        private bool MarkDepleted(ProceduralGeologyVaultViews views, int oreIndex)
+        private bool MarkDepleted(
+            ProceduralGeologyVaultViews views,
+            int oreIndex,
+            out ItemAcquiredSignal acquiredSignal,
+            out ResourceDepletionDeltaSignal depletionSignal,
+            out GeologyIndirectArgsDTO indirectArgs,
+            out Bounds drawBounds,
+            out float3 firstOrePosition,
+            out uint firstNodeHash)
         {
+            acquiredSignal = default;
+            depletionSignal = default;
+            indirectArgs = default;
+            drawBounds = default;
+            firstOrePosition = default;
+            firstNodeHash = 0u;
+
             if ((uint)oreIndex >= (uint)_renderInstanceCount ||
                 !views.ResourceNodes.IsCreated ||
                 !views.OreTypes.IsCreated ||
@@ -2435,7 +2697,6 @@ namespace Hecton8.World
             uint oreHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
             int depletedOreType = views.OreTypes[oreIndex];
             uint frame = AdvanceSimulationFrameId();
-            ItemAcquiredSignal acquiredSignal = default;
             acquiredSignal.PositionAup = positionAup;
             acquiredSignal.ItemHash = unchecked((uint)ResolveItemHash(depletedOreType));
             acquiredSignal.OreHash = oreHash;
@@ -2443,9 +2704,7 @@ namespace Hecton8.World
             acquiredSignal.SourceKind = 2;
             acquiredSignal.Flags = 0;
             acquiredSignal.Frame = frame;
-            SignalBus<ItemAcquiredSignal>.TryPushTracked(in acquiredSignal, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
 
-            ResourceDepletionDeltaSignal depletionSignal = default;
             depletionSignal.SectorHash = _currentSectorHash;
             depletionSignal.DepletionMask = mask;
             depletionSignal.OreHash = oreHash;
@@ -2453,17 +2712,23 @@ namespace Hecton8.World
             depletionSignal.WordIndex = (ushort)wordIndex;
             depletionSignal.Operation = 1;
             depletionSignal.Flags = 0;
-            SignalBus<ResourceDepletionDeltaSignal>.TryPushTracked(in depletionSignal, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
 
             ClearRenderedSlot(views, deterministicSlot, oreIndex);
             _depletedCullCount = math.max(0, _depletedCullCount + 1);
             CompactRenderedRows(views);
-            _drawBounds = ResolveDrawBounds(views);
-            UpdateIndirectArgsBuffer(views.IndirectArgs, (uint)_renderInstanceCount);
-            RefreshFirstLiveOreTelemetry(views);
-            _renderUploadDirty = true;
+            drawBounds = ResolveDrawBounds(views);
+            indirectArgs = UpdateIndirectArgsBuffer(views.IndirectArgs, (uint)_renderInstanceCount);
+            ResolveFirstLiveOreTelemetry(views, out firstOrePosition, out firstNodeHash);
             WriteTelemetrySample(views.TelemetryRing, ResolveDepletionWord0(views.DepletionMasks), 1u);
             return true;
+        }
+
+        private static void PublishDepletionSignals(
+            in ItemAcquiredSignal acquiredSignal,
+            in ResourceDepletionDeltaSignal depletionSignal)
+        {
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in acquiredSignal, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
+            SignalBus<ResourceDepletionDeltaSignal>.TryPushTracked(in depletionSignal, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
         }
 
         private void ClearRenderedSlot(ProceduralGeologyVaultViews views, int deterministicSlot, int fallbackIndex)
@@ -2663,17 +2928,20 @@ namespace Hecton8.World
             if (!TryLockVaultRuntimeShiftBuffers())
                 return false;
 
+            bool applied = false;
             try
             {
                 if (!TryOpenExistingRuntimeShiftViews(out ProceduralGeologyVaultViews views))
                     return false;
 
-                ApplyRuntimeShift(views, totalShift, writeTelemetry);
+                applied = ApplyRuntimeShift(views, totalShift, writeTelemetry);
                 return true;
             }
             finally
             {
                 UnlockVaultWriteBuffers();
+                if (applied)
+                    ApplyRuntimeShiftPresentation(totalShift);
             }
         }
 
@@ -2682,10 +2950,10 @@ namespace Hecton8.World
             return shiftFrameId != lastAppliedFrameId && unchecked(shiftFrameId - lastAppliedFrameId) < 0x80000000u;
         }
 
-        private void ApplyRuntimeShift(ProceduralGeologyVaultViews views, float3 totalShift, bool writeTelemetry)
+        private bool ApplyRuntimeShift(ProceduralGeologyVaultViews views, float3 totalShift, bool writeTelemetry)
         {
             if (!math.any(totalShift != new float3(0f)))
-                return;
+                return false;
 
             if (_renderInstanceCount > 0 && views.OreMatrices.IsCreated)
             {
@@ -2716,6 +2984,14 @@ namespace Hecton8.World
                 }
             }
 
+            if (writeTelemetry)
+                WriteTelemetrySample(views.TelemetryRing, 0UL, 2u);
+
+            return true;
+        }
+
+        private void ApplyRuntimeShiftPresentation(float3 totalShift)
+        {
             if (_hasDropPodAnchor)
                 _dropPodRuntimePosition -= totalShift;
             if (_hasPlayerRuntimePosition)
@@ -2724,8 +3000,6 @@ namespace Hecton8.World
                 _telemetryFirstOrePosition -= totalShift;
 
             _renderUploadDirty = true;
-            if (writeTelemetry)
-                WriteTelemetrySample(views.TelemetryRing, 0UL, 2u);
         }
 
         private void UploadRenderMatrices()
@@ -2781,12 +3055,11 @@ namespace Hecton8.World
 
         private void UpdateIndirectArgsBuffer(uint instanceCount)
         {
-            if (_argsBuffer == null)
-                return;
-
+            GeologyIndirectArgsDTO args = BuildIndirectArgs(instanceCount);
+            bool wroteVault = false;
             IDataVault vault = _dataVault;
-            if (vault == null ||
-                !TryAcquireVaultBuffer(
+            if (vault != null &&
+                TryAcquireVaultBuffer(
                     vault,
                     ref _indirectArgsHandle,
                     ProceduralGeologyVaultBufferIds.IndirectArgs,
@@ -2794,42 +3067,47 @@ namespace Hecton8.World
                     NativeArrayOptions.UninitializedMemory,
                     out NativeArray<GeologyIndirectArgsDTO> indirectArgs))
             {
-                return;
+                try
+                {
+                    WriteIndirectArgs(indirectArgs, in args);
+                    wroteVault = true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _indirectArgsHandle, OwnerSystemId);
+                }
             }
 
-            try
-            {
-                UpdateIndirectArgsBuffer(indirectArgs, instanceCount);
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _indirectArgsHandle, OwnerSystemId);
-            }
+            if (wroteVault && _argsBuffer != null)
+                QueueIndirectArgsGpu(in args);
         }
 
-        private void UpdateIndirectArgsBuffer(NativeArray<GeologyIndirectArgsDTO> indirectArgs, uint instanceCount)
+        private static GeologyIndirectArgsDTO UpdateIndirectArgsBuffer(NativeArray<GeologyIndirectArgsDTO> indirectArgs, uint instanceCount)
         {
-            GeologyIndirectArgsDTO args = indirectArgs.IsCreated && indirectArgs.Length > 0
-                ? indirectArgs[0]
-                : default;
-            args.VertexCountPerInstance = OreProceduralVertexCount;
-            args.InstanceCount = instanceCount;
-            args.StartVertex = 0u;
-            args.StartInstance = 0u;
-
-            if (indirectArgs.IsCreated && indirectArgs.Length > 0)
-                indirectArgs[0] = args;
-
-            QueueIndirectArgsGpu(in args);
+            GeologyIndirectArgsDTO args = BuildIndirectArgs(instanceCount);
+            WriteIndirectArgs(indirectArgs, in args);
+            return args;
         }
 
-        private void QueueIndirectArgsGpu(uint instanceCount)
+        private static GeologyIndirectArgsDTO BuildIndirectArgs(uint instanceCount)
         {
             GeologyIndirectArgsDTO args = default;
             args.VertexCountPerInstance = OreProceduralVertexCount;
             args.InstanceCount = instanceCount;
             args.StartVertex = 0u;
             args.StartInstance = 0u;
+            return args;
+        }
+
+        private static void WriteIndirectArgs(NativeArray<GeologyIndirectArgsDTO> indirectArgs, in GeologyIndirectArgsDTO args)
+        {
+            if (indirectArgs.IsCreated && indirectArgs.Length > 0)
+                indirectArgs[0] = args;
+        }
+
+        private void QueueIndirectArgsGpu(uint instanceCount)
+        {
+            GeologyIndirectArgsDTO args = BuildIndirectArgs(instanceCount);
             QueueIndirectArgsGpu(in args);
         }
 
@@ -2919,6 +3197,12 @@ namespace Hecton8.World
         private void WriteTelemetrySample(uint flags)
         {
             IDataVault vault = _dataVault;
+            TryReadExistingBuffer(
+                in _depletionMasksHandle,
+                _depletionWordCount,
+                out NativeArray<ulong>.ReadOnly depletionMasks);
+            ulong depletionWord0 = ResolveDepletionWord0(depletionMasks);
+
             if (vault == null ||
                 !TryAcquireVaultBuffer(
                     vault,
@@ -2933,11 +3217,7 @@ namespace Hecton8.World
 
             try
             {
-                TryReadExistingBuffer(
-                    in _depletionMasksHandle,
-                    _depletionWordCount,
-                    out NativeArray<ulong>.ReadOnly depletionMasks);
-                WriteTelemetrySample(telemetryRing, ResolveDepletionWord0(depletionMasks), flags);
+                WriteTelemetrySample(telemetryRing, depletionWord0, flags);
             }
             finally
             {
@@ -2971,7 +3251,9 @@ namespace Hecton8.World
             int index = _telemetryWriteIndex;
             if ((uint)index >= (uint)telemetryRing.Length)
                 index = 0;
-            _telemetryWriteIndex = (index + 1) % math.max(1, telemetryRing.Length);
+            int nextTelemetryIndex = index + 1;
+            nextTelemetryIndex -= math.select(0, telemetryRing.Length, nextTelemetryIndex >= telemetryRing.Length);
+            _telemetryWriteIndex = nextTelemetryIndex;
             float3 player = _hasPlayerRuntimePosition
                 ? _lastPlayerRuntimePosition
                 : default;
@@ -3007,8 +3289,16 @@ namespace Hecton8.World
 
         private void RefreshFirstLiveOreTelemetry(ProceduralGeologyVaultViews views)
         {
-            _telemetryFirstOrePosition = default;
-            _telemetryFirstNodeHash = 0u;
+            ResolveFirstLiveOreTelemetry(views, out _telemetryFirstOrePosition, out _telemetryFirstNodeHash);
+        }
+
+        private void ResolveFirstLiveOreTelemetry(
+            ProceduralGeologyVaultViews views,
+            out float3 firstOrePosition,
+            out uint firstNodeHash)
+        {
+            firstOrePosition = default;
+            firstNodeHash = 0u;
             if (!views.CandidateSlots.IsCreated || !views.OreTypes.IsCreated || !views.OrePositions.IsCreated)
                 return;
 
@@ -3023,8 +3313,8 @@ namespace Hecton8.World
                 if (deterministicSlot < 0)
                     continue;
 
-                _telemetryFirstOrePosition = views.OrePositions[i];
-                _telemetryFirstNodeHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
+                firstOrePosition = views.OrePositions[i];
+                firstNodeHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
                 return;
             }
         }
@@ -3103,8 +3393,6 @@ namespace Hecton8.World
                 int start = _telemetryWriteIndex - count;
                 while (start < 0)
                     start += telemetryRing.Length;
-                if (start >= telemetryRing.Length)
-                    start %= telemetryRing.Length;
 
                 for (int i = 0; i < count; i++)
                 {
@@ -3385,6 +3673,9 @@ namespace Hecton8.World
             public int HasDropPodAnchor;
             public double3 CameraAbsolutePosition;
             public float3 CameraRuntimePosition;
+            public float3 PlayerForward;
+            public uint EmptyScansStreak;
+            public uint PityTelemetryFlags;
             public float GlobalQualityWeight;
             public float VisualClusterDensity;
             public float ClusterSpreadRadius;
@@ -3403,9 +3694,39 @@ namespace Hecton8.World
                 int previousOreType = OreTypeBasaltIron;
                 float3 previousOrePosition = default;
                 bool hasPreviousOre = false;
+                int pitySlotToSkip = -1;
+                uint pityState = ResolvePitySeed();
+                if (ShouldTriggerPity() &&
+                    TryResolvePitySlot(safeScanCount, ref pityState, out pitySlotToSkip) &&
+                    TryResolvePityPlacement(ref pityState, out double3 pityAbsolute, out float3 pityNormal))
+                {
+                    if (renderCount < safeCapacity)
+                    {
+                        int pityOreType = SelectPityOreType(ref pityState);
+                        float3 pityPosition = ResolveRuntimePosition(pityAbsolute);
+                        float pityScale = SampleSlotScale(pitySlotToSkip, ref pityState);
+                        WriteNode(renderCount, pityPosition, pityNormal, pityAbsolute, (uint)pityOreType, 1f, pityScale, pitySlotToSkip);
+                        OreTypes[renderCount] = pityOreType;
+                        if (pityOreType == OreTypeTitanium)
+                            localTitaniumCount++;
+
+                        previousOreType = pityOreType;
+                        previousOrePosition = pityPosition;
+                        hasPreviousOre = true;
+                        authoritativeCount++;
+                        renderCount++;
+                    }
+                    else
+                    {
+                        overflowCount++;
+                    }
+                }
 
                 for (int slot = 0; slot < safeScanCount; slot++)
                 {
+                    if (slot == pitySlotToSkip)
+                        continue;
+
                     if (!IsBitSet(slot))
                     {
                         depletedCullCount++;
@@ -3500,6 +3821,150 @@ namespace Hecton8.World
                     args.StartInstance = 0u;
                     IndirectArgs[0] = args;
                 }
+            }
+
+            private bool ShouldTriggerPity()
+            {
+                uint threshold = ProceduralGeologyConstants.PityTimerEmptyScanThreshold != 0u
+                    ? ProceduralGeologyConstants.PityTimerEmptyScanThreshold
+                    : 1u;
+                uint forceFlag = PityTelemetryFlags & 1u;
+                return EmptyScansStreak >= threshold || forceFlag != 0u;
+            }
+
+            private uint ResolvePitySeed()
+            {
+                ulong key = SectorHash ^
+                            ((ulong)EmptyScansStreak << 32) ^
+                            ((ulong)PityTelemetryFlags << 17) ^
+                            0x504954594F524538UL; // PITYORE8
+                uint state = ProceduralGeologyHash.Mix64To32(key ^ Seed);
+                return state != 0u ? state : 0xA341316Cu;
+            }
+
+            private bool TryResolvePitySlot(int safeScanCount, ref uint state, out int slot)
+            {
+                slot = -1;
+                if (safeScanCount <= 0)
+                    return false;
+
+                int limit = safeScanCount;
+                int start = MapToRange(Next(ref state), limit);
+                int probeCount = math.min(limit, 64);
+                for (int probe = 0; probe < probeCount; probe++)
+                {
+                    int candidate = start + probe;
+                    candidate -= math.select(0, limit, candidate >= limit);
+                    if (!IsBitSet(candidate))
+                        continue;
+
+                    slot = candidate;
+                    return true;
+                }
+
+                return false;
+            }
+
+            private bool TryResolvePityPlacement(ref uint state, out double3 oreAbsolute, out float3 normal)
+            {
+                float3 forward = ResolvePityForward();
+                float3 right = new float3(-forward.z, 0f, forward.x);
+                normal = new float3(0f, 1f, 0f);
+                oreAbsolute = CameraAbsolutePosition;
+                double baseAheadMeters = 42.0 + (Next01(ref state) * 18.0);
+                double baseLateralMeters = (Next01(ref state) - 0.5f) * 12.0;
+                float minimumNormalY = math.max(0.35f, SlopeRejectNormalY);
+
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    uint attemptState = state + unchecked((uint)attempt * 747796405u);
+                    double aheadMeters = baseAheadMeters + attempt * 8.0;
+                    double lateralMeters = baseLateralMeters + ((Next01(ref attemptState) - 0.5f) * 8.0);
+                    double x = CameraAbsolutePosition.x + forward.x * aheadMeters + right.x * lateralMeters;
+                    double z = CameraAbsolutePosition.z + forward.z * aheadMeters + right.z * lateralMeters;
+                    if (!IsPityPlacementInsideSampleBounds(x, z))
+                        continue;
+
+                    float y = SampleGrounding(x, z, out float3 candidateNormal);
+                    if (!math.isfinite(y))
+                        continue;
+
+                    normal = SafeNormalize(candidateNormal, new float3(0f, 1f, 0f));
+                    oreAbsolute = new double3(x, y + 0.08f, z);
+                    if (normal.y < minimumNormalY)
+                        continue;
+
+                    return math.all(math.isfinite(oreAbsolute)) && math.all(math.isfinite(normal));
+                }
+
+                return false;
+            }
+
+            private bool IsPityPlacementInsideSampleBounds(double x, double z)
+            {
+                if (!math.isfinite(x) || !math.isfinite(z))
+                    return false;
+
+                if (HeightResolution > 1 &&
+                    HeightSamples.IsCreated &&
+                    HeightSamples.Length >= HeightResolution * HeightResolution)
+                {
+                    double sizeX = math.max(0.001, (double)TerrainSize.x);
+                    double sizeZ = math.max(0.001, (double)TerrainSize.z);
+                    double minX = TerrainOriginAbsoluteXZ.x;
+                    double minZ = TerrainOriginAbsoluteXZ.y;
+                    double maxX = minX + sizeX;
+                    double maxZ = minZ + sizeZ;
+                    return math.isfinite(minX) &&
+                           math.isfinite(minZ) &&
+                           math.isfinite(maxX) &&
+                           math.isfinite(maxZ) &&
+                           x >= minX &&
+                           x <= maxX &&
+                           z >= minZ &&
+                           z <= maxZ;
+                }
+
+                if (MockTerrainResolution > 1 &&
+                    MockTerrainSdf.IsCreated &&
+                    MockTerrainSdf.Length >= MockTerrainResolution * MockTerrainResolution)
+                {
+                    double size = math.max(0.001, (double)SectorSize);
+                    double minX = SectorOrigin.x;
+                    double minZ = SectorOrigin.y;
+                    double maxX = minX + size;
+                    double maxZ = minZ + size;
+                    return math.isfinite(minX) &&
+                           math.isfinite(minZ) &&
+                           math.isfinite(maxX) &&
+                           math.isfinite(maxZ) &&
+                           x >= minX &&
+                           x <= maxX &&
+                           z >= minZ &&
+                           z <= maxZ;
+                }
+
+                return true;
+            }
+
+            private float3 ResolvePityForward()
+            {
+                if (!math.all(math.isfinite(PlayerForward)))
+                    return new float3(0f, 0f, 1f);
+
+                float3 planar = new float3(PlayerForward.x, 0f, PlayerForward.z);
+                float lengthSq = math.lengthsq(planar);
+                return lengthSq > 0.0001f
+                    ? planar * math.rsqrt(lengthSq)
+                    : new float3(0f, 0f, 1f);
+            }
+
+            private int SelectPityOreType(ref uint state)
+            {
+                uint roll = Next(ref state);
+                bool highStreakBonus = EmptyScansStreak >= ProceduralGeologyConstants.PityTimerEmptyScanThreshold + 3u;
+                bool titanium = highStreakBonus && (roll & 3u) == 0u;
+                return math.select(OreTypeCopper, OreTypeTitanium, titanium);
             }
 
             private int ResolveSafeCapacity()
@@ -3904,6 +4369,12 @@ namespace Hecton8.World
             private static int MapToPercent(uint value)
             {
                 return (int)(((ulong)value * 100UL) >> 32);
+            }
+
+            private static int MapToRange(uint value, int range)
+            {
+                int safeRange = math.max(1, range);
+                return (int)(((ulong)value * (uint)safeRange) >> 32);
             }
 
             private static float TriangleSigned(float phase)

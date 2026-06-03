@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2773288162289488630}
   - component: {fileID: 1014208027966360417}
+  - component: {fileID: 1874470122390030120}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__strap
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3493780052427091132}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.050786138, y: 2.4655824, z: 0.0118919015}
-  m_Size: 4.9311647
+  m_LocalReferencePoint: {x: -0.055447698, y: 2.548661, z: 0.01969701}
+  m_Size: 5.097322
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 5292093423936425110}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &1874470122390030120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3493780052427091132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 129f00f32de6445468ad9e21bc296d35, type: 2}
 --- !u!1 &3521977915796961417
 GameObject:
   m_ObjectHideFlags: 0

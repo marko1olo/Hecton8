@@ -1,10 +1,17 @@
 ---
 packet_id: P045_BLACK_BOX_NAME_STACK
+release_set_id: RS009_COLONY_LAYOUT_WORKER_EVIDENCE
 article_id: hecton8.black_box_name_stack
+unlock_id: unlock.first_black_box_name_stack
+poi_tags: poi.black_box_stack;poi.evacuation_manifest
+biome_tags: biome.deep_colony;biome.factory_threshold
 locale: nl_NL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Naamstapel uit zwarte dozen

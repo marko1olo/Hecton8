@@ -3188,7 +3188,6 @@ public struct VoxelSpawnPointJob : IJob
 
 public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSonarSdfReadModel, Hecton8.Core.Contracts.IVoxelSonarSdfSurfaceResolver, Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel, IGlobalRegistryHotSwapListener
 {
-    private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
     private const string RuntimeCaveVolumeName = "CaveVolume";
     private const string RuntimeCaveMeshName = "CaveMesh";
     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
@@ -3873,11 +3872,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     IDataVault _streamingScratchVault;
     IDataVault _pendingStreamingScratchVault;
     VoxelStreamingScratchSlot[] _streamingScratchSlots;
-    VoxelDeltaProcessor _deltaProcessor;
-    Material _runtimeVoxelBakeGhostMaterial;
+    [SerializeField] VoxelDeltaProcessor _deltaProcessor;
 
     internal VoxelDeltaProcessor DeltaProcessor => _deltaProcessor;
-    internal Material ResolvedVoxelBakeGhostMaterial => voxelBakeGhostMaterial != null ? voxelBakeGhostMaterial : _runtimeVoxelBakeGhostMaterial;
+    internal Material ResolvedVoxelBakeGhostMaterial => voxelBakeGhostMaterial;
 
     StreamingScratchGateScope EnterStreamingScratchGate()
     {
@@ -4317,8 +4315,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         public void Execute()
         {
-            if (EntityId.ToULong(MeshId) != 0ul)
-                UnityEngine.Physics.BakeMesh(MeshId, false);
         }
     }
 
@@ -4328,13 +4324,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     static bool TryScheduleVoxelPhysicsBake(in VoxelMeshBakeJob job, out JobHandle handle)
     {
-        if (Application.isPlaying && !CanScheduleVoxelPhysicsBake())
-        {
-            handle = default;
-            return false;
-        }
-
-        return job.TryScheduleAdmitted(JobAdmissionLane.Lane2_Voxel, default, out handle);
+        handle = default;
+        return false;
     }
 
     private static bool CanScheduleVoxelPhysicsBake()
@@ -4378,10 +4369,25 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         EnsureStreamingScratchSlots();
         HectonVoxelVolume.TryEnsurePublishedSonarVaultPayloadCapacity(_streamingScratchVault);
         _ = WarmVoxelMeshPoolsAsync(destroyCancellationToken);
-        if (!TryGetComponent(out _deltaProcessor))
-            _deltaProcessor = gameObject.AddComponent<VoxelDeltaProcessor>();
+        CacheVoxelDeltaProcessorCold();
 
         MCTables.Initialize(_streamingScratchVault);
+    }
+
+    void CacheVoxelDeltaProcessorCold()
+    {
+        if (_deltaProcessor != null)
+            return;
+
+        TryGetComponent(out _deltaProcessor);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (_deltaProcessor == null)
+        {
+            Hecton8.Core.H8Debug.LogError(
+                "[HectonVoxel] Missing authored VoxelDeltaProcessor. Runtime voxel carving and delta-save replay will fail closed until the prefab is fixed.",
+                this);
+        }
+#endif
     }
 
     void OnDisable()
@@ -6317,39 +6323,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             }
         }
 
-        if (_runtimeVoxelBakeGhostMaterial != null)
-        {
-            SafeDestroy(_runtimeVoxelBakeGhostMaterial);
-            _runtimeVoxelBakeGhostMaterial = null;
-        }
     }
 
     void EnsureVoxelBakeGhostMaterial()
     {
-        if (voxelBakeGhostMaterial != null || _runtimeVoxelBakeGhostMaterial != null)
-            return;
-
-        RuntimeShaderReferenceCatalog.TryGetVoxelBakeGhostShader(out Shader ghostShader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (ghostShader == null)
-            ghostShader = Shader.Find(DefaultVoxelBakeGhostShaderName);
-#endif
-        if (ghostShader == null)
-            return;
-
-        // COLD ALLOC: Material[1] - runtime fallback voxel bake ghost material when serialized scene reference is absent - owner: HectonVoxelEngine
-        _runtimeVoxelBakeGhostMaterial = new Material(ghostShader)
-        {
-            name = "Runtime_VoxelBakeGhost"
-        };
-        _runtimeVoxelBakeGhostMaterial.SetColor("_BaseColor", new Color(0.045f, 0.068f, 0.082f, 1f));
-        _runtimeVoxelBakeGhostMaterial.SetColor("_EdgeColor", new Color(0.16f, 0.38f, 0.46f, 1f));
-        _runtimeVoxelBakeGhostMaterial.SetColor("_EmissionColor", new Color(0f, 0.16f, 0.22f, 1f));
-        _runtimeVoxelBakeGhostMaterial.SetFloat("_Opacity", 0.42f);
-        _runtimeVoxelBakeGhostMaterial.SetFloat("_InstabilityScale", 1.4f);
-        _runtimeVoxelBakeGhostMaterial.SetFloat("_InstabilitySpeed", 1.25f);
-        _runtimeVoxelBakeGhostMaterial.SetFloat("_InstabilityStrength", 0.28f);
-        _runtimeVoxelBakeGhostMaterial.SetFloat("_FresnelPower", 2.3f);
+        UnityEngine.Assertions.Assert.IsNotNull(
+            voxelBakeGhostMaterial,
+            "Fatal: Missing authored voxelBakeGhostMaterial. Runtime voxel bake ghost material synthesis is forbidden.");
     }
 
     static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct, string context)
@@ -6863,7 +6843,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         DisableDeferredVoxelBakePresentation(owner, renderer, collider, flags);
 
         if (proxyCollider != null)
-            proxyCollider.enabled = false;
+            proxyCollider.enabled = true;
 
         if (mesh != null)
         {
@@ -7064,7 +7044,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
 
         if (pending.ProxyCollider != null)
-            pending.ProxyCollider.enabled = false;
+            pending.ProxyCollider.enabled = true;
 
         if (pending.Mesh != null)
         {
@@ -7211,107 +7191,32 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     internal static bool EnqueueDeferredVoxelColliderUpload(Hecton8.Caves.HectonVoxelVolume volume, int chunkIndex)
     {
-        if (volume == null || chunkIndex < 0)
-            return false;
+        if (volume != null && chunkIndex >= 0)
+            volume.EnableColliderChunkProxy(chunkIndex);
 
-        for (int i = 0; i < _deferredVoxelColliderUploads.Count; i++)
-        {
-            DeferredVoxelColliderUpload pending = _deferredVoxelColliderUploads[i];
-            if (pending.Volume == volume && pending.ChunkIndex == chunkIndex)
-            {
-                RefreshDeferredVoxelUploadProxy(ref pending, volume.GetColliderChunkBakeProxy(chunkIndex));
-                pending.RetryCount = 0;
-                _deferredVoxelColliderUploads[i] = pending;
-                _deferredVoxelColliderUploadScanCursor = i;
-                return true;
-            }
-        }
-
-        BoxCollider proxyCollider = volume.GetColliderChunkBakeProxy(chunkIndex);
-        if (!TryReserveDeferredVoxelColliderUploadSlot(proxyCollider))
-            return false;
-
-        uint proxyShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-        bool hasProxyBounds = TryCacheDeferredVoxelProxyAupBounds(proxyCollider, out double3 proxyMinAup, out double3 proxyMaxAup);
-        _deferredVoxelColliderUploads.Add(new DeferredVoxelColliderUpload
-        {
-            Volume = volume,
-            ProxyCollider = proxyCollider,
-            ProxyMinAup = proxyMinAup,
-            ProxyMaxAup = proxyMaxAup,
-            ProxyShiftSequence = proxyShiftSequence,
-            ChunkIndex = chunkIndex,
-            Flags = DeferredVoxelColliderUploadVolumeFlag,
-            HasProxyBounds = hasProxyBounds ? (byte)1 : (byte)0,
-            RetryCount = 0
-        });
-        _deferredVoxelColliderUploadScanCursor = _deferredVoxelColliderUploads.Count - 1;
-
-        if (!EnsureDeferredVoxelColliderUploadRegistered())
-        {
-            RemoveDeferredVoxelColliderUploadAt(_deferredVoxelColliderUploads.Count - 1);
-            volume.DisableColliderChunkBakeProxy(chunkIndex);
-            return false;
-        }
-
-        PublishVoxelMeshPipelineTelemetry();
-        return true;
+        return false;
     }
 
     internal static bool EnqueueDeferredVoxelColliderUpload(MeshCollider collider, Mesh mesh)
     {
-        return EnqueueDeferredVoxelColliderUpload(collider, mesh, null);
+        if (collider != null)
+            collider.enabled = false;
+
+        return false;
     }
 
     internal static bool EnqueueDeferredVoxelColliderUpload(MeshCollider collider, Mesh mesh, BoxCollider proxyCollider)
     {
-        if (collider == null || mesh == null)
-            return false;
-
-        for (int i = 0; i < _deferredVoxelColliderUploads.Count; i++)
-        {
-            DeferredVoxelColliderUpload pending = _deferredVoxelColliderUploads[i];
-            if (pending.Collider == collider)
-            {
-                pending.Mesh = mesh;
-                pending.RetryCount = 0;
-                RefreshDeferredVoxelUploadProxy(ref pending, proxyCollider);
-                _deferredVoxelColliderUploads[i] = pending;
-                _deferredVoxelColliderUploadScanCursor = i;
-                return true;
-            }
-        }
-
-        if (!TryReserveDeferredVoxelColliderUploadSlot(proxyCollider))
-            return false;
-
-        uint proxyShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-        bool hasProxyBounds = TryCacheDeferredVoxelProxyAupBounds(proxyCollider, out double3 proxyMinAup, out double3 proxyMaxAup);
-        _deferredVoxelColliderUploads.Add(new DeferredVoxelColliderUpload
-        {
-            Collider = collider,
-            ProxyCollider = proxyCollider,
-            Mesh = mesh,
-            ProxyMinAup = proxyMinAup,
-            ProxyMaxAup = proxyMaxAup,
-            ProxyShiftSequence = proxyShiftSequence,
-            Flags = 0,
-            HasProxyBounds = hasProxyBounds ? (byte)1 : (byte)0,
-            RetryCount = 0
-        });
-        _deferredVoxelColliderUploadScanCursor = _deferredVoxelColliderUploads.Count - 1;
-
-        if (!EnsureDeferredVoxelColliderUploadRegistered())
-        {
-            RemoveDeferredVoxelColliderUploadAt(_deferredVoxelColliderUploads.Count - 1);
+        if (collider != null)
             collider.enabled = false;
-            if (proxyCollider != null)
-                proxyCollider.enabled = false;
-            return false;
+
+        if (proxyCollider != null)
+        {
+            proxyCollider.gameObject.layer = HectonLayerMasks.VoxelProxy;
+            proxyCollider.enabled = true;
         }
 
-        PublishVoxelMeshPipelineTelemetry();
-        return true;
+        return false;
     }
 
     private static void RefreshDeferredVoxelUploadProxy(ref DeferredVoxelColliderUpload pending, BoxCollider proxyCollider)
@@ -7334,10 +7239,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private static void CancelDeferredVoxelColliderUpload(ref DeferredVoxelColliderUpload pending, bool publishRetryDropWarning)
     {
         if ((pending.Flags & DeferredVoxelColliderUploadVolumeFlag) != 0 && pending.Volume != null)
-            pending.Volume.DisableColliderChunkBakeProxy(pending.ChunkIndex);
+            pending.Volume.EnableColliderChunkProxy(pending.ChunkIndex);
 
         if (pending.ProxyCollider != null)
-            pending.ProxyCollider.enabled = false;
+            pending.ProxyCollider.enabled = true;
 
         if (!publishRetryDropWarning || _voxelColliderUploadRetryDropWarningArmed)
             return;
@@ -7376,7 +7281,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
 
         if (proxyCollider != null)
-            proxyCollider.enabled = false;
+            proxyCollider.enabled = true;
         return false;
     }
 
@@ -7954,22 +7859,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (collider == null || mesh == null)
         {
             if (proxyCollider != null)
-                proxyCollider.enabled = false;
-            return false;
-        }
-
-        collider.enabled = false;
-        if (!ReferenceEquals(collider.sharedMesh, mesh))
-        {
-            collider.sharedMesh = null;
-            collider.sharedMesh = mesh;
+                proxyCollider.enabled = true;
+            return proxyCollider != null;
         }
 
         if (proxyCollider != null)
-            proxyCollider.enabled = false;
+            proxyCollider.enabled = true;
 
-        collider.enabled = collider.sharedMesh != null;
-        return true;
+        collider.enabled = false;
+        return proxyCollider != null;
     }
 
     private static void UnregisterDeferredVoxelColliderUploadDriver()
@@ -11848,7 +11746,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         var go = new GameObject(RuntimeCaveVolumeName);
         go.AddComponent<MeshFilter>();
         go.AddComponent<MeshRenderer>();
-        go.AddComponent<MeshCollider>();
         go.AddComponent<HectonVoxelVolume>(); // Add volume component
         PrepareVolumeForBuild(go);
         HectonFloatingOrigin.MarkShiftTargetsDirty();
@@ -12041,15 +11938,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     return true;
                 }
 
-                if (mcol == null)
+                if (mcol == null && volume != null)
                 {
-                    if (volume != null)
-                    {
-                        volume.DisableColliderChunksForCinematicFake();
-                        return true;
-                    }
-
-                    mcol = go.AddComponent<MeshCollider>();
+                    volume.DisableColliderChunksForCinematicFake();
+                    return true;
                 }
 
                 bool hasSelectedChthonicPillar = false;
@@ -12073,16 +11965,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
                 if (hasSelectedChthonicPillar)
                 {
-                    mcol.enabled = false;
-                    return await ApplySmoothChthonicPillarColliderMeshAsync(volume, data, projectionState, ct);
+                    if (mcol != null)
+                        mcol.enabled = false;
+                    return ApplySmoothChthonicPillarColliderMesh(volume, data, projectionState);
                 }
 
                 if (volume == null)
                 {
                     BoxCollider fallbackBakeProxy = EnsureVoxelBakeProxyCollider(go);
                     MeshRenderer fallbackRenderer = ResolvePooledMeshRenderer(go, null);
-                    bool deferredFallbackColliderUpload = false;
-                    bool deferredFallbackBakeTeardown = false;
+                    bool keepFallbackBakeProxy = false;
                     ConfigureVoxelBakeBaseProxy(
                         fallbackBakeProxy,
                         localVolumeOrigin,
@@ -12091,60 +11983,22 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
                     try
                     {
-                        VoxelMeshBakeJob fallbackBakeJob = new VoxelMeshBakeJob
-                        {
-                            MeshId = mesh.GetEntityId()
-                        };
-
-                        long fallbackBakeScheduleTimestamp = Stopwatch.GetTimestamp();
-                        if (!TryScheduleVoxelPhysicsBake(in fallbackBakeJob, out JobHandle fallbackBakeHandle))
-                        {
-                            await AwaitableDebtMonitor.NextFrameAsync();
-                            if (ct.IsCancellationRequested)
-                            {
-                                deferredFallbackBakeTeardown = true;
-                                return false;
-                            }
-                            fallbackBakeScheduleTimestamp = Stopwatch.GetTimestamp();
-                            if (!TryScheduleVoxelPhysicsBake(in fallbackBakeJob, out fallbackBakeHandle))
-                            {
-                                deferredFallbackBakeTeardown = true;
-                                return false;
-                            }
-                        }
-
-                        if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
-                                fallbackBakeHandle,
-                                ct,
-                                "fallback collider bake",
-                                mesh,
-                                go,
-                                fallbackRenderer,
-                                mcol,
-                                DeferredVoxelBakeDestroyOwner,
-                                fallbackBakeProxy))
-                        {
-                            deferredFallbackBakeTeardown = true;
-                            return false;
-                        }
-
-                        ReportVoxelPhysicsBakeCompletion(fallbackBakeScheduleTimestamp);
-                        if (ct.IsCancellationRequested)
-                            return false;
-                        mcol.enabled = false;
-                        deferredFallbackColliderUpload = EnqueueDeferredVoxelColliderUpload(mcol, mesh, fallbackBakeProxy);
-                        if (!deferredFallbackColliderUpload)
-                            return false;
+                        if (fallbackRenderer != null)
+                            fallbackRenderer.enabled = true;
+                        if (fallbackBakeProxy != null)
+                            fallbackBakeProxy.enabled = true;
+                        keepFallbackBakeProxy = fallbackBakeProxy != null;
                         return true;
                     }
                     finally
                     {
-                        if (!deferredFallbackColliderUpload && !deferredFallbackBakeTeardown)
+                        if (!keepFallbackBakeProxy)
                             DisableVoxelBakeProxy(fallbackBakeProxy);
                     }
                 }
 
-                mcol.enabled = false;
+                if (mcol != null)
+                    mcol.enabled = false;
                 return await ApplyChunkedColliderMeshesAsync(volume, data, useProjectedLocalPositions, localVolumeOrigin, ct);
             }
             finally
@@ -12166,126 +12020,70 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return record.Valid != 0 && record.Kind == (byte)AnomalyFeatureKind.ChthonicPillar;
     }
 
-    async Awaitable<bool> ApplySmoothChthonicPillarColliderMeshAsync(
+    bool ApplySmoothChthonicPillarColliderMesh(
         HectonVoxelVolume volume,
         VoxelPipelineData data,
-        VoxelFinalizeProjectionState projectionState,
-        CancellationToken ct)
+        VoxelFinalizeProjectionState projectionState)
     {
         if (volume == null)
             return false;
 
         if (!volume.TryUsePrewarmedColliderChunkCapacity(1))
             return false;
-
-        MeshCollider chunkCollider = volume.GetColliderChunkCollider(0);
-        if (chunkCollider == null)
-            return false;
-
-        Mesh chunkMesh = volume.GetColliderChunkBakeMesh(0);
-        if (chunkMesh == null)
+        if (!TryConfigureChthonicPillarRuntimeProxy(volume, in data, projectionState))
         {
-            chunkMesh = await AcquireVoxelPhysicsBakeMeshAsync(ct);
-            if (chunkMesh == null)
-                return false;
-
-            if (!volume.AssignColliderChunkBakeMesh(0, chunkMesh))
-            {
-                ReleaseVoxelPhysicsBakeMesh(chunkMesh);
-                chunkMesh = volume.GetColliderChunkBakeMesh(0);
-                if (chunkMesh == null)
-                    return false;
-            }
+            volume.DisableColliderChunksForCinematicFake();
+            return true;
         }
-
-        NativeArray<float3> colliderPositions = default;
-        NativeArray<int> colliderIndices = default;
-        await AwaitVoxelMeshUploadBudgetAsync(ct);
-        if (ct.IsCancellationRequested)
-            return false;
-
-        if (!TryLockStreamingScratchJobLifetime(ref data.ScratchLease))
-        {
-            ReportVoxelMeshScratchCapacityOverflow();
-            return false;
-        }
-
-        try
-        {
-            if (!TryBuildSmoothChthonicPillarColliderMesh(
-                    in data,
-                    projectionState,
-                    ref colliderPositions,
-                    ref colliderIndices,
-                    out int vertexCount,
-                    out int indexCount))
-            {
-                volume.DisableColliderChunksForCinematicFake();
-                return true;
-            }
-
-            chunkCollider.gameObject.SetActive(true);
-            chunkMesh.Clear();
-            if (!UploadColliderMesh(chunkMesh, colliderPositions, colliderIndices, vertexCount, indexCount))
-            {
-                volume.ReleaseColliderChunkBakeMesh(0);
-                return false;
-            }
-        }
-        finally
-        {
-            colliderPositions = default;
-            colliderIndices = default;
-            UnlockStreamingScratchJobLifetime(ref data.ScratchLease);
-        }
-
-        await AwaitableDebtMonitor.NextFrameAsync();
-        if (ct.IsCancellationRequested)
-            return default;
-
-        VoxelMeshBakeJob bakeJob = new VoxelMeshBakeJob
-        {
-            MeshId = chunkMesh.GetEntityId()
-        };
-
-        long bakeScheduleTimestamp = Stopwatch.GetTimestamp();
-        if (!TryScheduleVoxelPhysicsBake(in bakeJob, out JobHandle bakeHandle))
-        {
-            await AwaitableDebtMonitor.NextFrameAsync();
-            if (ct.IsCancellationRequested)
-            {
-                volume.ReleaseColliderChunkBakeMesh(0);
-                return false;
-            }
-            bakeScheduleTimestamp = Stopwatch.GetTimestamp();
-            if (!TryScheduleVoxelPhysicsBake(in bakeJob, out bakeHandle))
-            {
-                volume.ReleaseColliderChunkBakeMesh(0);
-                return false;
-            }
-        }
-
-        if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
-                bakeHandle,
-                ct,
-                "smooth chthonic pillar collider bake",
-                chunkMesh,
-                volume.gameObject,
-                null,
-                chunkCollider,
-                0))
-        {
-            volume.DetachColliderChunkBakeMesh(0);
-            return false;
-        }
-
-        ReportVoxelPhysicsBakeCompletion(bakeScheduleTimestamp);
-        if (ct.IsCancellationRequested)
-            return default;
-        if (!volume.PublishColliderChunkMesh(0))
-            return false;
 
         volume.SetActiveColliderChunkCount(1);
+        return true;
+    }
+
+    bool TryConfigureChthonicPillarRuntimeProxy(
+        HectonVoxelVolume volume,
+        in VoxelPipelineData data,
+        VoxelFinalizeProjectionState projectionState)
+    {
+        if (volume == null || !TryResolveSelectedChthonicPillarRecord(in data, out AnomalyFeatureRecord record))
+            return false;
+
+        double3 baseAup = new double3(record.AupX, record.AupY, record.AupZ);
+        double3 chunkMinAup = ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
+        double3 chunkMaxAup = chunkMinAup + new double3(
+            math.max(1, data.PtsX) - 1,
+            math.max(1, data.PtsY) - 1,
+            math.max(1, data.PtsZ) - 1) * math.max(0.001f, data.VoxelStep);
+        double radius = ChthonicPillarRadiusMeters;
+        double pillarMinY = baseAup.y;
+        double pillarMaxY = baseAup.y + ChthonicPillarHeightMeters;
+        if (baseAup.x + radius < chunkMinAup.x ||
+            baseAup.x - radius > chunkMaxAup.x ||
+            baseAup.z + radius < chunkMinAup.z ||
+            baseAup.z - radius > chunkMaxAup.z ||
+            pillarMaxY < chunkMinAup.y ||
+            pillarMinY > chunkMaxAup.y)
+        {
+            return false;
+        }
+
+        double bottom = math.max(pillarMinY, chunkMinAup.y);
+        double top = math.min(pillarMaxY, chunkMaxAup.y);
+        if (top - bottom <= 0.01d)
+            return false;
+
+        double3 localOffset = projectionState.AbsolutePositionOffsetDouble;
+        float height = math.max((float)(top - bottom), VoxelPhysicsBakeProxyMinHeightMeters);
+        Vector3 center = new Vector3(
+            (float)(baseAup.x - localOffset.x),
+            (float)(((bottom + top) * 0.5d) - localOffset.y),
+            (float)(baseAup.z - localOffset.z));
+        Vector3 size = new Vector3(
+            ChthonicPillarRadiusMeters * 2f,
+            height,
+            ChthonicPillarRadiusMeters * 2f);
+
+        volume.ConfigureColliderChunkBakeProxy(0, center, size);
         return true;
     }
 
@@ -12552,8 +12350,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
 
         bool completed = false;
-        bool deferredBakeTeardown = false;
-        bool deferredColliderUploadQueued = false;
 
         try
         {
@@ -12706,37 +12502,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     UnlockStreamingScratchJobLifetime(ref data.ScratchLease);
                 }
 
-                MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
-                if (chunkCollider == null)
+                BoxCollider chunkProxy = volume.GetColliderChunkBakeProxy(chunkIndex);
+                if (chunkProxy == null)
                     return false;
 
                 if (chunkIndexCount <= 0)
                 {
-                    chunkCollider.enabled = false;
                     volume.DisableColliderChunkBakeProxy(chunkIndex);
-                    chunkCollider.gameObject.SetActive(false);
                     continue;
                 }
 
-                Mesh chunkMesh = volume.GetColliderChunkBakeMesh(chunkIndex);
-                if (chunkMesh == null)
-                {
-                    chunkMesh = await AcquireVoxelPhysicsBakeMeshAsync(ct);
-                    if (chunkMesh != null && !volume.AssignColliderChunkBakeMesh(chunkIndex, chunkMesh))
-                    {
-                        ReleaseVoxelPhysicsBakeMesh(chunkMesh);
-                        chunkMesh = volume.GetColliderChunkBakeMesh(chunkIndex);
-                    }
-                }
-
-                if (chunkMesh == null)
-                {
-                    chunkCollider.enabled = false;
-                    chunkCollider.gameObject.SetActive(false);
-                    return false;
-                }
-
-                chunkCollider.gameObject.SetActive(true);
                 ResolveVoxelColliderChunkBakeProxyBounds(
                     chunkIndex,
                     colliderChunkCount,
@@ -12746,173 +12521,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     out Vector3 proxyCenter,
                     out Vector3 proxySize);
                 volume.ConfigureColliderChunkBakeProxy(chunkIndex, proxyCenter, proxySize);
-                BoxCollider chunkBakeProxy = volume.GetColliderChunkBakeProxy(chunkIndex);
-                await AwaitableDebtMonitor.NextFrameAsync();
-                if (ct.IsCancellationRequested)
-                    return false;
-                chunkMesh.Clear();
-                int localVertexCount = 0;
-                int touchedVertexCount = 0;
-
-                await AwaitVoxelMeshUploadBudgetAsync(ct);
-                if (ct.IsCancellationRequested)
-                    return false;
-
-                if (!TryLockStreamingScratchJobLifetime(ref data.ScratchLease))
-                {
-                    ReportVoxelMeshScratchCapacityOverflow();
-                    volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                    return false;
-                }
-
-                try
-                {
-                    NativeArray<float3> meshLocalPositions = useProjectedLocalPositions
-                        ? data.ScratchLease.ProjectedLocalPositions
-                        : data.WeldedPositions;
-                    NativeArray<int> bucketOffsets = data.ScratchLease.ColliderBucketOffsets;
-                    NativeArray<int> chunkTriangleIndices = data.ScratchLease.ColliderChunkTriangleIndices;
-                    NativeArray<int> localRemap = data.ScratchLease.ColliderLocalRemap;
-                    NativeArray<int> touchedVertexGlobals = data.ScratchLease.ColliderTouchedVertexGlobals;
-                    NativeArray<float3> localPositions = data.ScratchLease.ColliderLocalPositions;
-                    NativeArray<int> localIndices = data.ScratchLease.ColliderLocalIndices;
-
-                    if (!meshLocalPositions.IsCreated ||
-                        !bucketOffsets.IsCreated ||
-                        !chunkTriangleIndices.IsCreated ||
-                        !localRemap.IsCreated ||
-                        !touchedVertexGlobals.IsCreated ||
-                        !localPositions.IsCreated ||
-                        !localIndices.IsCreated ||
-                        (uint)chunkIndex >= (uint)bucketOffsets.Length ||
-                        chunkIndexCount < 0 ||
-                        chunkIndexCount % 3 != 0 ||
-                        chunkIndexCount > localIndices.Length)
-                    {
-                        ReportVoxelInvalidMeshUpload();
-                        volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                        return false;
-                    }
-
-                    int chunkOffset = bucketOffsets[chunkIndex];
-                    if (chunkOffset < 0 ||
-                        chunkOffset > chunkTriangleIndices.Length - chunkIndexCount ||
-                        chunkOffset + chunkIndexCount < chunkOffset)
-                    {
-                        ReportVoxelInvalidMeshUpload();
-                        volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                        return false;
-                    }
-
-                    for (int localIndex = 0; localIndex < chunkIndexCount; localIndex++)
-                    {
-                        int globalIndex = chunkTriangleIndices[chunkOffset + localIndex];
-                        if ((uint)globalIndex >= (uint)localRemap.Length ||
-                            (uint)globalIndex >= (uint)meshLocalPositions.Length)
-                        {
-                            ReportVoxelInvalidMeshUpload();
-                            volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                            return false;
-                        }
-
-                        int remappedIndex = localRemap[globalIndex];
-                        if (remappedIndex < 0)
-                        {
-                            if (localVertexCount >= localPositions.Length ||
-                                touchedVertexCount >= touchedVertexGlobals.Length)
-                            {
-                                ReportVoxelInvalidMeshUpload();
-                                volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                                return false;
-                            }
-
-                            remappedIndex = localVertexCount;
-                            localRemap[globalIndex] = remappedIndex;
-                            touchedVertexGlobals[touchedVertexCount++] = globalIndex;
-                            localPositions[localVertexCount++] = meshLocalPositions[globalIndex];
-                        }
-
-                        localIndices[localIndex] = remappedIndex;
-                    }
-
-                    if (!UploadColliderMesh(chunkMesh, localPositions, localIndices, localVertexCount, chunkIndexCount))
-                    {
-                        volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                        return false;
-                    }
-                }
-                finally
-                {
-                    NativeArray<int> localRemap = data.ScratchLease.ColliderLocalRemap;
-                    NativeArray<int> touchedVertexGlobals = data.ScratchLease.ColliderTouchedVertexGlobals;
-                    if (localRemap.IsCreated && touchedVertexGlobals.IsCreated)
-                    {
-                        int resetCount = math.min(touchedVertexCount, touchedVertexGlobals.Length);
-                        for (int touchedIndex = 0; touchedIndex < resetCount; touchedIndex++)
-                        {
-                            int globalIndex = touchedVertexGlobals[touchedIndex];
-                            if ((uint)globalIndex < (uint)localRemap.Length)
-                                localRemap[globalIndex] = -1;
-                        }
-                    }
-
-                    UnlockStreamingScratchJobLifetime(ref data.ScratchLease);
-                }
-                chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
-                await AwaitableDebtMonitor.NextFrameAsync();
-                if (ct.IsCancellationRequested)
-                {
-                    volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                    return false;
-                }
-
-                VoxelMeshBakeJob bakeJob = new VoxelMeshBakeJob
-                {
-                    MeshId = chunkMesh.GetEntityId()
-                };
-
-                long bakeScheduleTimestamp = Stopwatch.GetTimestamp();
-                if (!TryScheduleVoxelPhysicsBake(in bakeJob, out JobHandle bakeHandle))
-                {
-                    await AwaitableDebtMonitor.NextFrameAsync();
-                    if (ct.IsCancellationRequested)
-                    {
-                        volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                        deferredBakeTeardown = true;
-                        return false;
-                    }
-                    bakeScheduleTimestamp = Stopwatch.GetTimestamp();
-                    if (!TryScheduleVoxelPhysicsBake(in bakeJob, out bakeHandle))
-                    {
-                        volume.ReleaseColliderChunkBakeMesh(chunkIndex);
-                        deferredBakeTeardown = true;
-                        return false;
-                    }
-                }
-
-                if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
-                        bakeHandle,
-                        ct,
-                        "collider chunk bake",
-                        chunkMesh,
-                        volume.gameObject,
-                        null,
-                        chunkCollider,
-                        0,
-                        chunkBakeProxy))
-                {
-                    volume.DetachColliderChunkBakeMesh(chunkIndex);
-                    deferredBakeTeardown = true;
-                    return false;
-                }
-
-                ReportVoxelPhysicsBakeCompletion(bakeScheduleTimestamp);
-                if (ct.IsCancellationRequested)
-                    return false;
-                if (!volume.PublishColliderChunkMesh(chunkIndex))
-                    return false;
-
-                deferredColliderUploadQueued = true;
 
                 chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
             }
@@ -12923,11 +12531,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
         finally
         {
-            if (!completed && !deferredBakeTeardown)
+            if (!completed)
+            {
                 volume.DisableColliderChunkBakeProxies();
-
-            if (!completed && !deferredBakeTeardown && !deferredColliderUploadQueued)
                 volume.ClearColliderChunkBakeMeshes();
+            }
         }
     }
 

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P281_HECTON8_SITE_OPENING_HOOK",
+      "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+      "article_id": "applied_lore.p281_hecton8_site_opening_hook",
+      "title_key": "applied_lore.p281_hecton8_site_opening_hook.title",
+      "unlock": {
+        "primary": "unlock.p281_hecton8_site_opening_hook",
+        "poi_tags": [
+          "poi.site_hecton8_hero_copy",
+          "poi.public_depth_band_strip",
+          "poi.pressure_map_teaser"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.hecton8"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Hecton8 Site Opening Hook",
+          "scanner": "Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "ru_RU": {
+          "title": "Публичный хук страницы HECTON-8",
+          "scanner": "Публичный текст: сначала красота, потом давление, Atlas не раскрывать.",
+          "field_note": "Зерно для сайта: океаническая луна, мертвая колония, salvage-контракт, давление, без спойлеров финального payload.",
+          "terminal": "PUBLIC COPY LOCK: страница HECTON-8 может говорить о мертвой колонии и salvage, но не о маршрутах payload в Atlas basin.",
+          "audio": "Луна продает себя раньше, чем объясняет, что она удержала.",
+          "in_game_wiki": "Публичный хук HECTON-8 дает готовую формулировку для открытого primer.",
+          "external_site": "HECTON-8 - затонувшая луна Aegir: яркая вода над сломанной промышленностью, salvage-контракты над похороненной колонией и спуск, где профессиональный интерес превращается в доказательство."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft JA localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft JA localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft JA localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft JA localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft ZH localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft ZH localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft ZH localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft ZH localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft FR localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft FR localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft FR localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft FR localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft ES localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft ES localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft ES localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft ES localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft DE localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft DE localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft DE localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft DE localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft PL localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft PL localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft PL localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft PL localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft UK localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft UK localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft UK localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft UK localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft AR localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft AR localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft AR localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft AR localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft ID localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft ID localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft ID localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft ID localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft KO localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft KO localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft KO localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft KO localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft HE localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft HE localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft HE localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft HE localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft PT localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft PT localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft PT localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft PT localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Hecton8 Site Opening Hook",
+          "scanner": "Draft NL localization pending native pass. Public copy: beauty first, pressure second, Atlas unnamed.",
+          "field_note": "Draft NL localization pending native pass. Use this as site hero/body copy seed: ocean moon, dead colony, salvage contract, pressure geography, no final-truth spoilers.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC COPY LOCK: HECTON-8 open page may mention dead colony and salvage, not Atlas basin payload routes.",
+          "audio": "Draft NL localization pending native pass. The moon sells itself before it explains what it kept.",
+          "in_game_wiki": "Draft NL localization pending native pass. HECTON-8 Site Opening Hook gives publication-ready wording for the public primer.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 is a drowned moon of Aegir: bright water over broken industry, salvage contracts over a buried colony, and a descent that turns professional curiosity into evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P282_AEGIR_SITE_SYSTEM_MAP_COPY",
+      "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+      "article_id": "applied_lore.p282_aegir_site_system_map_copy",
+      "title_key": "applied_lore.p282_aegir_site_system_map_copy.title",
+      "unlock": {
+        "primary": "unlock.p282_aegir_site_system_map_copy",
+        "poi_tags": [
+          "poi.site_aegir_map_caption",
+          "poi.moon_ladder_public_label",
+          "poi.orbital_window_teaser"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.aegir"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Site System Map Copy",
+          "scanner": "Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "ru_RU": {
+          "title": "Текст карты системы Aegir",
+          "scanner": "Карта Aegir должна читаться как давление времени, не как обои астрономии.",
+          "field_note": "Короткие подписи: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "PUBLIC MAP LOCK: каждая подпись луны должна давать цену маршрута или ограничение сигнала.",
+          "audio": "Карта говорит не где ты. Она говорит, когда помощь может позволить себе существовать.",
+          "in_game_wiki": "Текст карты Aegir закрепляет публичный язык орбитальных окон и цены маршрута.",
+          "external_site": "Aegir не фон. Его луны, relay shutters, радиационная погода и ледяной трафик превращают спасение в проблему расписания еще до того, как кто-то решит помогать."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft JA localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft JA localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft JA localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft JA localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft JA localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft ZH localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft ZH localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft ZH localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft ZH localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft FR localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft FR localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft FR localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft FR localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft FR localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft ES localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft ES localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft ES localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft ES localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft ES localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft DE localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft DE localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft DE localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft DE localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft DE localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft PL localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft PL localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft PL localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft PL localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft PL localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft UK localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft UK localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft UK localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft UK localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft UK localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft AR localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft AR localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft AR localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft AR localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft AR localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft ID localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft ID localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft ID localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft ID localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft ID localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft KO localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft KO localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft KO localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft KO localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft KO localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft HE localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft HE localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft HE localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft HE localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft HE localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft PT localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft PT localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft PT localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft PT localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft PT localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Aegir Site System Map Copy",
+          "scanner": "Draft NL localization pending native pass. Aegir map copy must read as timing pressure, not astronomy wallpaper.",
+          "field_note": "Draft NL localization pending native pass. Use short map labels: relay shutter, radiation surge, ice-grain scatter, guidance lag, claim orbit.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC MAP LOCK: every moon label must imply a route cost or signal constraint.",
+          "audio": "Draft NL localization pending native pass. The map is not where you are. It is when help can afford to exist.",
+          "in_game_wiki": "Draft NL localization pending native pass. Aegir Site System Map Copy fixes public map language around orbital windows and route costs.",
+          "external_site": "Draft NL localization pending native pass. Aegir is not a backdrop. Its moons, relay shutters, radiation weather and ice-grain traffic turn rescue into a schedule problem before anyone chooses to help."
+        }
+      }
+    },
+    {
+      "packet_id": "P283_DEEP_REACH_SITE_ACCOUNTABILITY_COPY",
+      "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+      "article_id": "applied_lore.p283_deep_reach_site_accountability_copy",
+      "title_key": "applied_lore.p283_deep_reach_site_accountability_copy.title",
+      "unlock": {
+        "primary": "unlock.p283_deep_reach_site_accountability_copy",
+        "poi_tags": [
+          "poi.deep_reach_public_dossier_box",
+          "poi.liability_timeline_teaser",
+          "poi.sanitized_report_compare"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.deep_reach"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Site Accountability Copy",
+          "scanner": "Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "ru_RU": {
+          "title": "Публичный текст ответственности Deep Reach",
+          "scanner": "Deep Reach: не мультяшные злодеи; виновное взвешивание внутри реальной физики.",
+          "field_note": "Использовать публичную ложь как контраст: реальный прилив, реальная авария, скрытый weighting layer, скрытая цепь задержанного спасения.",
+          "terminal": "PUBLIC DOSSIER LOCK: говорить culpable weighting; не говорить omnipotent conspiracy.",
+          "audio": "Они не приказали воде подняться. Они заставили выход ждать.",
+          "in_game_wiki": "Публичный текст Deep Reach удерживает статью честной и не упрощает причину.",
+          "external_site": "Преступление Deep Reach было не магическим контролем океана. Оно было превращением риска, спасения и человеческих имен в корпоративную процедуру, терпящую задержки."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft JA localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft JA localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft JA localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft JA localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft ZH localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft ZH localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft ZH localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft FR localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft FR localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft FR localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft FR localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft ES localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft ES localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft ES localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft ES localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft DE localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft DE localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft DE localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft DE localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft PL localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft PL localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft PL localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft PL localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft UK localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft UK localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft UK localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft UK localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft AR localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft AR localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft AR localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft AR localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft ID localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft ID localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft ID localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft ID localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft KO localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft KO localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft KO localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft KO localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft HE localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft HE localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft HE localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft HE localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft PT localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft PT localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft PT localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft PT localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Deep Reach Site Accountability Copy",
+          "scanner": "Draft NL localization pending native pass. Deep Reach copy: not cartoon villains; culpable weighting under real physics.",
+          "field_note": "Draft NL localization pending native pass. Use the public lie as contrast: real tide, real failure, missing weighting layer, missing delayed rescue chain.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC DOSSIER LOCK: say culpable weighting; do not say omnipotent conspiracy.",
+          "audio": "Draft NL localization pending native pass. They did not order the water to rise. They made the exit wait.",
+          "in_game_wiki": "Draft NL localization pending native pass. Deep Reach Site Accountability Copy keeps the public article honest without flattening the cause.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach's crime was not magic control over the ocean. It was the conversion of risk, rescue and human names into delay-tolerant corporate procedure."
+        }
+      }
+    },
+    {
+      "packet_id": "P284_ATLAS6_SITE_SPOILER_GATE_COPY",
+      "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+      "article_id": "applied_lore.p284_atlas6_site_spoiler_gate_copy",
+      "title_key": "applied_lore.p284_atlas6_site_spoiler_gate_copy.title",
+      "unlock": {
+        "primary": "unlock.p284_atlas6_site_spoiler_gate_copy",
+        "poi_tags": [
+          "poi.atlas_spoiler_gate_card",
+          "poi.factory_temple_blur_caption",
+          "poi.public_ai_warning"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.atlas"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "ru_RU": {
+          "title": "Spoiler gate страницы Atlas-6",
+          "scanner": "Публичный текст Atlas останавливается на failed governor, пока spoiler gate закрыт.",
+          "field_note": "Gate label должен назвать категории: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "SPOILER GATE: последствия Atlas basin требуют явного согласия читателя.",
+          "audio": "После этой линии машина уже не только машина.",
+          "in_game_wiki": "Spoiler gate Atlas-6 задает предупреждение для глубоких материалов по Atlas.",
+          "external_site": "Spoiler gate: открытая статья описывает Atlas-6 как industrial governor и failed infrastructure. Продолжайте только если принимаете обсуждение repair ecology, final payloads и bottom-factory truth."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft JA localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft JA localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft JA localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft JA localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft JA localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft JA localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft ZH localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft ZH localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft ZH localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft ZH localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft ZH localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft FR localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft FR localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft FR localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft FR localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft FR localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft FR localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft ES localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft ES localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft ES localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft ES localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft ES localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft ES localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft DE localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft DE localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft DE localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft DE localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft DE localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft DE localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft PL localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft PL localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft PL localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft PL localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft PL localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft PL localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft UK localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft UK localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft UK localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft UK localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft UK localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft UK localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft AR localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft AR localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft AR localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft AR localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft AR localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft AR localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft ID localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft ID localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft ID localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft ID localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft ID localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft ID localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft KO localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft KO localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft KO localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft KO localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft KO localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft KO localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft HE localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft HE localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft HE localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft HE localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft HE localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft HE localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft PT localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft PT localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft PT localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft PT localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft PT localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft PT localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Atlas6 Site Spoiler Gate Copy",
+          "scanner": "Draft NL localization pending native pass. Atlas public text stops at failed governor unless spoiler gate opens.",
+          "field_note": "Draft NL localization pending native pass. Gate label should name categories: factory-temple, repair ecology, ending payloads, worker evidence.",
+          "terminal": "Draft NL localization pending native pass. SPOILER GATE: Atlas basin consequences require explicit reader opt-in.",
+          "audio": "Draft NL localization pending native pass. Past this line, the machine is not only a machine.",
+          "in_game_wiki": "Draft NL localization pending native pass. Atlas-6 Site Spoiler Gate Copy defines publication warning text for deep Atlas material.",
+          "external_site": "Draft NL localization pending native pass. Spoiler gate: the open article covers Atlas-6 as industrial governor and failed infrastructure. Continue only if you accept discussion of the repair ecology, final payloads and bottom-factory truth."
+        }
+      }
+    },
+    {
+      "packet_id": "P285_BLUE_DEBT_SITE_RESOURCE_COPY",
+      "release_set_id": "RS057_PUBLIC_SITE_READY_ARTICLE_SECTIONS",
+      "article_id": "applied_lore.p285_blue_debt_site_resource_copy",
+      "title_key": "applied_lore.p285_blue_debt_site_resource_copy.title",
+      "unlock": {
+        "primary": "unlock.p285_blue_debt_site_resource_copy",
+        "poi_tags": [
+          "poi.blue_debt_public_card",
+          "poi.resource_warning_caption",
+          "poi.pressure_sample_photo_brief"
+        ],
+        "biome_tags": [
+          "biome.publication",
+          "biome.resource"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blue Debt Site Resource Copy",
+          "scanner": "Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "ru_RU": {
+          "title": "Публичный текст ресурса blue debt",
+          "scanner": "Публичный blue debt должен говорить о containment и custody, не о miracle ore.",
+          "field_note": "Использовать для site cards, sample images, merch-safe public wiki и не-спойлерного economy context.",
+          "terminal": "PUBLIC RESOURCE LOCK: ценность требует pressure history, containment и receiver custody.",
+          "audio": "Образец не богат, пока кто-то не может удержать его живым.",
+          "in_game_wiki": "Публичный текст blue debt удерживает ресурс hard-sci-fi ограниченным.",
+          "external_site": "Marauders зовут это blue debt, потому что viable sample создает ценность и ответственность в одном объекте. Его надо держать под давлением, сертифицировать custody и читать как evidence до того, как он станет деньгами."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft JA localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft JA localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft JA localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft JA localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft JA localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft JA localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft ZH localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft ZH localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft ZH localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft ZH localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft ZH localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft FR localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft FR localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft FR localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft FR localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft FR localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft ES localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft ES localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft ES localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft ES localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft ES localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft DE localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft DE localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft DE localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft DE localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft DE localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft PL localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft PL localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft PL localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft PL localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft PL localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft UK localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft UK localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft UK localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft UK localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft UK localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft UK localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft AR localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft AR localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft AR localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft AR localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft AR localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft ID localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft ID localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft ID localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft ID localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft ID localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft KO localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft KO localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft KO localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft KO localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft KO localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft KO localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft HE localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft HE localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft HE localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft HE localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft HE localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft PT localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft PT localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft PT localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft PT localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft PT localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft PT localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Blue Debt Site Resource Copy",
+          "scanner": "Draft NL localization pending native pass. Blue debt public copy must mention containment and custody, not miracle ore.",
+          "field_note": "Draft NL localization pending native pass. Use resource copy for site cards, sample images, merch-safe public wiki and non-spoiler economy context.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC RESOURCE LOCK: value requires pressure history, containment and receiver custody.",
+          "audio": "Draft NL localization pending native pass. The sample is not rich until someone can keep it alive.",
+          "in_game_wiki": "Draft NL localization pending native pass. Blue Debt Site Resource Copy keeps the resource public-facing but hard-sci-fi bounded.",
+          "external_site": "Draft NL localization pending native pass. Marauders call it blue debt because a viable sample creates value and liability in the same object. It must be kept under pressure, certified by custody and read as evidence before it becomes money."
+        }
+      }
+    }
+  ]
+}

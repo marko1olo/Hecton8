@@ -1,10 +1,17 @@
 ---
 packet_id: P131_MATERIAL_EXIT_BITTER_CREDITS
+release_set_id: RS027_FALSE_EXIT_RETURN_PRESSURE
 article_id: endings.material_exit_bitter_credits
+unlock_id: unlock.material_exit_bitter_credits
+poi_tags: poi.ascent_mass_invoice;poi.blue_debt_sale_receipt
+biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Material Exit Bitter Credits

@@ -192,6 +192,16 @@ namespace Hecton8.World
         private const uint KccVelocityThermalMaxAgeFrames = 12u;
         private const int ThermalGridSaveRleCapacity = ThermalMapCellCount;
         private const int ThermalTelemetryCapacity = 300;
+        private const int ThermalTelemetryDumpHeaderBytes = sizeof(int) * 2;
+        private const int ThermalTelemetryDumpEntryBytes = (sizeof(double) * 3) +
+                                                           sizeof(long) +
+                                                           sizeof(ulong) +
+                                                           (sizeof(float) * 2) +
+                                                           sizeof(uint) +
+                                                           sizeof(int) +
+                                                           sizeof(uint);
+        private const int ThermalTelemetryDumpPayloadBytes =
+            ThermalTelemetryDumpHeaderBytes + ThermalTelemetryCapacity * ThermalTelemetryDumpEntryBytes;
         private const int VentBufferRingSize = 3;
         private const SystemID ThermalVaultOwnerSystem = SystemID.Thermodynamics;
         private const int PortableMaxComputeThreadsPerGroup = 256;
@@ -460,8 +470,16 @@ namespace Hecton8.World
 
         [Header("── Bio-Cable Visuals ───────────────")]
         [SerializeField]
-        [Tooltip("Shared authored material assigned to manager-created BioCableIK line renderers. Runtime material creation is forbidden.")]
+        [Tooltip("Shared authored material assigned to BioCableIK line renderers. Runtime material creation is forbidden.")]
         private Material bioCableMaterial;
+
+        [SerializeField]
+        [Tooltip("Authored persistent BioCableIK rigs. These are preferred over runtime pool spawn and must be pre-placed or prefab-warmed.")]
+        private BioCableIK[] authoredBioCableVisuals;
+
+        [SerializeField]
+        [Tooltip("Optional prewarmed pool prefab used only when authoredBioCableVisuals has no rig for a slot.")]
+        private BioCableIK bioCablePrefab;
 
         [SerializeField, Range(0.5f, 24f)]
         [Tooltip("Maximum camera/player distance where procedural bio-cable rigs stay actively simulated.")]
@@ -655,6 +673,7 @@ namespace Hecton8.World
         private GraphicsFence[] _ventBufferFences;
         private MaterialPropertyBlock _materialPropertyBlock;
         private BioCableIK[] _bioCableVisuals;
+        private bool[] _bioCableVisualsPooled;
         private Bounds _smokeBounds;
         private bool _registeredTick;
         private bool _registeredSlowTick;
@@ -684,6 +703,7 @@ namespace Hecton8.World
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private IPhysicsService _physicsService;
         private IGasDynamicsSolver _gasDynamics;
+        private IObjectPoolService _objectPoolService;
         private IPdaCorrosionPresentationSink _pdaCorrosionPresentationSink;
         private VoxelDeltaProcessor _voxelDeltaProcessor;
         private IDamageReceiver _playerThermalDamageReceiver;
@@ -723,6 +743,7 @@ namespace Hecton8.World
         private float[] _thermalMapVisualCelsius;
         private SaveBinaryStorage.ThermalGridRleRun[] _thermalGridRleRuns;
         private VaultGenerationHandle<AbyssalThermalManagerTelemetryEntry> _thermalTelemetryRingHandle;
+        private NativeArray<byte> _thermalTelemetryDumpPayload;
         private IDataVault _dataVault;
         private JobHandle _thermalMapJobHandle;
         private bool _thermalMapJobActive;
@@ -1117,6 +1138,7 @@ namespace Hecton8.World
             _thermalMapDiffusionSliceCursor = 0;
             ClearHazardSources();
             ClearThermalFeedbackSignals();
+            ReleaseBioCableVisualsToPool();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
             DisposeThermalMapBuffers();
@@ -1140,6 +1162,7 @@ namespace Hecton8.World
             CompleteThermalMapJobIfReady(forceComplete: true);
             ClearHazardSources();
             ClearThermalFeedbackSignals();
+            ReleaseBioCableVisualsToPool();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
             DisposeThermalMapBuffers();
@@ -2284,34 +2307,21 @@ namespace Hecton8.World
                 return;
             }
 
-            NativeArray<byte> dumpBytes = default;
-            bool dumpRegistered = false;
+            if (!IsThermalTelemetryDumpPayloadReady())
+                return;
+
             try
             {
-                const int HeaderBytes = sizeof(int) * 2;
-                const int EntryBytes = (sizeof(double) * 3) +
-                                       sizeof(long) +
-                                       sizeof(ulong) +
-                                       (sizeof(float) * 2) +
-                                       sizeof(uint) +
-                                       sizeof(int) +
-                                       sizeof(uint);
-
-                if (ring.Length > (int.MaxValue - HeaderBytes) / EntryBytes)
+                if (ring.Length > ThermalTelemetryCapacity)
                     return;
 
-                int byteCount = HeaderBytes + ring.Length * EntryBytes;
-                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    dumpBytes,
-                    nameof(AbyssalThermalManager),
-                    nameof(dumpBytes),
-                    NativeAllocationLifetime.Temp);
-                dumpRegistered = true;
+                int byteCount = ThermalTelemetryDumpHeaderBytes + ring.Length * ThermalTelemetryDumpEntryBytes;
+                if (byteCount > _thermalTelemetryDumpPayload.Length)
+                    return;
 
                 unsafe
                 {
-                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(_thermalTelemetryDumpPayload);
                     int cursor = 0;
                     WriteInt32LittleEndian(destination, ref cursor, ThermalTelemetryCapacity);
                     WriteInt32LittleEndian(destination, ref cursor, _thermalTelemetryIndex);
@@ -2330,7 +2340,10 @@ namespace Hecton8.World
                         WriteUInt32LittleEndian(destination, ref cursor, entry.FailureCode);
                     }
 
-                    _thermalTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(ThermalTelemetryDumpRelativePath, dumpBytes, cursor);
+                    _thermalTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(
+                        ThermalTelemetryDumpRelativePath,
+                        _thermalTelemetryDumpPayload,
+                        cursor);
                 }
 
                 if (!_thermalTelemetryDumped)
@@ -2347,15 +2360,6 @@ namespace Hecton8.World
             catch (System.ArgumentException)
             {
                 GlobalTelemetryBus.PublishUnityLogFault(ThermalHashSeed, 0u, 1u);
-            }
-            finally
-            {
-                if (dumpBytes.IsCreated)
-                {
-                    if (dumpRegistered)
-                        NativeMemorySentinel.UnregisterNativeArray(dumpBytes);
-                    dumpBytes.Dispose();
-                }
             }
         }
 
@@ -3488,6 +3492,7 @@ namespace Hecton8.World
         private void DisposeThermalTelemetry()
         {
             ReleaseThermalTelemetry(_dataVault);
+            DisposeThermalTelemetryDumpPayload();
             _thermalTelemetryIndex = 0;
         }
 
@@ -3502,7 +3507,7 @@ namespace Hecton8.World
             }
 
             if (HasThermalVaultBuffer(vault, in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing, ThermalTelemetryCapacity))
-                return true;
+                return IsThermalTelemetryDumpPayloadReady();
 
             ReleaseThermalTelemetry(vault);
             _thermalTelemetryRingHandle = vault.EnsureGenerationHandle<AbyssalThermalManagerTelemetryEntry>(
@@ -3512,10 +3517,48 @@ namespace Hecton8.World
                 NativeArrayOptions.ClearMemory);
 
             if (HasThermalVaultBuffer(vault, in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing, ThermalTelemetryCapacity))
-                return true;
+                return IsThermalTelemetryDumpPayloadReady();
 
             ReleaseThermalTelemetry(vault);
             return false;
+        }
+
+        private bool EnsureThermalTelemetryDumpPayloadCold()
+        {
+            if (_thermalTelemetryDumpPayload.IsCreated &&
+                _thermalTelemetryDumpPayload.Length >= ThermalTelemetryDumpPayloadBytes)
+            {
+                return true;
+            }
+
+            DisposeThermalTelemetryDumpPayload();
+
+            _thermalTelemetryDumpPayload = new NativeArray<byte>(
+                ThermalTelemetryDumpPayloadBytes,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _thermalTelemetryDumpPayload,
+                NativeMemoryOwner,
+                nameof(_thermalTelemetryDumpPayload),
+                NativeMemoryLifetime);
+            return IsThermalTelemetryDumpPayloadReady();
+        }
+
+        private bool IsThermalTelemetryDumpPayloadReady()
+        {
+            return _thermalTelemetryDumpPayload.IsCreated &&
+                   _thermalTelemetryDumpPayload.Length >= ThermalTelemetryDumpPayloadBytes;
+        }
+
+        private void DisposeThermalTelemetryDumpPayload()
+        {
+            if (!_thermalTelemetryDumpPayload.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_thermalTelemetryDumpPayload);
+            _thermalTelemetryDumpPayload.Dispose();
+            _thermalTelemetryDumpPayload = default;
         }
 
         private void ReleaseThermalTelemetry(IDataVault vault)
@@ -3675,10 +3718,9 @@ namespace Hecton8.World
                 {
                     _fluidDecalManager = fluidDecalManager;
                 }
-                else if (!TryGetComponent(out _fluidDecalManager))
+                else
                 {
-                    // COLD ALLOC: Component[1] - local abyssal fluid decal owner added on the thermal manager host when authoring missed it - owner: AbyssalThermalManager
-                    _fluidDecalManager = gameObject.AddComponent<AbyssalFluidDecalManager>();
+                    TryGetComponent(out _fluidDecalManager);
                 }
             }
 
@@ -3727,6 +3769,7 @@ namespace Hecton8.World
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _physicsService = GlobalRegistry.Physics;
             _gasDynamics = GlobalRegistry.GasDynamics;
+            _objectPoolService = GlobalRegistry.ObjectPoolService;
             _pdaCorrosionPresentationSink = GlobalRegistry.PdaCorrosionPresentationSink;
             if (cutManager == null)
                 cutManager = SargassumCutManager.Instance;
@@ -3779,6 +3822,10 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.GasDynamicsRuntime:
                     _gasDynamics = currentService as IGasDynamicsSolver;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPoolService = currentService as IObjectPoolService;
+                    ConfigureBioCableObjectPoolServiceCold();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _pdaCorrosionPresentationSink = currentService as IPdaCorrosionPresentationSink;
@@ -3967,6 +4014,7 @@ namespace Hecton8.World
                 _crystallizationResults = new ThermalCrystallizationResult[MaxCrystallizationSampleCapacity];
             }
 
+            EnsureThermalTelemetryDumpPayloadCold();
             EnsureThermalTelemetry();
 
             if (UsesThermalGrid())
@@ -3982,6 +4030,12 @@ namespace Hecton8.World
             {
                 // COLD ALLOC: BioCableIK[16] - reusable visual cable rigs paired to active abyssal vent cable zones - owner: AbyssalThermalManager
                 _bioCableVisuals = new BioCableIK[MaxVentCapacity];
+            }
+
+            if (_bioCableVisualsPooled == null || _bioCableVisualsPooled.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: bool[16] - pooled ownership flags for reusable abyssal bio-cable visual rigs - owner: AbyssalThermalManager
+                _bioCableVisualsPooled = new bool[MaxVentCapacity];
             }
 
             if (_thermalBubbleCommands == null || _thermalBubbleCommands.Length != MaxVentCapacity)
@@ -4192,24 +4246,134 @@ namespace Hecton8.World
 
             for (int i = 0; i < _bioCableVisuals.Length; i++)
             {
-                if (_bioCableVisuals[i] != null)
+                BioCableIK cableRig = _bioCableVisuals[i];
+                if (cableRig != null)
+                {
+                    ConfigureBioCableVisual(cableRig, resolvedCableMaterial);
+                    continue;
+                }
+
+                bool pooled = false;
+                cableRig = ResolveAuthoredBioCableVisual(i);
+                if (cableRig == null)
+                    cableRig = SpawnBioCableVisualFromPool(out pooled);
+                if (cableRig == null)
                     continue;
 
-                // COLD ALLOC: GameObject[1] - persistent abyssal bio-cable visual rig child created once per cable slot - owner: AbyssalThermalManager
-                GameObject cableObject = new GameObject("BioCableIK");
-                cableObject.SetActive(false);
-                cableObject.transform.SetParent(transform, false);
-                cableObject.transform.localPosition = Vector3.zero;
-                cableObject.transform.localRotation = Quaternion.identity;
-                cableObject.transform.localScale = Vector3.one;
-
-                // COLD ALLOC: Component[1] - persistent abyssal bio-cable IK rig component - owner: AbyssalThermalManager
-                BioCableIK cableRig = cableObject.AddComponent<BioCableIK>();
-                cableRig.SetCableMaterialCold(resolvedCableMaterial);
-                cableObject.SetActive(true);
-                cableRig.InitializeAt(transform.position, Vector3.up);
-                cableRig.SetCableActive(false);
+                ConfigureBioCableVisual(cableRig, resolvedCableMaterial);
                 _bioCableVisuals[i] = cableRig;
+                if (_bioCableVisualsPooled != null && i < _bioCableVisualsPooled.Length)
+                    _bioCableVisualsPooled[i] = pooled;
+            }
+        }
+
+        private BioCableIK ResolveAuthoredBioCableVisual(int index)
+        {
+            if (authoredBioCableVisuals == null ||
+                index < 0 ||
+                index >= authoredBioCableVisuals.Length)
+            {
+                return null;
+            }
+
+            return authoredBioCableVisuals[index];
+        }
+
+        private BioCableIK SpawnBioCableVisualFromPool(out bool pooled)
+        {
+            pooled = false;
+            if (bioCablePrefab == null)
+                return null;
+
+            IObjectPoolService pool = _objectPoolService;
+            if (pool == null)
+                return null;
+
+            GameObject prefabObject = bioCablePrefab.gameObject;
+            if (!pool.HasPool(prefabObject) ||
+                pool.GetAvailableCount(prefabObject) <= 0)
+            {
+                return null;
+            }
+
+            GameObject instance = pool.Spawn(prefabObject, transform.position, transform.rotation, false);
+            if (instance == null)
+                return null;
+
+            if (!pool.CanDespawnWithoutDestroy(instance))
+            {
+                pool.Despawn(instance);
+                return null;
+            }
+
+            if (!instance.TryGetComponent(out BioCableIK cableRig))
+            {
+                pool.Despawn(instance);
+                return null;
+            }
+
+            pooled = true;
+            Transform rigTransform = instance.transform;
+            rigTransform.SetParent(transform, false);
+            rigTransform.localPosition = Vector3.zero;
+            rigTransform.localRotation = Quaternion.identity;
+            rigTransform.localScale = Vector3.one;
+            return cableRig;
+        }
+
+        private void ConfigureBioCableVisual(BioCableIK cableRig, Material resolvedCableMaterial)
+        {
+            if (cableRig == null)
+                return;
+
+            GameObject cableObject = cableRig.gameObject;
+            if (cableObject != null && !cableObject.activeSelf)
+                cableObject.SetActive(true);
+
+            cableRig.ConfigureObjectPoolServiceCold(_objectPoolService);
+            cableRig.SetCableMaterialCold(resolvedCableMaterial);
+            cableRig.InitializeAt(transform.position, Vector3.up);
+            cableRig.SetCableActive(false);
+        }
+
+        private void ConfigureBioCableObjectPoolServiceCold()
+        {
+            if (_bioCableVisuals == null)
+                return;
+
+            for (int i = 0; i < _bioCableVisuals.Length; i++)
+            {
+                BioCableIK cableRig = _bioCableVisuals[i];
+                if (cableRig != null)
+                    cableRig.ConfigureObjectPoolServiceCold(_objectPoolService);
+            }
+        }
+
+        private void ReleaseBioCableVisualsToPool()
+        {
+            if (_bioCableVisuals == null || _bioCableVisualsPooled == null)
+                return;
+
+            IObjectPoolService pool = _objectPoolService;
+            for (int i = 0; i < _bioCableVisuals.Length && i < _bioCableVisualsPooled.Length; i++)
+            {
+                BioCableIK cableRig = _bioCableVisuals[i];
+                if (cableRig == null)
+                    continue;
+
+                GameObject cableObject = cableRig.gameObject;
+                if (!_bioCableVisualsPooled[i])
+                {
+                    cableRig.SetCableActive(false);
+                    continue;
+                }
+
+                cableRig.PrepareForPoolReturnCold();
+                if (pool != null && cableObject != null && pool.CanDespawnWithoutDestroy(cableObject))
+                    pool.Despawn(cableObject);
+
+                _bioCableVisuals[i] = null;
+                _bioCableVisualsPooled[i] = false;
             }
         }
 
@@ -4228,7 +4392,7 @@ namespace Hecton8.World
             if (!_loggedMissingBioCableMaterial)
             {
                 _loggedMissingBioCableMaterial = true;
-                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. Manager-created BioCableIK rigs are disabled until an authored material is assigned.", this);
+                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. BioCableIK rigs are disabled until an authored material is assigned.", this);
             }
 #endif
 
@@ -5452,7 +5616,6 @@ namespace Hecton8.World
                 Vector3 cableAnchor = ResolveCableAnchor(playerPosition, vent.CableAnchorWS);
                 float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS);
                 float activationDistance = Mathf.Min(cableRadius, cableVisualActivationDistance);
-                Vector2 planarDelta = new Vector2(playerPosition.x - cableAnchor.x, playerPosition.z - cableAnchor.z);
                 float planarDistance = ComputeAupPlanarDistance(in playerAup, cableAnchor);
                 float chainCharge01 = ResolveEmpChainChargeForVent(i);
                 float empCharge01 = Mathf.Max(ResolveEmpChargeForVent(i), chainCharge01);
@@ -5598,7 +5761,6 @@ namespace Hecton8.World
             {
                 ThermalVentState vent = _ventStates[i];
                 float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS);
-                Vector2 planarDelta = new Vector2(positionWS.x - vent.CableAnchorWS.x, positionWS.z - vent.CableAnchorWS.z);
                 float planarDistance = ComputeAupPlanarDistance(positionWS, vent.CableAnchorWS);
                 if (planarDistance > cableRadius)
                     continue;

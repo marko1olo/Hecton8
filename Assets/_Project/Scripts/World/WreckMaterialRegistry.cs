@@ -17,6 +17,7 @@ namespace Hecton8.World
     public sealed class WreckMaterialRegistry : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleContracts = 16;
+        private const int SharedWreckTierMaterialCount = 2;
         private const int WreckBrgMetadataCount = 1;
         private const int FrustumPlaneCount = 6;
         private const int DefaultMaxInstancesPerWreckBatch = 2048;
@@ -40,7 +41,7 @@ namespace Hecton8.World
             [Tooltip("Optional mesh override. When empty, the generator structural mesh for the same module slot is used.")]
             public Mesh MeshOverride;
 
-            [Tooltip("Optional material override. When empty, the tier fallback material is used.")]
+            [Tooltip("Optional shared indirect material override. When empty, the tier fallback material is used. Must use Hecton8/World/WreckIndirectLit.")]
             public Material MaterialOverride;
 
             [Tooltip("Submesh index used by the BRG draw.")]
@@ -66,10 +67,7 @@ namespace Hecton8.World
             private Mesh _registeredMesh;
             private Material _registeredMaterial;
             private GraphicsBuffer _registeredBatchBuffer;
-            private Material _runtimeMaterial;
-            private Material _materialSource;
-            private Material _runtimeMaterialSource;
-            private Shader _runtimeShader;
+            private Material _sharedMaterial;
             private GraphicsBuffer _matrixBufferA;
             private GraphicsBuffer _matrixBufferB;
             private GraphicsBuffer _activeMatrixBuffer;
@@ -93,7 +91,6 @@ namespace Hecton8.World
             private int _uploadedInstanceCount;
             private ShadowCastingMode _shadowCastingMode;
             private bool _receiveShadows;
-            private bool _ownsRuntimeMaterial;
             private bool _matrixUploadDirty;
 
             public ModuleBatch(WreckMaterialRegistry owner, int moduleIndex)
@@ -140,7 +137,7 @@ namespace Hecton8.World
                 int layer)
             {
                 _mesh = mesh;
-                _materialSource = material;
+                _sharedMaterial = _owner.ResolveSharedIndirectMaterial(material);
                 _subMeshIndex = math.max(0, subMeshIndex);
                 _shadowCastingMode = shadowCastingMode;
                 _receiveShadows = receiveShadows;
@@ -173,7 +170,7 @@ namespace Hecton8.World
                 bool forceCullCompletion = true)
             {
                 _drawBounds = drawBounds;
-                if (_mesh == null || _materialSource == null || _matrices == null || _matrixCount <= 0)
+                if (_mesh == null || _sharedMaterial == null || _matrices == null || _matrixCount <= 0)
                 {
                     _uploadedInstanceCount = 0;
                     return false;
@@ -203,7 +200,7 @@ namespace Hecton8.World
                 }
 
                 if (_batchRendererGroup == null ||
-                    _runtimeMaterial == null ||
+                    _sharedMaterial == null ||
                     _matrixBufferA == null ||
                     _matrixBufferB == null ||
                     _ageBufferA == null ||
@@ -221,8 +218,8 @@ namespace Hecton8.World
                 _activeMatrixBuffer = matrixWriteBuffer;
                 _activeAgeBuffer = ageWriteBuffer;
                 _uploadBufferIndex ^= 1;
-                _runtimeMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
-                _runtimeMaterial.SetBuffer(_WreckAgesId, _activeAgeBuffer);
+                _sharedMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
+                _sharedMaterial.SetBuffer(_WreckAgesId, _activeAgeBuffer);
                 SyncBatchBuffer(_activeMatrixBuffer);
                 SyncBatchRegistration();
                 _uploadedInstanceCount = visibleCount;
@@ -234,13 +231,12 @@ namespace Hecton8.World
 
             public bool PrepareUploadResources()
             {
-                if (_mesh == null || _materialSource == null || _matrices == null || _matrixCount <= 0)
+                if (_mesh == null || _sharedMaterial == null || _matrices == null || _matrixCount <= 0)
                     return false;
 
                 int preparedInstanceCapacity = math.max(1, _matrixCount);
                 EnsureResources();
-                EnsureRuntimeMaterial();
-                if (_batchRendererGroup == null || _runtimeMaterial == null)
+                if (_batchRendererGroup == null || _sharedMaterial == null)
                     return false;
 
                 EnsureMatrixBufferCapacity(preparedInstanceCapacity);
@@ -255,7 +251,7 @@ namespace Hecton8.World
             public bool HasUploadResourcesReady(int instanceCount)
             {
                 return _batchRendererGroup != null &&
-                       _runtimeMaterial != null &&
+                       _sharedMaterial != null &&
                        HasMatrixBufferCapacity(instanceCount) &&
                        HasAgeBufferCapacity(instanceCount);
             }
@@ -377,7 +373,7 @@ namespace Hecton8.World
                     return true;
                 }
 
-                if (_batchRendererGroup == null || _runtimeMaterial == null)
+                if (_batchRendererGroup == null || _sharedMaterial == null)
                     return false;
 
                 if (!HasMatrixBufferCapacity(uploadCount))
@@ -392,7 +388,7 @@ namespace Hecton8.World
                 UploadManagedArray(matrixWriteBuffer, _visibleMatrices, uploadCount);
                 _activeMatrixBuffer = matrixWriteBuffer;
                 _uploadBufferIndex ^= 1;
-                _runtimeMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
+                _sharedMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
                 SyncBatchBuffer(_activeMatrixBuffer);
                 _batchRendererGroup.SetGlobalBounds(_drawBounds);
                 _matrixUploadDirty = false;
@@ -441,18 +437,7 @@ namespace Hecton8.World
                 _activeAgeBuffer = null;
                 _uploadBufferIndex = 0;
 
-                if (_ownsRuntimeMaterial && _runtimeMaterial != null)
-                {
-                    if (Application.isPlaying)
-                        Object.Destroy(_runtimeMaterial);
-                    else
-                        Object.DestroyImmediate(_runtimeMaterial);
-                }
-
-                _runtimeMaterial = null;
-                _materialSource = null;
-                _runtimeMaterialSource = null;
-                _runtimeShader = null;
+                _sharedMaterial = null;
                 _registeredMaterial = null;
                 _registeredMesh = null;
                 _batchMeshId = default;
@@ -494,66 +479,54 @@ namespace Hecton8.World
                     userContext = System.IntPtr.Zero
                 });
 
-                if (!_owner.TryAcquireBatchMetadata(out NativeArray<MetadataValue> batchMetadata))
+                if (!_owner.CanAttemptBatchMetadataAcquire())
                 {
                     _batchRendererGroup.Dispose();
                     _batchRendererGroup = null;
                     return;
                 }
 
+                _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for wreck module renderer - owner: WreckMaterialRegistry
+
+                if (!_owner.TryWriteBatchMetadata(out MetadataValue batchMetadataValue))
+                {
+                    _batchHandleBuffer.Release();
+                    _batchHandleBuffer = null;
+                    _batchRendererGroup.Dispose();
+                    _batchRendererGroup = null;
+                    return;
+                }
+
+                bool batchAdded = false;
                 try
                 {
-                    batchMetadata[0] = new MetadataValue
+                    NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(
+                        WreckBrgMetadataCount,
+                        Allocator.Temp,
+                        NativeArrayOptions.ClearMemory);
+                    try
                     {
-                        NameID = _WreckAgesId,
-                        Value = 0u
-                    };
-                    _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for wreck module renderer - owner: WreckMaterialRegistry
-                    _batchId = _batchRendererGroup.AddBatch(batchMetadata, _batchHandleBuffer.bufferHandle);
+                        batchMetadata[0] = batchMetadataValue;
+                        _batchId = _batchRendererGroup.AddBatch(batchMetadata, _batchHandleBuffer.bufferHandle);
+                    }
+                    finally
+                    {
+                        if (batchMetadata.IsCreated)
+                            batchMetadata.Dispose();
+                    }
+
+                    batchAdded = !_batchId.Equals(default);
                 }
                 finally
                 {
-                    _owner.ReleaseBatchMetadataWriteLock();
+                    if (!batchAdded)
+                    {
+                        _batchId = default;
+                        ReleaseBuffer(ref _batchHandleBuffer);
+                        _batchRendererGroup.Dispose();
+                        _batchRendererGroup = null;
+                    }
                 }
-            }
-
-            private void EnsureRuntimeMaterial()
-            {
-                Shader runtimeShader = _owner.ResolveRuntimeShader(_materialSource);
-                if (_runtimeMaterial != null &&
-                    _runtimeMaterialSource == _materialSource &&
-                    _runtimeShader == runtimeShader)
-                {
-                    return;
-                }
-
-                if (_ownsRuntimeMaterial && _runtimeMaterial != null)
-                {
-                    if (Application.isPlaying)
-                        Object.Destroy(_runtimeMaterial);
-                    else
-                        Object.DestroyImmediate(_runtimeMaterial);
-                }
-
-                _runtimeMaterial = null;
-                _ownsRuntimeMaterial = false;
-                _runtimeMaterialSource = null;
-                _runtimeShader = null;
-                _registeredMaterial = null;
-                _batchMaterialId = default;
-
-                if (_materialSource == null || runtimeShader == null)
-                    return;
-
-                _runtimeMaterial = new Material(runtimeShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave,
-                    enableInstancing = true
-                }; // COLD ALLOC: Material[1] - BRG-local wreck module material clone - owner: WreckMaterialRegistry
-                _runtimeMaterial.CopyPropertiesFromMaterial(_materialSource);
-                _ownsRuntimeMaterial = true;
-                _runtimeMaterialSource = _materialSource;
-                _runtimeShader = runtimeShader;
             }
 
             private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -666,7 +639,7 @@ namespace Hecton8.World
 
             private void SyncBatchRegistration()
             {
-                if (_batchRendererGroup == null || _mesh == null || _runtimeMaterial == null)
+                if (_batchRendererGroup == null || _mesh == null || _sharedMaterial == null)
                     return;
 
                 if (_registeredMesh != _mesh)
@@ -678,13 +651,13 @@ namespace Hecton8.World
                     _registeredMesh = _mesh;
                 }
 
-                if (_registeredMaterial != _runtimeMaterial)
+                if (_registeredMaterial != _sharedMaterial)
                 {
                     if (!_batchMaterialId.Equals(default))
                         _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
 
-                    _batchMaterialId = _batchRendererGroup.RegisterMaterial(_runtimeMaterial);
-                    _registeredMaterial = _runtimeMaterial;
+                    _batchMaterialId = _batchRendererGroup.RegisterMaterial(_sharedMaterial);
+                    _registeredMaterial = _sharedMaterial;
                 }
             }
 
@@ -748,15 +721,19 @@ namespace Hecton8.World
 
         [Header("Tier Fallback Materials")]
         [SerializeField]
-        [Tooltip("Fallback material used for Essential-tier wreck modules when no module override is configured.")]
+        [Tooltip("Static shared wreck materials. Slot 0 is Essential. Slot 1 is Detail and Clutter. Each material must use Hecton8/World/WreckIndirectLit.")]
+        private Material[] wreckageTierSharedMaterials = { null, null };
+
+        [SerializeField]
+        [Tooltip("Legacy fallback only when the shared tier pool slot is empty. Must use Hecton8/World/WreckIndirectLit.")]
         private Material essentialTierMaterial;
 
         [SerializeField]
-        [Tooltip("Fallback material used for Detail-tier wreck modules when no module override is configured.")]
+        [Tooltip("Legacy fallback only when the shared tier pool slot is empty. Must use Hecton8/World/WreckIndirectLit.")]
         private Material detailTierMaterial;
 
         [SerializeField]
-        [Tooltip("Fallback material used for Clutter-tier wreck modules when no module override is configured.")]
+        [Tooltip("Legacy fallback only when the shared tier pool slot is empty. Must use Hecton8/World/WreckIndirectLit.")]
         private Material clutterTierMaterial;
 
         [Header("Module Contracts")]
@@ -765,7 +742,7 @@ namespace Hecton8.World
         private ModuleRenderContract[] moduleContracts = new ModuleRenderContract[MaxModuleContracts];
 
         [SerializeField]
-        [Tooltip("When true, all wreck matrices are published through one BRG draw command using the selected module contract. Required for procedural wrecks on the CPU budget path.")]
+        [Tooltip("When true, all wreck matrices are published through one BRG draw command using the selected module contract. When false, duplicate active material bindings are rejected because per-batch buffers are material-bound.")]
         private bool forceSingleDrawBatch = true;
 
         [SerializeField, Range(0, MaxModuleContracts - 1)]
@@ -809,6 +786,7 @@ namespace Hecton8.World
         private bool _registeredLateFrameTick;
         private bool _originShiftListenerRegistered;
         private bool _hotSwapListenerRegistered;
+        private bool _hasRuntimeDispatcher;
         private IDataVault _dataVault;
         private VaultGenerationHandle<MetadataValue> _batchMetadataHandle;
         private IDataVault _batchMetadataWriteVault;
@@ -832,7 +810,6 @@ namespace Hecton8.World
         private void Awake()
         {
             CacheRegistryServicesCold();
-            CacheDataVaultCold();
             ResolveIndirectShader();
             EnsureBatches();
             EnsureFrustumScratch();
@@ -841,7 +818,6 @@ namespace Hecton8.World
         private void OnEnable()
         {
             CacheRegistryServicesCold();
-            CacheDataVaultCold();
             ResolveIndirectShader();
             EnsureBatches();
             EnsureFrustumScratch();
@@ -871,24 +847,16 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            CacheRegistryServicesCold();
-            EnsureFrustumScratch();
-
             if (!_hasPublishedWreck)
             {
                 _visibilityUploadRequested = false;
                 _originShiftUploadRequested = false;
-                RefreshRuntimeTickRegistration();
                 return;
             }
 
             _visibilityUploadRequested = true;
-            PrepareUploadResourcesForContent(_moduleBatches != null ? _moduleBatches.Length : 0);
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
-            {
-                RefreshRuntimeTickRegistration();
                 return;
-            }
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in _publishedWreckCenterAup);
             float signalRadius = math.max(1f, pdaSignalRadiusMeters);
@@ -896,17 +864,13 @@ namespace Hecton8.World
             if (distanceSq <= signalRadiusSq)
             {
                 if (_pdaSignalLatched)
-                {
-                    RefreshRuntimeTickRegistration();
                     return;
-                }
 
                 _pdaSignalLatched = true;
                 Vector3 pingCenter = _publishedWorldBounds.center;
                 _pendingWreckSignalOrigin = new float3(pingCenter.x, pingCenter.y, pingCenter.z);
                 _pendingWreckSignalRadius = math.max(1f, pdaSignalPingRadiusMeters);
                 _pendingWreckSignalPing = true;
-                RefreshRuntimeTickRegistration();
                 return;
             }
 
@@ -914,8 +878,6 @@ namespace Hecton8.World
             double rearmRadiusSq = (double)rearmRadius * rearmRadius;
             if (distanceSq >= rearmRadiusSq)
                 _pdaSignalLatched = false;
-
-            RefreshRuntimeTickRegistration();
         }
 
         public void LateFrameTick()
@@ -1133,18 +1095,27 @@ namespace Hecton8.World
             int moduleDefinitionCount = math.min(
                 math.min(moduleDefinitions != null ? moduleDefinitions.Length : 0, MaxModuleContracts),
                 _moduleBatches.Length);
+            int safeCount = math.min(instanceCount, math.min(worldMatrices.Length, moduleIds.Length));
+            int activeModuleMask = ResolveActiveModuleMask(moduleIds, safeCount, moduleDefinitionCount);
 
             if (forceSingleDrawBatch)
             {
-                int singleModuleIndex = ResolveSingleDrawModuleIndex(moduleDefinitions, moduleDefinitionCount);
+                int singleModuleIndex = ResolveSingleDrawModuleIndex(moduleDefinitions, moduleDefinitionCount, activeModuleMask);
                 if (singleModuleIndex >= 0)
                 {
                     ModuleBatch singleBatch = _moduleBatches[singleModuleIndex];
-                    if (TryConfigureBatch(singleBatch, moduleDefinitions, singleModuleIndex, math.max(1, instanceCount)))
+                    if (TryConfigureBatch(singleBatch, moduleDefinitions, singleModuleIndex, math.max(1, safeCount)))
                     {
-                        int safeSingleCount = math.min(instanceCount, worldMatrices.Length);
-                        for (int instanceIndex = 0; instanceIndex < safeSingleCount; instanceIndex++)
+                        for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
                         {
+                            int moduleIndex = moduleIds[instanceIndex];
+                            if (moduleIndex < 0 ||
+                                moduleIndex >= moduleDefinitionCount ||
+                                (activeModuleMask & (1 << moduleIndex)) == 0)
+                            {
+                                continue;
+                            }
+
                             float age01 = ages != null && instanceIndex < ages.Length
                                 ? ages[instanceIndex]
                                 : 0.5f;
@@ -1172,8 +1143,13 @@ namespace Hecton8.World
                 }
             }
 
+            if (HasDuplicateMaterialBufferBindings(moduleDefinitions, moduleDefinitionCount, activeModuleMask))
+            {
+                RefreshRuntimeTickRegistration();
+                return;
+            }
+
             int configuredBatchMask = 0;
-            int safeCount = math.min(instanceCount, math.min(worldMatrices.Length, moduleIds.Length));
             for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
             {
                 int moduleIndex = moduleIds[instanceIndex];
@@ -1355,19 +1331,26 @@ namespace Hecton8.World
 
         private int ResolveSingleDrawModuleIndex(
             ProceduralWreckModuleDefinition[] moduleDefinitions,
-            int moduleDefinitionCount)
+            int moduleDefinitionCount,
+            int activeModuleMask)
         {
             if (moduleDefinitions == null || moduleDefinitionCount <= 0)
                 return -1;
 
             int preferredIndex = math.clamp(singleDrawModuleIndex, 0, moduleDefinitionCount - 1);
-            if (CanUseModuleContract(moduleDefinitions, preferredIndex))
+            if ((activeModuleMask & (1 << preferredIndex)) != 0 &&
+                CanUseModuleContract(moduleDefinitions, preferredIndex))
+            {
                 return preferredIndex;
+            }
 
             for (int moduleIndex = 0; moduleIndex < moduleDefinitionCount; moduleIndex++)
             {
-                if (CanUseModuleContract(moduleDefinitions, moduleIndex))
+                if ((activeModuleMask & (1 << moduleIndex)) != 0 &&
+                    CanUseModuleContract(moduleDefinitions, moduleIndex))
+                {
                     return moduleIndex;
+                }
             }
 
             return -1;
@@ -1388,7 +1371,65 @@ namespace Hecton8.World
                 ? moduleContracts[moduleIndex].MeshOverride
                 : definition.StructuralMesh;
             Material material = ResolveMaterialForModule(moduleIndex, definition.DrawCallPriority);
-            return mesh != null && material != null;
+            return mesh != null && ResolveSharedIndirectMaterial(material) != null;
+        }
+
+        private bool HasDuplicateMaterialBufferBindings(
+            ProceduralWreckModuleDefinition[] moduleDefinitions,
+            int moduleDefinitionCount,
+            int activeModuleMask)
+        {
+            if (moduleDefinitions == null || moduleDefinitionCount <= 1 || activeModuleMask == 0)
+                return false;
+
+            int safeCount = math.min(math.min(moduleDefinitionCount, moduleDefinitions.Length), MaxModuleContracts);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if ((activeModuleMask & (1 << i)) == 0)
+                    continue;
+
+                ProceduralWreckModuleDefinition definition = moduleDefinitions[i];
+                if (!definition.EmitsGeometry)
+                    continue;
+
+                Material material = ResolveSharedIndirectMaterial(ResolveMaterialForModule(i, definition.DrawCallPriority));
+                if (material == null)
+                    continue;
+
+                for (int j = i + 1; j < safeCount; j++)
+                {
+                    if ((activeModuleMask & (1 << j)) == 0)
+                        continue;
+
+                    ProceduralWreckModuleDefinition otherDefinition = moduleDefinitions[j];
+                    if (!otherDefinition.EmitsGeometry)
+                        continue;
+
+                    Material otherMaterial = ResolveSharedIndirectMaterial(ResolveMaterialForModule(j, otherDefinition.DrawCallPriority));
+                    if (object.ReferenceEquals(material, otherMaterial))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int ResolveActiveModuleMask(byte[] moduleIds, int instanceCount, int moduleDefinitionCount)
+        {
+            if (moduleIds == null || instanceCount <= 0 || moduleDefinitionCount <= 0)
+                return 0;
+
+            int mask = 0;
+            int safeCount = math.min(instanceCount, moduleIds.Length);
+            int safeModuleCount = math.min(moduleDefinitionCount, MaxModuleContracts);
+            for (int i = 0; i < safeCount; i++)
+            {
+                int moduleIndex = moduleIds[i];
+                if (moduleIndex >= 0 && moduleIndex < safeModuleCount)
+                    mask |= 1 << moduleIndex;
+            }
+
+            return mask;
         }
 
         private bool TryConfigureBatch(
@@ -1414,7 +1455,7 @@ namespace Hecton8.World
                         moduleContracts[moduleIndex].MeshOverride != null
                 ? moduleContracts[moduleIndex].MeshOverride
                 : definition.StructuralMesh;
-            Material material = ResolveMaterialForModule(moduleIndex, definition.DrawCallPriority);
+            Material material = ResolveSharedIndirectMaterial(ResolveMaterialForModule(moduleIndex, definition.DrawCallPriority));
             if (mesh == null || material == null)
                 return false;
 
@@ -1440,21 +1481,20 @@ namespace Hecton8.World
             return math.min(authoredCapacity, payloadCapacity);
         }
 
-        private IDataVault CacheDataVaultCold()
+        private IDataVault GetCachedDataVault()
         {
-            if (_dataVault != null)
-                return _dataVault;
-
-            if (!Application.isPlaying)
-                return null;
-
-            _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
+        }
+
+        private bool CanAttemptBatchMetadataAcquire()
+        {
+            IDataVault vault = GetCachedDataVault();
+            return vault != null && !vault.IsCompactionFenceActive;
         }
 
         private bool EnsureBatchMetadataBuffer()
         {
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = GetCachedDataVault();
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -1479,7 +1519,7 @@ namespace Hecton8.World
         private bool TryAcquireBatchMetadata(out NativeArray<MetadataValue> batchMetadata)
         {
             batchMetadata = default;
-            IDataVault vault = CacheDataVaultCold();
+            IDataVault vault = GetCachedDataVault();
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 _batchMetadataWriteVault != null ||
@@ -1512,6 +1552,28 @@ namespace Hecton8.World
             }
         }
 
+        private bool TryWriteBatchMetadata(out MetadataValue batchMetadataValue)
+        {
+            batchMetadataValue = new MetadataValue
+            {
+                NameID = _WreckAgesId,
+                Value = 0u
+            };
+
+            if (!TryAcquireBatchMetadata(out NativeArray<MetadataValue> batchMetadata))
+                return false;
+
+            try
+            {
+                batchMetadata[0] = batchMetadataValue;
+                return true;
+            }
+            finally
+            {
+                ReleaseBatchMetadataWriteLock();
+            }
+        }
+
         private void ReleaseBatchMetadataWriteLock()
         {
             IDataVault vault = _batchMetadataWriteVault;
@@ -1534,20 +1596,24 @@ namespace Hecton8.World
 
         private void TryRegisterSlowTick()
         {
-            if (!HasSlowTickWork() || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredSlowTick)
                 return;
 
-            if (!_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!HasSlowTickWork() || !Application.isPlaying || !_hasRuntimeDispatcher)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterLateFrameTick()
         {
-            if (!HasLateFrameTickWork() || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrameTick)
                 return;
 
-            if (!_registeredLateFrameTick)
-                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!HasRuntimeDispatcherWork() || !Application.isPlaying || !_hasRuntimeDispatcher)
+                return;
+
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterSlowTick()
@@ -1585,15 +1651,16 @@ namespace Hecton8.World
 
         private void RefreshRuntimeTickRegistration()
         {
-            if (HasSlowTickWork())
+            if (HasRuntimeDispatcherWork())
+            {
                 TryRegisterSlowTick();
-            else
-                TryUnregisterSlowTick();
-
-            if (HasLateFrameTickWork())
                 TryRegisterLateFrameTick();
+            }
             else
+            {
+                TryUnregisterSlowTick();
                 TryUnregisterLateFrameTick();
+            }
 
             RefreshOriginShiftRegistration();
         }
@@ -1634,6 +1701,7 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                _hasRuntimeDispatcher = currentService != null;
                 _registeredSlowTick = false;
                 _registeredLateFrameTick = false;
                 if (currentService != null && isActiveAndEnabled)
@@ -1674,6 +1742,11 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
+            _hasRuntimeDispatcher = Application.isPlaying && GlobalRegistry.Dispatcher != null;
+
+            if (Application.isPlaying && _dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
             if (_playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
 
@@ -1695,6 +1768,7 @@ namespace Hecton8.World
             _playerRuntimeContext = null;
             _playerTransform = null;
             _viewCamera = null;
+            _hasRuntimeDispatcher = false;
             _hasCachedFrustumState = false;
         }
 
@@ -1776,6 +1850,10 @@ namespace Hecton8.World
 
         private Material ResolveMaterialForModule(int moduleIndex, WreckLodTier tier)
         {
+            Material sharedTierMaterial = ResolveSharedTierMaterial(tier);
+            if (sharedTierMaterial != null)
+                return sharedTierMaterial;
+
             if (moduleContracts != null &&
                 moduleIndex >= 0 &&
                 moduleIndex < moduleContracts.Length &&
@@ -1792,30 +1870,51 @@ namespace Hecton8.World
             };
         }
 
+        private Material ResolveSharedTierMaterial(WreckLodTier tier)
+        {
+            int index = ResolveSharedTierMaterialIndex(tier);
+            if (wreckageTierSharedMaterials == null ||
+                index < 0 ||
+                index >= SharedWreckTierMaterialCount ||
+                index >= wreckageTierSharedMaterials.Length)
+            {
+                return null;
+            }
+
+            return wreckageTierSharedMaterials[index];
+        }
+
+        private static int ResolveSharedTierMaterialIndex(WreckLodTier tier)
+        {
+            return tier == WreckLodTier.Essential ? 0 : 1;
+        }
+
         private void ResolveIndirectShader()
         {
             if (indirectWreckShader == null)
                 RuntimeShaderReferenceCatalog.TryGetWreckIndirectLitShader(out indirectWreckShader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (indirectWreckShader == null)
-                indirectWreckShader = Shader.Find(IndirectWreckShaderName);
-#endif
         }
 
-        private Shader ResolveRuntimeShader(Material sourceMaterial)
+        private Material ResolveSharedIndirectMaterial(Material sourceMaterial)
         {
-            ResolveIndirectShader();
             if (sourceMaterial == null)
-                return indirectWreckShader;
+                return null;
 
             Shader sourceShader = sourceMaterial.shader;
-            if (sourceShader != null &&
-                string.Equals(sourceShader.name, IndirectWreckShaderName, System.StringComparison.Ordinal))
-            {
-                return sourceShader;
-            }
+            if (sourceShader == null)
+                return null;
 
-            return indirectWreckShader != null ? indirectWreckShader : sourceShader;
+            ResolveIndirectShader();
+            if (sourceShader == indirectWreckShader || IsIndirectWreckShader(sourceShader))
+                return sourceMaterial;
+
+            return null;
+        }
+
+        private static bool IsIndirectWreckShader(Shader shader)
+        {
+            return shader != null &&
+                   string.Equals(shader.name, IndirectWreckShaderName, System.StringComparison.Ordinal);
         }
 
         private static bool _HasUsableShift(Vector3 shiftOffset)

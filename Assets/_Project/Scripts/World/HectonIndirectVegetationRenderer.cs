@@ -11,6 +11,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -103,6 +104,7 @@ namespace Hecton8.World
         private static readonly int _ImpostorHeightId = Shader.PropertyToID("_HectonImpostorHeight");
         private static readonly int _RuntimeLodParamsId = Shader.PropertyToID("_HectonVegetationRuntimeLodParams");
         private static readonly int _RuntimeDrawParamsId = Shader.PropertyToID("_HectonVegetationRuntimeDrawParams");
+        private static readonly int _H8GlobalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int _SourceInstanceCountId = Shader.PropertyToID("_HectonSourceInstanceCount");
         private static readonly int _ViewProjectionId = Shader.PropertyToID("_HectonViewProjection");
         private static readonly int _ViewMatrixId = Shader.PropertyToID("_HectonViewMatrix");
@@ -186,8 +188,9 @@ namespace Hecton8.World
         private Shader _motionVectorShader;
 
         [SerializeField]
-        [Tooltip("Optional authored near mesh. If empty, a strip mesh is generated once at runtime.")]
-        private Mesh _mesh;
+        [FormerlySerializedAs("_mesh")]
+        [Tooltip("Authored near mesh baked offline by FloraTopologyStudio1711. Player runtime never creates this geometry.")]
+        private Mesh _authoredNearMesh;
 
         [SerializeField]
         [Tooltip("Submesh index rendered through the indirect draw calls.")]
@@ -227,10 +230,12 @@ namespace Hecton8.World
         [Tooltip("Enables a dedicated motion-vector draw for indirect vegetation to reduce TAA and motion-blur artifacts.")]
         private bool _enableMotionVectorDraw = true;
 
-        [Header("Runtime Mesh")]
+#if UNITY_EDITOR
+        [Header("Editor Mesh Authoring")]
         [SerializeField]
-        [Tooltip("Generates a single strip mesh once at runtime when no authored near mesh is assigned.")]
-        private bool _generateMeshAtRuntime = true;
+        [FormerlySerializedAs("_generateMeshAtRuntime")]
+        [Tooltip("Editor-only authoring escape hatch. Player runtime ignores procedural mesh construction.")]
+        private bool _generateMeshInEditor = false;
 
         [SerializeField, Range(4, 6)]
         [Tooltip("Strip segment count. User task requires 4-6 segments.")]
@@ -247,15 +252,20 @@ namespace Hecton8.World
         [SerializeField, Min(0.001f)]
         [Tooltip("Generated strip width at the tip.")]
         private float _stripTipWidth = 0.015f;
+#endif
 
         [Header("Impostor Cards")]
         [SerializeField]
-        [Tooltip("Optional authored far impostor card mesh. If empty, a quad is generated once at runtime.")]
-        private Mesh _impostorMesh;
+        [FormerlySerializedAs("_impostorMesh")]
+        [Tooltip("Authored far impostor mesh baked offline. If empty, the near authored mesh is reused.")]
+        private Mesh _authoredImpostorMesh;
 
+#if UNITY_EDITOR
         [SerializeField]
-        [Tooltip("Generates a unit vertical card once at runtime when no authored impostor mesh is assigned.")]
-        private bool _generateImpostorMeshAtRuntime = true;
+        [FormerlySerializedAs("_generateImpostorMeshAtRuntime")]
+        [Tooltip("Editor-only authoring escape hatch. Player runtime ignores procedural impostor construction.")]
+        private bool _generateImpostorMeshInEditor = false;
+#endif
 
         [SerializeField, Min(0.25f)]
         [Tooltip("Billboard card width multiplier passed into the shader.")]
@@ -346,8 +356,10 @@ namespace Hecton8.World
         [Tooltip("Fallback draw bounds size used when no explicit bounds override is supplied.")]
         private Vector3 _boundsSize = new Vector3(128f, 32f, 128f);
 
+#if UNITY_EDITOR
         private Mesh _generatedMesh;
         private Mesh _generatedImpostorMesh;
+#endif
         private GraphicsBuffer _instanceMatrixBuffer;
         private GraphicsBuffer _instanceDataBuffer;
         private GraphicsBuffer _floraPhaseSeedBuffer;
@@ -439,6 +451,7 @@ namespace Hecton8.World
         private MaterialPropertyBlock _shadowIndirectProperties;
         private MaterialPropertyBlock _motionNearIndirectProperties;
         private MaterialPropertyBlock _motionFarIndirectProperties;
+        private bool _indirectPropertyBlocksPrewarmAttempted;
         private MaterialBindingState _nearMaterialBindingState;
         private MaterialBindingState _farMaterialBindingState;
         private MaterialBindingState _depthNearMaterialBindingState;
@@ -531,6 +544,10 @@ namespace Hecton8.World
         private bool _floraGrowthTelemetryDumped;
         private bool _scatterCullTelemetryReadbackPending;
         private bool _scatterCullTelemetryReadbackRepairRequested;
+        private bool _scatterCullTelemetryReadbackDisposeAfterCompletion;
+        private bool _scatterCullTelemetryReleaseCountersBufferAfterCompletion;
+        private GraphicsBuffer _scatterCullTelemetryHeldCountersBuffer;
+        private Action<AsyncGPUReadbackRequest> _scatterCullTelemetryReadbackCompletion;
         private bool _scatterCullTelemetryDumped;
 
         private struct CullTelemetryReadbackOwner
@@ -571,6 +588,7 @@ namespace Hecton8.World
             public float TransitionRange;
             public float ImpostorWidth;
             public float ImpostorHeight;
+            public float GlobalQualityWeight;
             public byte UseGpuIndirectFlag;
             public byte IsValidFlag;
         }
@@ -793,17 +811,19 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildVegetationVisibilityMaskJob : IJobParallelFor
+        private unsafe struct BuildVegetationVisibilitySlotsJob : IJobParallelFor
         {
-            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
-            [ReadOnly, NoAlias] public NativeArray<HectonVegetationInstanceData> InstanceData;
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4>.ReadOnly Matrices;
+            [ReadOnly, NoAlias] public NativeArray<HectonVegetationInstanceData>.ReadOnly InstanceData;
             public FixedList512Bytes<float4> CullingPlanes;
             public FixedList512Bytes<float4> HeadlightPositionsWs;
             public FixedList512Bytes<float4> HeadlightDirectionsWs;
             public FixedList512Bytes<float4> HeadlightColors;
             public FixedList512Bytes<float4> HeadlightConeData;
-            [WriteOnly, NoAlias] public NativeArray<byte> VisibilityMask;
+            [NativeDisableUnsafePtrRestriction] public int* VisibleInstances;
             public int InstanceCount;
+            public int FarScratchOffset;
+            public int ShadowScratchOffset;
             public int CullingPlaneCount;
             public int HeadlightCount;
             public byte EnableCpuCullingFlag;
@@ -825,7 +845,7 @@ namespace Hecton8.World
 
                 if (!PassesDensityDecimation(index, DensityDecimationStep, DensityKeepProbability01))
                 {
-                    VisibilityMask[index] = 0;
+                    WriteVisibilitySlots(index, -1, -1, -1);
                     return;
                 }
 
@@ -849,13 +869,13 @@ namespace Hecton8.World
                             math.max(math.lengthsq(centerWs - sideAWs), math.lengthsq(centerWs - sideBWs))));
                     if (!IsSphereVisibleSq(centerWs, math.max(0.0625f, radiusSq)))
                     {
-                        VisibilityMask[index] = 0;
+                        WriteVisibilitySlots(index, -1, -1, -1);
                         return;
                     }
 
                     if (!IsVisibleInDarkness(centerWs))
                     {
-                        VisibilityMask[index] = 0;
+                        WriteVisibilitySlots(index, -1, -1, -1);
                         return;
                     }
 
@@ -878,7 +898,20 @@ namespace Hecton8.World
                         instanceVisibility |= VisibilityMaskShadow;
                 }
 
-                VisibilityMask[index] = instanceVisibility;
+                WriteVisibilitySlots(
+                    index,
+                    (instanceVisibility & VisibilityMaskNear) != 0 ? index : -1,
+                    (instanceVisibility & VisibilityMaskFar) != 0 ? index : -1,
+                    (instanceVisibility & VisibilityMaskShadow) != 0 ? index : -1);
+            }
+
+            private void WriteVisibilitySlots(int index, int nearValue, int farValue, int shadowValue)
+            {
+                VisibleInstances[index] = nearValue;
+                if (UseFarPassFlag != 0)
+                    VisibleInstances[FarScratchOffset + index] = farValue;
+                if (UseShadowPassFlag != 0)
+                    VisibleInstances[ShadowScratchOffset + index] = shadowValue;
             }
 
             private bool IsVisibleInDarkness(float3 samplePositionWs)
@@ -1087,8 +1120,9 @@ namespace Hecton8.World
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct FinalizeVegetationDrawOutputJob : IJob
         {
-            [ReadOnly, NoAlias] public NativeArray<byte> VisibilityMask;
             public int InstanceCount;
+            public int FarScratchOffset;
+            public int ShadowScratchOffset;
             public int Layer;
             public int SubMeshIndex;
             public byte UseFarPassFlag;
@@ -1119,12 +1153,11 @@ namespace Hecton8.World
                 int shadowCount = 0;
                 for (int instanceIndex = 0; instanceIndex < InstanceCount; instanceIndex++)
                 {
-                    byte instanceVisibility = VisibilityMask[instanceIndex];
-                    if ((instanceVisibility & VisibilityMaskNear) != 0)
+                    if (VisibleInstances[instanceIndex] >= 0)
                         nearCount++;
-                    if ((instanceVisibility & VisibilityMaskFar) != 0)
+                    if (UseFarPassFlag != 0 && VisibleInstances[FarScratchOffset + instanceIndex] >= 0)
                         farCount++;
-                    if ((instanceVisibility & VisibilityMaskShadow) != 0)
+                    if (UseShadowPassFlag != 0 && VisibleInstances[ShadowScratchOffset + instanceIndex] >= 0)
                         shadowCount++;
                 }
 
@@ -1137,23 +1170,31 @@ namespace Hecton8.World
 
                 for (int instanceIndex = 0; instanceIndex < InstanceCount; instanceIndex++)
                 {
-                    byte instanceVisibility = VisibilityMask[instanceIndex];
-                    if ((instanceVisibility & VisibilityMaskNear) != 0)
+                    int nearValue = VisibleInstances[instanceIndex];
+                    if (nearValue >= 0)
                     {
-                        VisibleInstances[nearOffset + nearWrite] = instanceIndex;
+                        VisibleInstances[nearOffset + nearWrite] = nearValue;
                         nearWrite++;
                     }
 
-                    if ((instanceVisibility & VisibilityMaskFar) != 0)
+                    if (UseFarPassFlag != 0)
                     {
-                        VisibleInstances[farOffset + farWrite] = instanceIndex;
-                        farWrite++;
+                        int farValue = VisibleInstances[FarScratchOffset + instanceIndex];
+                        if (farValue >= 0)
+                        {
+                            VisibleInstances[farOffset + farWrite] = farValue;
+                            farWrite++;
+                        }
                     }
 
-                    if ((instanceVisibility & VisibilityMaskShadow) != 0)
+                    if (UseShadowPassFlag != 0)
                     {
-                        VisibleInstances[shadowOffset + shadowWrite] = instanceIndex;
-                        shadowWrite++;
+                        int shadowValue = VisibleInstances[ShadowScratchOffset + instanceIndex];
+                        if (shadowValue >= 0)
+                        {
+                            VisibleInstances[shadowOffset + shadowWrite] = shadowValue;
+                            shadowWrite++;
+                        }
                     }
                 }
 
@@ -1560,7 +1601,7 @@ namespace Hecton8.World
         {
             if (!_hasCpuCullingData ||
                 _instanceCount <= 0 ||
-                !TryReadCpuCullingData(_instanceCount, out NativeArray<Matrix4x4> cpuCullingMatrices, out NativeArray<HectonVegetationInstanceData> cpuCullingData))
+                !TryReadCpuCullingData(_instanceCount, out NativeArray<Matrix4x4>.ReadOnly cpuCullingMatrices, out NativeArray<HectonVegetationInstanceData>.ReadOnly cpuCullingData))
             {
                 return 0;
             }
@@ -1688,7 +1729,8 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_generateMeshAtRuntime || _mesh == null)
+#if UNITY_EDITOR
+            if (_generateMeshInEditor || _authoredNearMesh == null)
             {
                 _generatedMesh = HectonProceduralVegetationStripBuilder.Build(
                     "HectonIndirectVegetationRenderer_Strip",
@@ -1698,8 +1740,9 @@ namespace Hecton8.World
                     _stripTipWidth);
             }
 
-            if ((_generateImpostorMeshAtRuntime || _impostorMesh == null) && _farLodDistance > _nearLodDistance)
+            if ((_generateImpostorMeshInEditor || _authoredImpostorMesh == null) && _farLodDistance > _nearLodDistance)
                 _generatedImpostorMesh = BuildImpostorCardMesh();
+#endif
 
             if (ResolveNearRenderMesh() == null)
             {
@@ -1721,7 +1764,6 @@ namespace Hecton8.World
             _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - cached frustum planes for GPU vegetation culling upload - owner: HectonIndirectVegetationRenderer
             _frustumPlaneVectors = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - packed frustum planes for compute upload - owner: HectonIndirectVegetationRenderer
             _cullTelemetryClearPayload = new uint[ScatterCullTelemetryCounterCount]; // COLD ALLOC: uint[4] - GPU cull telemetry counter clear payload - owner: HectonIndirectVegetationRenderer
-            EnsureIndirectPropertyBlocks();
             CreateAuxiliaryMaterials();
             RefreshCullCameraCacheCold();
         }
@@ -1764,17 +1806,9 @@ namespace Hecton8.World
             ReleaseAuxiliaryMaterials();
             ReleaseCpuCullingData();
 
-            if (_generatedMesh != null)
-            {
-                Destroy(_generatedMesh);
-                _generatedMesh = null;
-            }
-
-            if (_generatedImpostorMesh != null)
-            {
-                Destroy(_generatedImpostorMesh);
-                _generatedImpostorMesh = null;
-            }
+#if UNITY_EDITOR
+            ReleaseEditorGeneratedMeshes();
+#endif
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -2469,18 +2503,41 @@ namespace Hecton8.World
                 : new Bounds(rendererPosition + _boundsCenterOffset, _boundsSize);
         }
 
+#if UNITY_EDITOR
+        private void ReleaseEditorGeneratedMeshes()
+        {
+            if (_generatedMesh != null)
+            {
+                Destroy(_generatedMesh);
+                _generatedMesh = null;
+            }
+
+            if (_generatedImpostorMesh != null)
+            {
+                Destroy(_generatedImpostorMesh);
+                _generatedImpostorMesh = null;
+            }
+        }
+#endif
+
         private Mesh ResolveNearRenderMesh()
         {
-            return _generatedMesh != null ? _generatedMesh : _mesh;
+#if UNITY_EDITOR
+            return _generatedMesh != null ? _generatedMesh : _authoredNearMesh;
+#else
+            return _authoredNearMesh;
+#endif
         }
 
         private Mesh ResolveImpostorRenderMesh()
         {
+#if UNITY_EDITOR
             if (_generatedImpostorMesh != null)
                 return _generatedImpostorMesh;
+#endif
 
-            if (_impostorMesh != null)
-                return _impostorMesh;
+            if (_authoredImpostorMesh != null)
+                return _authoredImpostorMesh;
 
             return ResolveNearRenderMesh();
         }
@@ -2542,12 +2599,26 @@ namespace Hecton8.World
             if (sourceMaterial == null)
                 return false;
 
-            if (!HasIndirectPropertyBlocks())
-                return false;
-
             _nearBrgMaterial = sourceMaterial;
             if (_nearBrgMaterial == null)
                 return false;
+
+            bool useFarPass = farMesh != null;
+            bool useDepthPass = _enableDepthPrepass && _depthOnlyMaterial != null;
+            bool useDepthFarPass = useDepthPass && useFarPass;
+            bool useShadowPass = _enableShadowCasterDraw && _shadowCasterMaterial != null;
+            bool useMotionPass = _enableMotionVectorDraw && _motionVectorMaterial != null;
+            bool useMotionFarPass = useMotionPass && useFarPass;
+            if (!HasRequiredIndirectPropertyBlocks(
+                    useFarPass,
+                    useDepthPass,
+                    useDepthFarPass,
+                    useShadowPass,
+                    useMotionPass,
+                    useMotionFarPass))
+            {
+                return false;
+            }
 
             if (farMesh != null)
                 _farBrgMaterial = sourceMaterial;
@@ -2588,13 +2659,17 @@ namespace Hecton8.World
             }
 
             Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
-            ApplyIndirectPropertyBlockBindings(ref _nearIndirectProperties, ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyIndirectPropertyBlockBindings(ref _farIndirectProperties, ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
-            ApplyIndirectPropertyBlockBindings(ref _depthNearIndirectProperties, ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyIndirectPropertyBlockBindings(ref _depthFarIndirectProperties, ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
-            ApplyIndirectPropertyBlockBindings(ref _shadowIndirectProperties, ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesShadowBuffer, true);
-            ApplyIndirectPropertyBlockBindings(ref _motionNearIndirectProperties, ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyIndirectPropertyBlockBindings(ref _motionFarIndirectProperties, ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            float runtimeLodDistanceScalar = ResolveBrgLodDistanceScalar();
+            float runtimeNearLodDistance = Mathf.Max(0.01f, _nearLodDistance * runtimeLodDistanceScalar);
+            float runtimeFarLodDistance = Mathf.Max(runtimeNearLodDistance, _farLodDistance * runtimeLodDistanceScalar);
+            float runtimeLodTransitionRange = Mathf.Max(0.01f, _lodTransitionRange * runtimeLodDistanceScalar);
+            ApplyIndirectPropertyBlockBindings(ref _nearIndirectProperties, ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesLod0Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _farIndirectProperties, ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesLod1Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _depthNearIndirectProperties, ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesLod0Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _depthFarIndirectProperties, ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesLod1Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _shadowIndirectProperties, ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesShadowBuffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _motionNearIndirectProperties, ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesLod0Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _motionFarIndirectProperties, ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange, _visibleIndicesLod1Buffer, true);
             return true;
         }
 
@@ -2605,6 +2680,9 @@ namespace Hecton8.World
             GraphicsBuffer activeInstanceDataBuffer,
             Vector4 globalFloatingOffset,
             float passMode,
+            float runtimeNearLodDistance,
+            float runtimeFarLodDistance,
+            float runtimeLodTransitionRange,
             GraphicsBuffer visibleIndicesBuffer,
             bool useGpuIndirect)
         {
@@ -2622,6 +2700,9 @@ namespace Hecton8.World
                     floraAgeBuffer,
                     globalFloatingOffset,
                     passMode,
+                    runtimeNearLodDistance,
+                    runtimeFarLodDistance,
+                    runtimeLodTransitionRange,
                     visibleIndicesBuffer,
                     useGpuIndirect))
             {
@@ -2643,8 +2724,10 @@ namespace Hecton8.World
             propertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
             propertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
             float snapFlagsEnabled = _floraSnapFlagBuffer != null ? 1f : 0f;
-            propertyBlock.SetVector(_RuntimeLodParamsId, new Vector4(passMode, _nearLodDistance, _farLodDistance, _lodTransitionRange));
+            float globalQualityWeight = math.saturate(math.select(1f, _cachedQualityWeight01, math.isfinite(_cachedQualityWeight01)));
+            propertyBlock.SetVector(_RuntimeLodParamsId, new Vector4(passMode, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange));
             propertyBlock.SetVector(_RuntimeDrawParamsId, new Vector4(snapFlagsEnabled, _impostorWidth, _impostorHeight, useGpuIndirect && visibleIndicesBuffer != null ? 1f : 0f));
+            propertyBlock.SetFloat(_H8GlobalQualityWeightId, globalQualityWeight);
 
             state = new MaterialBindingState
             {
@@ -2657,11 +2740,12 @@ namespace Hecton8.World
                 VisibleIndicesBuffer = visibleIndicesBuffer,
                 GlobalFloatingOffset = globalFloatingOffset,
                 PassMode = passMode,
-                NearDistance = _nearLodDistance,
-                FarDistance = _farLodDistance,
-                TransitionRange = _lodTransitionRange,
+                NearDistance = runtimeNearLodDistance,
+                FarDistance = runtimeFarLodDistance,
+                TransitionRange = runtimeLodTransitionRange,
                 ImpostorWidth = _impostorWidth,
                 ImpostorHeight = _impostorHeight,
+                GlobalQualityWeight = globalQualityWeight,
                 UseGpuIndirectFlag = ToBindingFlag(useGpuIndirect),
                 IsValidFlag = BindingFlagTrue
             };
@@ -2674,9 +2758,13 @@ namespace Hecton8.World
             GraphicsBuffer floraAgeBuffer,
             Vector4 globalFloatingOffset,
             float passMode,
+            float runtimeNearLodDistance,
+            float runtimeFarLodDistance,
+            float runtimeLodTransitionRange,
             GraphicsBuffer visibleIndicesBuffer,
             bool useGpuIndirect)
         {
+            float globalQualityWeight = math.saturate(math.select(1f, _cachedQualityWeight01, math.isfinite(_cachedQualityWeight01)));
             return state.IsValidFlag != 0 &&
                 ReferenceEquals(state.Material, material) &&
                 ReferenceEquals(state.InstanceMatrixBuffer, _instanceMatrixBuffer) &&
@@ -2690,11 +2778,12 @@ namespace Hecton8.World
                 state.GlobalFloatingOffset.z == globalFloatingOffset.z &&
                 state.GlobalFloatingOffset.w == globalFloatingOffset.w &&
                 state.PassMode == passMode &&
-                state.NearDistance == _nearLodDistance &&
-                state.FarDistance == _farLodDistance &&
-                state.TransitionRange == _lodTransitionRange &&
+                state.NearDistance == runtimeNearLodDistance &&
+                state.FarDistance == runtimeFarLodDistance &&
+                state.TransitionRange == runtimeLodTransitionRange &&
                 state.ImpostorWidth == _impostorWidth &&
                 state.ImpostorHeight == _impostorHeight &&
+                state.GlobalQualityWeight == globalQualityWeight &&
                 (state.UseGpuIndirectFlag != 0) == useGpuIndirect;
         }
 
@@ -3476,8 +3565,11 @@ namespace Hecton8.World
                 return;
             }
 
-            CompletePendingScatterCullTelemetryReadbackForRelease();
-            ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
+            bool keepCullTelemetryCountersBuffer = DeferPendingScatterCullTelemetryReadbackForRelease();
+            if (keepCullTelemetryCountersBuffer)
+                _cullTelemetryCountersBuffer = null;
+            else
+                ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersUploadBuffer);
             _cullTelemetryCountersBuffer = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<uint>(ScatterCullTelemetryCounterCount); // COLD ALLOC: GraphicsBuffer[4] - GPU cull telemetry counters for SHINOBU_09 scatter diagnostics - owner: HectonIndirectVegetationRenderer
             _cullTelemetryCountersUploadBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<uint>(ScatterCullTelemetryCounterCount); // COLD ALLOC: GraphicsBuffer[4] - CPU-visible telemetry clear staging, GPU copy source only - owner: HectonIndirectVegetationRenderer
@@ -3872,7 +3964,10 @@ namespace Hecton8.World
 
         private void RequestCullTelemetryReadback(bool sampleCullTelemetry)
         {
-            if (!sampleCullTelemetry || _cullTelemetryCountersBuffer == null || _scatterCullTelemetryReadbackPending)
+            if (!sampleCullTelemetry ||
+                _cullTelemetryCountersBuffer == null ||
+                _scatterCullTelemetryReadbackPending ||
+                _scatterCullTelemetryReadbackDisposeAfterCompletion)
                 return;
 
             if (!HasCullTelemetryReadbackData())
@@ -3881,8 +3976,13 @@ namespace Hecton8.World
                 return;
             }
 
-            _cullTelemetryReadbackRequest = AsyncGPUReadback.RequestIntoNativeArray(ref _cullTelemetryReadback.Data, _cullTelemetryCountersBuffer);
-            _scatterCullTelemetryReadbackPending = true;
+            _cullTelemetryReadbackRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                ref _cullTelemetryReadback.Data,
+                _cullTelemetryCountersBuffer,
+                ResolveScatterCullTelemetryReadbackCompletion());
+            _scatterCullTelemetryReadbackPending = !_cullTelemetryReadbackRequest.hasError;
+            if (!_scatterCullTelemetryReadbackPending)
+                _cullTelemetryReadbackRequest = default;
         }
 
         private void PollCullTelemetryReadback()
@@ -3891,7 +3991,9 @@ namespace Hecton8.World
                 return;
 
             _scatterCullTelemetryReadbackPending = false;
-            if (_cullTelemetryReadbackRequest.hasError)
+            bool readbackError = _cullTelemetryReadbackRequest.hasError;
+            _cullTelemetryReadbackRequest = default;
+            if (readbackError)
                 return;
 
             NativeArray<uint> counters = _cullTelemetryReadback.Data;
@@ -4037,7 +4139,7 @@ namespace Hecton8.World
 
             if (IsExactVaultHandle(in handle, bufferId) &&
                 !vault.IsCompactionFenceActive &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                 existing.IsCreated &&
                 existing.Length >= length &&
                 !vault.IsCompactionFenceActive)
@@ -4052,7 +4154,7 @@ namespace Hecton8.World
                 options);
             return !vault.IsCompactionFenceActive &&
                    IsExactVaultHandle(in handle, bufferId) &&
-                   vault.TryResolveHandle(in handle, out NativeArray<T> resolved) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
                    resolved.IsCreated &&
                    resolved.Length >= length &&
                    !vault.IsCompactionFenceActive;
@@ -4126,8 +4228,8 @@ namespace Hecton8.World
 
         private bool TryReadCpuCullingData(
             int requiredCount,
-            out NativeArray<Matrix4x4> matrices,
-            out NativeArray<HectonVegetationInstanceData> instanceData)
+            out NativeArray<Matrix4x4>.ReadOnly matrices,
+            out NativeArray<HectonVegetationInstanceData>.ReadOnly instanceData)
         {
             matrices = default;
             instanceData = default;
@@ -4137,8 +4239,8 @@ namespace Hecton8.World
                    !vault.IsCompactionFenceActive &&
                    IsExactVaultHandle(in _cpuCullingMatricesHandle, CpuCullingMatricesBufferId) &&
                    IsExactVaultHandle(in _cpuCullingDataHandle, CpuCullingDataBufferId) &&
-                   vault.TryResolveHandle(in _cpuCullingMatricesHandle, out matrices) &&
-                   vault.TryResolveHandle(in _cpuCullingDataHandle, out instanceData) &&
+                   vault.TryReadOnlyHandle(in _cpuCullingMatricesHandle, out matrices) &&
+                   vault.TryReadOnlyHandle(in _cpuCullingDataHandle, out instanceData) &&
                    matrices.IsCreated &&
                    instanceData.IsCreated &&
                    matrices.Length >= requiredCount &&
@@ -4434,7 +4536,7 @@ namespace Hecton8.World
 
         private void ReleaseGpuIndirectResources()
         {
-            CompletePendingScatterCullTelemetryReadbackForRelease();
+            bool keepCullTelemetryCountersBuffer = DeferPendingScatterCullTelemetryReadbackForRelease();
             DisposeCullTelemetryReadbackData();
             ReleaseVisibleIndexBuffer(ref _visibleIndicesLod0Buffer);
             ReleaseVisibleIndexBuffer(ref _visibleIndicesLod1Buffer);
@@ -4443,13 +4545,17 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _indirectArgsLod0Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsLod1Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsShadowBuffer);
-            ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
+            if (keepCullTelemetryCountersBuffer)
+                _cullTelemetryCountersBuffer = null;
+            else
+                ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersUploadBuffer);
             ReleaseDepthPyramidTexture();
             _gpuVisibleIndexCapacity = 0;
             _gpuCullingFrameIndex = 0;
             _hasFarCullingSnapshot = false;
-            _scatterCullTelemetryReadbackPending = false;
+            if (!_scatterCullTelemetryReadbackDisposeAfterCompletion)
+                _scatterCullTelemetryReadbackPending = false;
             _depthPyramidWidth = 0;
             _depthPyramidHeight = 0;
             _depthPyramidMipCount = 0;
@@ -4459,6 +4565,9 @@ namespace Hecton8.World
 
         private void EnsureCullTelemetryReadbackData()
         {
+            if (_scatterCullTelemetryReadbackDisposeAfterCompletion)
+                return;
+
             if (HasCullTelemetryReadbackData())
                 return;
 
@@ -4484,6 +4593,9 @@ namespace Hecton8.World
 
         private void FlushCullTelemetryReadbackRepairSlow()
         {
+            if (_scatterCullTelemetryReadbackDisposeAfterCompletion)
+                return;
+
             if (!_scatterCullTelemetryReadbackRepairRequested && HasCullTelemetryReadbackData())
                 return;
 
@@ -4493,19 +4605,64 @@ namespace Hecton8.World
             EnsureCullTelemetryReadbackData();
         }
 
-        private void CompletePendingScatterCullTelemetryReadbackForRelease()
+        private Action<AsyncGPUReadbackRequest> ResolveScatterCullTelemetryReadbackCompletion()
         {
-            if (!_scatterCullTelemetryReadbackPending)
+            if (_scatterCullTelemetryReadbackCompletion == null)
+                _scatterCullTelemetryReadbackCompletion = OnScatterCullTelemetryReadbackComplete;
+
+            return _scatterCullTelemetryReadbackCompletion;
+        }
+
+        private void OnScatterCullTelemetryReadbackComplete(AsyncGPUReadbackRequest request)
+        {
+            if (!_scatterCullTelemetryReadbackDisposeAfterCompletion)
                 return;
 
-            // BLOCKING_SYNC_POINT: teardown/configuration must not release cull telemetry buffers while AsyncGPUReadback owns them.
-            AsyncGPUReadback.WaitAllRequests();
             _scatterCullTelemetryReadbackPending = false;
+            _cullTelemetryReadbackRequest = default;
+            _scatterCullTelemetryReadbackDisposeAfterCompletion = false;
+
+            bool releaseCountersBuffer = _scatterCullTelemetryReleaseCountersBufferAfterCompletion;
+            _scatterCullTelemetryReleaseCountersBufferAfterCompletion = false;
+            ReleaseCullTelemetryReadbackNativeData();
+
+            if (releaseCountersBuffer)
+                ReleaseGraphicsBuffer(ref _scatterCullTelemetryHeldCountersBuffer);
+            else
+                _scatterCullTelemetryHeldCountersBuffer = null;
+        }
+
+        private bool DeferPendingScatterCullTelemetryReadbackForRelease()
+        {
+            if (!_scatterCullTelemetryReadbackPending)
+                return false;
+
+            if (_cullTelemetryReadbackRequest.done)
+            {
+                _scatterCullTelemetryReadbackPending = false;
+                _cullTelemetryReadbackRequest = default;
+                return false;
+            }
+
+            bool holdCountersBuffer = _cullTelemetryCountersBuffer != null;
+            _scatterCullTelemetryReadbackDisposeAfterCompletion = true;
+            _scatterCullTelemetryReleaseCountersBufferAfterCompletion = holdCountersBuffer;
+            _scatterCullTelemetryHeldCountersBuffer = _cullTelemetryCountersBuffer;
+            _scatterCullTelemetryReadbackPending = false;
+            return holdCountersBuffer;
         }
 
         private void DisposeCullTelemetryReadbackData()
         {
             _scatterCullTelemetryReadbackRepairRequested = false;
+            if (_scatterCullTelemetryReadbackDisposeAfterCompletion)
+                return;
+
+            ReleaseCullTelemetryReadbackNativeData();
+        }
+
+        private void ReleaseCullTelemetryReadbackNativeData()
+        {
             if (_cullTelemetryReadback.Data.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_cullTelemetryReadback.Data);
@@ -4541,33 +4698,56 @@ namespace Hecton8.World
             buffer = null;
         }
 
-        private void EnsureIndirectPropertyBlocks()
+        private void EnsureRequiredIndirectPropertyBlocks()
         {
-            if (_nearIndirectProperties == null)
-                _nearIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - near indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
-            if (_farIndirectProperties == null)
-                _farIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
-            if (_depthNearIndirectProperties == null)
-                _depthNearIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - depth near indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
-            if (_depthFarIndirectProperties == null)
-                _depthFarIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - depth far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
-            if (_shadowIndirectProperties == null)
-                _shadowIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - shadow indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
-            if (_motionNearIndirectProperties == null)
-                _motionNearIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - motion near indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
-            if (_motionFarIndirectProperties == null)
-                _motionFarIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - motion far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (!_preferGpuIndirectRendering || !_supportsComputeShadersCold || _cullingCompute == null)
+                return;
+
+            EnsureIndirectPropertyBlock(ref _nearIndirectProperties);
+
+            bool hasFarPass = _farLodDistance > _nearLodDistance && ResolveImpostorRenderMesh() != null;
+            if (hasFarPass)
+                EnsureIndirectPropertyBlock(ref _farIndirectProperties);
+
+            if (_enableDepthPrepass && _depthOnlyMaterial != null)
+            {
+                EnsureIndirectPropertyBlock(ref _depthNearIndirectProperties);
+                if (hasFarPass)
+                    EnsureIndirectPropertyBlock(ref _depthFarIndirectProperties);
+            }
+
+            if (_enableShadowCasterDraw && _shadowCasterMaterial != null)
+                EnsureIndirectPropertyBlock(ref _shadowIndirectProperties);
+
+            if (_enableMotionVectorDraw && _motionVectorMaterial != null)
+            {
+                EnsureIndirectPropertyBlock(ref _motionNearIndirectProperties);
+                if (hasFarPass)
+                    EnsureIndirectPropertyBlock(ref _motionFarIndirectProperties);
+            }
         }
 
-        private bool HasIndirectPropertyBlocks()
+        private static void EnsureIndirectPropertyBlock(ref MaterialPropertyBlock propertyBlock)
+        {
+            if (propertyBlock == null)
+                propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - required GPU indirect pass payload - owner: HectonIndirectVegetationRenderer
+        }
+
+        private bool HasRequiredIndirectPropertyBlocks(
+            bool useFarPass,
+            bool useDepthPass,
+            bool useDepthFarPass,
+            bool useShadowPass,
+            bool useMotionPass,
+            bool useMotionFarPass)
         {
             return _nearIndirectProperties != null &&
-                   _farIndirectProperties != null &&
-                   _depthNearIndirectProperties != null &&
-                   _depthFarIndirectProperties != null &&
-                   _shadowIndirectProperties != null &&
-                   _motionNearIndirectProperties != null &&
-                   _motionFarIndirectProperties != null;
+                   (!useFarPass || _farIndirectProperties != null) &&
+                   (!useDepthPass || _depthNearIndirectProperties != null) &&
+                   (!useDepthFarPass || _depthFarIndirectProperties != null) &&
+                   (!useShadowPass || _shadowIndirectProperties != null) &&
+                   (!useMotionPass || _motionNearIndirectProperties != null) &&
+                   (!useMotionFarPass || _motionFarIndirectProperties != null);
         }
 
         private void ReleaseDepthPyramidTexture()
@@ -5087,8 +5267,8 @@ namespace Hecton8.World
 
             bool useDepthFarPass = useDepthPass && useFarPass && _depthFarBrgMaterial != null && _depthFarBatchMaterialId.value != 0u;
             bool useMotionFarPass = useMotionPass && useFarPass && _motionFarBrgMaterial != null && _motionFarBatchMaterialId.value != 0u;
-            NativeArray<Matrix4x4> cpuCullingMatrices = default;
-            NativeArray<HectonVegetationInstanceData> cpuCullingData = default;
+            NativeArray<Matrix4x4>.ReadOnly cpuCullingMatrices = default;
+            NativeArray<HectonVegetationInstanceData>.ReadOnly cpuCullingData = default;
             bool enableCpuCulling = _hasCpuCullingData &&
                                     TryReadCpuCullingData(
                                         _instanceCount,
@@ -5119,10 +5299,6 @@ namespace Hecton8.World
                 return default;
             }
 
-            NativeArray<byte> visibilityMask = new NativeArray<byte>(
-                _instanceCount,
-                TransientVegetationCullingAllocator,
-                NativeArrayOptions.UninitializedMemory);
             FixedList512Bytes<float4> cullingPlanes = default;
             FixedList512Bytes<float4> headlightPositionsWs = default;
             FixedList512Bytes<float4> headlightDirectionsWs = default;
@@ -5197,8 +5373,10 @@ namespace Hecton8.World
                     visibleInstanceCapacity,
                     drawCommandCapacity,
                     drawCommandCapacity);
+                int farScratchOffset = _instanceCount;
+                int shadowScratchOffset = _instanceCount + (useFarPass ? _instanceCount : 0);
 
-                JobHandle visibilityHandle = new BuildVegetationVisibilityMaskJob
+                JobHandle visibilityHandle = new BuildVegetationVisibilitySlotsJob
                 {
                     Matrices = cpuCullingMatrices,
                     InstanceData = cpuCullingData,
@@ -5207,8 +5385,10 @@ namespace Hecton8.World
                     HeadlightDirectionsWs = headlightDirectionsWs,
                     HeadlightColors = headlightColors,
                     HeadlightConeData = headlightConeData,
-                    VisibilityMask = visibilityMask,
+                    VisibleInstances = output.visibleInstances,
                     InstanceCount = _instanceCount,
+                    FarScratchOffset = farScratchOffset,
+                    ShadowScratchOffset = shadowScratchOffset,
                     CullingPlaneCount = cullingPlaneCount,
                     HeadlightCount = headlightCount,
                     EnableCpuCullingFlag = enableCpuCulling ? (byte)1 : (byte)0,
@@ -5226,8 +5406,9 @@ namespace Hecton8.World
 
                 JobHandle finalizeHandle = new FinalizeVegetationDrawOutputJob
                 {
-                    VisibilityMask = visibilityMask,
                     InstanceCount = _instanceCount,
+                    FarScratchOffset = farScratchOffset,
+                    ShadowScratchOffset = shadowScratchOffset,
                     Layer = gameObject.layer,
                     SubMeshIndex = _subMeshIndex,
                     UseFarPassFlag = useFarPass ? (byte)1 : (byte)0,
@@ -5252,8 +5433,7 @@ namespace Hecton8.World
                     OutputCommands = (BatchCullingOutputDrawCommands*)NativeArrayUnsafeUtility.GetUnsafePtr(cullingOutput.drawCommands)
                 }.Schedule(visibilityHandle);
 
-                JobHandle disposalHandle = visibilityMask.Dispose(finalizeHandle);
-                return disposalHandle;
+                return finalizeHandle;
             }
         }
 
@@ -6146,21 +6326,74 @@ namespace Hecton8.World
         {
             dirty = false;
             firstDirtyPageBytes = 0;
-            if (!TryAcquireUploadedDirtyPageForWrite(ref dirtyHandle, dirtyBufferId, out IDataVault vault, out NativeArray<byte> dirtyPages))
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
+            if (!HasUploadedDirtyPageStorage(requiredPages) ||
+                !IsExactVaultHandle(in dirtyHandle, dirtyBufferId))
+            {
+                return false;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in dirtyHandle, out NativeArray<byte>.ReadOnly dirtyPages) ||
+                dirtyPages.Length < requiredPages)
+            {
+                return false;
+            }
+
+            dirty = HasAnyDirtyPageReadOnly(dirtyPages, instanceCount, NativeUploadDirtyPageSize);
+            firstDirtyPageBytes = dirty
+                ? ResolveFirstDirtyPageBytesReadOnly<T>(dirtyPages, instanceCount, NativeUploadDirtyPageSize)
+                : 0;
+            return true;
+        }
+
+        private static bool HasAnyDirtyPageReadOnly(
+            NativeArray<byte>.ReadOnly dirtyPages,
+            int elementCount,
+            int pageSize)
+        {
+            if (elementCount <= 0)
                 return false;
 
-            try
+            int pageCount = math.min(dirtyPages.Length, GraphicsBufferUploadUtility.ResolveDirtyPageCount(elementCount, pageSize));
+            for (int i = 0; i < pageCount; i++)
             {
-                dirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(dirtyPages, instanceCount, NativeUploadDirtyPageSize);
-                firstDirtyPageBytes = dirty
-                    ? GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<T>(dirtyPages, instanceCount, NativeUploadDirtyPageSize)
-                    : 0;
-                return true;
+                if (dirtyPages[i] != 0)
+                    return true;
             }
-            finally
+
+            return false;
+        }
+
+        private static int ResolveFirstDirtyPageBytesReadOnly<T>(
+            NativeArray<byte>.ReadOnly dirtyPages,
+            int elementCount,
+            int pageSize)
+            where T : struct
+        {
+            if (elementCount <= 0)
+                return 0;
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPages.Length, GraphicsBufferUploadUtility.ResolveDirtyPageCount(elementCount, safePageSize));
+            int stride = UnsafeUtility.SizeOf<T>();
+            for (int i = 0; i < pageCount; i++)
             {
-                vault.ReleaseWriteLock(in dirtyHandle, VaultOwnerSystemId);
+                if (dirtyPages[i] == 0)
+                    continue;
+
+                int pageElementStart = i * safePageSize;
+                int pageElementCount = math.min(safePageSize, elementCount - pageElementStart);
+                if (pageElementCount <= 0)
+                    return 0;
+
+                long pageBytes = (long)pageElementCount * stride;
+                return pageBytes > int.MaxValue ? int.MaxValue : (int)pageBytes;
             }
+
+            return 0;
         }
 
         private bool TryUploadDirtyPages<T>(
@@ -6425,7 +6658,11 @@ namespace Hecton8.World
 
         private void CreateAuxiliaryMaterials()
         {
-            EnsureIndirectPropertyBlocks();
+            if (_indirectPropertyBlocksPrewarmAttempted)
+                return;
+
+            EnsureRequiredIndirectPropertyBlocks();
+            _indirectPropertyBlocksPrewarmAttempted = true;
         }
 
         private void ReleaseAuxiliaryMaterials()
@@ -6450,6 +6687,7 @@ namespace Hecton8.World
             return buffer != null ? (long)buffer.count * buffer.stride : 0L;
         }
 
+#if UNITY_EDITOR
         private static Mesh BuildImpostorCardMesh()
         {
             Mesh mesh = new Mesh
@@ -6500,6 +6738,7 @@ namespace Hecton8.World
             mesh.bounds = new Bounds(new Vector3(0f, 0.5f, 0f), new Vector3(1f, 1f, 0.01f));
             return mesh;
         }
+#endif
 
         private void TryRegister()
         {
@@ -6542,12 +6781,21 @@ namespace Hecton8.World
 
         private float ResolveBrgLodDistanceScalar()
         {
+            float pressureScalar = 1f;
             IVramPressureReadModel pressure = _vramPressure;
-            if (pressure == null)
-                return 1f;
+            if (pressure != null)
+            {
+                float scalar = pressure.BrgLodDistanceScalar;
+                pressureScalar = math.select(1f, math.max(0.05f, scalar), math.isfinite(scalar));
+            }
 
-            float scalar = pressure.BrgLodDistanceScalar;
-            return math.select(1f, math.max(0.05f, scalar), math.isfinite(scalar));
+            return math.max(0.05f, pressureScalar * ResolveFloraLodQualityDistanceScalar());
+        }
+
+        private float ResolveFloraLodQualityDistanceScalar()
+        {
+            float qualityWeight = math.saturate(math.select(1f, _cachedQualityWeight01, math.isfinite(_cachedQualityWeight01)));
+            return math.lerp(0.3f, 1f, Smooth01(qualityWeight));
         }
 
         private void TryRegisterLateFrameTickable()

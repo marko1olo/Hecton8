@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1501043287995522705}
   - component: {fileID: 7426858278476794883}
+  - component: {fileID: 2717302557254295920}
   m_Layer: 0
   m_Name: GEN_family_coral_plate__terrace
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3983068948178984092}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.12537658, y: 0.7402882, z: 0.012700796}
-  m_Size: 3.5004191
+  m_LocalReferencePoint: {x: -0.125386, y: 0.7402859, z: 0.012209773}
+  m_Size: 3.5007396
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 3393030078588161500}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &2717302557254295920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3983068948178984092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 4fc68ad212c18a7499c121bb1bf6f72d, type: 2}
 --- !u!1 &8474615279883735627
 GameObject:
   m_ObjectHideFlags: 0

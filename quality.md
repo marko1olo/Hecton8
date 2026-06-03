@@ -132,7 +132,24 @@ Audio must prove:
 - no hot-path allocations;
 - cue IDs not runtime strings.
 
-## 9. Final Report Shape
+## 9. Controller And Batch Prompt Gate
+
+Controller prompts, batch prompts, task files, and old logs are routing aids, not authority to lower the game.
+
+Reject or patch a controller/batch instruction if it:
+
+- demands bulk reading of unrelated root docs, archives, or old logs for a narrow task;
+- demands `Status_[ID].md`, `Rationale_[ID].md`, or `LOG_[ID].md` without an explicit active agent ID or logging mode;
+- tells agents to delete deprecated paths immediately without scoped proof, `.meta` handling, and rollback awareness;
+- downgrades the visual target to "visually acceptable";
+- treats cinematic cheats, fake-first rendering, or the 0.1 ms suspicion rule as permission for flat water, muddy skies, weak terrain, blurry textures, primitive meshes, or placeholder-looking assets;
+- contains absolute implementation bans without profiling, capture, platform, or domain context;
+- asks for fake microseconds, fake proof, or proof-label upgrades not backed by artifacts;
+- omits the surface/photic-shallows/medium-depth Subnautica-level visual floor for visual work.
+
+A valid controller prompt preserves inspect-first autonomy, the relevant root bibles, exact proof labels, three-pillar acceptance, continuous `GlobalQualityWeight`, active-ID logging rules, and the requirement that cheap paths still look premium.
+
+## 10. Final Report Shape
 
 A valid report says:
 
@@ -146,7 +163,7 @@ A valid report says:
 
 Reports that claim quality without evidence are rejected.
 
-## 10. Proof State Labels
+## 11. Proof State Labels
 
 Every report must use one of these labels:
 
@@ -159,7 +176,7 @@ Every report must use one of these labels:
 
 Do not collapse these labels. Static documentation work cannot claim runtime proof.
 
-## 11. Domain Proof Matrix
+## 12. Domain Proof Matrix
 
 Minimum proof by domain:
 
@@ -202,11 +219,12 @@ Minimum proof by domain:
 - Testing/CI (`testing.md`): evidence class, command/tool, target scene or repro, artifact path, timestamp, unresolved failures, and no static-proof upgrade for runtime claims.
 - Cinematics/capture (`cinematics.md`): sequence purpose, truth label, owner state list, entry/exit/interrupt rules, compact capture, control-loss duration, public-claim review if used externally.
 - Accessibility: low-tier readability capture, remapping/subtitle/flash/motion checks.
+- In-world writing (`writing.md`): canon sources, speaker/source, surface type, unlock context, evidence object, LocID/runtime layer, English authority text, 15-locale draft rows with status or explicit English-only scope, anti-AI prose scan, forbidden facts avoided, and native-review/runtime status.
 - Public writing: attached proof asset or explicit no-asset housekeeping reason, unsupported claims removed, channel target, owner approval state for Steam/demo/release/platform/access claims.
 
 If the domain has no matching proof artifact, it remains pending.
 
-## 12. Release-Grade Packet
+## 13. Release-Grade Packet
 
 For release-facing work, a final handoff is valid only if it contains:
 
@@ -222,6 +240,6 @@ For release-facing work, a final handoff is valid only if it contains:
 
 Do not write "AAA", "production ready", "release ready", "optimized", or "done" unless the packet contains proof for that exact claim.
 
-## 13. Acceptance Sentence
+## 14. Acceptance Sentence
 
 A change is accepted only when the relevant bible route was read, the owner and truth path are explicit, the compact-tier result remains readable, the high-tier path adds sensory value without changing truth, and proof artifacts exist for every runtime claim.

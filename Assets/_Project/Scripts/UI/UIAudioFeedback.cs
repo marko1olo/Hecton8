@@ -61,8 +61,15 @@ namespace Hecton8.UI
         [SerializeField]
         private float sliderTickThrottle = 0.1f;
 
-        [SerializeField]
+        [SerializeField, Tooltip("Hover sounds bind only to pre-authored EventTrigger PointerEnter entries. Runtime EventTrigger/Entry creation is forbidden.")]
         private bool enableHoverSounds = true;
+
+        [Header("=== AUTHORED BUTTON ROLES ===")]
+        [SerializeField, Tooltip("Buttons explicitly using the primary click cue. Default unlisted buttons use the secondary cue.")]
+        private Button[] primaryButtons = System.Array.Empty<Button>();
+
+        [SerializeField, Tooltip("Buttons explicitly using the destructive click cue. Default unlisted buttons use the secondary cue.")]
+        private Button[] destructiveButtons = System.Array.Empty<Button>();
 
         [Header("=== DEBUG ===")]
         [SerializeField, Tooltip("Log audio playback events")]
@@ -361,7 +368,7 @@ namespace Hecton8.UI
 
             if (root.TryGetComponent(out Button button))
             {
-                ButtonType type = GetButtonType(button.name);
+                ButtonType type = ResolveButtonType(button);
                 RegisterButton(button, type);
             }
 
@@ -465,68 +472,60 @@ namespace Hecton8.UI
             button.onClick.RemoveListener(action);
             button.onClick.AddListener(action);
 
-            // Add hover listener if enabled
             if (enableHoverSounds)
             {
-                if (!button.TryGetComponent(out EventTrigger trigger))
-                    trigger = button.gameObject.AddComponent<EventTrigger>();
-
-                EventTrigger.Entry entry = GetOrCreatePointerEnterEntry(trigger);
-                entry.callback.RemoveListener(_buttonHoverAction);
-                entry.callback.AddListener(_buttonHoverAction);
+                if (button.TryGetComponent(out EventTrigger trigger) &&
+                    TryGetPointerEnterEntry(trigger, out EventTrigger.Entry entry))
+                {
+                    entry.callback.RemoveListener(_buttonHoverAction);
+                    entry.callback.AddListener(_buttonHoverAction);
+                }
             }
         }
 
-        private static EventTrigger.Entry GetOrCreatePointerEnterEntry(EventTrigger trigger)
+        private static bool TryGetPointerEnterEntry(EventTrigger trigger, out EventTrigger.Entry pointerEnterEntry)
         {
+            pointerEnterEntry = null;
+            if (trigger == null)
+                return false;
+
             var entries = trigger.triggers;
             for (int i = 0; i < entries.Count; i++)
             {
                 EventTrigger.Entry entry = entries[i];
                 if (entry != null && entry.eventID == EventTriggerType.PointerEnter)
-                    return entry;
+                {
+                    pointerEnterEntry = entry;
+                    return true;
+                }
             }
 
-            // COLD ALLOC: EventTrigger.Entry[1] - shared pointer-enter hover callback entry - owner: UIAudioFeedback
-            EventTrigger.Entry newEntry = new EventTrigger.Entry
-            {
-                eventID = EventTriggerType.PointerEnter
-            };
-            entries.Add(newEntry);
-            return newEntry;
+            return false;
         }
 
-        private static ButtonType GetButtonType(string buttonName)
+        private ButtonType ResolveButtonType(Button button)
         {
-            if (string.IsNullOrEmpty(buttonName))
-                return ButtonType.Secondary;
-
-            if (ContainsOrdinalIgnoreCase(buttonName, "quit") ||
-                ContainsOrdinalIgnoreCase(buttonName, "exit") ||
-                ContainsOrdinalIgnoreCase(buttonName, "delete") ||
-                ContainsOrdinalIgnoreCase(buttonName, "abort"))
-            {
-                return ButtonType.Destructive;
-            }
-
-            if (ContainsOrdinalIgnoreCase(buttonName, "new") ||
-                ContainsOrdinalIgnoreCase(buttonName, "start") ||
-                ContainsOrdinalIgnoreCase(buttonName, "resume") ||
-                ContainsOrdinalIgnoreCase(buttonName, "save") ||
-                ContainsOrdinalIgnoreCase(buttonName, "load") ||
-                ContainsOrdinalIgnoreCase(buttonName, "apply") ||
-                ContainsOrdinalIgnoreCase(buttonName, "confirm") ||
-                ContainsOrdinalIgnoreCase(buttonName, "ok"))
-            {
+            if (IsButtonInArray(button, primaryButtons))
                 return ButtonType.Primary;
-            }
+
+            if (IsButtonInArray(button, destructiveButtons))
+                return ButtonType.Destructive;
 
             return ButtonType.Secondary;
         }
 
-        private static bool ContainsOrdinalIgnoreCase(string source, string token)
+        private static bool IsButtonInArray(Button button, Button[] buttons)
         {
-            return source.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0;
+            if (button == null || buttons == null)
+                return false;
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                if (ReferenceEquals(buttons[i], button))
+                    return true;
+            }
+
+            return false;
         }
 
         // ----------------------------------------------------------

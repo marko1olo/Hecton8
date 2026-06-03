@@ -1,6 +1,9 @@
-using System;
 using Hecton8.World;
 using UnityEngine;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System;
+#endif
 
 namespace Hecton8.Meta
 {
@@ -18,6 +21,7 @@ namespace Hecton8.Meta
         {
             GameObject runtimeRoot = null;
             WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for meta systems per gameplay scene - owner: MetaRuntimeInstaller
 
@@ -34,8 +38,12 @@ namespace Hecton8.Meta
                 runtimeRoot.AddComponent<MetaBuffInjector>();
 
             EnsureMetaCampaignService(runtimeRoot);
+#else
+            _ = runtimeRoot;
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void EnsureMetaCampaignService(GameObject runtimeRoot)
         {
             Type serviceType = Type.GetType("Hecton8.Narrative.Campaign.MetaCampaignService, Hecton8.Narrative.Campaign");
@@ -45,5 +53,6 @@ namespace Hecton8.Meta
             if (!runtimeRoot.TryGetComponent(serviceType, out _))
                 runtimeRoot.AddComponent(serviceType);
         }
+#endif
     }
 }

@@ -37,7 +37,7 @@ namespace Hecton8.Tests.Editor
             Assert.IsNotNull(verifier);
 
             int checkedCount = 0;
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (global::System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 foreach (Type type in GetLoadableTypes(assembly))
                 {
@@ -1260,9 +1260,7 @@ namespace Hecton8.Tests.Editor
             string sumpSource = File.ReadAllText(sumpPath);
             string slowTickBody = ExtractMethodBody(sumpSource, "public void SlowTick()");
             string lateFrameBody = ExtractMethodBody(sumpSource, "public void LateFrameTick()");
-            string mockBody = ExtractMethodBody(sumpSource, "public void GenerateMockDrainageNetwork()");
             string scheduleBody = ExtractMethodBody(sumpSource, "private bool ScheduleDrainageSolve");
-            string finalizeMockBody = ExtractMethodBody(sumpSource, "private bool TryFinalizeMockSeedNoWait()");
             string completeSolverBody = ExtractMethodBody(sumpSource, "private void CompleteScheduledSolverForTeardown()");
             string profileCsvBody = ExtractMethodBody(sumpSource, "public bool TryLoadPipeProfilesFromCsv");
             string initTuningBody = ExtractMethodBody(sumpSource, "private void InitializeTuningIfNeeded()");
@@ -1273,15 +1271,19 @@ namespace Hecton8.Tests.Editor
             AssertHotMethodAvoidsLookupAndLocks(lateFrameBody);
             AssertHotMethodAvoidsLookupAndLocks(scheduleBody);
             StringAssert.Contains("DrainageVaultMutationGuardMask", sumpSource);
-            StringAssert.Contains("TryAcquireDrainageMutationGuard", mockBody);
+            StringAssert.DoesNotContain("Generate" + "Mock" + "PipeNetworkJob", sumpSource);
+            StringAssert.DoesNotContain("Generate" + "Mock" + "DrainageNetwork", sumpSource);
+            StringAssert.DoesNotContain("TryGenerate" + "Mock" + "DrainageNetwork", sumpSource);
+            StringAssert.DoesNotContain("TryFinalize" + "Mock" + "SeedNoWait", sumpSource);
+            StringAssert.DoesNotContain("Complete" + "Mock" + "SeedForTeardown", sumpSource);
+            StringAssert.DoesNotContain("_" + "mockSeed", sumpSource);
+            StringAssert.Contains("RecordTopologyUnavailable", scheduleBody);
+            StringAssert.Contains("SumpDrainageTelemetryFlags.TopologyInvalid", sumpSource);
             StringAssert.Contains("TryAcquireDrainageMutationGuard", scheduleBody);
-            StringAssert.Contains("H8Memory.RegisterActiveJob", mockBody);
             StringAssert.Contains("H8Memory.RegisterActiveJob", scheduleBody);
             StringAssert.Contains("ReleaseDrainageMutationGuard", lateFrameBody);
-            StringAssert.Contains("ReleaseDrainageMutationGuard", finalizeMockBody);
             StringAssert.Contains("ReleaseDrainageMutationGuard", completeSolverBody);
             StringAssert.Contains("finally", lateFrameBody);
-            StringAssert.Contains("finally", finalizeMockBody);
             StringAssert.Contains("finally", completeSolverBody);
             StringAssert.Contains("TryAcquireLocalDrainageMutationGuard", profileCsvBody);
             StringAssert.Contains("ReleaseLocalDrainageMutationGuard", profileCsvBody);
@@ -1289,6 +1291,42 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ReleaseLocalDrainageMutationGuard", initTuningBody);
             StringAssert.Contains("TryAcquireLocalDrainageMutationGuard", writeTuningBody);
             StringAssert.Contains("ReleaseLocalDrainageMutationGuard", writeTuningBody);
+        }
+
+        [Test]
+        public void ModularBaseConstructionValidator_UsesTerrainSamplerWithoutSyntheticBoundsSeed()
+        {
+            string root = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts");
+            string validatorSource = File.ReadAllText(Path.Combine(root, "Construction/ModularBaseConstructionValidator.cs"));
+            string playerBuilderSource = File.ReadAllText(Path.Combine(root, "PlayerBuilder.cs"));
+            string tunerSource = File.ReadAllText(Path.Combine(root, "Editor/WfcBuilderTunerWindow.cs"));
+
+            StringAssert.DoesNotContain("Mock" + "WorldSampler", validatorSource);
+            StringAssert.DoesNotContain("Create" + "Mock" + "WorldSampler", validatorSource);
+            StringAssert.DoesNotContain("Generate" + "Emergency" + "MockBounds", validatorSource);
+            StringAssert.DoesNotContain("Emergency" + "MockBounds" + "Count", validatorSource);
+            StringAssert.DoesNotContain("Mock" + "WorldSampler", playerBuilderSource);
+            StringAssert.DoesNotContain("Mock" + "WorldSampler", tunerSource);
+            StringAssert.Contains("ConstructionTerrainSampler", validatorSource);
+            StringAssert.Contains("CreateTerrainSampler", playerBuilderSource);
+            StringAssert.Contains("EnsureBoundsOverrideBuffer(vault, out _);", validatorSource);
+        }
+
+        [Test]
+        public void ConstructionTransactionKernels_DoNotExposeSyntheticSeedJobs()
+        {
+            string root = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Construction");
+            string deconstructionSource = File.ReadAllText(Path.Combine(root, "HabitatDeconstructionTransactionKernel.cs"));
+            string droneTransactionSource = File.ReadAllText(Path.Combine(root, "DroneFleetTransactionKernel.cs"));
+
+            StringAssert.DoesNotContain("Generate" + "Mock" + "DeconstructionDataJob", deconstructionSource);
+            StringAssert.DoesNotContain("Generate" + "Mock" + "DroneTransactionsJob", droneTransactionSource);
+            StringAssert.Contains("EvaluateDroneTransactionsJob", droneTransactionSource);
+            StringAssert.Contains("ExecuteModuleTeardownJob", deconstructionSource);
         }
 
         [Test]
@@ -1603,7 +1641,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryUnlockBuffer", methodBody);
         }
 
-        private static Type[] GetLoadableTypes(Assembly assembly)
+        private static Type[] GetLoadableTypes(global::System.Reflection.Assembly assembly)
         {
             try
             {

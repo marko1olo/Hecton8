@@ -2,7 +2,7 @@
 
 Status: STATIC BIBLE/MANDATE/CODEBASE AUDIT - RUNTIME PROOF NOT RUN
 Date: 2026-06-02
-Verdict: YELLOW_RUNTIME_STATIC_RISK_REVIEW_REQUIRED
+Verdict: YELLOW_LINE_LEVEL_STATIC_CLASSIFIED_RUNTIME_PROOF_PENDING
 
 ## Scope
 
@@ -57,19 +57,24 @@ This report compares the current root bible routes and selected mandate registry
 
 ## Static Evidence Found
 
-Total matching files: 183. Showing first 80. Full list: _scans/03_rendering_visuals_evidence_files.txt.
+Total matching files: 189. Showing first 80. Full list: _scans/03_rendering_visuals_evidence_files.txt.
 
 - Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs
 - Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs
 - Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs
 - Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs
 - Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs
+- Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs
 - Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs
+- Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs
+- Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs
 - Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs
+- Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs
 - Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs
 - Assets\_Project\Editor\Generators\Structures\DeepReachStationContracts.cs
 - Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs
 - Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs
+- Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs
 - Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs
 - Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherJobs.cs
 - Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs
@@ -83,6 +88,7 @@ Total matching files: 183. Showing first 80. Full list: _scans/03_rendering_visu
 - Assets\_Project\Editor\HectonWaterGrid.cs
 - Assets\_Project\Editor\Particle_System_Scanner.cs
 - Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs
+- Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs
 - Assets\_Project\Editor\PlayModePerformanceMonitor.cs
 - Assets\_Project\Editor\PropwashGpuLayoutValidator.cs
 - Assets\_Project\Editor\PropwashGpuTunerWindow.cs
@@ -133,20 +139,22 @@ Total matching files: 183. Showing first 80. Full list: _scans/03_rendering_visu
 - Assets\_Project\Scripts\Graphics\Materials\Editor\UberNoirDegradationCsvBridge.cs
 - Assets\_Project\Scripts\Graphics\Materials\Editor\UberNoirMaterialLabWindow.cs
 - Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Aging_Inquisition.cs
-- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs
-- Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs
-- Assets\_Project\Scripts\Graphics\Materials\H8ShaderIDs.cs
-- Assets\_Project\Scripts\Graphics\Materials\Hecton8.Graphics.Materials.asmdef
-- Assets\_Project\Scripts\Graphics\Materials\ProceduralFloraBiomeTintBridge.cs
-- Assets\_Project\Scripts\Graphics\Materials\ShinobuMaterialResponseRuntime.cs
 
 ## Static Risk Suspects
 
-These are suspects, not confirmed defects. Runtime suspects need code review. Editor/tool suspects are legal only if they cannot execute in gameplay/player hot paths.
+These are raw static suspects, not confirmed defects. Current manual or line-level review files are the authority for classification where present; editor/tool suspects remain legal only if they cannot execute in gameplay/player hot paths.
 
 Runtime suspects:
 Total runtime suspects: 109. Showing first 80. Full list: _scans/03_rendering_visuals_runtime_risks.txt.
 
+- Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs:1394:                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
+- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:322:            payload.Matrices = new NativeArray<Matrix4x4>(header.MatrixCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:323:            payload.Metadata = new NativeArray<GpuScatterFloraInstanceData>(header.MetadataCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:324:            payload.QualityIndices = new NativeArray<int>(header.QualityIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:486:            NativeArray<byte> seen = new NativeArray<byte>(count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:606:            Debug.LogWarning(message, context);
+- Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs:1925:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs:2118:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:501:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Water_Extinction_Matrix.bin not found. Using analytical Beer-Lambert fallback.");
 - Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:508:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Failed to load Water_Extinction_Matrix.bin: " + exception.Message);
 - Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:515:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Invalid Water_Extinction_Matrix.bin byte count: " + byteCount);
@@ -154,20 +162,10 @@ Total runtime suspects: 109. Showing first 80. Full list: _scans/03_rendering_vi
 - Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:529:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] R16G16B16A16_SFloat sampling is unsupported; packed R16 path remains active when available.");
 - Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:536:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] StreamingAssets URI staging failed: " + error);
 - Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:543:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Portable or low-memory target detected. Using analytical Beer-Lambert fallback instead of streaming Water_Extinction_Matrix.bin.");
-- Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs:1394:                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
-- Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs:2118:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:389:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
-- Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:422:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
-- Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs:1925:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1682:            _visibleCountReadback.Data = new NativeArray<uint>(
 - Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1684:                Allocator.Persistent,
-- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:322:            payload.Matrices = new NativeArray<Matrix4x4>(header.MatrixCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:323:            payload.Metadata = new NativeArray<GpuScatterFloraInstanceData>(header.MetadataCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:324:            payload.QualityIndices = new NativeArray<int>(header.QualityIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:486:            NativeArray<byte> seen = new NativeArray<byte>(count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:606:            Debug.LogWarning(message, context);
-- Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:895:            _indirectArgsReadback.Data = new NativeArray<uint>(
-- Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:897:                Allocator.Persistent,
+- Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:389:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
+- Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:422:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
 - Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:509:                _buffers.MockVisibleInstances = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:510:                _buffers.SortScratch = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:511:                _buffers.MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
@@ -189,20 +187,18 @@ Total runtime suspects: 109. Showing first 80. Full list: _scans/03_rendering_vi
 - Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:521:                TelemetryRing = new NativeArray<TBDRPipelineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:1291:                SliceTable = new NativeArray<TextureStreamingSliceDTO>(SliceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: fixed texture array residency table; production should pass GlobalDataVault
 - Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs:1719:            Ring = new NativeArray<TBDRPipelineTelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<TBDRPipelineTelemetryEntry>[300] - TBDR black-box ring - owner: SHINOBU_45_TBDR_TELEMETRY
+- Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:895:            _indirectArgsReadback.Data = new NativeArray<uint>(
+- Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:897:                Allocator.Persistent,
 - Assets\_Project\Scripts\VFX\BiomeProfile.cs:68:                Hecton8.Core.H8Debug.LogWarning("[BiomeProfile] High AOIntensity may impact performance.");
+- Assets\_Project\Scripts\VFX\Debris\CarveDebrisComputeRenderer.cs:2393:            mesh.RecalculateNormals();
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs:184:                Hecton8.Core.H8Debug.LogError("[SHINOBU_354] Camera juice ABI violation.");
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:248:                densities = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:249:                decompressed = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:250:                stats = new NativeArray<int>(StatsLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:251:                writtenCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:679:            densities = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:680:            decompressed = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:681:            accumulator = new NativeArray<int>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:682:            removedMass = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:683:            debrisCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:684:            stats = new NativeArray<int>(StatsLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:685:            writtenCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:686:            particles = new NativeArray<DebrisParticleDTO>(ShinobuDeltaCrusher.MaximumQualityDebrisCap, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2845:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2853:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2861:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2869:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2877:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2885:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel thread-group contract is invalid. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\ShakeProfile.cs:52:                Hecton8.Core.H8Debug.LogWarning("[ShakeProfile] Invalid Duration. Clamping to 0.5s.");
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:861:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:869:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:877:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
@@ -218,32 +214,39 @@ Total runtime suspects: 109. Showing first 80. Full list: _scans/03_rendering_vi
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:957:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:965:            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
 - Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:973:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
-- Assets\_Project\Scripts\VFX\Debris\CarveDebrisComputeRenderer.cs:2393:            mesh.RecalculateNormals();
-- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2845:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
-- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2853:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
-- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2861:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
-- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2869:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
-- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2877:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
-- Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2885:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel thread-group contract is invalid. Disabling compute marine snow.");
+- Assets\_Project\Scripts\VFX\Parasites\ParasiteSwarmGpuRuntime.cs:130:                Hecton8.Core.H8Debug.LogError("SHINOBU_313 ParasiteSwarm layout rejection code " + failureCode);
+- Assets\_Project\Scripts\VFX\PlasmaBeam\ShinobuPlasmaBeamRuntime.cs:1486:                payload = new NativeArray<byte>(
 - Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:316:                    entries = new NativeArray<BiolumPulseTelemetryEntry>(
 - Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:318:                        Allocator.Persistent,
+- Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:1472:            Hecton8.Core.H8Debug.LogError(message);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:248:                densities = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:249:                decompressed = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:250:                stats = new NativeArray<int>(StatsLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:251:                writtenCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:679:            densities = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:680:            decompressed = new NativeArray<sbyte>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:681:            accumulator = new NativeArray<int>(GridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs:682:            removedMass = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 
 Editor/tool/static suspects:
-Total editor/tool/static suspects: 658. Showing first 80. Full list: _scans/03_rendering_visuals_editor_tool_risks.txt.
+Total editor/tool/static suspects: 823. Showing first 80. Full list: _scans/03_rendering_visuals_editor_tool_risks.txt.
 
+- Assets\_Project\Scripts\Rendering\Editor\HectonUberNoirMaterialConsolidator.cs:48:            Debug.Log($"[UberNoir] Consolidated {converted} hard-surface materials into {TargetShaderName}.");
+- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\PostProcess_Fog_Scanner.cs:22:            Debug.Log(string.Concat("Water optics fog scanner wrote ", reportPath));
+- Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:16:                Debug.Log("13KRA caustics DTO layout audit passed.");
+- Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:18:                Debug.LogError("13KRA caustics DTO layout audit failed.");
+- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:30:                Debug.Log(report);
+- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:34:            Debug.LogError(report);
+- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\AbyssalOpticsTunerWindow.cs:139:        private void Update()
 - Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:118:                _statusLabel.text = hasParameters ? RuntimeActiveLabel : RuntimeOfflineLabel;
 - Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:124:                    _depthLabel.text = DepthUnavailableLabel;
 - Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:125:                    _qualityLabel.text = QualityUnavailableLabel;
 - Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:141:                _depthLabel.text = s_depthLabels[depthTenths];
 - Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:151:                _qualityLabel.text = s_qualityLabels[qualityMillis];
 - Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:170:            _csvStatusLabel.text = loaded ? ProfilesLoadedLabel : ProfilesFailedLabel;
-- Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:16:                Debug.Log("13KRA caustics DTO layout audit passed.");
-- Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:18:                Debug.LogError("13KRA caustics DTO layout audit failed.");
-- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\AbyssalOpticsTunerWindow.cs:139:        private void Update()
-- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:30:                Debug.Log(report);
-- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:34:            Debug.LogError(report);
-- Assets\_Project\Scripts\Rendering\Editor\HectonUberNoirMaterialConsolidator.cs:48:            Debug.Log($"[UberNoir] Consolidated {converted} hard-surface materials into {TargetShaderName}.");
-- Assets\_Project\Scripts\Rendering\WaterOptics\Editor\PostProcess_Fog_Scanner.cs:22:            Debug.Log(string.Concat("Water optics fog scanner wrote ", reportPath));
+- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:47:            int activeMaterialMutations = Count(baseDegradation, ".material") + Count(runtime, ".material") + Count(baseDegradation, "MaterialPropertyBlock");
+- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:49:            int legacyRendererMaterialSetFloat = CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "GetComponent<Renderer>().material.SetFloat") +
+- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:50:                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "GetComponent<Renderer>().material.SetFloat");
 - Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs:141:            _runtimeLabel.text = bound ? "Runtime: GlobalDataVault bound, active " + activeCount : "Runtime: Play Mode bridge pending";
 - Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs:142:            _uploadLabel.text = "Upload: " + uploadUs.ToString("0.0") + " us";
 - Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs:143:            _flagsLabel.text = "Flags: 0x" + flags.ToString("X8");
@@ -262,23 +265,21 @@ Total editor/tool/static suspects: 658. Showing first 80. Full list: _scans/03_r
 - Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:169:            _pointLabel.text = "Point-light culled: " + snapshot.PointLightCulledCount;
 - Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:170:            _timingLabel.text = "Timing: " + snapshot.LastBurstWallTimeMs.ToString("0.000") + " ms / " + snapshot.LastUploadMicroseconds.ToString("0.0") + " us upload";
 - Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:194:            Debug.Log("Abyssal Shadow DTO layouts valid: state=32B, instance/counters/telemetry/runtime=64B, HZB=16B, indirect=32B.");
-- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:47:            int activeMaterialMutations = Count(baseDegradation, ".material") + Count(runtime, ".material") + Count(baseDegradation, "MaterialPropertyBlock");
-- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:49:            int legacyRendererMaterialSetFloat = CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "GetComponent<Renderer>().material.SetFloat") +
-- Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:50:                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "GetComponent<Renderer>().material.SetFloat");
+- Assets\_Project\Scripts\VFX\JacobianFoam\Editor\JacobianFoamTunerWindow.cs:181:                _statusLabel.text = value;
+- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:30:            json.AppendLine("  \"scanner\": \"Zero-dependency scoped source parser for Camera.main transform / AnimationClip / AnimationCurve / Cinemachine impulse-source / managed random camera-shake routes\",");
+- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:64:            json.AppendLine("  \"manualProof\": \"Scanner covers Camera.main.transform, CinemachineImpulse, AnimationClip, AnimationCurve, Random.insideUnitSphere, Random.Range, and hot transform.localPosition/localRotation/localEulerAngles writes. Runtime route is projection DTO output, not hierarchy mutation.\"");
+- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:68:            Debug.Log($"[SHINOBU_354] OOP camera shake scan wrote {report} with {findings} findings.");
+- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:79:            AppendIfFound(file, text, source, "Camera.main.transform", "DIRECT_CAMERA_MAIN_TRANSFORM", ref findings, ref first, json);
+- Assets\_Project\Scripts\VFX\Bioluminescence\Editor\BioluminescenceTunerWindow.cs:270:                    _speciesLabels[i].text = FormatSpeciesHash(tuning.SpeciesHash);
+- Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:43:                ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
+- Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:61:                MonoBehaviour[] behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(true);
 - Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:111:            _traumaLabel.text = "Trauma: " + state.x.ToString("0.000");
 - Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:112:            _translationLabel.text = "Max translation: " + state.y.ToString("0.0000") + " m";
 - Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:113:            _signalsLabel.text = "Signals: " + ((int)state.z).ToString();
 - Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:114:            _burstLabel.text = "Burst us: " + state.w.ToString("0.00");
 - Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:122:            CameraJuiceSystem[] runtimes = Resources.FindObjectsOfTypeAll<CameraJuiceSystem>();
 - Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:140:                _runtimeLabel.text = resolved ? "Runtime: CameraJuiceSystem" : "Runtime: unresolved";
-- Assets\_Project\Scripts\VFX\Bioluminescence\Editor\BioluminescenceTunerWindow.cs:270:                    _speciesLabels[i].text = FormatSpeciesHash(tuning.SpeciesHash);
-- Assets\_Project\Scripts\VFX\JacobianFoam\Editor\JacobianFoamTunerWindow.cs:181:                _statusLabel.text = value;
-- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:30:            json.AppendLine("  \"scanner\": \"Zero-dependency scoped source parser for Camera.main transform / AnimationClip / AnimationCurve / Cinemachine impulse-source / managed random camera-shake routes\",");
-- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:64:            json.AppendLine("  \"manualProof\": \"Scanner covers Camera.main.transform, CinemachineImpulse, AnimationClip, AnimationCurve, Random.insideUnitSphere, Random.Range, and hot transform.localPosition/localRotation/localEulerAngles writes. Runtime route is projection DTO output, not hierarchy mutation.\"");
-- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:68:            Debug.Log($"[SHINOBU_354] OOP camera shake scan wrote {report} with {findings} findings.");
-- Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:79:            AppendIfFound(file, text, source, "Camera.main.transform", "DIRECT_CAMERA_MAIN_TRANSFORM", ref findings, ref first, json);
-- Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:43:                ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
-- Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:61:                MonoBehaviour[] behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(true);
+- Assets\_Project\Scripts\Lighting\Editor\OOP_Lighting_Scanner.cs:93:            Debug.Log("[13KRA] OOP lighting scanner wrote " + dedicatedReportPath);
 - Assets\_Project\Scripts\Lighting\Editor\DayNightGIRelayTunerWindow.cs:126:                _status.text = "Runtime: missing";
 - Assets\_Project\Scripts\Lighting\Editor\DayNightGIRelayTunerWindow.cs:127:                _lighting.text = "EnvironmentLightingDTO: unavailable";
 - Assets\_Project\Scripts\Lighting\Editor\DayNightGIRelayTunerWindow.cs:128:                _telemetry.text = "Telemetry: unavailable";
@@ -292,33 +293,32 @@ Total editor/tool/static suspects: 658. Showing first 80. Full list: _scans/03_r
 - Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:147:                Renderer[] renderers = selected[i].GetComponentsInChildren<Renderer>(true);
 - Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:156:            Component[] components = Resources.FindObjectsOfTypeAll<Component>();
 - Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:169:            Debug.Log("[13KRA] Loaded-scene Unity probe group count: " + sceneGroups);
-- Assets\_Project\Scripts\Lighting\Editor\OOP_Lighting_Scanner.cs:93:            Debug.Log("[13KRA] OOP lighting scanner wrote " + dedicatedReportPath);
 - Assets\_Project\Scripts\Lighting\Editor\InteriorGITunerWindow.cs:164:                Renderer[] renderers = selected[i].GetComponentsInChildren<Renderer>(true);
 - Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\ShinobuStormPropagationTunerWindow.cs:92:                    _status.text = "Vault state: tuning buffer unavailable";
 - Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\ShinobuStormPropagationTunerWindow.cs:106:                _status.text = "Vault state: tuning buffer resolved. Graph: surface intensity vs attenuated depth energy.";
 - Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\Weather_Event_Inquisition.cs:123:            Debug.Log("SHINOBU_234 Weather Event Inquisition wrote Docs/Reports/ENVIRONMENT_OPTIMIZATION_REPORT.json");
-- Assets\_Project\Editor\GeminiWorldBuilder.cs:13:        Debug.Log("Gemini: Building Optimized Master-Grade World v3...");
-- Assets\_Project\Editor\GeminiWorldBuilder.cs:162:        Debug.Log("Master-Grade v3 Build Complete! Organic, Spikeless 108-Biome Matrix deployed.");
-- Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:35:            Debug.Log($"{LogPrefix} prefabFixes={prefabFixCount}, loadedSceneFixes={loadedSceneFixCount}.");
-- Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:72:            LODGroup[] lodGroups = Resources.FindObjectsOfTypeAll<LODGroup>();
-- Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:136:            root.GetComponentsInChildren(true, s_RendererScratch);
-- Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:146:            Debug.LogWarning($"{LogPrefix} Missing expected renderer '{expectedName}' under '{root.name}'.");
-- Assets\_Project\Editor\HectonMeshGenerator.cs:102:                Debug.Log(
-- Assets\_Project\Editor\HectonMeshGenerator.cs:114:                Debug.Log(
-- Assets\_Project\Editor\HectonMeshGenerator.cs:297:            Mesh mesh = new Mesh();
 - Assets\_Project\Editor\Camera_Proliferation_Scanner.cs:33:            Debug.Log("Superfluous Cameras Eradicated: " + report.superfluousCamerasEradicated + " | Violations: " + report.violationCount);
 - Assets\_Project\Editor\Camera_Proliferation_Scanner.cs:99:                Camera[] cameras = root.GetComponentsInChildren<Camera>(true);
-- Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:28:                Debug.LogError("[DataMonolithBakerWindow] H8DataMonolithCompilerWindow.Open is missing.");
-- Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:44:                Debug.LogError("[DataMonolithBakerWindow] H8DataMonolithCompiler.BakeAll is missing.");
-- Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:53:                Debug.LogError("[DataMonolithBakerWindow] static_data.h8bin bake failed.");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:119:                    Debug.LogWarning($"[GraphBuilder] Failed to set field '{fieldName}' on {type.Name}: {e.Message}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:152:                        Debug.LogWarning($"[GraphBuilder] Failed to set backing field '{pattern}' on {type.Name}: {e.Message}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:159:        Debug.LogWarning($"[GraphBuilder] Could not find any field matching '{fieldName}' on {target.GetType().Name}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:254:            Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Could not set '{fieldName}' on {type.Name}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:286:            Debug.LogWarning($"[GraphBuilder] Enum field '{fieldName}' not found on {type.Name}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:637:            Debug.LogError($"[GraphBuilder] Could not find generator type: {typeName}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:670:            Debug.LogError($"[GraphBuilder] No outlet found on {from.GetType().Name}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:675:            Debug.LogError($"[GraphBuilder] No inlet found on {to.GetType().Name}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:685:            Debug.LogError($"[GraphBuilder] Failed to link {from.GetType().Name} -> {to.GetType().Name}: {e.Message}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:714:                            Debug.Log("[GraphBuilder] Linked via reflection fallback.");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:741:            Debug.LogError($"[GraphBuilder] Reflection link fallback also failed: {e.Message}");
+- Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:764:            Debug.LogError("[GraphBuilder] Could not find Blend200.Layer type!");
 
 ## Exists / Missing / Required Proof
 
 - Exists: bible routes exist and static implementation evidence was found.
-- Partial: runtime static risk suspects need manual code review.
+- Partial: all 109 runtime static suspect lines have method-level classification in `LINE_LEVEL_CLASSIFICATION.md`; runtime/profiler/player proof is still missing.
 - Editor/tool: static suspects exist but may be legal if editor-only or cold-path.
 - Required proof: Frame Debugger/RenderGraph capture, URP asset proof, shader variant count, material batching proof, compact/high screenshots, GPU/VRAM profiler captures.
 
 ## Next Audit Action
 
-Classify each runtime suspect as cold-path/legal or runtime violation. Fix runtime violations before profiler proof.
+Use `LINE_LEVEL_CLASSIFICATION.md`, close `RB-123`, then collect RenderGraph, Frame Debugger, GPU, material, shader, readback, player-build, and device proof before any green/release claim.

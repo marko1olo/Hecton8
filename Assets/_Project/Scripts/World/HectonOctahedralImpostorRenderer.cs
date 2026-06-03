@@ -50,7 +50,6 @@ namespace Hecton8.World
         private GraphicsBuffer _matrixSourceBufferB;
         private GraphicsBuffer _activeMatrixSourceBuffer;
         private GraphicsBuffer _argsBuffer;
-        private readonly MaterialPropertyBlock _drawProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - HLOD impostor draw-local payload - owner: HectonOctahedralImpostorRenderer
         private Mesh _argsMesh;
         private Bounds _drawBounds;
         private int _instanceCount;
@@ -85,19 +84,11 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
-            InvalidateMaterialCaches();
             CacheInstanceCullingServiceCold();
             EnsureIndirectArgsBufferCold(ResolveQuadMesh());
             TryRegisterHotSwapListener();
             RegisterTick();
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            InvalidateMaterialCaches();
-        }
-#endif
 
         private void OnDisable()
         {
@@ -142,7 +133,7 @@ namespace Hecton8.World
             GraphicsBuffer drawInstanceBuffer = useMatrixStream
                 ? _instanceCullingService.VisibleInstancesBuffer
                 : _activeInstanceBuffer;
-            if (!TryBindDrawProperties(useMatrixStream, drawInstanceBuffer))
+            if (!TryBindDrawMaterial(material, useMatrixStream, drawInstanceBuffer))
                 return;
 
             RenderParams renderParams = new RenderParams(material)
@@ -151,8 +142,7 @@ namespace Hecton8.World
                 layer = gameObject.layer,
                 shadowCastingMode = ShadowCastingMode.Off,
                 receiveShadows = false,
-                camera = _cameraOverride,
-                matProps = _drawProperties
+                camera = _cameraOverride
             };
             GraphicsBuffer argsBuffer = useMatrixStream ? _instanceCullingService.IndirectArgsBuffer : _argsBuffer;
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
@@ -552,11 +542,6 @@ namespace Hecton8.World
             _drawBounds = drawBounds;
         }
 
-        private void InvalidateMaterialCaches()
-        {
-            _drawProperties.Clear();
-        }
-
         private void RegisterTick()
         {
             if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -695,10 +680,10 @@ namespace Hecton8.World
             return _material;
         }
 
-        private bool TryBindDrawProperties(bool useMatrixStream, GraphicsBuffer instanceBuffer)
+        private bool TryBindDrawMaterial(Material material, bool useMatrixStream, GraphicsBuffer instanceBuffer)
         {
             HectonOctahedralImpostorData data = _impostorData;
-            if (data == null || instanceBuffer == null)
+            if (material == null || data == null || instanceBuffer == null)
                 return false;
 
             Texture2D albedo = data.AlbedoDepthAtlas;
@@ -716,20 +701,19 @@ namespace Hecton8.World
             float quality = ResolveGlobalQualityWeight01();
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
 
-            _drawProperties.Clear();
-            _drawProperties.SetTexture(AlbedoDepthAtlasId, albedo);
-            _drawProperties.SetTexture(NormalDepthAtlasId, normal);
-            _drawProperties.SetVector(AtlasGridId, atlasGrid);
-            _drawProperties.SetFloat(DepthScaleMetersId, depthScale);
-            _drawProperties.SetFloat(GlobalQualityWeightId, quality);
-            _drawProperties.SetInt(UseVisibleMatrixStreamId, useMatrixStream ? 1 : 0);
-            _drawProperties.SetFloat(ImpostorTimeSecondsId, _impostorTimeSeconds);
-            _drawProperties.SetFloat(ImpostorFadeOutSecondsId, 1.5f);
-            _drawProperties.SetVector(GlobalFloatingOffsetId, floatingOffset);
+            material.SetTexture(AlbedoDepthAtlasId, albedo);
+            material.SetTexture(NormalDepthAtlasId, normal);
+            material.SetVector(AtlasGridId, atlasGrid);
+            material.SetFloat(DepthScaleMetersId, depthScale);
+            material.SetFloat(GlobalQualityWeightId, quality);
+            material.SetInt(UseVisibleMatrixStreamId, useMatrixStream ? 1 : 0);
+            material.SetFloat(ImpostorTimeSecondsId, _impostorTimeSeconds);
+            material.SetFloat(ImpostorFadeOutSecondsId, 1.5f);
+            material.SetVector(GlobalFloatingOffsetId, floatingOffset);
             if (useMatrixStream)
-                _drawProperties.SetBuffer(VisibleInstancesId, instanceBuffer);
+                material.SetBuffer(VisibleInstancesId, instanceBuffer);
             else
-                _drawProperties.SetBuffer(ImpostorInstancesId, instanceBuffer);
+                material.SetBuffer(ImpostorInstancesId, instanceBuffer);
 
             _lastQualityMilli = Mathf.RoundToInt(quality * 1000f);
             return true;
@@ -769,7 +753,6 @@ namespace Hecton8.World
             _activeMatrixSourceBuffer = null;
             _instanceUploadBufferIndex = 0;
             _matrixSourceUploadBufferIndex = 0;
-            _drawProperties.Clear();
 
             if (_argsBuffer != null)
             {

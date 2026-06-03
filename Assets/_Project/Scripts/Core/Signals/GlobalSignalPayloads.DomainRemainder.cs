@@ -1017,6 +1017,10 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct OxygenCriticalSignal : ISignal
     {
+        public const uint SourceBioCablePredatorBite = 0x42434954u; // BCIT
+        public const byte CriticalSeverity = 3;
+        public const byte FlagLifeSupportCutoff = 1;
+
         [FieldOffset(0)] public float Oxygen01;
         [FieldOffset(4)] public float SecondsRemaining;
         [FieldOffset(8)] public uint SourceId;

@@ -41,14 +41,14 @@ Shader "Hecton8/UI/Hecton Hologram Map"
                 half _Opacity;
                 half _Glow;
                 half _Quality;
+                float4x4 _PointCloudLocalToWorld;
                 float4 _CartographyGridParams;
                 float4 _CartographyVisualParams;
             CBUFFER_END
 
             struct Attributes
             {
-                float4 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
+                uint vertexId : SV_VertexID;
             };
 
             struct Varyings
@@ -57,11 +57,22 @@ Shader "Hecton8/UI/Hecton Hologram Map"
                 float2 uv : TEXCOORD0;
             };
 
+            float2 ResolveProceduralQuad01(uint vertexId)
+            {
+                float id = (float)(vertexId % 6u);
+                float positiveX = saturate(step(1.5, id) - step(2.5, id) + step(3.5, id));
+                float positiveY = saturate(step(0.5, id) - step(2.5, id) + step(3.5, id) - step(4.5, id));
+                return float2(positiveX, positiveY);
+            }
+
             Varyings Vert(Attributes input)
             {
+                float2 uv = ResolveProceduralQuad01(input.vertexId);
+                float2 local = uv - 0.5;
+                float3 worldPosition = mul(_PointCloudLocalToWorld, float4(local.x, local.y, 0.0, 1.0)).xyz;
                 Varyings output;
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                output.uv = input.uv;
+                output.positionCS = TransformWorldToHClip(worldPosition);
+                output.uv = uv;
                 return output;
             }
 

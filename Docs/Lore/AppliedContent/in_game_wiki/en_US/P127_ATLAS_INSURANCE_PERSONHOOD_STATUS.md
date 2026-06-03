@@ -1,10 +1,17 @@
 ---
 packet_id: P127_ATLAS_INSURANCE_PERSONHOOD_STATUS
+release_set_id: RS026_ATLAS_PUBLIC_AUTHORITY_CLASSIFICATION
 article_id: atlas.insurance_personhood_status
+unlock_id: unlock.atlas_insurance_personhood_status
+poi_tags: poi.atlas_policy_stamp;poi.infrastructure_proxy_clause
+biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Atlas Insurance Personhood Status

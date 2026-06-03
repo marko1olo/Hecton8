@@ -1,0 +1,21 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS033_DOMAIN_EPHEMERIS_ROUTE_TABLE",
+  "title": "Domain Ephemeris Route Table",
+  "status": "production_facing_draft_pending_native_localization",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS033_DOMAIN_EPHEMERIS_ROUTE_TABLE.packets.json"
+  ],
+  "packets": [
+    "P161_DOMAIN_DISTANCE_SCALE",
+    "P162_DOMAIN_POPULATION_AUTHORITY_SCALE",
+    "P163_PUBLIC_ROUTE_NAMES",
+    "P164_TRANSIT_DURATION_BANDS",
+    "P165_DEEP_REACH_SUBOFFICE_REGISTRY"
+  ],
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  }
+}

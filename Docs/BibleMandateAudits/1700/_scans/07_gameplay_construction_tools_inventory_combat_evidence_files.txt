@@ -206,6 +206,7 @@ Assets\_Project\Scripts\Gameplay\VRSomaticProvider.cs
 Assets\_Project\Scripts\Gameplay\VRSomaticRuntimeBootstrap.cs
 Assets\_Project\Scripts\Interaction\EquipmentInteractionContracts.cs
 Assets\_Project\Scripts\Interaction\EquipmentInteractionHandler.cs
+Assets\_Project\Scripts\Interaction\EquipmentMetadata.cs
 Assets\_Project\Scripts\Interaction\HeavyCarryInteractable.cs
 Assets\_Project\Scripts\Interaction\IInteractable.cs
 Assets\_Project\Scripts\Interaction\IKinematicRepairTarget.cs

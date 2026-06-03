@@ -410,6 +410,7 @@ namespace Hecton8.Dev
                     default,
                     default,
                     default,
+                    (ushort)0,
                     default,
                     rawBuffer,
                     compressedBuffer,

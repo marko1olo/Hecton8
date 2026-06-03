@@ -1,10 +1,17 @@
 ---
 packet_id: P102_BEAM_SAIL_PROBE_ERA
+release_set_id: RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY
 article_id: human_space.beam_sail_probe_era
+unlock_id: unlock.first_beam_sail_probe_era
+poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
+biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Эра beam-sail зондов

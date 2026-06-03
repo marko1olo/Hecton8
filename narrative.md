@@ -3,6 +3,8 @@
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: missions, quests, black-box records, logs, lore, environmental storytelling, corporate language, objectives, codex, text/audio evidence, and progression truth.
 
+Route note: this file owns narrative truth, evidence order, mission state, and text placement. For the actual prose quality of in-world articles, encyclopedia pages, survivor diaries, scanner/codex entries, technical notes, and AppliedContent packets, use `writing.md` with this file.
+
 ## 0. Prime Narrative Law
 
 Evidence comes before exposition.
@@ -23,6 +25,38 @@ Missions must be physical operations:
 - extract and return.
 
 Generic fetch quests are rejected unless the route, evidence, and risk make them HECTON-8.
+
+## 1A. Screenwriter Scene Packet
+
+Every authored scene, log discovery, diary placement, terminal read, black-box fragment, codex unlock, or public/wiki article handoff must start as a scene packet before prose is written.
+
+Required fields:
+
+- scene or content ID;
+- location, depth band, route, or website/wiki surface;
+- player state before the text appears;
+- physical operation underway;
+- evidence object carrying the text;
+- visible contradiction or missing fact;
+- source voice: survivor, Deep Reach, Marauder, Atlas, scanner, public archive, Black Keel, or neutral reference;
+- player decision or understanding changed by this beat;
+- spoiler level and unlock prerequisite;
+- follow-up lead, route, risk, or dossier consequence.
+
+If a beat has no physical operation and changes no player decision, it is not a scene. It is reference material and belongs in writer docs or website archive, not the critical path.
+
+## 1B. Writer/Screenwriter Handoff
+
+Scenario work owns sequence, evidence, and player need. Writing owns the artifact voice.
+
+Correct handoff:
+
+1. Scenario defines the place, action, evidence, knowledge boundary, and unlock.
+2. Writer uses `writing.md` to produce the actual artifact text for the correct surface.
+3. Localization uses `localization.md` and lore localization docs to preserve the same meaning across locales.
+4. Runtime/UI receives stable IDs and bounded surfaces, never free-form markdown.
+
+Do not ask a writer to "make lore for this area" without a scene packet. Do not ask a scenario agent to solve prose quality by dumping exposition into a log.
 
 ## 2. Evidence Stack
 
@@ -58,6 +92,30 @@ Bad text:
 - generic corporate villainy;
 - poetic vagueness hiding missing facts;
 - exposition before player need.
+
+## 3A. Dialogue, Logs, And Playback
+
+Dialogue/log writing is accepted only when it behaves like a recorded event.
+
+Use:
+
+- interruption, clipping, alarm priority, breath, suit noise, carrier delay, or missing packet only when the surface supports it;
+- one urgent operational fact per beat;
+- a named object, route, person, pressure state, or task;
+- partial knowledge and wrong assumptions appropriate to the speaker;
+- silence, cut-off, or contradiction where the artifact should be damaged.
+
+Reject:
+
+- trailer one-liners;
+- speeches about the theme;
+- perfect final messages;
+- omniscient survivors;
+- villains explaining the plot;
+- Atlas talking like a person who wants drama;
+- exposition that could be read before or after the scene without changing meaning.
+
+A good audio/log beat should make the player inspect a room, distrust a document, mark a route, repair a system, or remember a name. If it only "adds atmosphere", cut it or move it to optional archive content.
 
 ## 4. Quest State
 

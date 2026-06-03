@@ -35,7 +35,9 @@ public sealed class GlobalWeatherDirectorEditTests
 
         Assert.IsNull(GlobalRegistry.Weather, "Edit-mode weather component must not claim GlobalRegistry.Weather.");
         Assert.IsFalse(director.IsInitialized, "Runtime weather state must stay cold outside play mode.");
-        Assert.IsNull(ReadPrivate<Texture2D>(director, "_noirFogLutTexture"), "Edit mode must not allocate runtime noir fog LUT texture.");
+        Color[] samples = ReadPrivate<Color[]>(director, "_noirFogLutSamples");
+        Assert.IsNotNull(samples, "Noir fog LUT must use fixed sample storage, not a runtime Texture2D.");
+        Assert.AreEqual(16, samples.Length, "Noir fog LUT sample count must match shader constant-buffer contract.");
     }
 
     [Test]

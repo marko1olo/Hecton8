@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P441_RESOURCE_YIELD_VALUE_DRAFT_ROWS",
+    "P442_STACK_LIMIT_VALUE_DRAFT_ROWS",
+    "P443_ESCAPE_RECIPE_VALUE_DRAFT_ROWS",
+    "P444_CONTRACT_RISK_REWARD_VALUE_DRAFT_ROWS",
+    "P445_ENDING_PAYOUT_VALUE_DRAFT_ROWS"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS.packets.json"
+  ]
+}

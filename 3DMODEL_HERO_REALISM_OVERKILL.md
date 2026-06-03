@@ -3,6 +3,12 @@
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: hero-grade generated models, close-camera setpieces, premium creatures, premium flora/coral, premium geology, major base modules, command equipment, and any generated asset that must read as handcrafted AAA work.
 
+## 0. Prime Hero Asset Law
+
+Hero assets are not "better generated meshes". They are player-inspectable product-defining objects. If a hero asset does not survive close camera, grazing light, material/mask inspection, wireframe inspection, LOD transition, collision overlay, and in-scene scale proof, it is not a hero asset.
+
+The standard is not "less bad procedural output". The standard is believable macro form, functional construction, material history, optimized LODs, and premium surface response that can stand beside handcrafted AA/AAA art. Optimization changes density and proof cost; it does not permit primitive silhouettes, blurry textures, texture-hidden geometry, or low-poly read.
+
 ## 1. Purpose
 
 Baseline generator compliance prevents defective assets. It does not automatically create world-class realism. Hero realism requires a stricter pipeline: functional design, reference discipline, high-poly source generation, controlled retopology, baked detail maps, layered materials, decal/trim support, render review, and rejection of primitive silhouette language.
@@ -188,6 +194,22 @@ Every hero asset requires render proof before production acceptance:
 - Collider proxy overlay view.
 
 If the asset fails in any proof view, it is not accepted. A beautiful beauty shot with hidden wireframe, hidden masks, and hidden collider does not prove production quality.
+
+## 14A. Proof Artifacts
+
+Hero asset work must provide a proof packet:
+
+- reference contract with image/source categories and material age;
+- high-poly source path or generator manifest;
+- shipped LOD0/LOD1/LOD2 triangle counts and protected-edge notes;
+- UV density and material slot report;
+- bake manifest for normal, AO, curvature, cavity, material ID, emission/thickness where used;
+- texture resolution, compression, mip/padding, channel map, and atlas/trim/decal list;
+- collision proxy overlay or collider manifest;
+- neutral, grazing, underwater, albedo-only, normal/matcap, mask, wireframe, LOD transition, and collider proof renders;
+- Compact and High/Ultra in-scene captures when the asset is player-facing.
+
+Claims of "AAA", "realistic", "hero", "final", or "production ready" are invalid without these artifacts or an explicit `PENDING VERIFICATION` label.
 
 ## 15. Continuous Overkill Scaling
 

@@ -1,10 +1,17 @@
 ---
 packet_id: P104_RAN_B_H8_PUBLIC_CATALOG
+release_set_id: RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY
 article_id: aegir.ran_b_h8_public_catalog
+unlock_id: unlock.first_ran_b_h8_public_catalog
+poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
+biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: ru_RU
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Публичный каталог RAN-B:H8

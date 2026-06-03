@@ -101,7 +101,8 @@ namespace Hecton8.UI
 
         [Header("-- Hologram ------------------------------")]
         [SerializeField] private Mesh[] hologramProxyMeshes = System.Array.Empty<Mesh>();
-        [SerializeField] private Shader hologramShader;
+        [SerializeField, Tooltip("Required authored hologram material. Runtime material generation is forbidden.")]
+        private Material hologramMaterial;
         [SerializeField] private float hologramHeight = 0.14f;
         [SerializeField] private float hologramForwardOffset = 0.06f;
         [SerializeField] private float hologramScale = 0.045f;
@@ -220,7 +221,7 @@ namespace Hecton8.UI
         private char[] _resolvedSummaryHexBuffer = new char[4096];
         private int _resolvedSummaryHexLength;
         private float _hologramAnimationTime;
-        private Material _runtimeHologramMaterial;
+        private Material _resolvedHologramMaterial;
         private uint _latestSimulationLogHash;
         private float _latestSimulationLogTimestamp;
 
@@ -397,11 +398,7 @@ namespace Hecton8.UI
             UnregisterPDAEvents();
             LocalizationEvents.UnregisterLanguageListener(this);
             PDAEvents.AssertUnregistered(this, nameof(PDADataLogTab));
-            if (_runtimeHologramMaterial != null)
-            {
-                Destroy(_runtimeHologramMaterial);
-                _runtimeHologramMaterial = null;
-            }
+            _resolvedHologramMaterial = null;
         }
 
         private void TryRegisterPDAEvents()
@@ -2335,13 +2332,11 @@ namespace Hecton8.UI
 
         private void EnsureHologramMaterial()
         {
-            if (_runtimeHologramMaterial != null || hologramShader == null)
+            if (_resolvedHologramMaterial != null)
                 return;
 
-            _runtimeHologramMaterial = new Material(hologramShader)
-            {
-                name = "Runtime_PDADataLogHologram"
-            }; // COLD ALLOC: Material[1] — PDA data-log hologram material — owner: PDADataLogTab
+            UnityEngine.Assertions.Assert.IsNotNull(hologramMaterial, "Fatal: PDADataLogTab requires an authored hologram material.");
+            _resolvedHologramMaterial = hologramMaterial;
         }
 
         private void RenderSelectedLoreHologram(float deltaTime)
@@ -2349,7 +2344,7 @@ namespace Hecton8.UI
             if (!_detailVisible || _selectedIndex < 0)
                 return;
 
-            if (_runtimeHologramMaterial == null || hologramProxyMeshes == null || hologramProxyMeshes.Length == 0)
+            if (_resolvedHologramMaterial == null || hologramProxyMeshes == null || hologramProxyMeshes.Length == 0)
                 return;
 
             AudioLogData log = GetSelectedLog();
@@ -2386,7 +2381,7 @@ namespace Hecton8.UI
             UnityEngine.Graphics.DrawMesh(
                 mesh,
                 matrix,
-                _runtimeHologramMaterial,
+                _resolvedHologramMaterial,
                 gameObject.layer,
                 null,
                 0,
@@ -2468,4 +2463,3 @@ namespace Hecton8.UI
     }
 
 }
-

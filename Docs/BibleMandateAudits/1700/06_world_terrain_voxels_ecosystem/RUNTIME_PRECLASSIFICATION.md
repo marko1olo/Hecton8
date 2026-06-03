@@ -5,115 +5,113 @@ Date: 2026-06-02
 
 This file groups static runtime suspects by a conservative heuristic. It can reduce review time, but it cannot prove a line is legal or illegal without reading the containing method and owner phase.
 
-Total runtime suspects: 254.
+Raw generated runtime suspects: 255. Line-level reconciliation: 254 classified lines in `LINE_LEVEL_CLASSIFICATION.md`.
 
 ## Summary
 
-- LEGAL_EDITOR_OR_DEV_GUARDED: 100
-- REVIEW_NATIVE_LIFETIME_OR_ALLOCATOR_PROOF_REQUIRED: 79
+- LEGAL_EDITOR_OR_DEV_GUARDED: 104
+- REVIEW_NATIVE_LIFETIME_OR_ALLOCATOR_PROOF_REQUIRED: 77
 - LIKELY_LEGAL_COLD_OR_OWNER_LIFETIME_PATH: 44
-- REVIEW_CACHE_OR_INJECTION_REQUIRED: 12
-- REVIEW_RUNTIME_MESH_MATERIAL_PATH: 9
+- REVIEW_CACHE_OR_INJECTION_REQUIRED: 13
+- REVIEW_RUNTIME_MESH_MATERIAL_PATH: 7
 - REVIEW_UNCLASSIFIED_STATIC_RISK: 5
 - REVIEW_HOT_PHASE_METHOD: 2
 - LIKELY_LEGAL_COLD_LOOKUP: 1
 - REVIEW_LOG_GUARD_REQUIRED: 1
 - LIKELY_LEGAL_COLD_OR_DIAGNOSTIC_PATH: 1
 
-## LEGAL_EDITOR_OR_DEV_GUARDED (100)
+## LEGAL_EDITOR_OR_DEV_GUARDED (104)
 
 - Runtime debug logging | Assets\_Project\Scripts\World\AbyssalFluidDecalManager.cs:943:                    Hecton8.Core.H8Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
-- Runtime debug logging | Assets\_Project\Scripts\World\BioCableIK.cs:708:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
-- Runtime debug logging | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1058:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
-- Runtime debug logging | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4231:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. Manager-created BioCableIK rigs are disabled until an authored material is assigned.", this);
-- Runtime debug logging | Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:206:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:213:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:537:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:552:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:558:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:645:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
-- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:668:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
-- Runtime debug logging | Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
-- Runtime debug logging | Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
-- Runtime debug logging | Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
+- Runtime debug logging | Assets\_Project\Scripts\World\BioCableIK.cs:998:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
+- Runtime debug logging | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1068:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
+- Runtime debug logging | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4345:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. BioCableIK rigs are disabled until an authored material is assigned.", this);
 - Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumZone.cs:454:            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
-- Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
-- Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
-- Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
-- Runtime debug logging | Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
-- Runtime debug logging | Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
-- Runtime debug logging | Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
 - Runtime debug logging | Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:45:                Hecton8.Core.H8Debug.Log(
-- Runtime debug logging | Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
 - Runtime debug logging | Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntimeBootstrap.cs:48:            Hecton8.Core.H8Debug.LogWarning(
 - Runtime debug logging | Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1414:                Hecton8.Core.H8Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
 - Runtime debug logging | Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
-- Runtime debug logging | Assets\_Project\Scripts\World\FloraInteractionManager.cs:8127:                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
-- Runtime debug logging | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1667:                Hecton8.Core.H8Debug.LogException(exception);
-- Runtime debug logging | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1685:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
-- Runtime debug logging | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1707:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
+- Runtime debug logging | Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:215:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:222:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:552:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:569:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:575:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:665:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
+- Runtime debug logging | Assets\_Project\Scripts\World\CullingManager.cs:688:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
+- Runtime debug logging | Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
+- Runtime debug logging | Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
+- Runtime debug logging | Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
+- Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
+- Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
+- Runtime debug logging | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
+- Runtime debug logging | Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
+- Runtime debug logging | Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
+- Runtime debug logging | Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
 - Runtime debug logging | Assets\_Project\Scripts\World\HectonSpatialHash.cs:1225:                Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
+- Runtime debug logging | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1694:                Hecton8.Core.H8Debug.LogException(exception);
+- Runtime debug logging | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1688:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
+- Runtime debug logging | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1712:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
+- Runtime debug logging | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5392:            Hecton8.Core.H8Debug.Log(
+- Runtime debug logging | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5402:            Hecton8.Core.H8Debug.LogError("[HectonMapMagicVegetationBridge] Loop guard hit.");
 - Runtime debug logging | Assets\_Project\Scripts\World\LODSystemManager.cs:214:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Duplicate registry owner detected. Destroying duplicate.");
 - Runtime debug logging | Assets\_Project\Scripts\World\LODSystemManager.cs:234:            Hecton8.Core.H8Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
 - Runtime debug logging | Assets\_Project\Scripts\World\LODSystemManager.cs:565:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Invalid quality preset value. Using default (Medium).");
 - Runtime debug logging | Assets\_Project\Scripts\World\LODSystemManager.cs:598:                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Registered LOD groups exceeds max capacity. Consider increasing capacity.");
-- Runtime debug logging | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5361:            Hecton8.Core.H8Debug.Log(
-- Runtime debug logging | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5371:            Hecton8.Core.H8Debug.LogError("[HectonMapMagicVegetationBridge] Loop guard hit.");
-- Runtime debug logging | Assets\_Project\Scripts\World\ImpostorSystem.cs:213:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
-- Runtime debug logging | Assets\_Project\Scripts\World\ImpostorSystem.cs:1179:                Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
-- Additional lines omitted here: 60. Use `../_scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt` for the full list.
+- Runtime debug logging | Assets\_Project\Scripts\World\ImpostorSystem.cs:261:                Hecton8.Core.H8Debug.LogError("[ImpostorSystem] DTO layout validation failed. Disabling impostor runtime.");
+- Runtime debug logging | Assets\_Project\Scripts\World\ImpostorSystem.cs:271:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
+- Runtime debug logging | Assets\_Project\Scripts\World\ImpostorSystem.cs:1393:                Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
+- Runtime debug logging | Assets\_Project\Scripts\World\ImpostorSystem.cs:1395:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
+- Additional lines omitted here: 64. Use `../_scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt` for the full list.
 
-## REVIEW_NATIVE_LIFETIME_OR_ALLOCATOR_PROOF_REQUIRED (79)
+## REVIEW_NATIVE_LIFETIME_OR_ALLOCATOR_PROOF_REQUIRED (77)
 
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:629:            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:631:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:690:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:695:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:700:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:705:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:710:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:715:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:720:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1162:                    Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:687:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:692:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:697:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:702:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:707:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:712:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:717:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1178:                    Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:2524:            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4471:            _cullTelemetryReadback.Data = new NativeArray<uint>(
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4473:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:5127:            NativeArray<byte> visibilityMask = new NativeArray<byte>(
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonHLODRenderer.cs:288:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:2519:            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4466:            _cullTelemetryReadback.Data = new NativeArray<uint>(
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:4468:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:5122:            NativeArray<byte> visibilityMask = new NativeArray<byte>(
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4785:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5567:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8567:            state.HeightReadbackData = new NativeArray<ushort>(
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8569:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4816:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5598:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8598:            state.HeightReadbackData = new NativeArray<ushort>(
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8600:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2661:        private const Allocator DataVaultExemptPersistentRecordAllocator = Allocator.Persistent;
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2662:        private const Allocator DataVaultExemptPersistentDeltaAllocator = Allocator.Persistent;
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2663:        private const Allocator DataVaultExemptPersistentTombstoneAllocator = Allocator.Persistent;
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2664:        private const Allocator DataVaultExemptPersistentHydrationAllocator = Allocator.Persistent;
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2665:        private const Allocator DataVaultExemptPersistentStateAllocator = Allocator.Persistent;
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2666:        private const Allocator DataVaultExemptPersistentQueueAllocator = Allocator.Persistent;
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:202:                    scratch = new NativeArray<T>(length, Allocator.Persistent, options);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2021:                payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:188:                    scratch = new NativeArray<T>(length, Allocator.Persistent, options);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:1973:                payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs:310:            Allocator laneAllocator = Allocator.Persistent;
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:255:                NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:421:                    Workspace = new NativeArray<PressureMetamorphismSample>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:423:                        Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs:310:            Allocator laneAllocator = Allocator.Persistent;
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:254:                NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\SpawnZoneSdfValidation.cs:1022:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\SargassumMicroFaunaBoids.cs:7603:            _parasiteLatchReadback.Data = new NativeArray<int>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\SargassumMicroFaunaBoids.cs:7605:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:483:                    Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:789:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:794:                Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\VegetationChunkResidencyDirector.cs:799:                Allocator.Persistent,
-- Additional lines omitted here: 39. Use `../_scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt` for the full list.
+- Additional lines omitted here: 37. Use `../_scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt` for the full list.
 
 ## LIKELY_LEGAL_COLD_OR_OWNER_LIFETIME_PATH (44)
 
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:796:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2304:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:806:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2316:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:94:                samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:95:                sources = new NativeArray<BiomeTransitionFogSource>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:99:                fromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -123,16 +121,17 @@ Total runtime suspects: 254.
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:828:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1519:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1947:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1518:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1519:            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:106:                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:107:                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:108:                reductions = new NativeArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:109:                summary = new NativeArray<HectonSandboxAbyssalShelfSmokeSummary>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:36:                heights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:37:                sediment = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:38:                weights = new NativeArray<float4>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:39:                slopeWeights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1521:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1522:            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:5319:                desiredSectorHashView = new NativeArray<long>(PagedSectorHashCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:6489:                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucketCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:6567:            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(stateCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:8045:            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:37:            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(MatrixInstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:38:            NativeArray<byte> dirtyPages = new NativeArray<byte>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:75:            NativeArray<byte> dirtyPages = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -143,49 +142,49 @@ Total runtime suspects: 254.
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:148:            NativeArray<int> bufferB = new NativeArray<int>(FuzzerInstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:150:            NativeArray<byte> dirtyA = new NativeArray<byte>(pageCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:151:            NativeArray<byte> dirtyB = new NativeArray<byte>(pageCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:5319:                desiredSectorHashView = new NativeArray<long>(PagedSectorHashCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:6489:                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucketCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:6567:            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(stateCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:8045:            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs:631:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:3091:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\VegetationMemorySovereigntyRuntime.cs:510:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs:3307:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:36:                heights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:37:                sediment = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:38:                weights = new NativeArray<float4>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:39:                slopeWeights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\World\TerrainChunkPagerRuntime.cs:2346:                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Additional lines omitted here: 4. Use `../_scans/06_world_terrain_voxels_ecosystem_runtime_risks.txt` for the full list.
 
-## REVIEW_CACHE_OR_INJECTION_REQUIRED (12)
+## REVIEW_CACHE_OR_INJECTION_REQUIRED (13)
 
 - Unity scene lookup | Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:25:            if (cameraRig == null && Camera.main != null)
 - Unity scene lookup | Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:26:                cameraRig = Camera.main.transform;
-- Unity scene lookup | Assets\_Project\Scripts\World\ImpostorSystem.cs:1012:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
-- Unity scene lookup | Assets\_Project\Scripts\World\ImpostorSystem.cs:1199:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
-- Unity scene lookup | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6851:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+- Unity scene lookup | Assets\_Project\Scripts\World\ImpostorSystem.cs:1215:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
+- Unity scene lookup | Assets\_Project\Scripts\World\ImpostorSystem.cs:1413:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
+- Unity scene lookup | Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:1378:            if (_authoredOrePrefab != null && _authoredOrePrefab.GetComponent<ResourceNode>() == null)
+- Unity scene lookup | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6897:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
 - Unity scene lookup | Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:24:            if (!runtimeRoot.TryGetComponent<FaunaGeneticsManager>(out _))
 - Unity scene lookup | Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:27:            if (!runtimeRoot.TryGetComponent<EcosystemHealthDirector>(out _))
 - Unity scene lookup | Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:30:            if (!runtimeRoot.TryGetComponent<MigrationDirector>(out _))
 - Unity scene lookup | Assets\_Project\Scripts\Ecosystem\EcosystemRuntimeInstaller.cs:33:            if (!runtimeRoot.TryGetComponent<EcosystemPopulationBalancer>(out _))
 - Unity scene lookup | Assets\_Project\Scripts\Fauna\CreatureDamageManager.cs:229:            GetComponentsInChildren(true, _rendererScratch);
-- Unity scene lookup | Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4425:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
-- Unity scene lookup | Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7434:            GetComponentsInChildren(true, _logicalLodColliderScratch);
+- Unity scene lookup | Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4438:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+- Unity scene lookup | Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7382:            GetComponentsInChildren(true, _logicalLodColliderScratch);
 
-## REVIEW_RUNTIME_MESH_MATERIAL_PATH (9)
+## REVIEW_RUNTIME_MESH_MATERIAL_PATH (7)
 
 - Runtime mesh/material mutation | Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
-- Runtime mesh/material mutation | Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2184:            mesh.RecalculateNormals();
-- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5646:                result = new Mesh();
-- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5849:                result = new Mesh();
-- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5968:                result = new Mesh();
-- Unity scene lookup | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6834:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
-- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6837:                MeshCollider meshCollider = meshColliders[i];
-- Runtime mesh/material mutation | Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:4048:            mesh.RecalculateNormals();
-- Runtime mesh/material mutation | Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7756:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
+- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5660:                result = new Mesh();
+- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5866:                result = new Mesh();
+- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5988:                result = new Mesh();
+- Unity scene lookup | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6880:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+- Runtime mesh/material mutation | Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6883:                MeshCollider meshCollider = meshColliders[i];
+- Runtime mesh/material mutation | Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7704:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
 
 ## REVIEW_UNCLASSIFIED_STATIC_RISK (5)
 
 - Uncategorized | Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:5362:                    _statusLabel.text = "Play Mode and GlobalDataVault required.";
 - Uncategorized | Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs:5410:                _statusLabel.text = "Vault live. Layout: CelestialStateDTO 64B, EnvironmentStateDTO 64B, CelestialTelemetryEntry 64B.";
+- Uncategorized | Assets\_Project\Scripts\Atmosphere\ShinobuAtmosphereWaveTunerWindow.cs:150:            _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
 - Uncategorized | Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:146:                _status.text =
 - Uncategorized | Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:156:                _status.text = "No atmosphere telemetry yet.";
-- Uncategorized | Assets\_Project\Scripts\Atmosphere\ShinobuAtmosphereWaveTunerWindow.cs:150:            _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
 
 ## REVIEW_HOT_PHASE_METHOD (2)
 
@@ -198,8 +197,9 @@ Total runtime suspects: 254.
 
 ## REVIEW_LOG_GUARD_REQUIRED (1)
 
-- Runtime debug logging | Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1765:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
+- Runtime debug logging | Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:2041:            Debug.Log("[OOP_Movement_Scanner] scanned Update scopes=" + updateScopes.ToString() +
 
 ## LIKELY_LEGAL_COLD_OR_DIAGNOSTIC_PATH (1)
 
 - Runtime debug logging | Assets\_Project\Scripts\World\PcieBandwidthGuard1411SelfTest.cs:32:            Debug.Log("Agent 1411 PCIe bandwidth guard self test passed.");
+

@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY",
+      "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+      "article_id": "applied_lore.acoustic_relay_spine_assembly",
+      "title_key": "applied_lore.acoustic_relay_spine_assembly.title",
+      "unlock": {
+        "primary": "unlock.acoustic_relay_spine_assembly",
+        "poi_tags": [
+          "poi.acoustic_relay_spine",
+          "poi.pinger_line_spool",
+          "poi.broken_capsule_comm_mast"
+        ],
+        "biome_tags": [
+          "biome.shallow_shelf",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Acoustic Relay Spine Assembly",
+          "scanner": "Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "ru_RU": {
+          "title": "Сборка акустического релейного хребта",
+          "scanner": "Неполный релейный хребет. Капсула может стучать через воду, но не говорить с орбитой чистым каналом.",
+          "terminal": "ASCENT RELAY: сначала восстановить низкочастотный акустический хребет. High-gain mast lost. Emergency buoy unreliable. Rescue без route proof запрещен.",
+          "audio": "Если Black Keel это услышит, он услышит код давления, а не голос.",
+          "in_game_wiki": "Первый компонент побега не радиочудо. Это физическая цепь акустической связи: pinger float, ceramic ribs, cable skin и точное окно.",
+          "external_site": "Побег с HECTON-8 строится как инженерная задача. Игрок сначала чинит путь для звука, и только потом просит орбиту поверить сигналу.",
+          "field_note": "Ставить на сломанную мачту, pinger-line или капсульный/P-63 маршрут."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft JA localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft JA localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft JA localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft JA localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft JA localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft ZH localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft ZH localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft ZH localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft ZH localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft FR localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft FR localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft FR localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft FR localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft FR localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft ES localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft ES localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft ES localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft ES localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft ES localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft DE localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft DE localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft DE localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft DE localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft DE localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft PL localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft PL localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft PL localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft PL localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft PL localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft UK localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft UK localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft UK localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft UK localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft UK localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft AR localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft AR localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft AR localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft AR localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft AR localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft ID localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft ID localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft ID localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft ID localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft ID localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft KO localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft KO localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft KO localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft KO localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft KO localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft HE localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft HE localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft HE localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft HE localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft HE localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft PT localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft PT localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft PT localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft PT localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft PT localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Acoustic Relay Spine Assembly",
+          "scanner": "Draft NL localization pending native pass. Relay spine partial. The capsule can ping through water, not speak cleanly through orbit.",
+          "terminal": "Draft NL localization pending native pass. ASCENT RELAY: rebuild a low-band acoustic spine before any recovery window. High-gain mast lost. Emergency buoy unreliable. Do not promise rescue without route proof.",
+          "audio": "Draft NL localization pending native pass. If Black Keel hears this, it hears a pressure code, not a voice.",
+          "in_game_wiki": "Draft NL localization pending native pass. The first escape component is not a radio miracle. It is a physical acoustic relay chain: pinger float, ceramic ribs, cable skin and timing discipline.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 escape is engineering, not a cutscene. The player must rebuild a route for sound before asking orbit to believe the signal.",
+          "field_note": "Draft NL localization pending native pass. Place on broken mast or pinger-line evidence near capsule/P-63 routes."
+        }
+      }
+    },
+    {
+      "packet_id": "P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY",
+      "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+      "article_id": "applied_lore.pressure_seal_clamp_ring_assembly",
+      "title_key": "applied_lore.pressure_seal_clamp_ring_assembly.title",
+      "unlock": {
+        "primary": "unlock.pressure_seal_clamp_ring_assembly",
+        "poi_tags": [
+          "poi.pressure_clamp_ring",
+          "poi.cold_sealant_patch",
+          "poi.atlas_shell_sealant_growth"
+        ],
+        "biome_tags": [
+          "biome.industrial_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Seal Clamp Ring Assembly",
+          "scanner": "Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "ru_RU": {
+          "title": "Сборка прижимного кольца герметизации",
+          "scanner": "След clamp ring. Ascent sleeve не исчез; его потратили, чтобы капсула пережила удар.",
+          "terminal": "SEAL CERT: shallow patch держит комнату. Он не держит ascent. Нужны pressure glass seat, shell-sealant map и Deep Reach clamp profile.",
+          "audio": "Полезный уплотнитель здесь тот, который Atlas вырастил неправильно. В этом и проблема.",
+          "in_game_wiki": "Герметизация объясняет, почему игрок идет глубже: ремонт убежища не равен ремонту взлета, а био-герметик Atlas может спасти модуль и заблокировать отделение.",
+          "external_site": "Поврежденная капсула не может просто улететь. Ей нужны глубоководные кольца, pressure glass и решение, использовать ли материал, выращенный Atlas.",
+          "field_note": "Ставить там, где repair ecology пересекается с механикой seal evidence."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft JA localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft JA localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft JA localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft JA localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft JA localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft JA localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft ZH localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft ZH localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft ZH localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft ZH localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft ZH localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft FR localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft FR localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft FR localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft FR localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft FR localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft ES localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft ES localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft ES localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft ES localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft ES localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft DE localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft DE localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft DE localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft DE localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft DE localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft PL localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft PL localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft PL localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft PL localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft PL localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft UK localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft UK localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft UK localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft UK localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft UK localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft UK localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft AR localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft AR localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft AR localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft AR localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft AR localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft ID localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft ID localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft ID localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft ID localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft ID localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft KO localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft KO localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft KO localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft KO localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft KO localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft HE localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft HE localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft HE localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft HE localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft HE localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft PT localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft PT localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft PT localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft PT localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft PT localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft PT localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Pressure Seal Clamp Ring Assembly",
+          "scanner": "Draft NL localization pending native pass. Clamp ring scar. The capsule's ascent sleeve is not missing; it was spent during impact survival.",
+          "terminal": "Draft NL localization pending native pass. SEAL CERT: shallow patch holds a room. It does not hold ascent. Certified rings require pressure glass seat, shell-sealant map, and a Deep Reach clamp profile.",
+          "audio": "Draft NL localization pending native pass. The useful seal is the one Atlas grew wrong. That is the problem.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure seals explain why the player must go deeper: safe-room repair is not ascent repair, and Atlas bio-sealant can preserve a module while blocking clean separation.",
+          "external_site": "Draft NL localization pending native pass. The damaged capsule cannot simply lift off. Its ascent seal chain needs deep-rated rings, pressure glass and a repair decision that may involve Atlas-grown material.",
+          "field_note": "Draft NL localization pending native pass. Use where repair ecology and mechanical seal evidence overlap."
+        }
+      }
+    },
+    {
+      "packet_id": "P363_GUIDANCE_TIMING_CORE_ASSEMBLY",
+      "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+      "article_id": "applied_lore.guidance_timing_core_assembly",
+      "title_key": "applied_lore.guidance_timing_core_assembly.title",
+      "unlock": {
+        "primary": "unlock.guidance_timing_core_assembly",
+        "poi_tags": [
+          "poi.guidance_timing_core",
+          "poi.orbit_window_chart",
+          "poi.dead_beacon_timing_slice"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Guidance Timing Core Assembly",
+          "scanner": "Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "ru_RU": {
+          "title": "Сборка ядра наведения и тайминга",
+          "scanner": "Пустой timing core. Геометрия Aegir решает, будет ли ascent спасением, захватом или тишиной.",
+          "terminal": "GUIDANCE CORE: сверить clock капсулы с Aegir window, Black Keel receiver, moon relay shutter и storm plume drift. Late packets become evidence loss.",
+          "audio": "Тут нет просто 'вверх'. Тут окно, приемник и ложь в очереди.",
+          "in_game_wiki": "Для ascent нужно ядро тайминга, которое понимает геометрию лун Aegir, blackout intervals и lane recovery carrier.",
+          "external_site": "HECTON-8 держит космический полет жестким: orbital timing, relay shadows и мертвые beacons превращают extraction в route problem.",
+          "field_note": "Привязать к orbital-window charts, beacon fragments и guidance gimbal wreckage."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft JA localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft JA localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft JA localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft JA localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft JA localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft ZH localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft ZH localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft ZH localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft ZH localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft ZH localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft FR localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft FR localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft FR localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft FR localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft FR localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft ES localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft ES localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft ES localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft ES localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft ES localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft DE localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft DE localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft DE localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft DE localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft DE localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft PL localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft PL localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft PL localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft PL localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft PL localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft UK localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft UK localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft UK localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft UK localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft UK localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft AR localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft AR localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft AR localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft AR localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft AR localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft ID localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft ID localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft ID localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft ID localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft ID localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft KO localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft KO localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft KO localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft KO localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft KO localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft HE localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft HE localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft HE localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft HE localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft HE localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft PT localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft PT localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft PT localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft PT localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft PT localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Guidance Timing Core Assembly",
+          "scanner": "Draft NL localization pending native pass. Timing core blank. Aegir geometry decides whether ascent is recovery, capture, or silence.",
+          "terminal": "Draft NL localization pending native pass. GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver, moon relay shutter, and storm plume drift. Late packets become evidence loss.",
+          "audio": "Draft NL localization pending native pass. There is no up. There is a window, a receiver, and a lie in the queue.",
+          "in_game_wiki": "Draft NL localization pending native pass. A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals and carrier recovery lanes.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 keeps spaceflight hard-sci-fi: orbital timing, relay shadows and damaged beacons turn extraction into a route problem.",
+          "field_note": "Draft NL localization pending native pass. Bind to orbital-window charts, beacon fragments and guidance gimbal wreckage."
+        }
+      }
+    },
+    {
+      "packet_id": "P364_ASCENT_ENERGY_CHARGE_ASSEMBLY",
+      "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+      "article_id": "applied_lore.ascent_energy_charge_assembly",
+      "title_key": "applied_lore.ascent_energy_charge_assembly.title",
+      "unlock": {
+        "primary": "unlock.ascent_energy_charge_assembly",
+        "poi_tags": [
+          "poi.ascent_charge_cradle",
+          "poi.vent_forge_heat_cell",
+          "poi.blue_debt_energy_insulator"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ascent Energy Charge Assembly",
+          "scanner": "Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "ru_RU": {
+          "title": "Сборка энергетического заряда ascent",
+          "scanner": "Energy cradle иссечен pressure pulse. Дешевый заряд равен мертвой капсуле.",
+          "terminal": "ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Каждый грамм здесь - побег, доказательство или деньги. Все три сразу не выйдут.",
+          "in_game_wiki": "Ascent charge делает ресурсы механическим и моральным выбором: глубокие материалы могут поднять игрока, сохранить evidence или стать payout.",
+          "external_site": "Ресурсы напрямую завязаны на сюжет: blue debt и vent-forged hardware решают escape, custody и compromise.",
+          "field_note": "Использовать на vent forge / blue debt маршруте, где escape и payout пересекаются."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft JA localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft JA localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft JA localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft JA localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft JA localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft JA localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft ZH localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft ZH localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft ZH localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft ZH localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft ZH localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft FR localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft FR localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft FR localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft FR localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft FR localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft FR localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft ES localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft ES localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft ES localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft ES localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft ES localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft ES localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft DE localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft DE localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft DE localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft DE localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft DE localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft DE localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft PL localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft PL localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft PL localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft PL localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft PL localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft PL localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft UK localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft UK localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft UK localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft UK localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft UK localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft UK localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft AR localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft AR localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft AR localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft AR localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft AR localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft AR localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft ID localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft ID localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft ID localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft ID localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft ID localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft ID localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft KO localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft KO localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft KO localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft KO localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft KO localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft KO localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft HE localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft HE localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft HE localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft HE localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft HE localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft HE localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft PT localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft PT localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft PT localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft PT localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft PT localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft PT localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Ascent Energy Charge Assembly",
+          "scanner": "Draft NL localization pending native pass. Energy cradle scored by pressure pulse. Cheap charge equals dead capsule.",
+          "terminal": "Draft NL localization pending native pass. ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp. Raw fuel is rejected. Uncertified blue debt fractures under launch impulse.",
+          "audio": "Draft NL localization pending native pass. Every gram here is either escape, evidence, or money. You do not get all three.",
+          "in_game_wiki": "Draft NL localization pending native pass. The ascent charge turns resources into a moral and mechanical trade: deep pressure materials can lift the player, preserve evidence, or become payout.",
+          "external_site": "Draft NL localization pending native pass. Resource design ties directly into narrative: blue debt and vent-forged hardware are not loot sparkle; they decide escape, custody and compromise.",
+          "field_note": "Draft NL localization pending native pass. Use for vent forge / blue debt route where escape and payout decisions overlap."
+        }
+      }
+    },
+    {
+      "packet_id": "P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY",
+      "release_set_id": "RS073_ESCAPE_ASCENT_ENGINEERING_COMPONENTS",
+      "article_id": "applied_lore.quarantine_legal_handshake_assembly",
+      "title_key": "applied_lore.quarantine_legal_handshake_assembly.title",
+      "unlock": {
+        "primary": "unlock.quarantine_legal_handshake_assembly",
+        "poi_tags": [
+          "poi.quarantine_handshake_panel",
+          "poi.legal_receiver_key",
+          "poi.payload_authority_socket"
+        ],
+        "biome_tags": [
+          "biome.safe_module",
+          "biome.abyssal_machine_field"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Quarantine Legal Handshake Assembly",
+          "scanner": "Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "ru_RU": {
+          "title": "Сборка карантинно-правового handshake",
+          "scanner": "Handshake socket. Капсула может быть механически готова и все равно юридически захвачена.",
+          "terminal": "RECOVERY HANDSHAKE: receiver key required. Keelmark принимает mass and lien. Recovery Compliance принимает coordinates. Public ledger принимает proof with delay.",
+          "audio": "Последняя деталь не металл. Последняя деталь - кто имеет право назвать тебя recovered.",
+          "in_game_wiki": "Финальный компонент escape юридический и информационный: quarantine status, receiver identity, payload custody и evidence state решают ветку ending.",
+          "external_site": "Extraction в HECTON-8 грязный намеренно. Механический ascent может стать corporate custody, public truth или unresolved quarantine.",
+          "field_note": "Использовать для exit UI, late terminal proof и ending payload bridge."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft JA localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft JA localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft JA localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft JA localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft JA localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft ZH localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft ZH localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft ZH localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft ZH localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft ZH localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft FR localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft FR localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft FR localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft FR localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft FR localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft ES localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft ES localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft ES localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft ES localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft ES localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft DE localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft DE localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft DE localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft DE localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft DE localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft PL localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft PL localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft PL localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft PL localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft PL localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft UK localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft UK localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft UK localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft UK localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft UK localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft AR localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft AR localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft AR localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft AR localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft AR localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft ID localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft ID localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft ID localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft ID localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft ID localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft KO localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft KO localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft KO localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft KO localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft KO localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft HE localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft HE localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft HE localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft HE localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft HE localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft PT localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft PT localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft PT localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft PT localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft PT localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Quarantine Legal Handshake Assembly",
+          "scanner": "Draft NL localization pending native pass. Handshake socket. The capsule can be mechanically ready and still legally captured.",
+          "terminal": "Draft NL localization pending native pass. RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates. Public ledger accepts proof with delay.",
+          "audio": "Draft NL localization pending native pass. The last part is not metal. It is who gets to call you recovered.",
+          "in_game_wiki": "Draft NL localization pending native pass. The final escape component is legal and informational: quarantine status, receiver identity, payload custody and evidence state decide the ending branch.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8's extraction fantasy is deliberately dirty. Mechanical ascent can still become corporate custody, public truth or an unresolved quarantine.",
+          "field_note": "Draft NL localization pending native pass. Use for exit UI, late terminal proof and ending payload bridge."
+        }
+      }
+    }
+  ]
+}

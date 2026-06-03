@@ -24,8 +24,8 @@ namespace Hecton8.AI
     internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource, IGlobalRegistryHotSwapListener
     {
         private int _signalPushDropCount;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
-        private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
+        private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1702.bin";
         private const string TelemetryDumpPayloadLabel = "faunaKinematicsTelemetryDumpPayload";
         private const string BiteTelemetryDumpPayloadLabel = "faunaKinematicsBiteTelemetryDumpPayload";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
@@ -332,6 +332,7 @@ namespace Hecton8.AI
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             HydrateRigDefinitionsOrMockCold();
+            EnsureVisualGpuBuffersCold();
         }
 
         private void OnEnable()
@@ -344,6 +345,7 @@ namespace Hecton8.AI
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             HydrateRigDefinitionsOrMockCold();
+            EnsureVisualGpuBuffersCold();
             ResetConstraintIterationHysteresis();
             TryRegister();
             TryRegisterHotSwapListener();
@@ -1898,7 +1900,7 @@ namespace Hecton8.AI
             }
         }
 
-        private bool TryCopyTerrainSdfLeaseToSnapshot(
+        private unsafe bool TryCopyTerrainSdfLeaseToSnapshot(
             NativeArray<byte>.ReadOnly sourceSdf,
             int requiredLength,
             out NativeArray<byte>.ReadOnly snapshotSdf,
@@ -1942,8 +1944,12 @@ namespace Hecton8.AI
                 if (!TryOpenVaultBuffer(vault, ref _terrainSdfSnapshotHandle, TerrainSdfSnapshotBuffer, requiredLength, out snapshot))
                     return false;
 
-                for (int i = 0; i < requiredLength; i++)
-                    snapshot[i] = sourceSdf[i];
+                void* sourcePtr = sourceSdf.GetUnsafeReadOnlyPtr();
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(snapshot);
+                if (sourcePtr == null || destinationPtr == null)
+                    return false;
+
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, requiredLength);
 
                 snapshotSdf = snapshot.AsReadOnly();
                 handedOff = true;
@@ -2047,7 +2053,14 @@ namespace Hecton8.AI
                 return false;
             }
 
-            EnsureGraphicsBuffers();
+            if (!HasValidGraphicsBuffer(_bonesGraphicsBufferA, MaxSegments) ||
+                !HasValidGraphicsBuffer(_bonesGraphicsBufferB, MaxSegments))
+            {
+                _gpuBufferDataValid = false;
+                ClearGpuSkinningBinding();
+                return false;
+            }
+
             GraphicsBuffer writeBuffer = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferA : _bonesGraphicsBufferB;
             if (!HasValidGraphicsBuffer(writeBuffer, MaxSegments))
             {
@@ -2148,7 +2161,8 @@ namespace Hecton8.AI
         {
             if (!ValidateLeviathanIkShaderGlobalsLayout() ||
                 !_supportsConstantBufferBinding ||
-                !EnsureIkGlobalsBuffers())
+                !HasValidGraphicsBuffer(_ikGlobalsBufferA, 1) ||
+                !HasValidGraphicsBuffer(_ikGlobalsBufferB, 1))
                 return false;
 
             GraphicsBuffer writeBuffer = _ikGlobalsUploadBufferIndex == 0 ? _ikGlobalsBufferA : _ikGlobalsBufferB;
@@ -2173,7 +2187,14 @@ namespace Hecton8.AI
             _supportsConstantBufferBinding = SystemInfo.supportsSetConstantBuffer;
         }
 
-        private bool EnsureIkGlobalsBuffers()
+        private void EnsureVisualGpuBuffersCold()
+        {
+            EnsureGraphicsBuffersCold();
+            if (_supportsConstantBufferBinding)
+                EnsureIkGlobalsBuffersCold();
+        }
+
+        private bool EnsureIkGlobalsBuffersCold()
         {
             if (!HasValidGraphicsBuffer(_ikGlobalsBufferA, 1))
             {
@@ -2191,7 +2212,7 @@ namespace Hecton8.AI
                    _ikGlobalsBufferB != null && _ikGlobalsBufferB.IsValid();
         }
 
-        private void EnsureGraphicsBuffers()
+        private void EnsureGraphicsBuffersCold()
         {
             if (!HasValidGraphicsBuffer(_bonesGraphicsBufferA, MaxSegments))
             {

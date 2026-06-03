@@ -128,9 +128,76 @@ namespace Hecton8.World
             return changed;
         }
 
+        private bool TryFinalizeDeferredTileCacheDisposals()
+        {
+            if (_tileStates.Count <= 0)
+                return false;
+
+            bool changed = false;
+            _tileStateRemovalScratchKeyCount = 0;
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                TileRuntimeState state = enumerator.Current.Value;
+                if (state == null ||
+                    !state.TileCacheDisposalDeferred ||
+                    HasChunkBuildJobsForTile(state.TileX, state.TileZ))
+                {
+                    continue;
+                }
+
+                if (_tileStateRemovalScratchKeyCount < _tileStateRemovalScratchKeys.Length)
+                    _tileStateRemovalScratchKeys[_tileStateRemovalScratchKeyCount++] = enumerator.Current.Key;
+                else
+                    RecordChunkQueueCapacityExceeded(_tileStateRemovalScratchKeys.Length, _tileStateRemovalScratchKeyCount);
+            }
+
+            enumerator.Dispose();
+
+            for (int i = 0; i < _tileStateRemovalScratchKeyCount; i++)
+                changed |= TryFinalizeDeferredTileCacheDisposal(_tileStateRemovalScratchKeys[i]);
+
+            _tileStateRemovalScratchKeyCount = 0;
+            return changed;
+        }
+
+        private bool TryFinalizeDeferredTileCacheDisposal(long tileKey)
+        {
+            if (!_tileStates.TryGetValue(tileKey, out TileRuntimeState state) ||
+                state == null ||
+                !state.TileCacheDisposalDeferred ||
+                HasChunkBuildJobsForTile(state.TileX, state.TileZ))
+            {
+                return false;
+            }
+
+            bool pendingRemoval = state.PendingRemoval;
+            bool pendingEviction = state.TileCacheEvictionDeferred;
+            state.TileCacheDisposalDeferred = false;
+            state.TileCacheEvictionDeferred = false;
+            DisposeTileNativeCaches(state);
+            if (state.TileCacheDisposalDeferred)
+                return false;
+
+            if (pendingRemoval)
+            {
+                _tileStates.Remove(tileKey);
+                _activeSetDirty = true;
+                return true;
+            }
+
+            if (pendingEviction)
+            {
+                ClearEvictedTileCacheMetadata(state);
+                return true;
+            }
+
+            return true;
+        }
+
         private bool TryFinalizeTileHeightReadback(TileRuntimeState state)
         {
-            if (state == null || !state.HeightReadbackPending)
+            if (state == null || !state.HeightReadbackPending || state.HeightReadbackDisposalDeferred)
                 return false;
 
             if (!state.HeightReadbackRequest.done)
@@ -223,10 +290,10 @@ namespace Hecton8.World
             if (state.HeightReadbackPending)
                 return;
 
-            if (HasChunkBuildJobsForTile(state.TileX, state.TileZ))
-                CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
-
             DisposeTileNativeCaches(state);
+            if (state.TileCacheDisposalDeferred)
+                return;
+
             _tileStates.Remove(tileKey);
             _activeSetDirty = true;
         }
@@ -269,7 +336,7 @@ namespace Hecton8.World
             sandMask = default;
             rockMask = default;
             heightSamples = default;
-            if (state == null)
+            if (state == null || state.TileCacheDisposalDeferred)
                 return false;
 
             TileNativeCacheBuffer buffer = state.ActiveCacheBufferIndex == 0
@@ -312,7 +379,7 @@ namespace Hecton8.World
 
         private static bool HasActiveTileCache(TileRuntimeState state)
         {
-            if (state == null)
+            if (state == null || state.TileCacheDisposalDeferred)
                 return false;
 
             TileNativeCacheBuffer buffer = state.ActiveCacheBufferIndex == 0
@@ -332,10 +399,21 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            if (HasChunkBuildJobsForTile(state.TileX, state.TileZ))
-                CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
-
             DisposeTileNativeCaches(state);
+            if (state.TileCacheDisposalDeferred)
+            {
+                state.TileCacheEvictionDeferred = true;
+                return;
+            }
+
+            ClearEvictedTileCacheMetadata(state);
+        }
+
+        private static void ClearEvictedTileCacheMetadata(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
             state.AlphamapTextureCache = null;
             state.HeightTextureCache = null;
             state.AlphamapTextureCount = 0;
@@ -384,7 +462,8 @@ namespace Hecton8.World
                     residentCacheCount++;
                     if (tileKey == protectedTileKey ||
                         state == null ||
-                        state.HeightReadbackPending)
+                        state.HeightReadbackPending ||
+                        state.TileCacheDisposalDeferred)
                     {
                         continue;
                     }

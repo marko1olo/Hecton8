@@ -18,6 +18,7 @@ namespace Hecton8.UI
     public sealed class SonarHoloCompass : MonoBehaviour, ILateFrameTickable, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxDots = 16;
+        private const int MinimumQualityDotCapacity = 4;
         private const int ProjectionBatchSize = 4;
         private const float RootWidth = 188f;
         private const float RootHeight = 188f;
@@ -84,6 +85,7 @@ namespace Hecton8.UI
         private float _pingPulse;
         private float _lastRootAlpha = -1f;
         private int _pendingProjectionCount;
+        private int _qualityDotCapacity = MaxDots;
         private bool _dotsHidden = true;
 
         // COLD ALLOC: SpatialAudioImpactEmitterSample[16] - impact-emitter copy buffer with cached AUP for acoustic radar projection - owner: SonarHoloCompass
@@ -99,7 +101,7 @@ namespace Hecton8.UI
             CacheRegistryServicesCold();
             EnsureProjectionBuffers();
             ResolveOwners(allowHierarchySearch: true);
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             SpectrumEvents.RegisterSonarPingListener(this);
             RegisterToTickManager();
             TryRegisterHotSwapListener();
@@ -108,7 +110,7 @@ namespace Hecton8.UI
         private void Start()
         {
             ResolveOwners(allowHierarchySearch: true);
-            EnsureUiBuilt(allowCreate: true);
+            EnsureUiBuilt();
             RegisterToTickManager();
         }
 
@@ -142,6 +144,7 @@ namespace Hecton8.UI
 
             if (_pingPulse > 0f)
                 _pingPulse = math.max(0f, _pingPulse - (dt * PingDecaySharpness));
+            RefreshQualityPolicy();
 
             if (_canvasGroup == null || _root == null || _viewCamera == null)
             {
@@ -235,12 +238,12 @@ namespace Hecton8.UI
             _pendingProjectionCount = 0;
         }
 
-        private bool EnsureUiBuilt(bool allowCreate)
+        private bool EnsureUiBuilt()
         {
             if (_uiBuilt)
                 return true;
 
-            if (!allowCreate || _targetCanvas == null)
+            if (_targetCanvas == null)
                 return false;
 
             RectTransform canvasRoot = HectonUIScaler.ResolveContentRoot(_targetCanvas);
@@ -249,12 +252,7 @@ namespace Hecton8.UI
 
             _root = FindExistingChild(canvasRoot, RootName);
             if (_root == null)
-            {
-                GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(CanvasGroup));
-                rootObject.layer = canvasRoot.gameObject.layer;
-                rootObject.TryGetComponent(out _root);
-                _root.SetParent(canvasRoot, false);
-            }
+                return false;
 
             _root.anchorMin = new Vector2(0.5f, 0f);
             _root.anchorMax = new Vector2(0.5f, 0f);
@@ -264,23 +262,25 @@ namespace Hecton8.UI
             _root.localScale = Vector3.one;
             _root.SetAsLastSibling();
 
-            _root.TryGetComponent(out _canvasGroup);
-            if (_canvasGroup == null)
-                _canvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
+            if (!_root.TryGetComponent(out _canvasGroup) || _canvasGroup == null)
+                return false;
+
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.alpha = 0f;
 
-            ClearChildren(_root);
-            CreateFrame();
-            CreateDots();
+            if (!BindFrame() || !BindDots())
+                return false;
+
             _uiBuilt = true;
             return true;
         }
 
-        private void CreateFrame()
+        private bool BindFrame()
         {
-            Image outerRing = EnsureImage(CreateRect(_root, "RingOuter").gameObject);
+            if (!TryBindImageChild(_root, "RingOuter", out Image outerRing))
+                return false;
+
             outerRing.sprite = null;
             outerRing.color = FrameColor;
             outerRing.raycastTarget = false;
@@ -290,7 +290,9 @@ namespace Hecton8.UI
             outerRing.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             outerRing.rectTransform.sizeDelta = new Vector2(RootWidth - 18f, RootHeight - 18f);
 
-            Image horizontalRule = EnsureImage(CreateRect(_root, "RuleH").gameObject);
+            if (!TryBindImageChild(_root, "RuleH", out Image horizontalRule))
+                return false;
+
             horizontalRule.sprite = null;
             horizontalRule.color = FrameColor;
             horizontalRule.raycastTarget = false;
@@ -298,45 +300,82 @@ namespace Hecton8.UI
             horizontalRule.rectTransform.anchorMax = new Vector2(1f, 0.5f);
             horizontalRule.rectTransform.sizeDelta = new Vector2(0f, 1f);
 
-            Image verticalRule = EnsureImage(CreateRect(_root, "RuleV").gameObject);
+            if (!TryBindImageChild(_root, "RuleV", out Image verticalRule))
+                return false;
+
             verticalRule.sprite = null;
             verticalRule.color = FrameColor;
             verticalRule.raycastTarget = false;
             verticalRule.rectTransform.anchorMin = new Vector2(0.5f, 0f);
             verticalRule.rectTransform.anchorMax = new Vector2(0.5f, 1f);
             verticalRule.rectTransform.sizeDelta = new Vector2(1f, 0f);
+
+            return true;
         }
 
-        private void CreateDots()
+        private bool BindDots()
         {
-            // COLD ALLOC: RectTransform[16] - prebuilt acoustic-radar marker pool - owner: SonarHoloCompass
-            _dotRects = new RectTransform[MaxDots];
-            // COLD ALLOC: Image[16] - prebuilt acoustic-radar marker visuals - owner: SonarHoloCompass
-            _dotImages = new Image[MaxDots];
-            // COLD ALLOC: Vector2[16] - acoustic-radar marker position cache for Canvas dirty-write suppression - owner: SonarHoloCompass
-            _lastDotAnchoredPositions = new Vector2[MaxDots];
-            // COLD ALLOC: float[16] - acoustic-radar marker size cache for Canvas dirty-write suppression - owner: SonarHoloCompass
-            _lastDotSizes = new float[MaxDots];
-            // COLD ALLOC: Color[16] - acoustic-radar marker color cache for Canvas dirty-write suppression - owner: SonarHoloCompass
-            _lastDotColors = new Color[MaxDots];
-            // COLD ALLOC: bool[16] - acoustic-radar marker visibility cache for Canvas dirty-write suppression - owner: SonarHoloCompass
-            _dotVisibleFlags = new bool[MaxDots];
+            EnsureDotBindingBuffers();
 
             for (int i = 0; i < MaxDots; i++)
             {
-                RectTransform dotRect = CreateRect(_root, DotName);
+                RectTransform dotRect = FindExistingChild(_root, DotName, i);
+                if (dotRect == null || !dotRect.TryGetComponent(out Image dotImage) || dotImage == null)
+                {
+                    ClearDotBindings();
+                    return false;
+                }
+
                 dotRect.anchorMin = new Vector2(0.5f, 0.5f);
                 dotRect.anchorMax = new Vector2(0.5f, 0.5f);
                 dotRect.pivot = new Vector2(0.5f, 0.5f);
                 dotRect.sizeDelta = new Vector2(DotBaseSize, DotBaseSize);
 
-                Image dotImage = EnsureImage(dotRect.gameObject);
                 dotImage.sprite = null;
                 dotImage.color = Color.clear;
                 dotImage.raycastTarget = false;
 
                 _dotRects[i] = dotRect;
                 _dotImages[i] = dotImage;
+            }
+
+            _dotsHidden = true;
+            return true;
+        }
+
+        private void EnsureDotBindingBuffers()
+        {
+            if (_dotRects == null)
+                _dotRects = new RectTransform[MaxDots]; // COLD ALLOC: RectTransform[16] - authored acoustic-radar marker bindings - owner: SonarHoloCompass
+            if (_dotImages == null)
+                _dotImages = new Image[MaxDots]; // COLD ALLOC: Image[16] - authored acoustic-radar marker visuals - owner: SonarHoloCompass
+            if (_lastDotAnchoredPositions == null)
+                _lastDotAnchoredPositions = new Vector2[MaxDots]; // COLD ALLOC: Vector2[16] - acoustic-radar marker position cache for Canvas dirty-write suppression - owner: SonarHoloCompass
+            if (_lastDotSizes == null)
+                _lastDotSizes = new float[MaxDots]; // COLD ALLOC: float[16] - acoustic-radar marker size cache for Canvas dirty-write suppression - owner: SonarHoloCompass
+            if (_lastDotColors == null)
+                _lastDotColors = new Color[MaxDots]; // COLD ALLOC: Color[16] - acoustic-radar marker color cache for Canvas dirty-write suppression - owner: SonarHoloCompass
+            if (_dotVisibleFlags == null)
+                _dotVisibleFlags = new bool[MaxDots]; // COLD ALLOC: bool[16] - acoustic-radar marker visibility cache for Canvas dirty-write suppression - owner: SonarHoloCompass
+        }
+
+        private void ClearDotBindings()
+        {
+            if (_dotRects == null || _dotImages == null)
+                return;
+
+            for (int i = 0; i < MaxDots; i++)
+            {
+                _dotRects[i] = null;
+                _dotImages[i] = null;
+                if (_dotVisibleFlags != null)
+                    _dotVisibleFlags[i] = false;
+                if (_lastDotColors != null)
+                    _lastDotColors[i] = Color.clear;
+                if (_lastDotSizes != null)
+                    _lastDotSizes[i] = 0f;
+                if (_lastDotAnchoredPositions != null)
+                    _lastDotAnchoredPositions[i] = Vector2.zero;
             }
         }
 
@@ -345,7 +384,8 @@ namespace Hecton8.UI
             if (_projectionInputs == null || _projectionOutputs == null)
                 return;
 
-            int safeCount = math.clamp(emitterCount, 0, math.min(MaxDots, _impactEmitterSamples.Length));
+            int qualityLimit = math.clamp(_qualityDotCapacity, MinimumQualityDotCapacity, MaxDots);
+            int safeCount = math.clamp(emitterCount, 0, math.min(qualityLimit, _impactEmitterSamples.Length));
             safeCount = math.min(safeCount, _projectionInputs.Length);
             safeCount = math.min(safeCount, _projectionOutputs.Length);
             Transform viewTransform = _viewCamera.transform;
@@ -514,7 +554,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            int safeLimit = MaxDots;
+            int safeLimit = math.clamp(_qualityDotCapacity, MinimumQualityDotCapacity, MaxDots);
             safeLimit = math.min(safeLimit, _projectionOutputs.Length);
             safeLimit = math.min(safeLimit, _dotRects.Length);
             safeLimit = math.min(safeLimit, _dotImages.Length);
@@ -580,6 +620,17 @@ namespace Hecton8.UI
 
             _dotsHidden = visibleCount <= 0;
             ApplyRootAlpha(visibleCount > 0 ? 1f : 0f);
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.select(0f, quality, math.isfinite(quality)));
+            float smoothQuality = quality * quality * (3f - (2f * quality));
+            _qualityDotCapacity = math.clamp(
+                (int)math.round(math.lerp((float)MinimumQualityDotCapacity, (float)MaxDots, smoothQuality)),
+                MinimumQualityDotCapacity,
+                MaxDots);
         }
 
         private void HideDots()
@@ -714,56 +765,31 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            if (!allowComponentFallback || SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+            if (!allowComponentFallback || overlay == null)
                 return null;
 
-            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            overlay.TryGetComponent(out Canvas canvas);
             return canvas;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string name)
         {
-            if (parent == null)
-                return null;
-
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (child.name == name)
-                    return child as RectTransform;
-            }
-
-            return null;
+            return UiChildSpanUtility.FindExistingChild(parent, name);
         }
 
-        private static void ClearChildren(Transform parent)
+        private static RectTransform FindExistingChild(Transform parent, string name, int occurrenceIndex)
         {
-            for (int i = parent.childCount - 1; i >= 0; i--)
-            {
-                Transform child = parent.GetChild(i);
-                if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
-                else
-                    Object.DestroyImmediate(child.gameObject);
-            }
+            return UiChildSpanUtility.FindExistingChild(parent, name, occurrenceIndex);
         }
 
-        private static RectTransform CreateRect(Transform parent, string name)
+        private static bool TryBindImageChild(Transform parent, string childName, out Image image)
         {
-            GameObject go = new GameObject(name, typeof(RectTransform));
-            go.layer = parent.gameObject.layer;
-            go.TryGetComponent(out RectTransform rect);
-            rect.SetParent(parent, false);
-            rect.localScale = Vector3.one;
-            return rect;
-        }
+            image = null;
+            RectTransform rect = FindExistingChild(parent, childName);
+            if (rect == null || !rect.TryGetComponent(out image) || image == null)
+                return false;
 
-        private static Image EnsureImage(GameObject target)
-        {
-            target.TryGetComponent(out Image image);
-            if (image == null)
-                image = target.AddComponent<Image>();
-            return image;
+            return true;
         }
     }
 }

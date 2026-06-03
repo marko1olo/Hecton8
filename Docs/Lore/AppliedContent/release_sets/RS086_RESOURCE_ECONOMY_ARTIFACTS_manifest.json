@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT",
+    "P427_PRESSURE_GLASS_FIELD_CERTIFICATE",
+    "P428_BRINE_SALT_PROCESS_LOT_CARD",
+    "P429_ATLAS_LATTICE_CONTAMINATION_TAG",
+    "P430_BLACK_KEEL_PAYOUT_MASS_LEDGER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS086_RESOURCE_ECONOMY_ARTIFACTS.packets.json"
+  ]
+}

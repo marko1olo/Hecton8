@@ -127,6 +127,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private SubmarineStructuralGrid structuralGrid;
 
         private Transform _cachedTransform;
+        private SubmarineAutoLevelBallastController _ballastController;
         private bool _registeredFixedTick;
         private bool _registeredRuntimeRoot;
         private bool _profileMassApplied;
@@ -321,6 +322,18 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        public bool TrySubmitBallastLeverAngle(float leverAngleDegrees, uint sourceHash)
+        {
+            SubmarineAutoLevelBallastController controller = _ballastController;
+            return controller != null && controller.TrySubmitSomaticBallastLever(leverAngleDegrees, sourceHash);
+        }
+
+        public bool TryRecordVesselMaintenanceAction(uint panelBitIndex, uint sourceHash)
+        {
+            SubmarineAutoLevelBallastController controller = _ballastController;
+            return controller != null && controller.TryRecordVesselMaintenanceAction(panelBitIndex, sourceHash);
+        }
+
         /// <summary>
         /// Clears one fixed submarine upgrade slot.
         /// </summary>
@@ -392,11 +405,16 @@ namespace Hecton8.Gameplay
             if (structuralGrid == null)
                 TryGetComponent(out structuralGrid);
 
+            if (_ballastController == null)
+                TryGetComponent(out _ballastController);
+
             if (Application.isPlaying &&
                 enableLegacyPhysXAutoLevelInstall &&
-                !TryGetComponent<SubmarineAutoLevelBallastController>(out _))
+                _ballastController == null)
             {
-                gameObject.AddComponent<SubmarineAutoLevelBallastController>();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                _ballastController = gameObject.AddComponent<SubmarineAutoLevelBallastController>();
+#endif
             }
         }
 

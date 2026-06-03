@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonRetinaDistortionFeature
   m_Active: 0
   settings:
-    shader: {fileID: 4800000, guid: 8f4ada24e17a4e82bdd691ad587c4d66, type: 3}
+    material: {fileID: 2100000, guid: a91705b0c4d54f6f8b3e203d765d3278, type: 2}
     injectionPoint: 550
     healthThreshold01: 0.15
     baseHeartbeatBpm: 54
@@ -65,8 +65,9 @@ MonoBehaviour:
     noirTemperature: -0.12
     noirDepthTone: 0.42
     noirAbSplit: 0
-    shader: {fileID: 4800000, guid: 2b2a9f18d90f4b35b8b4f9d1a8e23501, type: 3}
-    reconstructionShader: {fileID: 4800000, guid: b104c09d7a4e49d69f0e8467bb15a104, type: 3}
+    noirMaterial: {fileID: 2100000, guid: a1705ace5d5e4b6187312e8cda1705a0, type: 2}
+    material: {fileID: 2100000, guid: a1705f00dface4e9aa17d0b21705c0d1, type: 2}
+    reconstructionMaterial: {fileID: 2100000, guid: a1705b117a7e4b0ca903c8d21705c0d2, type: 2}
     crackTexture: {fileID: 0}
     lensDirtTexture: {fileID: 0}
     blueNoiseTexture: {fileID: 0}
@@ -113,7 +114,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonAbyssalSsdoFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 1273a37900a6855419fdc57dc70275cd, type: 3}
+    material: {fileID: 2100000, guid: a1705ad0c0ff4a76a39ed0022750dd00, type: 2}
     injectionPoint: 450
     renderScale: 0.5
     radiusMeters: 1.5
@@ -136,7 +137,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonScooterVolumetricShaftsFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: df2f9fd24e26ee54f919bd0a51806232, type: 3}
+    material: {fileID: 2100000, guid: a1705c00e5c04f41a5df2f9fd24e2600, type: 2}
     autoExposureComputeShader: {fileID: 7200000, guid: d94720f8af074719a93b576740cb35e1, type: 3}
     injectionPoint: 450
     renderScale: 0.5
@@ -191,7 +192,7 @@ MonoBehaviour:
   m_Active: 1
   settings:
     computeShader: {fileID: 7200000, guid: 7618448cd4b042e7a4f6914362ac6497, type: 3}
-    dearLieProxyShader: {fileID: 4800000, guid: 247f18787ebf4ad285d1c97f60410947, type: 3}
+    dearLieProxyMaterial: {fileID: 2100000, guid: a1705f06deaf4b7aa85d247f18787047, type: 2}
     injectionPoint: 550
     fogColor: {r: 0.015, g: 0.045, b: 0.065, a: 1}
     baseDensity: 0.045
@@ -221,7 +222,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonHalfResParticlesFeature
   m_Active: 1
   settings:
-    compositeShader: {fileID: 4800000, guid: 0e6e90a46f3b4ad7a8d58ce80e785f15, type: 3}
+    material: {fileID: 2100000, guid: e1705a9f0c4d4f91a2b7c0e6e90a46f3, type: 2}
     injectionPoint: 550
     particleLayerMask:
       serializedVersion: 2
@@ -243,7 +244,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonNoirDepthFogFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: d38821027adf58747a75d2048230832c, type: 3}
+    material: {fileID: 2100000, guid: c1705d0f4e6a4b88b9d8c3f21705c0df, type: 2}
     injectionPoint: 450
     shallowFogColor: {r: 0.34, g: 0.58, b: 0.72, a: 1}
     abyssFogColor: {r: 0.05, g: 0.09, b: 0.12, a: 1}
@@ -340,7 +341,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.DeferredDecalPass
   m_Active: 1
   settings:
-    deferredDecalShader: {fileID: 4800000, guid: 8f60cfb6a5b944c481b829bb0a2d2b40, type: 3}
+    material: {fileID: 2100000, guid: d1705deca1b04a45aa8e8f60cfb6a5b0, type: 2}
     decalAtlas: {fileID: 0}
     maxDecals: 128
     baseFadeTimeSeconds: 7.5
@@ -361,7 +362,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Rendering.HectonDeferredCausticsFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
+    material: {fileID: 2100000, guid: ca1705d0efca4b7b92d44cbb8fb5b0c1, type: 2}
     injectionPoint: 450
 --- !u!114 &348348348000002
 MonoBehaviour:
@@ -377,7 +378,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.Rendering.WristPdaScreenProjectorFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 0d75901ecc6a479385541da8be342394, type: 3}
+    material: {fileID: 2100000, guid: 7d1a1705fda64a8da6a1f78d3b1705aa, type: 2}
     injectionPoint: 550
 --- !u!114 &58536412019685547
 MonoBehaviour:
@@ -450,7 +451,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorFluidDistortionFeature
   m_Active: 0
   settings:
-    shader: {fileID: 4800000, guid: 2f16f2dbb7e64be8b2e781182e8fd8f7, type: 3}
+    material: {fileID: 2100000, guid: a1705f11d05f4bb0b7ef15d91705c0d3, type: 2}
     lensComputeShader: {fileID: 0}
     injectionPoint: 550
     distortionStrength: 0.012
@@ -484,7 +485,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonAtmosphereSootFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 5e29a614e3f04bd5b7be4a2d213e6c0b, type: 3}
+    material: {fileID: 2100000, guid: b1705a0c4d5e4f6ba614d232132e6c0b, type: 2}
     injectionPoint: 550
     maximumRadius: 0.82
 --- !u!114 &7270194210237144737
@@ -522,7 +523,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVRBrownoutFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 86f624d8b2fb47b3bed4961b51bf2cbc, type: 3}
+    material: {fileID: 2100000, guid: 9b1705b0ac5d4f62a7c1d0e91705bb31, type: 2}
     injectionPoint: 550
     worldBlurTexelRadius: 1.65
     scanlineStrength: 0.55

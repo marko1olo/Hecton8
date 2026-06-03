@@ -17,11 +17,25 @@ namespace Hecton8.World
             "Quad"
         };
         private static readonly Dictionary<int, PrimitiveRuntimeState> _RuntimeStates = new Dictionary<int, PrimitiveRuntimeState>(2048); // COLD ALLOC: generated primitive component cache for visual-sync reuse.
+        private static Material _authoredDefaultMaterial;
 
         private struct PrimitiveRuntimeState
         {
             public MeshFilter Filter;
             public MeshRenderer Renderer;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < _CachedMeshes.Length; i++)
+            {
+                _CachedMeshes[i] = null;
+                _CachedMaterials[i] = null;
+            }
+
+            _RuntimeStates.Clear();
+            _authoredDefaultMaterial = null;
         }
 
         public static void PrewarmPrimitiveResources()
@@ -32,6 +46,32 @@ namespace Hecton8.World
             TryGetPrimitiveResources(PrimitiveType.Cube, out _, out _);
             TryGetPrimitiveResources(PrimitiveType.Plane, out _, out _);
             TryGetPrimitiveResources(PrimitiveType.Quad, out _, out _);
+        }
+
+        public static bool RegisterPrimitiveResourcesCold(PrimitiveType primitiveType, Mesh mesh, Material material)
+        {
+            int index = (int)primitiveType;
+            if ((uint)index >= (uint)_CachedMeshes.Length || mesh == null)
+                return false;
+
+            _CachedMeshes[index] = mesh;
+            _CachedMaterials[index] = material;
+            return true;
+        }
+
+        public static bool RegisterDefaultPrimitiveMaterialCold(Material material)
+        {
+            if (material == null)
+                return false;
+
+            _authoredDefaultMaterial = material;
+            for (int i = 0; i < _CachedMaterials.Length; i++)
+            {
+                if (_CachedMeshes[i] != null && _CachedMaterials[i] == null)
+                    _CachedMaterials[i] = material;
+            }
+
+            return true;
         }
 
         public static Renderer ConfigurePrimitiveVisualHot(
@@ -181,20 +221,33 @@ namespace Hecton8.World
             if (mesh != null)
                 return true;
 
-            GameObject temp = GameObject.CreatePrimitive(primitiveType);
-            temp.TryGetComponent(out MeshFilter filter);
-            temp.TryGetComponent(out MeshRenderer renderer);
-            mesh = filter != null ? filter.sharedMesh : null;
-            material = renderer != null ? renderer.sharedMaterial : null;
+            mesh = Resources.GetBuiltinResource<Mesh>(GetPrimitiveMeshResourceName(primitiveType));
+            material = _authoredDefaultMaterial;
             _CachedMeshes[index] = mesh;
             _CachedMaterials[index] = material;
 
-            if (Application.isPlaying)
-                Object.Destroy(temp);
-            else
-                Object.DestroyImmediate(temp);
-
             return mesh != null;
+        }
+
+        private static string GetPrimitiveMeshResourceName(PrimitiveType primitiveType)
+        {
+            switch (primitiveType)
+            {
+                case PrimitiveType.Sphere:
+                    return "Sphere.fbx";
+                case PrimitiveType.Capsule:
+                    return "Capsule.fbx";
+                case PrimitiveType.Cylinder:
+                    return "Cylinder.fbx";
+                case PrimitiveType.Cube:
+                    return "Cube.fbx";
+                case PrimitiveType.Plane:
+                    return "Plane.fbx";
+                case PrimitiveType.Quad:
+                    return "Quad.fbx";
+                default:
+                    return string.Empty;
+            }
         }
 
         private static void RegisterPrimitiveRuntimeState(GameObject primitive, MeshFilter filter, MeshRenderer renderer)

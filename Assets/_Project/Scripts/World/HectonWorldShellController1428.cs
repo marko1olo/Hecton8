@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -6,7 +7,7 @@ using UnityEngine.InputSystem;
 namespace Hecton8.World
 {
     [DisallowMultipleComponent]
-    public sealed class HectonWorldShellController1428 : MonoBehaviour
+    public sealed class HectonWorldShellController1428 : MonoBehaviour, IUpdatable
     {
         [SerializeField] private Transform cameraRig;
         [SerializeField] private float moveSpeed = 7.5f;
@@ -17,22 +18,34 @@ namespace Hecton8.World
         private Transform _transform;
         private float _yaw;
         private float _pitch;
+        private bool _registeredUpdate;
 
         private void Awake()
         {
             _transform = transform;
-
-            if (cameraRig == null && Camera.main != null)
-                cameraRig = Camera.main.transform;
 
             Vector3 euler = cameraRig != null ? cameraRig.rotation.eulerAngles : _transform.rotation.eulerAngles;
             _yaw = euler.y;
             _pitch = NormalizePitch(euler.x);
         }
 
-        private void Update()
+        private void OnEnable()
         {
-            float deltaTime = Time.deltaTime;
+            TryRegisterDispatcher();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterDispatcher();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterDispatcher();
+        }
+
+        public void Tick(float deltaTime)
+        {
             if (deltaTime <= 0f)
                 return;
 
@@ -55,6 +68,23 @@ namespace Hecton8.World
                 _transform.position += Vector3.up * (vertical * verticalSpeed * deltaTime);
 
             UpdateCameraRig(deltaTime);
+        }
+
+        private void TryRegisterDispatcher()
+        {
+            if (_registeredUpdate || !Application.isPlaying)
+                return;
+
+            _registeredUpdate = SystemDispatcher.Register((IUpdatable)this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatcher()
+        {
+            if (!_registeredUpdate)
+                return;
+
+            SystemDispatcher.Unregister((IUpdatable)this, PriorityLayer.Environment);
+            _registeredUpdate = false;
         }
 
         private void UpdateCameraRig(float deltaTime)

@@ -40,6 +40,34 @@ namespace Hecton8.World
             cache = expanded;
         }
 
+        private static void EnsureFloat2Capacity(ref float2[] cache, int requiredCount)
+        {
+            if (cache != null && cache.Length >= requiredCount)
+                return;
+
+            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(InitialChunkArrayCapacity, requiredCount));
+            // COLD ALLOC: float2[nextCapacity] - dynamic float2 cache growth - owner: HectonMapMagicVegetationBridge
+            float2[] expanded = new float2[nextCapacity];
+            if (cache != null && cache.Length > 0)
+                Array.Copy(cache, expanded, cache.Length);
+
+            cache = expanded;
+        }
+
+        private static void EnsureFloat3Capacity(ref float3[] cache, int requiredCount)
+        {
+            if (cache != null && cache.Length >= requiredCount)
+                return;
+
+            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(InitialChunkArrayCapacity, requiredCount));
+            // COLD ALLOC: float3[nextCapacity] - dynamic float3 cache growth - owner: HectonMapMagicVegetationBridge
+            float3[] expanded = new float3[nextCapacity];
+            if (cache != null && cache.Length > 0)
+                Array.Copy(cache, expanded, cache.Length);
+
+            cache = expanded;
+        }
+
         private static void EnsureMatrixCapacity(ref Matrix4x4[] matrixCache, int requiredCount)
         {
             if (matrixCache != null && matrixCache.Length >= requiredCount)

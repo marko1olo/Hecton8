@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P456_SITE_HOME_LONGFORM_BRIEF",
+    "P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF",
+    "P458_DEEP_REACH_LIABILITY_LONGFORM_BRIEF",
+    "P459_ATLAS_SPOILER_LONGFORM_BRIEF",
+    "P460_BLUE_DEBT_RESOURCE_LONGFORM_BRIEF"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS.packets.json"
+  ]
+}

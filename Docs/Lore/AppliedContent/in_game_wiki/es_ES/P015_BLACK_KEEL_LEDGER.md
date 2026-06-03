@@ -1,10 +1,17 @@
 ---
 packet_id: P015_BLACK_KEEL_LEDGER
+release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.black_keel_ledger
+unlock_id: unlock.first_black_keel_ledger
+poi_tags: poi.claim_pool_ledger;poi.carrier_debt_record
+biome_tags: biome.drowned_colony;biome.deep_launch_route
 locale: es_ES
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Libro Black Keel

@@ -12,6 +12,22 @@ namespace Hecton8.Quest
         public const int NodeDescriptorStrideBytes = 128;
         public const int RevertDescriptorStrideBytes = 32;
         public const int SaveHeaderStrideBytes = 64;
+        public const int WordCapacity = 320;
+        public const int WordStrideBits = 32;
+        public const int QuestWordStart = 0;
+        public const int QuestWordCount = 64;
+        public const int ItemWordStart = 64;
+        public const int ItemWordCount = 64;
+        public const int LocationWordStart = 128;
+        public const int LocationWordCount = 64;
+        public const int NarrativeWordStart = 192;
+        public const int NarrativeWordCount = 32;
+        public const int PhaseWordStart = 224;
+        public const int PhaseWordCount = 32;
+        public const int EntityDestroyWordStart = 256;
+        public const int EntityDestroyWordCount = 32;
+        public const int DeadlockWordStart = 288;
+        public const int DeadlockWordCount = 32;
     }
 
     internal enum QuestSignalKind : byte

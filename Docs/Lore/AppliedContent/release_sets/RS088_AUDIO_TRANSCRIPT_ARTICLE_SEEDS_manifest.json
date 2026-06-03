@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P436_BLACK_KEEL_APPROACH_TRANSCRIPT_SEED",
+    "P437_DEEP_REACH_SANITIZED_PACKET_TRANSCRIPT_SEED",
+    "P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED",
+    "P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED",
+    "P440_ENDING_RECORD_TRANSCRIPT_SEED"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS.packets.json"
+  ]
+}

@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8565530975572702723}
   - component: {fileID: 3573988165521633490}
+  - component: {fileID: 5243458204690471573}
   m_Layer: 0
   m_Name: GEN_family_kelp_abyssal__veilwall__s150-240
   m_TagString: Untagged
@@ -43,8 +44,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 905029647780345240}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.53357524, y: 9.656271, z: -0.69728005}
-  m_Size: 19.312542
+  m_LocalReferencePoint: {x: -0.5351474, y: 10.081213, z: -0.6599703}
+  m_Size: 20.162426
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -63,6 +64,19 @@ LODGroup:
     - renderer: {fileID: 3255685471269858569}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &5243458204690471573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905029647780345240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 401aeefa62b5b8847b8eac7ef2b5951b, type: 2}
 --- !u!1 &1893185718292835692
 GameObject:
   m_ObjectHideFlags: 0

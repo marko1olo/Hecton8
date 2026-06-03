@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P321_BLACK_KEEL_CLAIM_POOL_CHARTER",
+      "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+      "article_id": "applied_lore.black_keel_claim_pool_charter",
+      "title_key": "applied_lore.black_keel_claim_pool_charter.title",
+      "unlock": {
+        "primary": "unlock.black_keel_claim_pool_charter",
+        "poi_tags": [
+          "poi.black_keel_charter_card",
+          "poi.claim_pool_registry_strip",
+          "poi.carrier_debt_socket"
+        ],
+        "biome_tags": [
+          "biome.orbit",
+          "biome.contract"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Claim-Pool Charter",
+          "scanner": "Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Use this on the first contract or carrier-status screen."
+        },
+        "ru_RU": {
+          "title": "Устав claim-pool Black Keel",
+          "scanner": "Charter carrier: claim-pool recovery asset, активный lien, минимальная crew authority.",
+          "terminal": "CHARTER: BLACK KEEL работает как автоматический salvage carrier под custody Aegir Reclamation Pool. Доставка подрядчика не дает rescue priority, ownership корпуса или clean exit rights.",
+          "audio": "Carrier пришел не за тобой. Он пришел за claim, к которому прикреплено твое имя.",
+          "in_game_wiki": "Устав Black Keel фиксирует carrier игрока как арендованную salvage-инфраструктуру. У игрока есть доступ, не владение; транспорт, recovery и payout проходят через claim-pool debt.",
+          "external_site": "Black Keel решает проблему корабля-побега в hard-sci-fi ключе: полезный орбитальный актив остается долговой инфраструктурой, а не личным верным судном.",
+          "field_note": "Использовать на первом contract или carrier-status screen."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft JA localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft JA localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft JA localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft JA localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft JA localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft JA localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft ZH localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft ZH localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft ZH localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft ZH localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft ZH localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft FR localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft FR localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft FR localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft FR localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft FR localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft ES localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft ES localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft ES localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft ES localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft ES localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft DE localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft DE localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft DE localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft DE localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft DE localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft PL localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft PL localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft PL localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft PL localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft PL localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft UK localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft UK localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft UK localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft UK localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft UK localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft UK localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft AR localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft AR localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft AR localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft AR localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft AR localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft ID localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft ID localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft ID localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft ID localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft ID localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft KO localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft KO localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft KO localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft KO localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft KO localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft HE localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft HE localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft HE localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft HE localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft HE localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft PT localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft PT localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft PT localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft PT localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft PT localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft PT localization pending native pass. Use this on the first contract or carrier-status screen."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Black Keel Claim-Pool Charter",
+          "scanner": "Draft NL localization pending native pass. Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.",
+          "terminal": "Draft NL localization pending native pass. CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.",
+          "audio": "Draft NL localization pending native pass. The carrier did not come for you. It came for a claim with your name attached.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.",
+          "external_site": "Draft NL localization pending native pass. Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.",
+          "field_note": "Draft NL localization pending native pass. Use this on the first contract or carrier-status screen."
+        }
+      }
+    },
+    {
+      "packet_id": "P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE",
+      "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+      "article_id": "applied_lore.masked_deep_reach_beneficiary_clause",
+      "title_key": "applied_lore.masked_deep_reach_beneficiary_clause.title",
+      "unlock": {
+        "primary": "unlock.masked_deep_reach_beneficiary_clause",
+        "poi_tags": [
+          "poi.beneficiary_clause_redaction",
+          "poi.priority_channel_stamp",
+          "poi.deep_reach_proxy_holder"
+        ],
+        "biome_tags": [
+          "biome.contract",
+          "biome.deep_reach"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Masked Deep Reach Beneficiary Clause",
+          "scanner": "Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "ru_RU": {
+          "title": "Скрытая beneficiary clause Deep Reach",
+          "scanner": "Contract clause отредактирована. Beneficiary chain идет через proxy loss desk.",
+          "terminal": "BENEFICIARY TRACE: Deep Reach отсутствует в видимом hire sheet и присутствует в priority recovery channel. Proxy holder скрывает liability и сохраняет coordinate access.",
+          "audio": "Если имени нет, но канал открывается первым, владелец все равно в комнате.",
+          "in_game_wiki": "Скрытая beneficiary clause держит заговор приземленным. Deep Reach не магический кукловод; это contract pressure layer через shell custody, insurance priority и recovery compliance.",
+          "external_site": "Современная роль Deep Reach - не всемогущее управление. Это бумага с зубами: proxy ownership, recovery clauses и legal pressure вокруг старой затопленной катастрофы.",
+          "field_note": "Не писать это как монолог злодея. Показать clause и дать игроку вывести давление самому."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft JA localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft JA localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft JA localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft JA localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft JA localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft JA localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft ZH localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft ZH localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft ZH localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft ZH localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft ZH localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft FR localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft FR localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft FR localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft FR localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft FR localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft FR localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft ES localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft ES localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft ES localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft ES localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft ES localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft ES localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft DE localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft DE localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft DE localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft DE localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft DE localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft DE localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft PL localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft PL localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft PL localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft PL localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft PL localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft PL localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft UK localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft UK localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft UK localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft UK localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft UK localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft UK localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft AR localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft AR localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft AR localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft AR localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft AR localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft AR localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft ID localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft ID localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft ID localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft ID localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft ID localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft ID localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft KO localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft KO localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft KO localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft KO localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft KO localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft KO localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft HE localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft HE localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft HE localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft HE localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft HE localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft HE localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft PT localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft PT localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft PT localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft PT localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft PT localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft PT localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Masked Deep Reach Beneficiary Clause",
+          "scanner": "Draft NL localization pending native pass. Contract clause redacted. Beneficiary chain routes through proxy loss desk.",
+          "terminal": "Draft NL localization pending native pass. BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.",
+          "audio": "Draft NL localization pending native pass. If the name is missing but the channel opens first, the owner is still in the room.",
+          "in_game_wiki": "Draft NL localization pending native pass. Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.",
+          "external_site": "Draft NL localization pending native pass. Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.",
+          "field_note": "Draft NL localization pending native pass. Do not write this as a villain monologue. Show the clause and let the player infer the pressure."
+        }
+      }
+    },
+    {
+      "packet_id": "P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL",
+      "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+      "article_id": "applied_lore.orbital_recovery_window_protocol",
+      "title_key": "applied_lore.orbital_recovery_window_protocol.title",
+      "unlock": {
+        "primary": "unlock.orbital_recovery_window_protocol",
+        "poi_tags": [
+          "poi.orbital_window_clock",
+          "poi.aegir_magnetic_forecast",
+          "poi.recovery_vector_board"
+        ],
+        "biome_tags": [
+          "biome.orbit",
+          "biome.aegir"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Orbital Recovery Window Protocol",
+          "scanner": "Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "ru_RU": {
+          "title": "Протокол orbital recovery window",
+          "scanner": "Recovery window blocked: storm shear, магнитный шум Aegir, плохая ascent geometry.",
+          "terminal": "RECOVERY WINDOW: Black Keel принимает rated ascent object только при узкой Aegir geometry, низком magnetic interference и verified quarantine handshake.",
+          "audio": "Корабль достаточно близко, чтобы иметь значение, и слишком далеко, чтобы быстро спасти тебя.",
+          "in_game_wiki": "Протокол recovery window привязывает побег к hard-sci-fi ограничениям: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware и legal receiver state.",
+          "external_site": "HECTON-8 не запирает игрока произвольной логикой. Геометрия системы и поврежденная посадочная цепь делают rescue инженерным маршрутом.",
+          "field_note": "Для route timers, carrier UI и объяснения false exits."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft JA localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft JA localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft JA localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft JA localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft JA localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft JA localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft ZH localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft ZH localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft ZH localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft ZH localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft ZH localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft FR localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft FR localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft FR localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft FR localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft FR localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft FR localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft ES localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft ES localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft ES localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft ES localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft ES localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft ES localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft DE localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft DE localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft DE localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft DE localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft DE localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft DE localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft PL localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft PL localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft PL localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft PL localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft PL localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft PL localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft UK localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft UK localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft UK localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft UK localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft UK localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft UK localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft AR localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft AR localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft AR localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft AR localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft AR localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft AR localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft ID localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft ID localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft ID localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft ID localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft ID localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft ID localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft KO localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft KO localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft KO localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft KO localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft KO localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft KO localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft HE localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft HE localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft HE localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft HE localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft HE localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft HE localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft PT localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft PT localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft PT localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft PT localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft PT localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft PT localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Orbital Recovery Window Protocol",
+          "scanner": "Draft NL localization pending native pass. Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.",
+          "terminal": "Draft NL localization pending native pass. RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.",
+          "audio": "Draft NL localization pending native pass. The ship is close enough to matter and too far to save you quickly.",
+          "in_game_wiki": "Draft NL localization pending native pass. Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.",
+          "external_site": "Draft NL localization pending native pass. HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.",
+          "field_note": "Draft NL localization pending native pass. Useful for route timers, carrier UI and false-exit explanation."
+        }
+      }
+    },
+    {
+      "packet_id": "P324_SALVAGE_CARRIER_AUTONOMY_LIMITS",
+      "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+      "article_id": "applied_lore.salvage_carrier_autonomy_limits",
+      "title_key": "applied_lore.salvage_carrier_autonomy_limits.title",
+      "unlock": {
+        "primary": "unlock.salvage_carrier_autonomy_limits",
+        "poi_tags": [
+          "poi.carrier_autonomy_table",
+          "poi.no_surface_drop_stamp",
+          "poi.tender_mass_limit_warning"
+        ],
+        "biome_tags": [
+          "biome.orbit",
+          "biome.hardware"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Salvage Carrier Autonomy Limits",
+          "scanner": "Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "ru_RU": {
+          "title": "Пределы автономии salvage carrier",
+          "scanner": "Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "AUTONOMY LIMIT: Black Keel может schedule recovery, reject contaminated mass, sell claim telemetry и drop low-risk supplies. Он не может authorize crewed descent или deep-rated rescue без insured receiver approval.",
+          "audio": "Автономный не значит свободный. Это значит, что долг может двигаться без твоего согласия.",
+          "in_game_wiki": "Пределы автономии Black Keel делают carrier правдоподобной инфраструктурой. Он компетентен, полезен и опасен, но не magic rescue AI.",
+          "external_site": "Пределы carrier держат HECTON-8 приземленным: autonomy покрывает accounting и recovery, не невозможное спасение под океанским давлением.",
+          "field_note": "Не использовать как combat bark; это carrier status и contract UI."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft JA localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft JA localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft JA localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft JA localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft JA localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft JA localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft ZH localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft ZH localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft ZH localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft ZH localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft ZH localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft FR localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft FR localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft FR localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft FR localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft FR localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft ES localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft ES localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft ES localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft ES localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft ES localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft DE localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft DE localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft DE localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft DE localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft DE localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft PL localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft PL localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft PL localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft PL localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft PL localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft UK localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft UK localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft UK localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft UK localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft UK localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft UK localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft AR localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft AR localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft AR localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft AR localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft AR localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft ID localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft ID localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft ID localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft ID localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft ID localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft KO localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft KO localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft KO localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft KO localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft KO localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft KO localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft HE localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft HE localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft HE localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft HE localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft HE localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft PT localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft PT localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft PT localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft PT localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft PT localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft PT localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Salvage Carrier Autonomy Limits",
+          "scanner": "Draft NL localization pending native pass. Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.",
+          "terminal": "Draft NL localization pending native pass. AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.",
+          "audio": "Draft NL localization pending native pass. Autonomous does not mean free. It means the debt can move without asking you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.",
+          "external_site": "Draft NL localization pending native pass. The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.",
+          "field_note": "Draft NL localization pending native pass. Keep this out of combat barks; it belongs in carrier status and contract UI."
+        }
+      }
+    },
+    {
+      "packet_id": "P325_PLAYER_LIEN_CONTRACT_START_CARD",
+      "release_set_id": "RS065_CARRIER_CONTRACT_OWNERSHIP_SURFACES",
+      "article_id": "applied_lore.player_lien_contract_start_card",
+      "title_key": "applied_lore.player_lien_contract_start_card.title",
+      "unlock": {
+        "primary": "unlock.player_lien_contract_start_card",
+        "poi_tags": [
+          "poi.player_lien_start_card",
+          "poi.contract_risk_field",
+          "poi.ex_deep_reach_key_line"
+        ],
+        "biome_tags": [
+          "biome.first_hour",
+          "biome.contract"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Player Lien Contract Start Card",
+          "scanner": "Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "ru_RU": {
+          "title": "Стартовая contract card долга игрока",
+          "scanner": "Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Ты пришел за работой. Файл вспомнил тебя раньше, чем ты вспомнил его.",
+          "in_game_wiki": "Стартовая contract card фиксирует протагониста как бывшего профессионала Deep Reach, ставшего мародером. Мотив начинается практично и становится личным через evidence, не через семейную месть.",
+          "external_site": "Протагонист HECTON-8 не турист. Это скомпрометированный профессионал, возвращающийся через salvage work к катастрофе, которую его старый работодатель не сдержал.",
+          "field_note": "Без lost-relative hook. Держать мотив professional-to-personal."
+        },
+        "ja_JP": {
+          "title": "Draft JA localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft JA localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft JA localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft JA localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft JA localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft JA localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft JA localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "zh_CN": {
+          "title": "Draft ZH localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft ZH localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft ZH localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft ZH localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft ZH localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft ZH localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft ZH localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft FR localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft FR localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft FR localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft FR localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft FR localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft FR localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft ES localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft ES localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft ES localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft ES localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft ES localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft ES localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft DE localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft DE localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft DE localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft DE localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft DE localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft DE localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft PL localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft PL localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft PL localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft PL localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft PL localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft PL localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "uk_UA": {
+          "title": "Draft UK localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft UK localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft UK localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft UK localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft UK localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft UK localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft UK localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft AR localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft AR localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft AR localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft AR localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft AR localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft AR localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft ID localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft ID localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft ID localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft ID localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft ID localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft ID localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft KO localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft KO localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft KO localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft KO localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft KO localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft KO localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft HE localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft HE localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft HE localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft HE localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft HE localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft HE localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft PT localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft PT localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft PT localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft PT localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft PT localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft PT localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Player Lien Contract Start Card",
+          "scanner": "Draft NL localization pending native pass. Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.",
+          "terminal": "Draft NL localization pending native pass. CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.",
+          "audio": "Draft NL localization pending native pass. You came for work. The file remembered you before you remembered it.",
+          "in_game_wiki": "Draft NL localization pending native pass. Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.",
+          "external_site": "Draft NL localization pending native pass. The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.",
+          "field_note": "Draft NL localization pending native pass. No lost-relative hook. Keep motive professional-to-personal."
+        }
+      }
+    }
+  ]
+}

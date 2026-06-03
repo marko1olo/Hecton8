@@ -1,0 +1,37 @@
+---
+packet_id: P431_PDA_EVIDENCE_TIER_LABEL_RULE
+release_set_id: RS087_PDA_CODEX_PRESENTATION_RULES
+article_id: applied_lore.pda_evidence_tier_label_rule
+unlock_id: unlock.pda_evidence_tier_label_rule
+poi_tags: poi.pda_evidence_tier_rule;poi.codex_filter_label
+biome_tags: biome.codex;biome.ui_rules
+locale: pt_BR
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
+---
+
+# PDA Evidence Tier Label Rule
+
+In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.
+
+## Scanner
+
+Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.
+
+## Terminal
+
+PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.
+
+## Audio
+
+The PDA should tell you how strong the proof is, not what to feel.
+
+## Field Note
+
+Use for PDA UI labels and localization glossary.
+
+<!-- External Site; generated from P431_PDA_EVIDENCE_TIER_LABEL_RULE/pt_BR. -->

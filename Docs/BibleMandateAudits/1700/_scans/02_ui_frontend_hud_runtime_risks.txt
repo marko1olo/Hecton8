@@ -1,31 +1,5 @@
 ﻿Assets\_Project\Scripts\UI\BaseIntegrityHUD.cs:476:            Hecton8.Core.H8Debug.LogError("[BaseIntegrityEvents] Listener destroyed while still registered.");
 Assets\_Project\Scripts\UI\BaseIntegrityHUD.cs:701:            Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\AcousticRadarSphereRenderer.cs:531:            mesh.RecalculateNormals();
-Assets\_Project\Scripts\UI\DiegeticMenuCanvasUtility.cs:74:            return Camera.main;
-Assets\_Project\Scripts\UI\DiegeticMenuCanvasUtility.cs:97:            root.GetComponentsInChildren(true, s_readableTextScratch); // COLD SCAN: main-menu setup only, never per-frame.
-Assets\_Project\Scripts\UI\DiegeticTooltipSystem.cs:1572:                payload = new NativeArray<byte>(
-Assets\_Project\Scripts\UI\DiegeticVisorHudMesh.cs:438:                _runtimeMesh = new Mesh(); // COLD ALLOC: Mesh[1] - visor physical projection surface - owner: DiegeticVisorHudMesh
-Assets\_Project\Scripts\UI\DiegeticVisorHudMesh.cs:802:                payload = new NativeArray<byte>(
-Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:1221:                Hecton8.Core.H8Debug.LogError("SHINOBU_49 glitch DTO layout mismatch.");
-Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:1301:                Allocator.Persistent,
-Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:1331:            H8Memory.FreeRaw(buffer, Allocator.Persistent, SystemID.UI);
-Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:2430:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\UI\MainMenuAtmosphereController.cs:189:            renderer = quad.GetComponent<MeshRenderer>();
-Assets\_Project\Scripts\UI\DiegeticPDAController.cs:652:            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityRenderers);
-Assets\_Project\Scripts\UI\DiegeticPDAController.cs:653:            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityColliders);
-Assets\_Project\Scripts\UI\DiegeticPDAController.cs:654:            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityCanvasGroups);
-Assets\_Project\Scripts\UI\PauseMenuController.cs:1428:            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Save failed.");
-Assets\_Project\Scripts\UI\PauseMenuController.cs:1637:            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Fatal pause-menu state.");
-Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:225:                        Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] Destroying duplicate runtime owner.", this);
-Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:242:                Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] Awake.", this);
-Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:253:                Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] OnEnable.", this);
-Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:280:                Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] OnDestroy.", this);
-Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:1274:            Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] runtime snapshot captured.", this);
-Assets\_Project\Scripts\UI\LocalizedFontResolver.cs:189:            if (font == null || font.material == null)
-Assets\_Project\Scripts\UI\LocalizedFontResolver.cs:353:                if (font.material != null && font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)
-Assets\_Project\Scripts\UI\NotificationEvents.cs:667:            Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\Navigation\DiegeticGyroCompassRuntime.cs:1796:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\UI\FontStreamingManager.cs:633:            return font != null ? font.material : null;
 Assets\_Project\Scripts\UI\FontAssetRecovery.cs:131:            bool hasAtlasBinding = ResolveAtlasTexture(fontAsset) != null && fontAsset.material != null;
 Assets\_Project\Scripts\UI\FontAssetRecovery.cs:168:            Material fontMaterial = fontAsset.material;
 Assets\_Project\Scripts\UI\FontAssetRecovery.cs:209:                    return fontAsset.material != null
@@ -43,95 +17,46 @@ Assets\_Project\Scripts\UI\FontAssetRecovery.cs:448:            fontAsset.materi
 Assets\_Project\Scripts\UI\FontAssetRecovery.cs:508:            if (fontAsset.material != null &&
 Assets\_Project\Scripts\UI\FontAssetRecovery.cs:511:                fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, atlasTexture);
 Assets\_Project\Scripts\UI\FontAssetRecovery.cs:512:                EditorUtility.SetDirty(fontAsset.material);
+Assets\_Project\Scripts\UI\DiegeticMenuCanvasUtility.cs:74:            return Camera.main;
+Assets\_Project\Scripts\UI\DiegeticMenuCanvasUtility.cs:97:            root.GetComponentsInChildren(true, s_readableTextScratch); // COLD SCAN: main-menu setup only, never per-frame.
+Assets\_Project\Scripts\UI\DiegeticPDAController.cs:652:            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityRenderers);
+Assets\_Project\Scripts\UI\DiegeticPDAController.cs:653:            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityColliders);
+Assets\_Project\Scripts\UI\DiegeticPDAController.cs:654:            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityCanvasGroups);
+Assets\_Project\Scripts\UI\DiegeticVisorHudMesh.cs:438:                _runtimeMesh = new Mesh(); // COLD ALLOC: Mesh[1] - visor physical projection surface - owner: DiegeticVisorHudMesh
+Assets\_Project\Scripts\UI\DiegeticVisorHudMesh.cs:802:                payload = new NativeArray<byte>(
+Assets\_Project\Scripts\UI\DiegeticTooltipSystem.cs:1572:                payload = new NativeArray<byte>(
+Assets\_Project\Scripts\UI\FontStreamingManager.cs:633:            return font != null ? font.material : null;
+Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:225:                        Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] Destroying duplicate runtime owner.", this);
+Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:242:                Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] Awake.", this);
+Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:253:                Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] OnEnable.", this);
+Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:280:                Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] OnDestroy.", this);
+Assets\_Project\Scripts\UI\HectonSystemsDebugUI.cs:1274:            Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] runtime snapshot captured.", this);
+Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:1221:                Hecton8.Core.H8Debug.LogError("SHINOBU_49 glitch DTO layout mismatch.");
+Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:1301:                Allocator.Persistent,
+Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:1331:            H8Memory.FreeRaw(buffer, Allocator.Persistent, SystemID.UI);
+Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs:2430:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\UI\LoadingScreenController.cs:136:                Hecton8.Core.H8Debug.LogError("[LoadingScreenController] Missing CanvasGroup component!");
+Assets\_Project\Scripts\UI\LoadingScreenController.cs:150:                Hecton8.Core.H8Debug.LogError("[LoadingScreenController] Loading panel not assigned!");
+Assets\_Project\Scripts\UI\MainMenuAtmosphereController.cs:189:            renderer = quad.GetComponent<MeshRenderer>();
 Assets\_Project\Scripts\UI\MenuVisualConceptDecorApplier.cs:80:                _root = rootObject.GetComponent<RectTransform>();
 Assets\_Project\Scripts\UI\MenuVisualConceptDecorApplier.cs:81:                _group = rootObject.GetComponent<CanvasGroup>();
 Assets\_Project\Scripts\UI\MenuVisualConceptDecorApplier.cs:90:                _group = _root.gameObject.GetComponent<CanvasGroup>();
 Assets\_Project\Scripts\UI\MenuVisualConceptDecorApplier.cs:111:            RectTransform rect = slotObject.GetComponent<RectTransform>();
 Assets\_Project\Scripts\UI\MenuVisualConceptDecorApplier.cs:112:            Image image = slotObject.GetComponent<Image>();
-Assets\_Project\Scripts\UI\SettingsComparisonView.cs:69:                Hecton8.Core.H8Debug.LogWarning("[SettingsComparisonView] Settings runtime is not registered. Comparison panel disabled.");
-Assets\_Project\Scripts\UI\LoadingScreenController.cs:136:                Hecton8.Core.H8Debug.LogError("[LoadingScreenController] Missing CanvasGroup component!");
-Assets\_Project\Scripts\UI\LoadingScreenController.cs:150:                Hecton8.Core.H8Debug.LogError("[LoadingScreenController] Loading panel not assigned!");
-Assets\_Project\Scripts\UI\RelayHUDRuntimeBootstrap.cs:42:            Hecton8.Core.H8Debug.LogWarning("[RelayHUDRuntimeBootstrap] Spawned RelayRouteMarker at runtime because the active HUD had none. This is a fail-safe, not a substitute for authored HUD setup.");
+Assets\_Project\Scripts\UI\NotificationEvents.cs:667:            Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\LocalizedFontResolver.cs:189:            if (font == null || font.material == null)
+Assets\_Project\Scripts\UI\LocalizedFontResolver.cs:353:                if (font.material != null && font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)
+Assets\_Project\Scripts\UI\Navigation\DiegeticGyroCompassRuntime.cs:1796:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\UI\PauseMenuController.cs:1428:            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Save failed.");
+Assets\_Project\Scripts\UI\PauseMenuController.cs:1637:            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Fatal pause-menu state.");
+Assets\_Project\Scripts\UI\PDADecryptionSpectrogramPanel.cs:847:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\UI\PDAIntrusionManager.cs:246:            Hecton8.Core.H8Debug.LogError("[PDAIntrusionEvents] Listener destroyed while still registered.");
 Assets\_Project\Scripts\UI\PDAIntrusionManager.cs:430:            Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\PDAEncyclopediaStreamer.cs:3027:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\UI\PDADecryptionSpectrogramPanel.cs:899:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\UI\PDAEncyclopediaStreamer.cs:3413:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\UI\PDAShellChrome.cs:1712:            graphic.material = material;
+Assets\_Project\Scripts\UI\RelayHUDRuntimeBootstrap.cs:42:            Hecton8.Core.H8Debug.LogWarning("[RelayHUDRuntimeBootstrap] Spawned RelayRouteMarker at runtime because the active HUD had none. This is a fail-safe, not a substitute for authored HUD setup.");
+Assets\_Project\Scripts\UI\SettingsComparisonView.cs:69:                Hecton8.Core.H8Debug.LogWarning("[SettingsComparisonView] Settings runtime is not registered. Comparison panel disabled.");
 Assets\_Project\Scripts\UI\PDAMapTab.cs:483:                mapImage.material = null;
-Assets\_Project\Scripts\UI\UIAudioFeedback.cs:616:                    Hecton8.Core.H8Debug.Log("[UIAudioFeedback] Playback event.", this);
-Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1370:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1374:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1378:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1382:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1386:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1390:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
-Assets\_Project\Scripts\UI\ShaderCompassRibbon.cs:178:                _ribbonImage.material = _runtimeMaterial;
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:514:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:518:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:522:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:526:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:530:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:534:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\SettingsPanelProfiler.cs:129:            Hecton8.Core.H8Debug.Log("[SettingsPanelProfiler] Apply metrics captured.");
-Assets\_Project\Scripts\UI\SettingsPanelProfiler.cs:133:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanelProfiler] Apply time exceeded target.");
-Assets\_Project\Scripts\UI\SettingsPanelProfiler.cs:138:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanelProfiler] GC allocation detected.");
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:542:                        Allocator.Persistent,
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:548:                        Allocator.Persistent,
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:554:                        Allocator.Persistent,
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:560:                        Allocator.Persistent,
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:566:                        Allocator.Persistent,
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:572:                        Allocator.Persistent,
-Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:2008:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Scripts\UI\SettingsPanel.cs:367:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanel] SettingsManager runtime is null. Settings unavailable.");
-Assets\_Project\Scripts\UI\SettingsPanel.cs:604:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:607:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:611:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:671:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:674:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:678:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:738:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:741:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:745:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:800:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:803:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:807:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:863:            Slider slider = sliderObject.GetComponent<Slider>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:880:            RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:896:            RectTransform handleAreaRect = handleAreaObject.GetComponent<RectTransform>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:922:            Image image = imageObject.GetComponent<Image>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:941:            Image image = buttonObject.GetComponent<Image>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:944:            Button button = buttonObject.GetComponent<Button>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:969:            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:1001:            LayoutElement layout = target.GetComponent<LayoutElement>();
-Assets\_Project\Scripts\UI\SettingsPanel.cs:2004:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanel] Apply button on cooldown. Please wait.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:1730:            Hecton8.Core.H8Debug.LogWarning("[Agent1335] Legacy font atlas discovery failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2156:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2160:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2164:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2168:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2172:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2176:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2216:                Hecton8.Core.H8Debug.LogError("WristHudQuadTransformDTO stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2218:                Hecton8.Core.H8Debug.LogError("WristHudStateDTO stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2220:                Hecton8.Core.H8Debug.LogError("WristHudFontGlyphDTO stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2222:                Hecton8.Core.H8Debug.LogError("WristHudTelemetryEntry stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2224:                Hecton8.Core.H8Debug.LogError("WristHudBlackBoxDumpHeader stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2226:                Hecton8.Core.H8Debug.LogError("PlayerVitalsSignal stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2228:                Hecton8.Core.H8Debug.LogError("O2LevelChangedSignal stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2230:                Hecton8.Core.H8Debug.LogError("PdaOpenedSignal stride mismatch.");
-Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2232:                Hecton8.Core.H8Debug.LogError("AcousticEchoTap stride mismatch.");
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1144:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1149:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1154:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1159:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1164:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1169:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4090:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4094:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4098:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4102:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4106:                Hecton8.Core.H8Debug.LogException(exception);
-Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4110:                Hecton8.Core.H8Debug.LogException(exception);
 Assets\_Project\Scripts\UI\SettingsManager.cs:774:                H8Debug.Log("[SettingsManager] Clearing all settings keys from options.h8cfg...");
 Assets\_Project\Scripts\UI\SettingsManager.cs:806:                H8Debug.Log("[SettingsManager] All settings keys cleared. Applying defaults...");
 Assets\_Project\Scripts\UI\SettingsManager.cs:851:                H8Debug.Log("[SettingsManager] Default settings applied and saved.");
@@ -160,22 +85,95 @@ Assets\_Project\Scripts\UI\SettingsManager.cs:1552:            H8Debug.LogError(
 Assets\_Project\Scripts\UI\SettingsManager.cs:1561:            H8Debug.LogError("[SettingsManager] Failed to apply accessibility UI motion scale.");
 Assets\_Project\Scripts\UI\SettingsManager.cs:1852:                    H8Debug.LogWarning("[SettingsManager] AudioMixer parameter not found or not exposed.");
 Assets\_Project\Scripts\UI\SettingsManager.cs:1861:                H8Debug.LogError("[SettingsManager] Failed to set AudioMixer parameter.");
+Assets\_Project\Scripts\UI\SettingsPanelProfiler.cs:129:            Hecton8.Core.H8Debug.Log("[SettingsPanelProfiler] Apply metrics captured.");
+Assets\_Project\Scripts\UI\SettingsPanelProfiler.cs:133:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanelProfiler] Apply time exceeded target.");
+Assets\_Project\Scripts\UI\SettingsPanelProfiler.cs:138:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanelProfiler] GC allocation detected.");
+Assets\_Project\Scripts\UI\SettingsPanel.cs:367:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanel] SettingsManager runtime is null. Settings unavailable.");
+Assets\_Project\Scripts\UI\SettingsPanel.cs:604:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:607:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:611:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:671:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:674:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:678:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:738:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:741:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:745:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:800:            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:803:            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:807:            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:863:            Slider slider = sliderObject.GetComponent<Slider>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:880:            RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:896:            RectTransform handleAreaRect = handleAreaObject.GetComponent<RectTransform>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:922:            Image image = imageObject.GetComponent<Image>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:941:            Image image = buttonObject.GetComponent<Image>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:944:            Button button = buttonObject.GetComponent<Button>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:969:            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:1001:            LayoutElement layout = target.GetComponent<LayoutElement>();
+Assets\_Project\Scripts\UI\SettingsPanel.cs:2004:                Hecton8.Core.H8Debug.LogWarning("[SettingsPanel] Apply button on cooldown. Please wait.");
+Assets\_Project\Scripts\UI\ShaderCompassRibbon.cs:178:                _ribbonImage.material = _runtimeMaterial;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2721:                image.material = _ditheredUiBackgroundMaterial;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2752:                _savingProgressDataLamp.material = null;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2756:                _savingProgressDataNeedle.material = null;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2773:                _savingProgressDataLamp.material = _savingProgressDataPulseMaterial;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2779:                _savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2809:                _acousticRadarOverlay.material = null;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:3590:            _acousticRadarOverlay.material = _acousticRadarMaterial;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5426:                refs.Icon.material = null;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5747:            image.material = null;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5788:            Material material = fontAsset.material;
+Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:7282:                image.material = null;
+Assets\_Project\Scripts\UI\UIAudioFeedback.cs:616:                    Hecton8.Core.H8Debug.Log("[UIAudioFeedback] Playback event.", this);
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:1730:            Hecton8.Core.H8Debug.LogWarning("[Agent1335] Legacy font atlas discovery failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2156:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2160:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2164:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2168:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2172:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2176:                Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2216:                Hecton8.Core.H8Debug.LogError("WristHudQuadTransformDTO stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2218:                Hecton8.Core.H8Debug.LogError("WristHudStateDTO stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2220:                Hecton8.Core.H8Debug.LogError("WristHudFontGlyphDTO stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2222:                Hecton8.Core.H8Debug.LogError("WristHudTelemetryEntry stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2224:                Hecton8.Core.H8Debug.LogError("WristHudBlackBoxDumpHeader stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2226:                Hecton8.Core.H8Debug.LogError("PlayerVitalsSignal stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2228:                Hecton8.Core.H8Debug.LogError("O2LevelChangedSignal stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2230:                Hecton8.Core.H8Debug.LogError("PdaOpenedSignal stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs:2232:                Hecton8.Core.H8Debug.LogError("AcousticEchoTap stride mismatch.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1370:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1374:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1378:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1382:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1386:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
+Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs:1390:                Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
 Assets\_Project\Scripts\UI\VehicleSubOsCockpitRuntime.cs:2601:            mesh.RecalculateNormals();
 Assets\_Project\Scripts\UI\VehicleSubOsCockpitRuntime.cs:3008:            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:463:                        Allocator.Persistent,
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:469:                        Allocator.Persistent,
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:475:                        Allocator.Persistent,
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:481:                        Allocator.Persistent,
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:487:                        Allocator.Persistent,
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:493:                        Allocator.Persistent,
+Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs:1914:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
 Assets\_Project\Scripts\UI\VR\OpenXRManualOverrideLever.cs:152:                Hecton8.Core.H8Debug.LogError("[OpenXRManualOverrideLever] Projection dot/cross verification failed.", this);
 Assets\_Project\Scripts\UI\VR\OpenXRManualOverrideLever.cs:685:                payload = new NativeArray<byte>(
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2725:                image.material = _ditheredUiBackgroundMaterial;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2756:                _savingProgressDataLamp.material = null;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2760:                _savingProgressDataNeedle.material = null;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2777:                _savingProgressDataLamp.material = _savingProgressDataPulseMaterial;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2783:                _savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:2813:                _acousticRadarOverlay.material = null;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:3594:            _acousticRadarOverlay.material = _acousticRadarMaterial;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5491:                refs.Icon.material = null;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5812:            image.material = null;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5853:            Material material = fontAsset.material;
-Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:7347:                image.material = null;
-Assets\_Project\Scripts\Visor\DiegeticVisorLensRuntime.cs:871:            H8Debug.LogError("DIEGETIC_VISOR_LENS_NATIVE_FAIL_CLOSED");
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:514:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:518:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:522:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:526:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:530:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime_TerminalProjection.cs:534:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1168:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1173:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1178:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1183:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1188:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:1193:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4179:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4183:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4187:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4191:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4195:                Hecton8.Core.H8Debug.LogException(exception);
+Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs:4199:                Hecton8.Core.H8Debug.LogException(exception);
 Assets\_Project\Scripts\Visor\HectonBiolumSSGIFeature.cs:353:                    passData.material = _compositeMaterial;
 Assets\_Project\Scripts\Visor\HectonBiolumSSGIFeature.cs:365:                        if (data.material == null)
 Assets\_Project\Scripts\Visor\HectonBiolumSSGIFeature.cs:370:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
@@ -186,25 +184,29 @@ Assets\_Project\Scripts\Visor\DynamicDecalVaultRuntime.cs:2339:                N
 Assets\_Project\Scripts\Visor\DynamicDecalVaultRuntime.cs:3108:                Hecton8.Core.H8Debug.LogError("AGENT_1335 visor trauma ABI layout mismatch: expected TraumaDecalDTO=80B and request ingress DTOs=64B with explicit shader/Vault offsets.");
 Assets\_Project\Scripts\Visor\DynamicDecalVaultRuntime.cs:3115:                Hecton8.Core.H8Debug.Log("AGENT_1335 visor trauma ABI layout valid: TraumaDecalDTO=80B, DecalRequestSignal=64B, DecalRequestQueueStateDTO=64B.");
 Assets\_Project\Scripts\Visor\DynamicDecalVaultRuntime.cs:3117:                Hecton8.Core.H8Debug.LogError("AGENT_1335 visor trauma ABI layout mismatch: shader/Vault ABI is unsafe.");
-Assets\_Project\Scripts\Visor\HectonScooterVolumetricShaftsFeature.cs:639:                    passData.material = material;
-Assets\_Project\Scripts\Visor\HectonScooterVolumetricShaftsFeature.cs:661:                        if (data.material == null)
-Assets\_Project\Scripts\Visor\HectonScooterVolumetricShaftsFeature.cs:687:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
-Assets\_Project\Scripts\Visor\HectonHolographicEdgeFeature.cs:94:                    passData.material = _material;
-Assets\_Project\Scripts\Visor\HectonHolographicEdgeFeature.cs:103:                        HectonScanRenderRegistry.DrawRenderers(context.cmd, data.material, data.requiredFlags, data.maxDrawnTargets);
-Assets\_Project\Scripts\Visor\HectonSonarPointCloudFeature.cs:311:                    passData.material = material;
-Assets\_Project\Scripts\Visor\HectonSonarPointCloudFeature.cs:329:                        if (data.material == null)
-Assets\_Project\Scripts\Visor\HectonSonarPointCloudFeature.cs:345:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
-Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:200:                Hecton8.Core.H8Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
-Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:204:            Hecton8.Core.H8Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Source=80, Target=64, Digits=64, Telemetry=64, Profile=64.");
-Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:702:                Hecton8.Core.H8Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
-Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:1378:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Visor\HectonVisorFluidDistortionFeature.cs:1731:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Visor\HectonVisorUberPostFeature.Noir.cs:1076:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Visor\HectonVisorUberPostFeature.cs:1797:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Visor\VolumetricLightFeature.cs:563:                    passData.material = _proxyMaterial;
+Assets\_Project\Scripts\Visor\VolumetricLightFeature.cs:586:                        if (data.material == null)
+Assets\_Project\Scripts\Visor\VolumetricLightFeature.cs:605:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, 0);
 Assets\_Project\Scripts\Visor\HectonVolumetricParticulateFogFeature.cs:1111:                    passData.material = _dearLieProxyMaterial;
 Assets\_Project\Scripts\Visor\HectonVolumetricParticulateFogFeature.cs:1128:                        if (data.material == null ||
 Assets\_Project\Scripts\Visor\HectonVolumetricParticulateFogFeature.cs:1149:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.passIndex);
 Assets\_Project\Scripts\Visor\HectonVolumetricParticulateFogFeature.cs:1963:                    payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Visor\HectonSonarPointCloudFeature.cs:311:                    passData.material = material;
+Assets\_Project\Scripts\Visor\HectonSonarPointCloudFeature.cs:329:                        if (data.material == null)
+Assets\_Project\Scripts\Visor\HectonSonarPointCloudFeature.cs:345:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
+Assets\_Project\Scripts\Visor\HectonVisorUberPostFeature.Noir.cs:1076:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Visor\HectonScooterVolumetricShaftsFeature.cs:639:                    passData.material = material;
+Assets\_Project\Scripts\Visor\HectonScooterVolumetricShaftsFeature.cs:661:                        if (data.material == null)
+Assets\_Project\Scripts\Visor\HectonScooterVolumetricShaftsFeature.cs:687:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
+Assets\_Project\Scripts\Visor\VisorHUDController.cs:2151:            return font != null ? font.material : null;
+Assets\_Project\Scripts\Visor\HectonVisorUberPostFeature.cs:1797:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Visor\HectonVisorFluidDistortionFeature.cs:1731:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Visor\DiegeticVisorLensRuntime.cs:871:            H8Debug.LogError("DIEGETIC_VISOR_LENS_NATIVE_FAIL_CLOSED");
+Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:200:                Hecton8.Core.H8Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
+Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:204:            Hecton8.Core.H8Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Source=80, Target=64, Digits=64, Telemetry=64, Profile=64.");
+Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:702:                Hecton8.Core.H8Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
+Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs:1378:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Scripts\Visor\SpectrumSystem.cs:3762:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:789:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:811:                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump IO failed.");
 Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:817:                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump access denied.");
@@ -212,15 +214,17 @@ Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:823:             
 Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:829:                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump invalid operation.");
 Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:835:                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump argument invalid.");
 Assets\_Project\Scripts\Visor\InternalFloodWaterlineRuntime.cs:841:                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump path unsupported.");
-Assets\_Project\Scripts\Visor\SpectrumSystem.cs:3762:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Scripts\Visor\VisorHUDController.cs:2151:            return font != null ? font.material : null;
-Assets\_Project\Scripts\Visor\VolumetricLightFeature.cs:563:                    passData.material = _proxyMaterial;
-Assets\_Project\Scripts\Visor\VolumetricLightFeature.cs:586:                        if (data.material == null)
-Assets\_Project\Scripts\Visor\VolumetricLightFeature.cs:605:                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, 0);
+Assets\_Project\Scripts\Visor\HectonHolographicEdgeFeature.cs:94:                    passData.material = _material;
+Assets\_Project\Scripts\Visor\HectonHolographicEdgeFeature.cs:103:                        HectonScanRenderRegistry.DrawRenderers(context.cmd, data.material, data.requiredFlags, data.maxDrawnTargets);
 Assets\_Project\Scripts\Input\ControlRemapper.cs:132:                snapshot = new NativeArray<byte>(maxByteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\Input\ControlRemapper.cs:220:                buffer = new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\Input\ControlRemapper.cs:346:                fileBytes = new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 Assets\_Project\Scripts\Input\ControlRemapper.cs:356:                records = new NativeArray<InputActionStateDTO>(MaxBindingRecords, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:478:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:485:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:492:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:499:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to decode options.h8cfg.");
+Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:506:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
 Assets\_Project\Scripts\Input\InputManager.cs:441:                Hecton8.Core.H8Debug.LogError("[InputManager] No InputActionAsset template available.");
 Assets\_Project\Scripts\Input\InputManager.cs:450:                Hecton8.Core.H8Debug.LogError("[InputManager] Failed to create runtime InputActionAsset clone.");
 Assets\_Project\Scripts\Input\InputManager.cs:465:                Hecton8.Core.H8Debug.LogError("[InputManager] Player action map not found in InputActionAsset!");
@@ -232,10 +236,5 @@ Assets\_Project\Scripts\Input\InputManager.cs:643:                Hecton8.Core.H
 Assets\_Project\Scripts\Input\InputManager.cs:649:                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
 Assets\_Project\Scripts\Input\InputManager.cs:655:                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
 Assets\_Project\Scripts\Input\InputManager.cs:661:                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
-Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:478:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
-Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:485:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
-Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:492:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
-Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:499:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to decode options.h8cfg.");
-Assets\_Project\Scripts\Input\UserOptionsPersistence.cs:506:                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
 Assets\_Project\Scripts\LocRegistry.cs:650:                Allocator.Persistent,
 Assets\_Project\Scripts\LocRegistry.cs:1989:                Allocator.Persistent,

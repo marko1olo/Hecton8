@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 235959038158622213}
   - component: {fileID: 3453613899699939826}
+  - component: {fileID: 2947565410898268132}
   m_Layer: 0
   m_Name: GEN_family_kelp_tall__lean
   m_TagString: Untagged
@@ -223,8 +224,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4960164781819539376}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.08144879, y: 2.1493363, z: 0.020248592}
-  m_Size: 4.2986727
+  m_LocalReferencePoint: {x: -0.06578159, y: 2.27635, z: 0.017956138}
+  m_Size: 4.5527
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -243,6 +244,19 @@ LODGroup:
     - renderer: {fileID: 6074210884237251128}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &2947565410898268132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4960164781819539376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: b6944822b60486442a395748e10124d1, type: 2}
 --- !u!1 &8972435436512988101
 GameObject:
   m_ObjectHideFlags: 0

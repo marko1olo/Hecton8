@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MAT_AegirGasGiant_Impostor_1428
+  m_Shader: {fileID: 4800000, guid: 0661c64fe7dfd77469f3bd686cbc254e, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _DetailTex:
+        m_Texture: {fileID: 2800000, guid: e1aefa60ab4517644bb884257440872b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 6c173d4e1a858b34ca1b7e5610aae988, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _StormTex:
+        m_Texture: {fileID: 2800000, guid: d9d11072e85a2b54cacd11eaad6614a8, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _DetailStrength: 0.58
+    - _Exposure: 0.92
+    - _PhaseCenter: 0.42
+    - _PhaseSoftness: 0.52
+    - _RimPower: 2.8
+    - _RimStrength: 0.62
+    - _Rotation: 0.18
+    - _StormStrength: 0.26
+    m_Colors:
+    - _DeepTint: {r: 0.09, g: 0.13, b: 0.3, a: 1}
+    - _DetailTiling: {r: 1.8, g: 1.8, b: 0.08, a: 0}
+    - _HighTint: {r: 0.42, g: 0.58, b: 1.08, a: 1}
+    - _LightDirection: {r: -0.38, g: 0.28, b: 0.88, a: 0}
+    - _RimTint: {r: 0.28, g: 0.54, b: 1.3, a: 1}
+    - _StormTiling: {r: 0.9, g: 0.9, b: 0.18, a: 0}
+    - _WarmTint: {r: 0.95, g: 0.43, b: 0.2, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

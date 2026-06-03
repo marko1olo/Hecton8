@@ -75,11 +75,17 @@ namespace Hecton8.World
     {
         private const float CameraResolveRetryInterval = 1f;
         private const int MaxHotPathLODGroupsPerFrame = 64;
+        private const int MaxRegisteredLODGroupCapacity = 2048;
+        private const int GeologyMarkerTraversalCapacity = 256;
         private const float AupDistanceThresholdMeters = 50f;
         private const float AupDistanceThresholdSqr = AupDistanceThresholdMeters * AupDistanceThresholdMeters;
         private const float LODSolveBudgetWarningMs = 0.2f;
         private const int LODPerformanceWarningCooldownFrames = 30;
+        private const byte LodFadeStateNone = 0;
+        private const byte LodFadeStateCrossFade = 1;
+        private const byte LodFadeStateUnknown = 255;
         private const uint LODSolveBudgetWarningHash = 0x4C4F4457u;
+        private const uint LODRegistrationCapacityWarningHash = 0x4C4F4443u;
         private const uint LODSystemContextHash = 0x4C4F4453u;
 
         // ══════════════════════════════════════════════════════════
@@ -105,7 +111,7 @@ namespace Hecton8.World
         private float _crossfadeDistanceThreshold = 50f;
 
         [Header("── Performance ──────────────────")]
-        [SerializeField, Tooltip("Authoring cap for registered LOD groups. Runtime Tick applies a hard 64-group hot-path batch.")]
+        [SerializeField, Tooltip("Authoring cap for registered LOD groups. Clamped to 2048 prewarmed slots; runtime Tick applies a hard 64-group hot-path batch.")]
         private int _maxLODGroupsPerFrame = 500;
 
         [SerializeField, Tooltip("Enable performance monitoring")]
@@ -118,17 +124,23 @@ namespace Hecton8.World
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
-        // COLD ALLOC: List<LODGroup>[500] — registered LOD groups — owner: LODSystemManager
-        private readonly List<LODGroup> _registeredLODGroups = new List<LODGroup>(500);
+        // COLD ALLOC: List<LODGroup>[2048] - registered LOD groups - owner: LODSystemManager
+        private readonly List<LODGroup> _registeredLODGroups = new List<LODGroup>(MaxRegisteredLODGroupCapacity);
 
-        // COLD ALLOC: List<Transform>[500] — cached transforms — owner: LODSystemManager
-        private readonly List<Transform> _lodGroupTransforms = new List<Transform>(500);
+        // COLD ALLOC: List<Transform>[2048] - cached transforms - owner: LODSystemManager
+        private readonly List<Transform> _lodGroupTransforms = new List<Transform>(MaxRegisteredLODGroupCapacity);
 
-        // COLD ALLOC: List<Vector3>[500] — presentation-only LOD anchors — owner: LODSystemManager
-        private readonly List<Vector3> _lodGroupPresentationPositions = new List<Vector3>(500);
+        // COLD ALLOC: List<Vector3>[2048] - presentation-only LOD anchors - owner: LODSystemManager
+        private readonly List<Vector3> _lodGroupPresentationPositions = new List<Vector3>(MaxRegisteredLODGroupCapacity);
 
-        // COLD ALLOC: HashSet<LODGroup>[500] — O(1) duplicate check — owner: LODSystemManager
-        private readonly HashSet<LODGroup> _registeredLODGroupsSet = new HashSet<LODGroup>(500);
+        // COLD ALLOC: List<byte>[2048] - cached fade mode states - owner: LODSystemManager
+        private readonly List<byte> _lodGroupFadeModeStates = new List<byte>(MaxRegisteredLODGroupCapacity);
+
+        // COLD ALLOC: HashSet<LODGroup>[2048] - O(1) duplicate check - owner: LODSystemManager
+        private readonly HashSet<LODGroup> _registeredLODGroupsSet = new HashSet<LODGroup>(MaxRegisteredLODGroupCapacity);
+
+        // COLD ALLOC: Transform[256] - bounded geology marker traversal stack - owner: LODSystemManager
+        private readonly Transform[] _geologyMarkerTraversalScratch = new Transform[GeologyMarkerTraversalCapacity];
 
         // COLD ALLOC: float[64] - capped hot-path distance scratch - owner: LODSystemManager
         private float[] _lodGroupSquaredDistances;
@@ -166,6 +178,7 @@ namespace Hecton8.World
         private bool _qualityVisualSyncDirty;
         private bool _mathLodVisualSyncDirty;
         private bool _registeredHotSwapListener;
+        private bool _lodRegistrationCapacityWarningPublished;
 
         private float _lodSystemCPUTime;
 
@@ -446,7 +459,16 @@ namespace Hecton8.World
                     _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
                     break;
                 case GlobalRegistryServiceSlot.ImpostorRuntime:
+                    ImpostorSystem previousImpostorSystem = _impostorSystem;
+                    if (previousImpostorSystem != null &&
+                        !ReferenceEquals(previousImpostorSystem, currentService))
+                    {
+                        UnregisterAllImpostorCandidates(previousImpostorSystem);
+                    }
+
                     _impostorSystem = currentService as ImpostorSystem;
+                    if (_impostorSystem != null)
+                        RegisterAllImpostorCandidatesCold();
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
@@ -584,16 +606,24 @@ namespace Hecton8.World
             // O(1) duplicate check via HashSet
             if (_registeredLODGroupsSet.Contains(lodGroup)) return;
 
+            int registrationCapacity = ResolveRegisteredLODGroupCapacity();
+            if (_registeredLODGroups.Count >= registrationCapacity)
+            {
+                PublishLODRegistrationCapacityWarningOnce(registrationCapacity);
+                return;
+            }
+
             Transform lodTransform = lodGroup.transform;
             _registeredLODGroups.Add(lodGroup);
             _lodGroupTransforms.Add(lodTransform);
             _lodGroupPresentationPositions.Add(lodTransform.position);
+            _lodGroupFadeModeStates.Add(LodFadeStateUnknown);
             lodTransform.hasChanged = false;
             _registeredLODGroupsSet.Add(lodGroup);
             TryRegisterImpostorCandidate(lodGroup);
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_registeredLODGroups.Count > _maxLODGroupsPerFrame)
+            if (_registeredLODGroups.Count > registrationCapacity)
             {
                 Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Registered LOD groups exceeds max capacity. Consider increasing capacity.");
             }
@@ -626,10 +656,12 @@ namespace Hecton8.World
                         _registeredLODGroups[i] = _registeredLODGroups[lastIndex];
                         _lodGroupTransforms[i] = _lodGroupTransforms[lastIndex];
                         _lodGroupPresentationPositions[i] = _lodGroupPresentationPositions[lastIndex];
+                        _lodGroupFadeModeStates[i] = _lodGroupFadeModeStates[lastIndex];
                     }
                     _registeredLODGroups.RemoveAt(lastIndex);
                     _lodGroupTransforms.RemoveAt(lastIndex);
                     _lodGroupPresentationPositions.RemoveAt(lastIndex);
+                    _lodGroupFadeModeStates.RemoveAt(lastIndex);
                     break;
                 }
             }
@@ -750,27 +782,27 @@ namespace Hecton8.World
                 if (lodGroup == null) continue;
 
                 float sqrDist = _lodGroupSquaredDistances[i];
+                byte desiredFadeState = sqrDist < crossfadeThresholdSqr
+                    ? LodFadeStateCrossFade
+                    : LodFadeStateNone;
+                if (_lodGroupFadeModeStates[lodGroupIndex] == desiredFadeState)
+                    continue;
 
                 // Apply crossfade mode for near objects
-                if (sqrDist < crossfadeThresholdSqr)
+                if (desiredFadeState == LodFadeStateCrossFade)
                 {
-                    if (lodGroup.fadeMode != LODFadeMode.CrossFade)
-                    {
-                        lodGroup.fadeMode = LODFadeMode.CrossFade;
-                        lodGroup.animateCrossFading = true;
-                        transitionCount++;
-                    }
+                    lodGroup.fadeMode = LODFadeMode.CrossFade;
+                    lodGroup.animateCrossFading = true;
                 }
                 else
                 {
                     // Discrete switching for distant objects
-                    if (lodGroup.fadeMode != LODFadeMode.None)
-                    {
-                        lodGroup.fadeMode = LODFadeMode.None;
-                        lodGroup.animateCrossFading = false;
-                        transitionCount++;
-                    }
+                    lodGroup.fadeMode = LODFadeMode.None;
+                    lodGroup.animateCrossFading = false;
                 }
+
+                _lodGroupFadeModeStates[lodGroupIndex] = desiredFadeState;
+                transitionCount++;
             }
 
             _lastFrameTransitionCount = transitionCount;
@@ -822,8 +854,25 @@ namespace Hecton8.World
 
         private int ResolveHotPathLODGroupBatchCount()
         {
-            int authoringCap = math.max(1, _maxLODGroupsPerFrame);
+            int authoringCap = ResolveRegisteredLODGroupCapacity();
             return math.min(_registeredLODGroups.Count, math.min(authoringCap, MaxHotPathLODGroupsPerFrame));
+        }
+
+        private int ResolveRegisteredLODGroupCapacity()
+        {
+            return math.clamp(_maxLODGroupsPerFrame, 1, MaxRegisteredLODGroupCapacity);
+        }
+
+        private void PublishLODRegistrationCapacityWarningOnce(int registrationCapacity)
+        {
+            if (_lodRegistrationCapacityWarningPublished)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                LODRegistrationCapacityWarningHash,
+                LODSystemContextHash,
+                registrationCapacity);
+            _lodRegistrationCapacityWarningPublished = true;
         }
 
         private int ResolveHotPathLODGroupIndex(int startIndex, int offset)
@@ -995,6 +1044,14 @@ namespace Hecton8.World
             if (impostorSystem == null)
                 return;
 
+            UnregisterAllImpostorCandidates(impostorSystem);
+        }
+
+        private void UnregisterAllImpostorCandidates(ImpostorSystem impostorSystem)
+        {
+            if (impostorSystem == null)
+                return;
+
             for (int i = _registeredLODGroups.Count - 1; i >= 0; i--)
             {
                 LODGroup lodGroup = _registeredLODGroups[i];
@@ -1002,6 +1059,18 @@ namespace Hecton8.World
                     continue;
 
                 impostorSystem.UnregisterImpostorCandidate(lodGroup.gameObject);
+            }
+        }
+
+        private void RegisterAllImpostorCandidatesCold()
+        {
+            if (_impostorSystem == null)
+                return;
+
+            for (int i = 0; i < _registeredLODGroups.Count; i++)
+            {
+                LODGroup lodGroup = _registeredLODGroups[i];
+                TryRegisterImpostorCandidate(lodGroup);
             }
         }
 
@@ -1016,7 +1085,7 @@ namespace Hecton8.World
             return lodGroup.gameObject.activeInHierarchy;
         }
 
-        private static bool ShouldUseDistantGeologyImpostorCandidate(LODGroup lodGroup)
+        private bool ShouldUseDistantGeologyImpostorCandidate(LODGroup lodGroup)
         {
             if (lodGroup == null || lodGroup.size < 8f)
                 return false;
@@ -1025,33 +1094,56 @@ namespace Hecton8.World
             if (ContainsGeologyMarker(owner.name))
                 return true;
 
-            LOD[] lods = lodGroup.GetLODs();
-            for (int lodIndex = 0; lodIndex < lods.Length; lodIndex++)
+            return ContainsGeologyMarkerInRendererHierarchy(owner.transform);
+        }
+
+        private bool ContainsGeologyMarkerInRendererHierarchy(Transform root)
+        {
+            if (root == null)
+                return false;
+
+            int stackCount = 1;
+            _geologyMarkerTraversalScratch[0] = root;
+            while (stackCount > 0)
             {
-                Renderer[] renderers = lods[lodIndex].renderers;
-                if (renderers == null)
+                Transform current = _geologyMarkerTraversalScratch[--stackCount];
+                _geologyMarkerTraversalScratch[stackCount] = null;
+                if (current == null)
                     continue;
 
-                for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                if (current.TryGetComponent(out Renderer renderer) && renderer != null)
                 {
-                    Renderer renderer = renderers[rendererIndex];
-                    if (renderer == null)
-                        continue;
-
                     Material material = renderer.sharedMaterial;
-                    if (material == null)
-                        continue;
-
-                    Shader shader = material.shader;
-                    if ((shader != null && ContainsGeologyMarker(shader.name)) ||
-                        ContainsGeologyMarker(material.name))
+                    if (material != null)
                     {
-                        return true;
+                        Shader shader = material.shader;
+                        if ((shader != null && ContainsGeologyMarker(shader.name)) ||
+                            ContainsGeologyMarker(material.name))
+                        {
+                            ClearGeologyMarkerTraversalScratch(stackCount);
+                            return true;
+                        }
                     }
                 }
+
+                int childCount = current.childCount;
+                if (childCount > GeologyMarkerTraversalCapacity - stackCount)
+                {
+                    ClearGeologyMarkerTraversalScratch(stackCount);
+                    return false;
+                }
+
+                for (int childIndex = childCount - 1; childIndex >= 0; childIndex--)
+                    _geologyMarkerTraversalScratch[stackCount++] = current.GetChild(childIndex);
             }
 
             return false;
+        }
+
+        private void ClearGeologyMarkerTraversalScratch(int count)
+        {
+            for (int i = 0; i < count; i++)
+                _geologyMarkerTraversalScratch[i] = null;
         }
 
         private static bool ContainsGeologyMarker(string value)
@@ -1090,11 +1182,13 @@ namespace Hecton8.World
                     _registeredLODGroups[i] = _registeredLODGroups[lastIndex];
                     _lodGroupTransforms[i] = _lodGroupTransforms[lastIndex];
                     _lodGroupPresentationPositions[i] = _lodGroupPresentationPositions[lastIndex];
+                    _lodGroupFadeModeStates[i] = _lodGroupFadeModeStates[lastIndex];
                 }
 
                 _registeredLODGroups.RemoveAt(lastIndex);
                 _lodGroupTransforms.RemoveAt(lastIndex);
                 _lodGroupPresentationPositions.RemoveAt(lastIndex);
+                _lodGroupFadeModeStates.RemoveAt(lastIndex);
                 if (_nullCleanupCursor >= _registeredLODGroups.Count)
                     _nullCleanupCursor = 0;
             }

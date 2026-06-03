@@ -84,6 +84,7 @@ namespace Hecton8.Physiology
         public const uint CsvProfile = 1u << 7;
         public const uint ChemicalSampled = 1u << 8;
         public const uint Fatigue = ShinobuMetabolismVaultContract.FlagFatigue;
+        public const uint Hypoxia = ShinobuMetabolismVaultContract.FlagHypoxia;
         public const uint ExecutionBudgetExceeded = 1u << 30;
         public const uint NanDetected = 1u << 31;
     }
@@ -264,8 +265,10 @@ namespace Hecton8.Physiology
                    UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.EntityHashID))) == 16 &&
                    UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Flags))) == 20 &&
                    UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Fatigue01))) == 24 &&
-                   UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO._pad0))) == 24 &&
-                   UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO._pad1))) == 28;
+                   UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.RealO2))) == 28 &&
+                   UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.AgonyTimeRemaining))) == 32 &&
+                   UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.IsInHypoxia))) == 36 &&
+                   (UnsafeUtility.SizeOf<MetabolicStateDTO>() & 7) == 0;
         }
 
         public static bool ValidateMetabolismDetailLayout()

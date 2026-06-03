@@ -15,10 +15,6 @@ using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Visor
 {
     /// <summary>
@@ -26,11 +22,6 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed partial class HectonVisorUberPostFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable
     {
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader";
-        private const string ReconstructionShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_BilateralUpsample.shader";
-#endif
-
         private const float ReconstructionConstantsEpsilon = 0.0001f;
         private const float DefaultHypoxiaSafeOxygen01 = 0.22f;
         private const float TemperatureActivityThreshold = 0.001f;
@@ -67,11 +58,11 @@ namespace Hecton8.Visor
         [Serializable]
         private sealed partial class FeatureSettings
         {
-            [Tooltip("Hidden fullscreen shader used for the unified visor post pass.")]
-            public Shader shader = null;
+            [Tooltip("Authored fullscreen material used for the legacy visor post pass when Deep Sea Noir is disabled.")]
+            [FormerlySerializedAs("shader")] public Material material = null;
 
-            [Tooltip("Hidden fullscreen shader used for bilateral DRS reconstruction.")]
-            public Shader reconstructionShader = null;
+            [Tooltip("Authored fullscreen material used for bilateral DRS reconstruction when Deep Sea Noir is disabled.")]
+            [FormerlySerializedAs("reconstructionShader")] public Material reconstructionMaterial = null;
 
             [Tooltip("Packed crack normal/alpha texture. RG is normal XY; alpha is reveal threshold.")]
             public Texture2D crackTexture = null;
@@ -934,14 +925,6 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-#if UNITY_EDITOR
-            TryAssignNoirShaderEditor();
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-            if (settings != null && settings.reconstructionShader == null)
-                settings.reconstructionShader = AssetDatabase.LoadAssetAtPath<Shader>(ReconstructionShaderAssetPath);
-#endif
-
             RefreshNoirCachedDependenciesCold();
             CachePlatformCapabilitiesCold(settings);
             TryRegisterHotSwapListener();
@@ -955,19 +938,13 @@ namespace Hecton8.Visor
             else
                 _pass.ReleaseStaticPostTextureHandles();
             EnsureNoirPassCold();
-            Shader shader = settings != null ? settings.shader : null;
-            Shader reconstructionShader = settings != null && !settings.deepSeaNoirUnifiedPass ? settings.reconstructionShader : null;
-            if (shader == null && reconstructionShader == null)
-            {
-                CoreUtils.Destroy(_material);
-                _material = null;
-                CoreUtils.Destroy(_reconstructionMaterial);
-                _reconstructionMaterial = null;
+            _material = ResolvePostMaterial(settings);
+            _reconstructionMaterial = settings != null && !settings.deepSeaNoirUnifiedPass
+                ? settings.reconstructionMaterial
+                : null;
+            if (_material == null && _reconstructionMaterial == null)
                 return;
-            }
 
-            RecreateMaterial(ref _material, shader);
-            RecreateMaterial(ref _reconstructionMaterial, reconstructionShader);
             if (settings != null && settings.deepSeaNoirUnifiedPass)
             {
                 if (!runtimeAllocationAllowed)
@@ -976,8 +953,6 @@ namespace Hecton8.Visor
                     return;
                 }
 
-                EnsureNoirConstantsBuffersCold();
-                EnsureNoirVaultHandles();
                 _noirColorCsvLoadAttempted = false;
 #if UNITY_EDITOR
                 if (settings.loadNoirColorCsv)
@@ -994,8 +969,6 @@ namespace Hecton8.Visor
                 return;
             }
 
-            EnsureReconstructionConstantsBufferCold();
-            EnsureReconstructionVaultHandles();
             _aestheticCsvLoadAttempted = false;
             _aestheticProfileCacheCount = 0;
 #if UNITY_EDITOR
@@ -1214,9 +1187,7 @@ namespace Hecton8.Visor
             _pass?.ReleaseStaticPostTextureHandles();
             ReleaseNoirVaultHandles(_dataVault);
             ReleaseReconstructionVaultHandles(_dataVault);
-            CoreUtils.Destroy(_material);
             _material = null;
-            CoreUtils.Destroy(_reconstructionMaterial);
             _reconstructionMaterial = null;
             _noirConstantsBufferA?.Release();
             _noirConstantsBufferA = null;
@@ -2713,21 +2684,15 @@ namespace Hecton8.Visor
             return oxygen < safe ? math.saturate(1f - oxygen * math.rcp(safe)) : 0f;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
+        private static Material ResolvePostMaterial(FeatureSettings currentSettings)
         {
-            if (shader == null)
-            {
-                CoreUtils.Destroy(material);
-                material = null;
-                return;
-            }
+            if (currentSettings == null)
+                return null;
 
-            if (material != null && material.shader == shader)
-                return;
+            if (currentSettings.deepSeaNoirUnifiedPass)
+                return currentSettings.noirMaterial != null ? currentSettings.noirMaterial : currentSettings.material;
 
-            CoreUtils.Destroy(material);
-            // COLD ALLOC: Material[1] - engine-owned fullscreen post material recreated only when shader changes - owner: HectonVisorUberPostFeature
-            material = CoreUtils.CreateEngineMaterial(shader);
+            return currentSettings.material;
         }
 
         private static float Sanitize01(float value)

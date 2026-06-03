@@ -1,10 +1,17 @@
 ---
 packet_id: P010_PAYLOAD_WINDOW
+release_set_id: RS002_DEEPENING_DESCENT
 article_id: ending.payload_window
+unlock_id: unlock.first_payload_window
+poi_tags: poi.ascent_package;poi.launch_floodgate
+biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: ko_KR
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # 페이로드 윈도우

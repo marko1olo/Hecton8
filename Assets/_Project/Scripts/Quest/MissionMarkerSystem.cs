@@ -7,10 +7,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Quest
 {
     /// <summary>
@@ -19,7 +15,6 @@ namespace Hecton8.Quest
     [DisallowMultipleComponent]
     public sealed class MissionMarkerSystem : MonoBehaviour, IUpdatable, IRenderable, IQuestEventListener, IGlobalRegistryHotSwapListener
     {
-        private const string MarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int MaxMarkers = 32;
         private const float MinimumDistanceMeters = 3f;
         private const double MarkerRebuildMoveThresholdMetersSq = 64d;
@@ -27,9 +22,6 @@ namespace Hecton8.Quest
         private const uint MarkerCacheOverflowWarningHash = 0x4D4D4351u; // MMCQ
         private const uint MarkerContextHash = 0x4D4D4354u; // MMCT
         private static readonly uint _atlasCoreMarkerTargetHash = QuestFlagHashKernel.ComputeStableHash("atlas6_core");
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
-        private static readonly int FlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
 
         [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct QuestMarkerCache
@@ -43,23 +35,17 @@ namespace Hecton8.Quest
         }
 
         [Header("── Appearance ───────────────────────")]
-        [Tooltip("Instanced shader used for quest markers.")]
-        [SerializeField] private Shader markerShader;
+        [Tooltip("Authored instanced marker mesh. Runtime mesh synthesis is forbidden for quest presentation.")]
+        [SerializeField] private Mesh markerMesh;
 
-        [Tooltip("Base marker tint.")]
-        [SerializeField] private Color markerColor = new Color(1f, 0.62f, 0.08f, 0.9f);
+        [Tooltip("Authored marker material with GPU instancing enabled. Runtime material instancing is forbidden for quest presentation.")]
+        [SerializeField] private Material markerMaterial;
 
         [Tooltip("Uniform marker scale in world meters.")]
         [SerializeField, Min(0.25f)] private float markerScaleMeters = 5f;
 
         [Tooltip("Maximum world-space marker range from the player.")]
         [SerializeField, Min(5f)] private float maxVisibleDistanceMeters = 6000f;
-
-        [Tooltip("Per-frame flicker frequency fed into the instanced marker shader.")]
-        [SerializeField, Min(0f)] private float flickerFrequency = 18f;
-
-        [Tooltip("Per-frame flicker intensity fed into the instanced marker shader.")]
-        [SerializeField, Range(0f, 0.4f)] private float flickerIntensity = 0.08f;
 
         // COLD ALLOC: uint[32] - quest hash marker cache keys - owner: MissionMarkerSystem
         private readonly uint[] _markerCacheQuestHashes = new uint[MaxMarkers];
@@ -69,16 +55,12 @@ namespace Hecton8.Quest
         private readonly uint[] _activeQuestHashes = new uint[MaxMarkers];
         // COLD ALLOC: Matrix4x4[32] - instanced quest marker matrices - owner: MissionMarkerSystem
         private readonly Matrix4x4[] _markerMatrices = new Matrix4x4[MaxMarkers];
-
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private QuestManager _questManager;
+        private IQuestSystem _questManager;
         private IAtlasSignalReadModel _atlasSignalReadModel;
         private HectonPlayerMovement _playerMovement;
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
-        private Color _appliedMarkerColor;
-        private float _appliedFlickerFrequency;
-        private float _appliedFlickerIntensity;
         private int _visibleMarkerCount;
         private int _markerCacheCount;
         private int _activeQuestCount;
@@ -91,7 +73,6 @@ namespace Hecton8.Quest
         private bool _registeredRenderable;
         private bool _hotSwapRegistered;
         private bool _markerCacheDirty = true;
-        private bool _markerMaterialDirty = true;
         private bool _hasMarkerRebuildPlayerAup;
         private float _cachedMarkerScaleMeters = -1f;
         private AbsoluteUniversePosition _lastMarkerRebuildPlayerAup;
@@ -138,17 +119,8 @@ namespace Hecton8.Quest
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
 
-            if (_runtimeMarkerMaterial != null)
-            {
-                Destroy(_runtimeMarkerMaterial);
-                _runtimeMarkerMaterial = null;
-            }
-
-            if (_runtimeMarkerMesh != null)
-            {
-                Destroy(_runtimeMarkerMesh);
-                _runtimeMarkerMesh = null;
-            }
+            _runtimeMarkerMaterial = null;
+            _runtimeMarkerMesh = null;
         }
 
         /// <summary>
@@ -226,8 +198,6 @@ namespace Hecton8.Quest
                 return;
             }
 
-            ApplyMarkerMaterialIfNeeded();
-
             UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeMarkerMesh,
                 0,
@@ -248,7 +218,7 @@ namespace Hecton8.Quest
             if (Application.isPlaying && !_registeredUpdatable)
                 _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
 
-            if (!_registeredRenderable)
+            if (Application.isPlaying && !_registeredRenderable)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
 
@@ -284,7 +254,7 @@ namespace Hecton8.Quest
 
         private void CacheQuestRuntimeFromRegistryCold()
         {
-            CacheQuestRuntime(GlobalRegistry.Quest);
+            CacheQuestRuntime(GlobalRegistry.QuestSystem);
         }
 
         private void CacheAtlasSignalFromRegistryCold()
@@ -303,7 +273,8 @@ namespace Hecton8.Quest
                     CachePlayerContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
-                    CacheQuestRuntime(currentService as QuestManager);
+                case GlobalRegistryServiceSlot.QuestSystem:
+                    CacheQuestRuntime(currentService as IQuestSystem);
                     PrimeActiveQuestSet();
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
@@ -324,14 +295,30 @@ namespace Hecton8.Quest
             _playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
         }
 
-        private void CacheQuestRuntime(QuestManager questManager)
+        private void CacheQuestRuntime(IQuestSystem questManager)
         {
+            if (ReferenceEquals(_questManager, questManager))
+                return;
+
             _questManager = questManager;
-            if (questManager == null)
+            ResetQuestMarkerState();
+        }
+
+        private void ResetQuestMarkerState()
+        {
+            _activeQuestSetPrimed = false;
+            _activeQuestCount = 0;
+            _visibleMarkerCount = 0;
+            _markerCacheCount = 0;
+            _markerCacheDirty = true;
+            _hasMarkerRebuildPlayerAup = false;
+
+            for (int i = 0; i < MaxMarkers; i++)
             {
-                _activeQuestSetPrimed = false;
-                _activeQuestCount = 0;
-                _visibleMarkerCount = 0;
+                _activeQuestHashes[i] = 0u;
+                _markerCacheQuestHashes[i] = 0u;
+                _markerCaches[i] = default;
+                _markerMatrices[i] = default;
             }
         }
 
@@ -359,63 +346,33 @@ namespace Hecton8.Quest
 
         private void EnsureRuntimeResources()
         {
-            if (_runtimeMarkerMesh == null)
-                _runtimeMarkerMesh = CreateMarkerMesh();
+            bool meshValid = markerMesh != null &&
+                             markerMesh.subMeshCount > 0 &&
+                             markerMesh.GetIndexCount(0) > 0u;
+            bool materialValid = markerMaterial != null &&
+                                 markerMaterial.shader != null &&
+                                 markerMaterial.enableInstancing;
 
-            if (_runtimeMarkerMaterial != null)
-                return;
-
-#if UNITY_EDITOR
-            if (markerShader == null)
-                markerShader = AssetDatabase.LoadAssetAtPath<Shader>(MarkerShaderPath);
-#endif
-
-            if (markerShader == null)
-                return;
-
-            _runtimeMarkerMaterial = new Material(markerShader)
+            if (!meshValid || !materialValid)
             {
-                enableInstancing = true,
-                hideFlags = HideFlags.DontSave
-            };
-            _markerMaterialDirty = true;
-        }
-
-        private void ApplyMarkerMaterialIfNeeded()
-        {
-            if (_runtimeMarkerMaterial == null)
-                return;
-
-            if (!_markerMaterialDirty &&
-                SameColor(_appliedMarkerColor, markerColor) &&
-                math.abs(_appliedFlickerFrequency - flickerFrequency) <= 0.0001f &&
-                math.abs(_appliedFlickerIntensity - flickerIntensity) <= 0.0001f)
-            {
+                _runtimeMarkerMesh = null;
+                _runtimeMarkerMaterial = null;
+                _visibleMarkerCount = 0;
                 return;
             }
 
-            _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
-            _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
-            _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
-            _appliedMarkerColor = markerColor;
-            _appliedFlickerFrequency = flickerFrequency;
-            _appliedFlickerIntensity = flickerIntensity;
-            _markerMaterialDirty = false;
-        }
+            if (!ReferenceEquals(_runtimeMarkerMesh, markerMesh))
+                _runtimeMarkerMesh = markerMesh;
 
-        private static bool SameColor(Color lhs, Color rhs)
-        {
-            return math.abs(lhs.r - rhs.r) <= 0.0001f &&
-                   math.abs(lhs.g - rhs.g) <= 0.0001f &&
-                   math.abs(lhs.b - rhs.b) <= 0.0001f &&
-                   math.abs(lhs.a - rhs.a) <= 0.0001f;
+            if (!ReferenceEquals(_runtimeMarkerMaterial, markerMaterial))
+                _runtimeMarkerMaterial = markerMaterial;
         }
 
         private void RebuildMarkerCache(in AbsoluteUniversePosition playerAup)
         {
             _visibleMarkerCount = 0;
 
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (questManager == null)
                 return;
 
@@ -452,7 +409,7 @@ namespace Hecton8.Quest
         private void PrimeActiveQuestSet()
         {
             _activeQuestCount = 0;
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (questManager == null)
             {
                 _activeQuestSetPrimed = false;
@@ -521,7 +478,7 @@ namespace Hecton8.Quest
         }
 
         private bool TryResolveMarkerPosition(
-            QuestManager questManager,
+            IQuestSystem questManager,
             uint questHash,
             out Vector3 markerWorldPosition,
             out AbsoluteUniversePosition markerAup)
@@ -569,7 +526,7 @@ namespace Hecton8.Quest
             return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
         }
 
-        private bool TryResolveMarkerCache(QuestManager questManager, uint questHash, out QuestMarkerCache cache)
+        private bool TryResolveMarkerCache(IQuestSystem questManager, uint questHash, out QuestMarkerCache cache)
         {
             for (int i = 0; i < _markerCacheCount; i++)
             {
@@ -671,41 +628,5 @@ namespace Hecton8.Quest
                 math.max(1, _droppedMarkerCacheCount));
         }
 
-        private static Mesh CreateMarkerMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "QuestMarkerDiamond"
-            };
-
-            Vector3[] vertices =
-            {
-                new Vector3(0f, 0.75f, 0f),
-                new Vector3(0.6f, 0f, 0f),
-                new Vector3(0f, 0f, 0.6f),
-                new Vector3(-0.6f, 0f, 0f),
-                new Vector3(0f, 0f, -0.6f),
-                new Vector3(0f, -0.9f, 0f)
-            };
-
-            int[] triangles =
-            {
-                0, 1, 2,
-                0, 2, 3,
-                0, 3, 4,
-                0, 4, 1,
-                5, 2, 1,
-                5, 3, 2,
-                5, 4, 3,
-                5, 1, 4
-            };
-
-            mesh.SetVertices(vertices);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(false);
-            return mesh;
-        }
     }
 }

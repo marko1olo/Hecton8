@@ -1,30 +1,37 @@
 ---
 packet_id: P120_BIOMETAL_SENSOR_TAGS
+release_set_id: RS024_RESOURCE_RECIPE_TAXONOMY
 article_id: resources.biometal_sensor_tags
+unlock_id: unlock.first_biometal_sensor_tags
+poi_tags: poi.sensor_tag_fauna;poi.biometal_scale_cluster
+biome_tags: biome.repair_ecology;biome.abyssal_machine_field
 locale: pt_BR
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Biometal Sensor Tags
 
-Draft PT localization pending native pass. Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
 
 ## Scanner
 
-Draft PT localization pending native pass. Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
 
 ## Terminal
 
-Draft PT localization pending native pass. RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
 
 ## Audio
 
-Draft PT localization pending native pass. The fish is not a drone. The tag does not know the difference.
+The fish is not a drone. The tag does not know the difference.
 
 ## Field Note
 
-Draft PT localization pending native pass. Make resource extraction feel like evidence handling.
+Make resource extraction feel like evidence handling.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/pt_BR. -->

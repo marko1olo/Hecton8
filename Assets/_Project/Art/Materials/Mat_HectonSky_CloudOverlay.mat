@@ -29,7 +29,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -37,6 +37,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BakedStarCubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BaseMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -101,6 +105,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 13a5b68ec75a4bc4b804b409e2ddcfe2, type: 3}
         m_Scale: {x: 0.2, y: 0.2}
         m_Offset: {x: 0, y: 0}
+    - _StarTwinkleLUT:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -116,13 +124,24 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
-    - _AegirGlowIntensity: 1.5
-    - _AegirHaloIntensity: 0.82
+    - _AegirGlowIntensity: 0
+    - _AegirHaloIntensity: 0.58
     - _AegirHaloPower: 2.9
+    - _AegirLensingEdgeWidth: 0.07
+    - _AegirLensingRadius: 0.32
+    - _AegirLensingStrength: 0.018
+    - _AegirLensingTint: 0.18
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _BacklitIntensity: 3
+    - _AtmosphereDensity: 0.08
+    - _AtmosphereInscatterWeight: 1
+    - _AtmosphereTransmittanceWeight: 1
+    - _AuroraHorizonFade: 0.18
+    - _AuroraIntensity: 0.65
+    - _AuroraSpeed: 0.028
+    - _BacklitIntensity: 1.25
     - _BacklitPower: 4
+    - _BakedStarCubemapReady: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -133,40 +152,43 @@ Material:
     - _CelestialTransmittanceSoftness: 0.24
     - _CelestialTransmittanceStrength: 0.4
     - _CelestialTransmittanceThreshold: 0.52
-    - _CirrusOpacity: 1
+    - _CirrusOpacity: 0.55
     - _CirrusParallaxStrength: 0.5
     - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CloudDensityThreshold: 0
+    - _CloudDensityThreshold: 0.2
     - _CloudOverlayMode: 1
-    - _CloudSoftness: 0.3
-    - _CloudSpeedMult: 0.001
+    - _CloudSoftness: 0.18
+    - _CloudSpeedMult: 0.045
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DetailStrength: 1
+    - _DetailStrength: 0.66
     - _DitherScale: 4
     - _DstBlend: 10
     - _DstBlendAlpha: 0
     - _EclipseOcclusion: 0
     - _EnvironmentReflections: 1
-    - _FlowCycleSpeed: 0.05
-    - _FlowStrength: 0.178
+    - _FlowCycleSpeed: 0.08
+    - _FlowStrength: 0.05
     - _GameTime: 0.00545989
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HazeFalloff: 3.4
-    - _HazeIntensity: 0.96
-    - _HazeSunTintStrength: 0.18
+    - _HazeFalloff: 2.65
+    - _HazeIntensity: 0.58
+    - _HazeSunTintStrength: 0.35
     - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
+    - _HorizonMistShelfHeight: 0.17
+    - _HorizonMistShelfIntensity: 0.44
+    - _HorizonMistShelfSoftness: 0.11
     - _Metallic: 0
-    - _NightBlend: 0
+    - _NightBlend: 0.025
     - _OcclusionStrength: 1
     - _OverlayAlpha: 1
     - _OverlayDiscInnerDot: 0.9214169
@@ -174,19 +196,21 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _SkyLuminanceMultiplier: 1.42
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
-    - _StarIntensity: 0
+    - _StarIntensity: 0.45
     - _StarIntensityMax: 2
+    - _StarSeed: 99173
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.0032
-    - _SunElevation: 0.58930904
-    - _SunScatterIntensity: 0.82
+    - _SunElevation: 0.56
+    - _SunScatterIntensity: 1.1
     - _SunScatterPower: 2.6
     - _SunSize: 0.0016
     - _Surface: 0
@@ -195,24 +219,27 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _AegirHaloColor: {r: 0.52, g: 0.6, b: 0.78, a: 1}
+    - _AuroraColorA: {r: 0.02, g: 0.95, b: 0.72, a: 1}
+    - _AuroraColorB: {r: 0.45, g: 0.28, b: 1.35, a: 1}
+    - _AuroraScale: {r: 2.2, g: 5.8, b: 0, a: 0}
     - _BacklitColor: {r: 0.39999998, g: 0.90006435, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
     - _CirrusColor: {r: 0.82, g: 0.84, b: 0.9, a: 1}
-    - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
-    - _CloudColorLit: {r: 0.78, g: 0.82, b: 0.88, a: 1}
-    - _CloudColorShadow: {r: 0.31, g: 0.37, b: 0.47, a: 1}
-    - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
+    - _CirrusTiling: {r: 7.25, g: 3.55, b: 0, a: 0}
+    - _CloudColorLit: {r: 0.94, g: 0.98, b: 1.04, a: 1}
+    - _CloudColorShadow: {r: 0.33, g: 0.43, b: 0.52, a: 1}
+    - _CloudTiling: {r: 2.65, g: 1.42, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.35, g: 0.4, b: 0.46, a: 1}
+    - _HazeColor: {r: 0.62, g: 0.68, b: 0.78, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.04, g: 0.03, b: 0.079999976, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.38, g: 0.46, b: 0.62, a: 1}
-    - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
-    - _SkyColorZenith: {r: 0.1, g: 0.16, b: 0.5, a: 1}
+    - _SkyColorHorizon: {r: 0.76, g: 0.82, b: 0.9, a: 1}
+    - _SkyColorNadir: {r: 0.11, g: 0.2, b: 0.24, a: 1}
+    - _SkyColorZenith: {r: 0.33, g: 0.5, b: 0.72, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
@@ -220,6 +247,6 @@ Material:
     - _SunScatterColor: {r: 1.04, g: 0.74, b: 0.34, a: 1}
     - _SunsetCloudColor: {r: 1.18, g: 0.54, b: 0.24, a: 1}
     - _SunsetHorizonColor: {r: 1.72, g: 0.7, b: 0.2, a: 1}
-    - _WindDirection: {r: 1, g: 0.2, b: 0, a: 0}
+    - _WindDirection: {r: 0.8, g: 0.6, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

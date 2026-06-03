@@ -7,7 +7,9 @@ Scope: biome ecology, macro ecosystem director, biomass migration, flora/fauna d
 
 Ecosystem is pressure architecture. It is not random life scatter.
 
-Biomes, flora, fauna, carcasses, nests, feeding routes, avoidance zones, and biolum fields must explain how life survives under depth, current, pressure, light scarcity, geology, and industrial contamination. HECTON-8 rejects zoo placement, decorative coral fields, random fish confetti, and biomes that differ only by color.
+Biomes, flora, fauna, carcasses, nests, feeding routes, avoidance zones, and biolum fields must explain how life survives under depth, current, pressure, available light, geology, and industrial contamination. HECTON-8 rejects zoo placement, decorative coral fields, random fish confetti, and biomes that differ only by color.
+
+Surface and photic-zone ecology must use light abundance as a strength: visible reefs, clear silhouettes, fish schools, wet shoreline biofilm, shallow coral/flora color, and readable predator shadows. Darkness, sparse biolum-only life, and oppressive scarcity belong to depth, caves, storms, contaminated industrial pockets, or transition routes.
 
 ## Truth Ownership
 
@@ -56,6 +58,7 @@ Any ecosystem or biome simulation work must declare:
 
 - biome id and ecological purpose;
 - producer, consumer, scavenger, threat, and shelter roles;
+- light regime, including explicit daylight/photic behavior when relevant;
 - deterministic seed and spawn mask source;
 - biomass or population scalar if simulated;
 - migration, decay, bloom, and collapse cadence;

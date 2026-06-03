@@ -1,10 +1,17 @@
 ---
 packet_id: P094_SEED_GEOLOGY_INVARIANTS
+release_set_id: RS019_HECTON8_PHYSICAL_ATLAS_DEPTH_BANDS
 article_id: hecton8.seed_geology_invariants
+unlock_id: unlock.first_seed_geology_invariants
+poi_tags: poi.seed_invariant_chart;poi.route_generation_note
+biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Seed Geology Invariants

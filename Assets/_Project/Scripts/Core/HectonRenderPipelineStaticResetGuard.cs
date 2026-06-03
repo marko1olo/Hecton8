@@ -1,34 +1,17 @@
 using UnityEngine;
-using UnityEngine.Rendering;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Clears SRP package statics before Unity constructs a fresh URP instance.
+    /// Keeps the previous first-party SRP static reset hook inert.
     /// </summary>
     internal static class HectonRenderPipelineStaticResetGuard
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetForSubsystemRegistration()
         {
-            CleanupBlitterCold();
-        }
-
-#if UNITY_EDITOR
-        [InitializeOnLoadMethod]
-        private static void ResetForEditorDomainReload()
-        {
-            CleanupBlitterCold();
-        }
-#endif
-
-        private static void CleanupBlitterCold()
-        {
-            Blitter.Cleanup();
+            // Unity owns Blitter lifetime. First-party cleanup races URP RenderGraph copy passes
+            // during Play Mode transitions and leaves the package static material null.
         }
     }
 }

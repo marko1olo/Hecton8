@@ -1,0 +1,211 @@
+#pragma kernel CSBakeVisorMasks1726
+
+struct VisorBakeParams1726
+{
+    float4 ResolutionSeedQuality; // x width, y height, z seed, w GlobalQualityWeight
+    float4 Strengths;             // x dirt, y scratch, z salt, w condensation
+    float4 Shape;                 // x edge exponent, y salt edge bias, z scratch density, w flipbook grid
+};
+
+StructuredBuffer<VisorBakeParams1726> _VisorBakeParams1726;
+RWTexture2D<float4> _VisorMaskOutput;
+
+static const float kTau1726 = 6.28318530718;
+
+uint HashMix1726(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return value;
+}
+
+uint WrapInt1726(int value, uint period)
+{
+    int safePeriod = max(1, (int)period);
+    int wrapped = value % safePeriod;
+    return (uint)(wrapped < 0 ? wrapped + safePeriod : wrapped);
+}
+
+float Hash01_1726(uint value, uint seed)
+{
+    uint h = HashMix1726(value ^ seed ^ 0x9e3779b9u);
+    return (float)(h & 0x00ffffffu) * (1.0 / 16777215.0);
+}
+
+float Hash21_1726(uint2 cell, uint seed)
+{
+    return Hash01_1726(cell.x * 0x85ebca6bu ^ cell.y * 0xc2b2ae35u, seed);
+}
+
+float2 Hash22_1726(uint value, uint seed)
+{
+    return float2(
+        Hash01_1726(value * 0x27d4eb2du + 17u, seed),
+        Hash01_1726(value * 0x165667b1u + 53u, seed));
+}
+
+float PeriodicValueNoise1726(float2 p, uint period, uint seed)
+{
+    int2 cell = (int2)floor(p);
+    float2 f = frac(p);
+    uint2 c00 = uint2(WrapInt1726(cell.x, period), WrapInt1726(cell.y, period));
+    uint2 c10 = uint2(WrapInt1726(cell.x + 1, period), c00.y);
+    uint2 c01 = uint2(c00.x, WrapInt1726(cell.y + 1, period));
+    uint2 c11 = uint2(c10.x, c01.y);
+    float n00 = Hash21_1726(c00, seed);
+    float n10 = Hash21_1726(c10, seed);
+    float n01 = Hash21_1726(c01, seed);
+    float n11 = Hash21_1726(c11, seed);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(n00, n10, u.x), lerp(n01, n11, u.x), u.y);
+}
+
+float PeriodicFbm1726(float2 uv, uint basePeriod, uint seed)
+{
+    float sum = 0.0;
+    float norm = 0.0;
+    float amp = 0.54;
+    [unroll]
+    for (int i = 0; i < 5; i++)
+    {
+        uint period = max(8u, basePeriod << i);
+        sum += PeriodicValueNoise1726(uv * (float)period, period, seed + (uint)i * 101u) * amp;
+        norm += amp;
+        amp *= 0.52;
+    }
+
+    return norm > 0.0 ? sum / norm : 0.0;
+}
+
+float EdgeWear1726(float2 uv, float edgeExponent)
+{
+    float2 p = abs(uv * 2.0 - 1.0);
+    float edge = max(p.x, p.y);
+    float corner = saturate(length(p) * 0.72);
+    float band = smoothstep(0.50, 0.985, edge);
+    return pow(saturate(max(band, corner * 0.82)), max(0.5, edgeExponent));
+}
+
+float FingerprintSmudge1726(float2 uv, uint seed)
+{
+    float smudge = 0.0;
+    [unroll]
+    for (uint i = 0u; i < 10u; i++)
+    {
+        float2 h = Hash22_1726(i + 11u, seed);
+        float2 center = lerp(float2(0.16, 0.14), float2(0.84, 0.82), h);
+        float2 radius = lerp(float2(0.075, 0.045), float2(0.22, 0.12), Hash22_1726(i + 73u, seed));
+        float angle = Hash01_1726(i + 211u, seed) * kTau1726;
+        float2 local = uv - center;
+        float2x2 rot = float2x2(cos(angle), -sin(angle), sin(angle), cos(angle));
+        local = mul(rot, local) / max(radius, float2(0.001, 0.001));
+        float ell = dot(local, local);
+        float ridge = 0.55 + 0.45 * sin((local.x * 17.0 + local.y * 8.0) + Hash01_1726(i + 311u, seed) * kTau1726);
+        smudge = max(smudge, (1.0 - smoothstep(0.24, 1.0, ell)) * ridge);
+    }
+
+    return saturate(smudge);
+}
+
+float ScratchMask1726(float2 uv, uint seed, float density)
+{
+    float scratches = 0.0;
+    float safeDensity = saturate(density * 0.5);
+    [unroll]
+    for (uint i = 0u; i < 30u; i++)
+    {
+        float keep = step(Hash01_1726(i + 1709u, seed), lerp(0.22, 0.96, safeDensity));
+        float2 center = Hash22_1726(i + 911u, seed);
+        float angle = lerp(-1.05, 1.05, Hash01_1726(i + 1223u, seed)) + 0.18;
+        float2 dir = float2(cos(angle), sin(angle));
+        float2 normal = float2(-dir.y, dir.x);
+        float2 local = uv - center;
+        float lineDistance = abs(dot(local, normal));
+        float along = abs(dot(local, dir));
+        float width = lerp(0.00055, 0.0024, Hash01_1726(i + 1447u, seed));
+        float length01 = lerp(0.10, 0.82, Hash01_1726(i + 1559u, seed));
+        float cut = 1.0 - smoothstep(length01 * 0.74, length01, along);
+        float score = (1.0 - smoothstep(width, width * 3.0, lineDistance)) * cut * keep;
+        scratches = max(scratches, score);
+    }
+
+    float micro = 1.0 - smoothstep(0.012, 0.038, abs(frac((uv.x * 81.0 + uv.y * 19.0) + PeriodicFbm1726(uv * 0.5, 32u, seed + 1901u)) - 0.5));
+    micro *= smoothstep(0.62, 0.90, PeriodicFbm1726(uv + 0.37, 96u, seed + 2003u));
+    return saturate(max(scratches, micro * safeDensity * 0.72));
+}
+
+float SaltCrust1726(float2 uv, uint seed, float edgeExponent, float saltEdgeBias)
+{
+    float edge = EdgeWear1726(uv, max(0.8, edgeExponent * 0.72));
+    float brine = PeriodicFbm1726(uv * 0.82 + 0.21, 48u, seed + 3011u);
+    float crystals = PeriodicFbm1726(uv * 2.4 + 0.59, 96u, seed + 3251u);
+    float lowerLip = smoothstep(0.56, 1.0, 1.0 - uv.y);
+    float crustBand = saturate(max(edge * lerp(0.55, 1.25, saltEdgeBias), lowerLip * 0.62));
+    float granular = smoothstep(0.56, 0.92, brine + crystals * 0.35);
+    float flecks = step(0.82, PeriodicValueNoise1726(uv * 192.0, 192u, seed + 3539u)) * smoothstep(0.38, 0.80, crystals);
+    return saturate(crustBand * (0.36 + granular * 0.74) + flecks * 0.32);
+}
+
+float CondensationFrame1726(float2 localUv, uint frameIndex, uint seed, float edgeExponent)
+{
+    float t = ((float)frameIndex) * (1.0 / 63.0);
+    float angle = t * kTau1726;
+    float2 timeCircle = float2(cos(angle), sin(angle));
+    float2 warpedUv = localUv + timeCircle * 0.075;
+    float fog0 = PeriodicFbm1726(warpedUv * 0.94 + float2(timeCircle.y, -timeCircle.x) * 0.04, 64u, seed + 4001u);
+    float fog1 = PeriodicFbm1726(localUv * 2.10 + timeCircle * 0.05 + 0.37, 128u, seed + 4211u);
+    float edge = EdgeWear1726(localUv, edgeExponent);
+    float condensation = smoothstep(0.36, 0.88, fog0 * 0.62 + fog1 * 0.38 + edge * 0.32);
+
+    float droplets = 0.0;
+    [unroll]
+    for (uint i = 0u; i < 18u; i++)
+    {
+        float2 center = Hash22_1726(i + 5003u, seed);
+        float radius = lerp(0.010, 0.045, Hash01_1726(i + 5237u, seed));
+        float phase = Hash01_1726(i + 5501u, seed) * kTau1726;
+        float pulse = 0.58 + 0.42 * sin(angle + phase);
+        float dist = length((localUv - center) / max(radius, 0.001));
+        droplets = max(droplets, (1.0 - smoothstep(0.50, 1.0, dist)) * pulse);
+    }
+
+    return saturate(max(condensation * 0.74, droplets) * (0.55 + edge * 0.45));
+}
+
+[numthreads(8, 8, 1)]
+void CSBakeVisorMasks1726(uint3 id : SV_DispatchThreadID)
+{
+    VisorBakeParams1726 p = _VisorBakeParams1726[0];
+    uint width = (uint)max(1.0, p.ResolutionSeedQuality.x);
+    uint height = (uint)max(1.0, p.ResolutionSeedQuality.y);
+    if (id.x >= width || id.y >= height)
+        return;
+
+    uint seed = (uint)max(1.0, p.ResolutionSeedQuality.z);
+    float quality = saturate(p.ResolutionSeedQuality.w);
+    float2 uv = (float2(id.xy) + 0.5) / float2(width, height);
+    uint grid = (uint)max(1.0, p.Shape.w);
+    uint2 tile = min((uint2)floor(uv * (float)grid), uint2(grid - 1u, grid - 1u));
+    uint frameIndex = min(tile.y * grid + tile.x, 63u);
+    float2 localUv = frac(uv * (float)grid);
+    float2 staticUv = uv;
+
+    float edgeExponent = max(0.5, p.Shape.x);
+    float dirtStrength = saturate(p.Strengths.x * 0.5);
+    float scratchStrength = saturate(p.Strengths.y * 0.5);
+    float saltStrength = saturate(p.Strengths.z * 0.5);
+    float condensationStrength = saturate(p.Strengths.w * 0.5);
+
+    float edgeWear = EdgeWear1726(staticUv, edgeExponent);
+    float panelOil = PeriodicFbm1726(staticUv * 0.58 + 0.12, 48u, seed + 101u);
+    float dirt = saturate((edgeWear * (0.48 + panelOil * 0.40) + FingerprintSmudge1726(staticUv, seed + 233u) * 0.68) * dirtStrength);
+
+    float scratch = ScratchMask1726(staticUv, seed + 557u, p.Shape.z * (0.72 + quality * 0.28)) * scratchStrength;
+    float salt = SaltCrust1726(staticUv, seed + 809u, edgeExponent, saturate(p.Shape.y)) * saltStrength;
+    float condensation = CondensationFrame1726(localUv, frameIndex, seed + 1301u, edgeExponent) * condensationStrength;
+
+    _VisorMaskOutput[id.xy] = saturate(float4(dirt, scratch, salt, condensation));
+}

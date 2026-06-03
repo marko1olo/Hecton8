@@ -1,10 +1,17 @@
 ---
 packet_id: P073_BARNARD_YARDS_MARAUDER_ORIGIN
+release_set_id: RS015_HUMAN_DOMAINS_ROUTE_ECONOMY
 article_id: human.barnard_yards_marauder_origin
+unlock_id: unlock.first_barnard_yards_marauder_origin
+poi_tags: poi.barnard_tool_stamp;poi.salvage_belt_patch
+biome_tags: biome.shallow_cache;biome.marauder_route
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Barnard Yards Marauder Origin

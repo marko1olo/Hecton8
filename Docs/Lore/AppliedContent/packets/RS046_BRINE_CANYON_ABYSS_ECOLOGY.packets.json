@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS046_BRINE_CANYON_ABYSS_ECOLOGY",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P226_BRINE_VANE_FORESTS",
+      "release_set_id": "RS046_BRINE_CANYON_ABYSS_ECOLOGY",
+      "article_id": "ecology.brine_vane_forests",
+      "title_key": "applied_lore.brine_vane_forests.title",
+      "unlock": {
+        "primary": "unlock.brine_vane_forests",
+        "poi_tags": [
+          "poi.brine_vane_forest",
+          "poi.density_leaf_wall",
+          "poi.canyon_visibility_cut"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.density_layer"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Brine Vane Forests",
+          "scanner": "Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "ru_RU": {
+          "title": "Леса соляных лопастей",
+          "scanner": "Плоские brine vanes растут вдоль границ плотности и показывают, где вода становится стеной.",
+          "field_note": "Леса лопастей не являются растениями в земном смысле. Это соляно-минеральные мембраны, питающиеся химическими градиентами.",
+          "terminal": "CANYON NOTE: держись рваных краев vane для дыхательных карманов; избегай мутной слоистой воды.",
+          "audio": "У каньона есть листья, потому что у него есть градиенты давления.",
+          "in_game_wiki": "Леса соляных лопастей превращают физику плотности в читаемую структуру мира для среднеглубинного исследования.",
+          "external_site": "Леса соляных лопастей задают экологию каньонов HECTON-8. Эти мембранные ростки отмечают границы плотности, маршрутные угрозы и химическую экономику, из-за которой глубокий океан луны ощущается созданным давлением."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft JP localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft JP localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft JP localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft JP localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft JP localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft JP localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft CN localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft CN localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft CN localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft CN localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft CN localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft CN localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft FR localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft FR localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft FR localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft FR localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft FR localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft FR localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft ES localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft ES localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft ES localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft ES localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft ES localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft ES localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft DE localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft DE localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft DE localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft DE localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft DE localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft DE localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft PL localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft PL localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft PL localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft PL localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft PL localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft PL localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft UA localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft UA localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft UA localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft UA localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft UA localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft UA localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft AR localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft AR localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft AR localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft AR localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft AR localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft AR localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft ID localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft ID localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft ID localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft ID localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft ID localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft ID localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft KO localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft KO localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft KO localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft KO localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft KO localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft KO localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft HE localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft HE localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft HE localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft HE localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft HE localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft HE localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft PT localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft PT localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft PT localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft PT localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft PT localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft PT localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Brine Vane Forests",
+          "scanner": "Draft NL localization pending native pass. Flat brine vanes grow along density boundaries and show where water becomes a wall.",
+          "field_note": "Draft NL localization pending native pass. Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.",
+          "terminal": "Draft NL localization pending native pass. CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.",
+          "audio": "Draft NL localization pending native pass. The canyon has leaves because it has pressure gradients.",
+          "in_game_wiki": "Draft NL localization pending native pass. Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.",
+          "external_site": "Draft NL localization pending native pass. Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure."
+        }
+      }
+    },
+    {
+      "packet_id": "P227_DENSITY_SKATER_FAUNA",
+      "release_set_id": "RS046_BRINE_CANYON_ABYSS_ECOLOGY",
+      "article_id": "ecology.density_skater_fauna",
+      "title_key": "applied_lore.density_skater_fauna.title",
+      "unlock": {
+        "primary": "unlock.density_skater_fauna",
+        "poi_tags": [
+          "poi.density_skater_trace",
+          "poi.brine_surface_ripple",
+          "poi.canyon_skim_warning"
+        ],
+        "biome_tags": [
+          "biome.brine_canyon",
+          "biome.density_layer"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Density Skater Fauna",
+          "scanner": "Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Something is walking on the water inside the water.",
+          "in_game_wiki": "Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "ru_RU": {
+          "title": "Фауна плотностных скользунов",
+          "scanner": "Скользуны идут по brine interface как по твердой поверхности, оставляя рябь там, где сонар ожидает открытую воду.",
+          "field_note": "Плотностные скользуны доказывают, что каньон является слоистой машиной. Их маршруты идут по химии, а не по пустоте.",
+          "terminal": "FAUNA: контакт skater вероятнее у разрывов vane, теплых brine steps и мертвых краев сонара.",
+          "audio": "Что-то идет по воде внутри воды.",
+          "in_game_wiki": "Фауна плотностных скользунов строится вокруг реального поведения слоев плотности, а не вокруг фантазийной левитации.",
+          "external_site": "Фауна плотностных скользунов показывает hard-sci-fi логику существ HECTON-8. Они не ломают физику; они используют brine interfaces, слои давления и слепые зоны сонара как среду и охотничьи маршруты."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft JP localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft JP localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft JP localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft JP localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft JP localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft JP localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft CN localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft CN localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft CN localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft CN localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft CN localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft CN localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft FR localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft FR localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft FR localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft FR localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft FR localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft FR localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft ES localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft ES localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft ES localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft ES localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft ES localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft ES localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft DE localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft DE localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft DE localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft DE localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft DE localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft DE localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft PL localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft PL localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft PL localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft PL localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft PL localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft PL localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft UA localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft UA localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft UA localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft UA localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft UA localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft UA localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft AR localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft AR localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft AR localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft AR localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft AR localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft AR localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft ID localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft ID localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft ID localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft ID localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft ID localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft ID localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft KO localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft KO localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft KO localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft KO localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft KO localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft KO localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft HE localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft HE localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft HE localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft HE localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft HE localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft HE localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft PT localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft PT localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft PT localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft PT localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft PT localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft PT localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Density Skater Fauna",
+          "scanner": "Draft NL localization pending native pass. Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.",
+          "field_note": "Draft NL localization pending native pass. Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.",
+          "terminal": "Draft NL localization pending native pass. FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.",
+          "audio": "Draft NL localization pending native pass. Something is walking on the water inside the water.",
+          "in_game_wiki": "Draft NL localization pending native pass. Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.",
+          "external_site": "Draft NL localization pending native pass. Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes."
+        }
+      }
+    },
+    {
+      "packet_id": "P228_VENT_ANCHOR_COLONIES",
+      "release_set_id": "RS046_BRINE_CANYON_ABYSS_ECOLOGY",
+      "article_id": "ecology.vent_anchor_colonies",
+      "title_key": "applied_lore.vent_anchor_colonies.title",
+      "unlock": {
+        "primary": "unlock.vent_anchor_colonies",
+        "poi_tags": [
+          "poi.vent_anchor_colony",
+          "poi.hot_sulfide_rib",
+          "poi.forge_ecology_edge"
+        ],
+        "biome_tags": [
+          "biome.thermal_vent",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Vent Anchor Colonies",
+          "scanner": "Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "ru_RU": {
+          "title": "Колонии вент-якорей",
+          "scanner": "Колониальные ребра цепляются за thermal vents, ловят сульфиды и питают материалы для глубинного ремонта.",
+          "field_note": "Vent anchor: ресурсный знак, температурная угроза, биологическое укрытие и первый намек, что forge chemistry жива по краям.",
+          "terminal": "RESOURCE NOTE: vent anchor colonies повышают вероятность sealant и pressure-ceramic. Тепловое воздействие остается смертельным.",
+          "audio": "Каждая хорошая ремонтная деталь лежит в воде, которая хочет тебя сварить.",
+          "in_game_wiki": "Колонии вент-якорей связывают экологию HECTON-8 с маршрутами крафта, не превращая ресурсы в магическую руду.",
+          "external_site": "Колонии вент-якорей объясняют, почему глубокое исследование механически необходимо. Они превращают термальные выходы в ресурсные двигатели, биологические укрытия и угрозы давления, давая игроку причину двигаться вниз, а не просто чиниться вверх."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft JP localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft JP localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft JP localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft JP localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft JP localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft JP localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft CN localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft CN localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft CN localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft CN localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft CN localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft CN localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft FR localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft FR localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft FR localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft FR localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft FR localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft ES localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft ES localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft ES localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft ES localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft ES localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft DE localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft DE localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft DE localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft DE localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft DE localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft PL localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft PL localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft PL localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft PL localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft PL localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft UA localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft UA localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft UA localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft UA localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft UA localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft UA localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft AR localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft AR localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft AR localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft AR localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft AR localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft ID localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft ID localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft ID localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft ID localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft ID localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft KO localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft KO localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft KO localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft KO localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft KO localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft KO localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft HE localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft HE localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft HE localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft HE localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft HE localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft PT localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft PT localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft PT localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft PT localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft PT localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft PT localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Vent Anchor Colonies",
+          "scanner": "Draft NL localization pending native pass. Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.",
+          "field_note": "Draft NL localization pending native pass. Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.",
+          "terminal": "Draft NL localization pending native pass. RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.",
+          "audio": "Draft NL localization pending native pass. Every good repair part is sitting in water that wants to cook you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.",
+          "external_site": "Draft NL localization pending native pass. Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward."
+        }
+      }
+    },
+    {
+      "packet_id": "P229_WIDE_FILTER_BODY_TRACE",
+      "release_set_id": "RS046_BRINE_CANYON_ABYSS_ECOLOGY",
+      "article_id": "ecology.wide_filter_body_trace",
+      "title_key": "applied_lore.wide_filter_body_trace.title",
+      "unlock": {
+        "primary": "unlock.wide_filter_body_trace",
+        "poi_tags": [
+          "poi.wide_filter_shadow",
+          "poi.sonar_filter_body",
+          "poi.deep_plankton_gap"
+        ],
+        "biome_tags": [
+          "biome.abyssal_machine_field",
+          "biome.open_deep_water"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Wide Filter Body Trace",
+          "scanner": "A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "ru_RU": {
+          "title": "След широкого фильтрующего тела",
+          "scanner": "Широкое фильтрующее тело очищает планктон, гнет сонар и может скрывать или открывать промышленные руины своим проходом.",
+          "field_note": "Крупный фильтрующий организм надо считать движущейся погодой. Он меняет видимость, звук и риск, не становясь scripted monster set-piece.",
+          "terminal": "CONTACT NOTE: не преследовать тень wide filter body. Использовать акустический зазор, который оно оставляет.",
+          "audio": "Это не рев. Это звук карты, которую вытирают начисто.",
+          "in_game_wiki": "След широкого фильтрующего тела задает крупную фауну как давление среды, меняющее маршруты и доверие к сенсорам.",
+          "external_site": "След широкого фильтрующего тела удерживает крупнейшую фауну HECTON-8 приземленной. Это не boss reveal; это движущаяся экология, очищающая планктон, сгибающая сонар и меняющая чтение глубины."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft JP localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft JP localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft JP localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft JP localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft JP localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft JP localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft CN localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft CN localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft CN localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft CN localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft CN localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft CN localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft FR localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft FR localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft FR localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft FR localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft FR localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft FR localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft ES localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft ES localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft ES localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft ES localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft ES localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft ES localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft DE localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft DE localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft DE localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft DE localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft DE localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft DE localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft PL localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft PL localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft PL localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft PL localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft PL localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft PL localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft UA localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft UA localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft UA localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft UA localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft UA localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft UA localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft AR localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft AR localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft AR localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft AR localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft AR localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft AR localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft ID localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft ID localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft ID localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft ID localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft ID localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft ID localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft KO localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft KO localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft KO localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft KO localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft KO localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft KO localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft HE localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft HE localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft HE localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft HE localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft HE localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft HE localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft PT localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft PT localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft PT localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft PT localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft PT localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft PT localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Wide Filter Body Trace",
+          "scanner": "Draft NL localization pending native pass. A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.",
+          "field_note": "Draft NL localization pending native pass. Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.",
+          "terminal": "Draft NL localization pending native pass. CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.",
+          "audio": "Draft NL localization pending native pass. That is not a roar. That is the sound of the map being wiped clean.",
+          "in_game_wiki": "Draft NL localization pending native pass. Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.",
+          "external_site": "Draft NL localization pending native pass. Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep."
+        }
+      }
+    },
+    {
+      "packet_id": "P230_SILT_AMBUSHER_TELEGRAPH",
+      "release_set_id": "RS046_BRINE_CANYON_ABYSS_ECOLOGY",
+      "article_id": "ecology.silt_ambusher_telegraph",
+      "title_key": "applied_lore.silt_ambusher_telegraph.title",
+      "unlock": {
+        "primary": "unlock.silt_ambusher_telegraph",
+        "poi_tags": [
+          "poi.silt_ambusher_bed",
+          "poi.false_flat_silt",
+          "poi.low_pulse_warning"
+        ],
+        "biome_tags": [
+          "biome.abyssal_machine_field",
+          "biome.silt_plain"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Silt Ambusher Telegraph",
+          "scanner": "A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Flat ground is a lie down here.",
+          "in_game_wiki": "Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "ru_RU": {
+          "title": "Телеграф илового засадника",
+          "scanner": "Подозрительно чистая иловая плита, отсутствие микрофауны и низкий pulse return отмечают засадника до контакта.",
+          "field_note": "Глубинная опасность обязана предупреждать. Игрок должен выучить неправильность до того, как заплатит за нее.",
+          "terminal": "CONTACT RULE: silt ambusher beds требуют sonar warning, disturbed-edge silhouette или missing-life clue.",
+          "audio": "Ровная земля внизу всегда врет.",
+          "in_game_wiki": "Телеграф илового засадника задает честный контакт с глубинным существом через признаки среды.",
+          "external_site": "Телеграф илового засадника является правилом creature design для зон HECTON-8 с низкой видимостью. Угрозы страшны потому, что они системны и читаемы: пропавшая микрофауна, неправильная геометрия поверхности и акустическое предупреждение до удара."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft JP localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft JP localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft JP localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft JP localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft JP localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft JP localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft CN localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft CN localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft CN localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft CN localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft CN localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft CN localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft FR localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft FR localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft FR localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft FR localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft FR localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft FR localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft ES localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft ES localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft ES localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft ES localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft ES localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft ES localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft DE localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft DE localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft DE localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft DE localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft DE localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft DE localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft PL localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft PL localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft PL localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft PL localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft PL localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft PL localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft UA localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft UA localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft UA localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft UA localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft UA localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft UA localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft AR localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft AR localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft AR localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft AR localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft AR localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft AR localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft ID localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft ID localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft ID localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft ID localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft ID localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft ID localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft KO localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft KO localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft KO localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft KO localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft KO localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft KO localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft HE localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft HE localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft HE localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft HE localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft HE localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft HE localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft PT localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft PT localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft PT localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft PT localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft PT localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft PT localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Silt Ambusher Telegraph",
+          "scanner": "Draft NL localization pending native pass. A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.",
+          "field_note": "Draft NL localization pending native pass. Deep danger must telegraph. The player should learn the wrongness before paying for it.",
+          "terminal": "Draft NL localization pending native pass. CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.",
+          "audio": "Draft NL localization pending native pass. Flat ground is a lie down here.",
+          "in_game_wiki": "Draft NL localization pending native pass. Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.",
+          "external_site": "Draft NL localization pending native pass. Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact."
+        }
+      }
+    }
+  ]
+}

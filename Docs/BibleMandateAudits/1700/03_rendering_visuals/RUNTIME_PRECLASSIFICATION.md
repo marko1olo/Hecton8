@@ -18,6 +18,7 @@ Total runtime suspects: 109.
 
 ## LEGAL_EDITOR_OR_DEV_GUARDED (50)
 
+- Runtime debug logging | Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs:1394:                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:501:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Water_Extinction_Matrix.bin not found. Using analytical Beer-Lambert fallback.");
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:508:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Failed to load Water_Extinction_Matrix.bin: " + exception.Message);
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:515:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Invalid Water_Extinction_Matrix.bin byte count: " + byteCount);
@@ -25,11 +26,17 @@ Total runtime suspects: 109.
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:529:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] R16G16B16A16_SFloat sampling is unsupported; packed R16 path remains active when available.");
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:536:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] StreamingAssets URI staging failed: " + error);
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\LutArrayResolver.cs:543:            Hecton8.Core.H8Debug.LogWarning("[LutArrayResolver] Portable or low-memory target detected. Using analytical Beer-Lambert fallback instead of streaming Water_Extinction_Matrix.bin.");
-- Runtime debug logging | Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs:1394:                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:389:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
 - Runtime debug logging | Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerFeature.cs:422:                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\BiomeProfile.cs:68:                Hecton8.Core.H8Debug.LogWarning("[BiomeProfile] High AOIntensity may impact performance.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs:184:                Hecton8.Core.H8Debug.LogError("[SHINOBU_354] Camera juice ABI violation.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2845:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2853:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2861:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2869:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2877:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2885:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel thread-group contract is invalid. Disabling compute marine snow.");
+- Runtime debug logging | Assets\_Project\Scripts\VFX\ShakeProfile.cs:52:                Hecton8.Core.H8Debug.LogWarning("[ShakeProfile] Invalid Duration. Clamping to 0.5s.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:861:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:869:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:877:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
@@ -45,15 +52,8 @@ Total runtime suspects: 109.
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:957:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:965:            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\CameraJuiceSystem.cs:973:            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2845:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2853:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2861:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2869:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2877:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs:2885:            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel thread-group contract is invalid. Disabling compute marine snow.");
-- Runtime debug logging | Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:1472:            Hecton8.Core.H8Debug.LogError(message);
-- Runtime debug logging | Assets\_Project\Scripts\VFX\ShakeProfile.cs:52:                Hecton8.Core.H8Debug.LogWarning("[ShakeProfile] Invalid Duration. Clamping to 0.5s.");
 - Runtime debug logging | Assets\_Project\Scripts\VFX\Parasites\ParasiteSwarmGpuRuntime.cs:130:                Hecton8.Core.H8Debug.LogError("SHINOBU_313 ParasiteSwarm layout rejection code " + failureCode);
+- Runtime debug logging | Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:1472:            Hecton8.Core.H8Debug.LogError(message);
 - Runtime debug logging | Assets\_Project\Scripts\Lighting\HectonGIRelaySystem.cs:966:                Hecton8.Core.H8Debug.LogException(exception, this);
 - Runtime debug logging | Assets\_Project\Scripts\Lighting\HectonLightingRuntime_DayNightRelay.cs:608:                Hecton8.Core.H8Debug.LogException(exception, this);
 - Runtime debug logging | Assets\_Project\Scripts\Lighting\InteriorGIProbeVolumeRuntime.cs:1693:                    Hecton8.Core.H8Debug.LogWarning("Interior GI CSV rejected rows: " + rowsRejected);
@@ -62,12 +62,12 @@ Total runtime suspects: 109.
 
 ## LIKELY_LEGAL_COLD_OR_OWNER_LIFETIME_PATH (39)
 
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs:2118:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs:1925:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:322:            payload.Matrices = new NativeArray<Matrix4x4>(header.MatrixCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:323:            payload.Metadata = new NativeArray<GpuScatterFloraInstanceData>(header.MetadataCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:324:            payload.QualityIndices = new NativeArray<int>(header.QualityIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\Scatter\AbyssalScatterBrgDataVaultBootstrap.cs:486:            NativeArray<byte> seen = new NativeArray<byte>(count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs:1925:            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs:2118:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:509:                _buffers.MockVisibleInstances = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:510:                _buffers.SortScratch = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs:511:                _buffers.MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
@@ -108,9 +108,9 @@ Total runtime suspects: 109.
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Rendering\Scatter\GpuScatterLodManager.cs:1684:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:895:            _indirectArgsReadback.Data = new NativeArray<uint>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Graphics\Culling\InstanceCullingService.cs:897:                Allocator.Persistent,
+- Native allocation or persistent lifetime | Assets\_Project\Scripts\VFX\PlasmaBeam\ShinobuPlasmaBeamRuntime.cs:1486:                payload = new NativeArray<byte>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:316:                    entries = new NativeArray<BiolumPulseTelemetryEntry>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:318:                        Allocator.Persistent,
-- Native allocation or persistent lifetime | Assets\_Project\Scripts\VFX\PlasmaBeam\ShinobuPlasmaBeamRuntime.cs:1486:                payload = new NativeArray<byte>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1746:            scratch = new NativeArray<GasDynamicsTelemetryEntry>(
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1748:                Allocator.Persistent,
 - Native allocation or persistent lifetime | Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1789:            data = new NativeArray<float4>(
@@ -133,3 +133,4 @@ Total runtime suspects: 109.
 ## REVIEW_RUNTIME_MESH_MATERIAL_PATH (1)
 
 - Runtime mesh/material mutation | Assets\_Project\Scripts\VFX\Debris\CarveDebrisComputeRenderer.cs:2393:            mesh.RecalculateNormals();
+

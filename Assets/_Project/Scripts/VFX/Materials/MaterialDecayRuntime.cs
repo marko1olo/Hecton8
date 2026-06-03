@@ -25,7 +25,6 @@ namespace Hecton8.VFX.Materials
         private static int s_x001MaterialDecayRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int MaterialDecayStateSizeBytes = 32;
-        private const int RustAtlasSize = 512;
         private const float RustPomGate = 0.3f;
         private const float WetnessFadeSeconds = 5f;
         private const float ShaderUniformEpsilon = 0.0005f;
@@ -57,7 +56,6 @@ namespace Hecton8.VFX.Materials
         private IDataVault _dataVault;
         private VaultGenerationHandle<MaterialDecayState> _blackBoxHandle;
         private ITickDispatcher _tickDispatcher;
-        private Texture2D _runtimeFallbackAtlas;
         private Vector4 _lastRuntimeVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private Vector4 _lastBloodVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private float _lastUploadedRust01 = float.NaN;
@@ -98,10 +96,7 @@ namespace Hecton8.VFX.Materials
             if (s_runtimeInstance != null)
                 return;
 
-            // COLD ALLOC: one scene-local bridge only when authoring has not placed the component.
-            GameObject host = new GameObject("H8_MaterialDecayRuntime");
-            host.hideFlags = HideFlags.DontSave;
-            host.AddComponent<MaterialDecayRuntime>();
+            Hecton8.Core.H8Debug.LogError("[MaterialDecayRuntime] Missing authored scene instance. Runtime component creation is forbidden.");
         }
 
         private void Awake()
@@ -113,6 +108,9 @@ namespace Hecton8.VFX.Materials
             }
 
             s_runtimeInstance = this;
+            if (!HasAuthoredRustAtlas())
+                return;
+
             _rust01 = SanitizeUnit(defaultRust01);
             RefreshQualityState();
             EnsureBlackBox();
@@ -128,6 +126,9 @@ namespace Hecton8.VFX.Materials
             }
 
             s_runtimeInstance = this;
+            if (!HasAuthoredRustAtlas())
+                return;
+
             TryRegisterHotSwapListener();
             RefreshQualityState();
             EnsureBlackBox();
@@ -148,8 +149,15 @@ namespace Hecton8.VFX.Materials
             TryUnregisterHotSwapListener();
             _tickDispatcher = null;
             _dispatcherReady = false;
-            UploadZeroState();
-            ReleaseBlackBoxBuffer();
+            if (Application.isPlaying)
+            {
+                UploadZeroState();
+                ReleaseBlackBoxBuffer();
+            }
+            else
+            {
+                ClearBlackBoxDescriptor();
+            }
         }
 
         private void OnDestroy()
@@ -159,13 +167,10 @@ namespace Hecton8.VFX.Materials
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
 
-            ReleaseBlackBoxBuffer();
-
-            if (_runtimeFallbackAtlas != null)
-            {
-                Destroy(_runtimeFallbackAtlas);
-                _runtimeFallbackAtlas = null;
-            }
+            if (Application.isPlaying)
+                ReleaseBlackBoxBuffer();
+            else
+                ClearBlackBoxDescriptor();
         }
 
         private void AdvanceMaterialDecayState(float deltaTime)
@@ -384,52 +389,21 @@ namespace Hecton8.VFX.Materials
 
         private void BindRustAtlas()
         {
-            Texture2D atlas = rustDetailAtlas != null ? rustDetailAtlas : ResolveFallbackAtlas();
-            if (atlas != null)
-            {
-                Shader.SetGlobalTexture(RustDetailMapId, atlas);
-                Shader.SetGlobalVector(RustDetailMapStId, new Vector4(1f, 1f, 0f, 0f));
-            }
+            if (!HasAuthoredRustAtlas())
+                return;
+
+            Shader.SetGlobalTexture(RustDetailMapId, rustDetailAtlas);
+            Shader.SetGlobalVector(RustDetailMapStId, new Vector4(1f, 1f, 0f, 0f));
         }
 
-        private Texture2D ResolveFallbackAtlas()
+        private bool HasAuthoredRustAtlas()
         {
-            if (_runtimeFallbackAtlas != null)
-                return _runtimeFallbackAtlas;
+            if (rustDetailAtlas != null)
+                return true;
 
-            _runtimeFallbackAtlas = CreateFallbackRustAtlas();
-            return _runtimeFallbackAtlas;
-        }
-
-        private static Texture2D CreateFallbackRustAtlas()
-        {
-            Texture2D texture = new Texture2D(RustAtlasSize, RustAtlasSize, TextureFormat.RGBA32, mipChain: true, linear: true)
-            {
-                name = "TX_Runtime_MaterialDecay_RustDetail_512",
-                wrapMode = TextureWrapMode.Repeat,
-                filterMode = FilterMode.Bilinear,
-                anisoLevel = 1,
-                hideFlags = HideFlags.DontSave
-            };
-
-            var pixels = texture.GetRawTextureData<Color32>();
-            for (int y = 0; y < RustAtlasSize; y++)
-            {
-                for (int x = 0; x < RustAtlasSize; x++)
-                {
-                    uint hash = Mix((uint)x * 0x9E3779B9u ^ (uint)y * 0x85EBCA6Bu);
-                    uint hashB = Mix(hash ^ 0xC2B2AE35u);
-                    float ridge = math.saturate(((hash & 0xFFu) * (1f / 255f) - 0.28f) * 1.55f);
-                    byte height = (byte)math.clamp(math.round(35f + ridge * 210f), 0f, 255f);
-                    byte normalX = (byte)math.clamp(128 + (int)((sbyte)(hashB & 0x7Fu) - 63) / 3, 0, 255);
-                    byte normalY = (byte)math.clamp(128 + (int)((sbyte)((hashB >> 8) & 0x7Fu) - 63) / 3, 0, 255);
-                    byte roughness = (byte)math.clamp(184 + (int)((hash >> 16) & 0x47u), 0, 255);
-                    pixels[y * RustAtlasSize + x] = new Color32(height, normalX, normalY, roughness);
-                }
-            }
-
-            texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
-            return texture;
+            Hecton8.Core.H8Debug.LogError("[MaterialDecayRuntime] Missing authored rust detail atlas. Runtime atlas generation is forbidden.", this);
+            enabled = false;
+            return false;
         }
 
         private void BindDataVault(IDataVault vault)

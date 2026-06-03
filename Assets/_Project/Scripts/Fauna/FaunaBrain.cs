@@ -32,6 +32,7 @@ namespace Hecton8.AI
     [RequireComponent(typeof(Rigidbody))]
     public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IBucketedSlowTickable, ILateFrameTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener, ICombatMobilityModifierReceiver, IScannerFaunaScientificContact, IGlobalRegistryHotSwapListener, IFaunaSpatialContact, IFaunaPredationTarget, IFaunaDirectorCueSink, IFaunaNoiseSignalReceiver
     {
+        private const int LogicalLodColliderCacheCapacity = 17;
         private static int _signalPushDropCount;
         /// <summary>
         /// Global state definition for all fauna.
@@ -167,6 +168,10 @@ namespace Hecton8.AI
         public bool isAggressive = false;
         public bool canFlee = true;
 
+        [Header("── Presentation ─────────────────────────────────")]
+        [SerializeField, Tooltip("Optional authored shared material for fauna presentation. Runtime code must not clone this material.")]
+        private Material _authoredFaunaMaterial;
+
         [Header("── Brain LOD ──────────────────────────────────────")]
         public bool enableBrainLOD = true;
         public float brainDisableDistance = 150f;
@@ -273,7 +278,7 @@ namespace Hecton8.AI
         private Vector3 _acousticHeadLookTarget;
         private float _acousticHeadLookWeight;
         private float _acousticHeadLookUntilTime;
-        
+
         private static readonly int _FaunaBiolumDimShaderId = Shader.PropertyToID("_FaunaBiolumDim");
         private static readonly int _FaunaCamouflageTintShaderId = Shader.PropertyToID("_FaunaCamouflageTint");
         private static readonly int _FaunaCamouflageParamsShaderId = Shader.PropertyToID("_FaunaCamouflageParams");
@@ -288,6 +293,8 @@ namespace Hecton8.AI
         private static readonly int _FaunaMutationTwitchShaderId = Shader.PropertyToID("_FaunaMutationTwitch");
         private static readonly int _H8FaunaGeneticMaskBytes0ShaderId = Shader.PropertyToID("_H8FaunaGeneticMaskBytes0");
         private static readonly int _H8FaunaGeneticMaskBytes1ShaderId = Shader.PropertyToID("_H8FaunaGeneticMaskBytes1");
+        private static readonly int _DamageBlendShaderId = Shader.PropertyToID("_DamageBlend");
+        private static readonly int _EmissionStrengthShaderId = Shader.PropertyToID("_EmissionStrength");
         private const float SlowTickIntervalSeconds = 0.5f;
         private const int MaxSlowTicksPerDispatcherTick = 2;
         private const float AmbientCurrentInfluence = 0.22f;
@@ -454,23 +461,10 @@ namespace Hecton8.AI
         private const float DeathSpiralCorkscrewDescentSpeed = 1.4f;
         private const float CorpseSinkSpeedMetersPerSecond = 0.5f;
         private const float CorpseFloorSettleOffsetMeters = 0.08f;
-        private const int MaxBiolumPresentationLights = 4;
-        private const ushort FaunaPresentationBiolumMask = 1;
-        private const ushort FaunaPresentationDeathDitherMask = 2;
-        private const ushort FaunaPresentationCorpseBloatMask = 4;
-        private const ushort FaunaPresentationCorpseBloatTimerMask = 8;
-        private const ushort FaunaPresentationCorpseBloatDurationMask = 16;
-        private const ushort FaunaPresentationCamouflageTintMask = 32;
-        private const ushort FaunaPresentationCamouflageParamsMask = 64;
-        private const ushort FaunaPresentationCamouflageStrengthMask = 128;
-        private const ushort FaunaPresentationHitFlashMask = 256;
-        private const ushort FaunaPresentationDecayAmountMask = 512;
-        private const ushort FaunaPresentationMutationTwitchMask = 1024;
-        private const ushort FaunaPresentationMutationHueMask = 2048;
-        private const ushort FaunaPresentationColorMask = 4096;
-        private const ushort FaunaPresentationBaseColorMask = 8192;
-        private const ushort FaunaPresentationEmissionColorMask = 16384;
-        private const ushort FaunaPresentationGeneticMaskMask = 32768;
+        private const ulong CorpseSinkKinematicMutationGuardMask =
+            (1UL << ((int)BufferID.FaunaCorpseSinkKinematicInput & 31)) |
+            (1UL << ((int)BufferID.FaunaCorpseSinkKinematicOutput & 31));
+        private const int MaxBiolumPresentationLights = FaunaMetadata.MaxBiolumPresentationLightCount;
         private const float FaunaCamouflageStrength = 0.55f;
         private const float FaunaCamouflageDepthStartMeters = 35f;
         private const float FaunaCamouflageDepthEndMeters = 260f;
@@ -493,7 +487,7 @@ namespace Hecton8.AI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static int _nextSlowTickWatchdogLogFrame;
 #endif
-        
+
         // --- LOD & Stagger ---
         private bool _lodDisabled;
         private FaunaLogicalLodTier _logicalLodTier = FaunaLogicalLodTier.FullSim;
@@ -503,8 +497,8 @@ namespace Hecton8.AI
         private int _tier1LodProxyHandle;
         private uint _uniqueInstanceUid;
         private Renderer _renderer;
-        // COLD ALLOC: List<Collider>[8] - logical LOD collider cache build scratch - owner: FaunaBrain
-        private readonly List<Collider> _logicalLodColliderScratch = new List<Collider>(8);
+        private FaunaMetadata _faunaMetadata;
+        private List<Collider> _logicalLodColliderScratch;
         private Collider[] _logicalLodColliders = Array.Empty<Collider>();
         private CapsuleCollider _predatorLungeCcdCapsule;
         private SphereCollider _predatorLungeCcdSphere;
@@ -521,7 +515,7 @@ namespace Hecton8.AI
         private Transform _playerNoiseEmitterTransform;
         private bool _tier2HibernationRecordWritten;
         private bool _tier2HibernationHandoffInProgress;
-        
+
         // --- Buffers ---
         private static readonly SpatialQueryHit[] _panicBuffer = new SpatialQueryHit[10];
         // COLD ALLOC: SpatialQueryHit[12] - reusable cleaner host lookup buffer over fauna spatial registry - owner: FaunaBrain
@@ -538,16 +532,9 @@ namespace Hecton8.AI
         private readonly Light[] _biolumPresentationLights = new Light[MaxBiolumPresentationLights];
         // COLD ALLOC: float[4] - base intensities for owned biolum presentation lights - owner: FaunaBrain
         private readonly float[] _biolumPresentationBaseIntensities = new float[MaxBiolumPresentationLights];
-        // COLD ALLOC: List<Light>[4] - owned light discovery scratch without array allocations - owner: FaunaBrain
-        private readonly List<Light> _biolumPresentationLightScratch = new List<Light>(MaxBiolumPresentationLights);
-        // COLD ALLOC: List<Material>[4] - shared-material scratch for one-time fauna presentation material binding - owner: FaunaBrain
-        private readonly List<Material> _faunaPresentationMaterialScratch = new List<Material>(4);
-        // COLD ALLOC: List<Material>[4] - original fauna materials restored before destroying runtime material instances - owner: FaunaBrain
-        private readonly List<Material> _faunaPresentationOriginalMaterials = new List<Material>(4);
-        // COLD ALLOC: List<Material>[4] - owned runtime material instances for shader-side fauna presentation state - owner: FaunaBrain
-        private readonly List<Material> _faunaPresentationRuntimeMaterials = new List<Material>(4);
-        // COLD ALLOC: List<ushort>[4] - cached shader property support masks for fauna runtime materials - owner: FaunaBrain
-        private readonly List<ushort> _faunaPresentationRuntimeMaterialMasks = new List<ushort>(4);
+        // COLD ALLOC: List<Light>[4] - shared main-thread light discovery scratch without per-fauna allocations - owner: FaunaBrain
+        private static readonly List<Light> s_biolumPresentationLightScratch = new List<Light>(MaxBiolumPresentationLights);
+        private static MaterialPropertyBlock s_faunaPresentationPropertyBlock;
 
         // --- Event Hooks ---
         [Header("── Audio Hooks ─────────────────────────────────")]
@@ -657,6 +644,8 @@ namespace Hecton8.AI
         private float _lastAppliedHitFlashShader01 = -1f;
         private float _lastAppliedMutationHueShader01 = -1f;
         private float _lastAppliedMutationTwitchShader01 = -1f;
+        private float _lastAppliedDamageBlendShader01 = -1f;
+        private float _lastAppliedEmissionStrength = -1f;
         private ulong _lastAppliedGeneticMask = ulong.MaxValue;
         private float _lastAppliedInfectionShaderSeverity01 = -1f;
         private bool _lastAppliedInfectionShaderActive;
@@ -667,6 +656,7 @@ namespace Hecton8.AI
         private float _pendingFaunaPresentationCorpseBloatAge01;
         private float _pendingFaunaPresentationHitFlash01;
         private float _pendingFaunaPresentationDecayAmount01;
+        private float _pendingFaunaPresentationQuality01 = -1f;
         private bool _pendingBiolumPresentationLightScaleDirty;
         private float _pendingBiolumPresentationLightScale01 = 1f;
         private bool _pendingCorpseBloatShaderTimerDirty;
@@ -699,11 +689,13 @@ namespace Hecton8.AI
         private float _corpseFloorY;
         private bool _corpseFloorLatched;
         private IDataVault _corpseSinkVault;
+        private IDataVault _corpseSinkMutationGuardVault;
         private VaultGenerationHandle<CorpseSinkKinematicInput> _corpseSinkInputHandle;
         private VaultGenerationHandle<CorpseSinkKinematicOutput> _corpseSinkOutputHandle;
         private JobHandle _corpseSinkJobHandle;
         private bool _corpseSinkJobScheduled;
-        private bool _corpseSinkLateFrameRegistered;
+        private bool _corpseSinkMutationGuardHeld;
+        private bool _faunaLateFrameRegistered;
         private float _corpseSinkPoseDeltaTime;
         private struct FaunaPlayerRuntimeContextSnapshot
         {
@@ -792,6 +784,7 @@ namespace Hecton8.AI
         private void Awake()
         {
             TryGetComponent(out _rb);
+            TryGetComponent(out _faunaMetadata);
             CaptureBaseRigidbodyPresentationState();
             if (!ValidatePrimitiveColliderRig())
             {
@@ -801,10 +794,11 @@ namespace Hecton8.AI
 
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             CacheBiolumPresentationLights();
-            EnsureFaunaPresentationMaterials();
+            InitializeFaunaPresentationPropertyBlock();
             ApplyFaunaPresentationShaderState(1f, 0f, 0f, 0f);
             CacheLogicalLodComponents();
             TryGetComponent(out _faunaKinematicsRuntime);
+            TryGetComponent(out _creatureDamageManager);
             TryGetComponent(out _simplifiedRagdollHandoff);
             TryGetComponent(out _scannableTarget);
             ResolveFoveatedBindings();
@@ -843,6 +837,7 @@ namespace Hecton8.AI
             if (!_dispatcherRegistered)
                 return;
 
+            TryRegisterFaunaLateFrame();
             RegisterSpatialHandle();
             RefreshSimulationBucketerBinding();
             InvalidatePlayerRuntimeContextCache();
@@ -867,6 +862,7 @@ namespace Hecton8.AI
                 _dispatcherRegistered = false;
             }
 
+            TryUnregisterFaunaLateFrame();
             TryUnregisterHotSwapListener();
 
             ClearInfectionHazardRegistration();
@@ -898,6 +894,7 @@ namespace Hecton8.AI
                 _dispatcherRegistered = false;
             }
 
+            TryUnregisterFaunaLateFrame();
             TryUnregisterHotSwapListener();
             ClearSimulationBucketerBinding();
 
@@ -915,7 +912,7 @@ namespace Hecton8.AI
             ClearPredatorSquadState();
             ReleaseCorpseSinkingKinematicsBuffers();
             ReleaseMimicOcclusionRuntimeOwner();
-            ReleaseFaunaPresentationMaterials();
+            ReleaseFaunaPresentationPropertyBlock();
             InvalidatePlayerRuntimeContextCache();
         }
 
@@ -951,6 +948,8 @@ namespace Hecton8.AI
             _lastAppliedHitFlashShader01 = -1f;
             _lastAppliedMutationHueShader01 = -1f;
             _lastAppliedMutationTwitchShader01 = -1f;
+            _lastAppliedDamageBlendShader01 = -1f;
+            _lastAppliedEmissionStrength = -1f;
             _lastAppliedGeneticMask = ulong.MaxValue;
             _lastAppliedInfectionShaderSeverity01 = -1f;
             _lastAppliedInfectionShaderActive = false;
@@ -979,6 +978,7 @@ namespace Hecton8.AI
             SetInfectedState(false, 0f);
             SetDiseasedState(false, 0f);
             _currentHealth = _maxHealth;
+            QueueCurrentFaunaPresentationShaderState();
             TryRegisterCombatDamageTarget();
             MarkCombatDamageSyncDirty();
             _utilityBrain.ResetRuntimeState(ResolveSelfRuntimePositionOrZero());
@@ -1025,6 +1025,8 @@ namespace Hecton8.AI
             _lastAppliedHitFlashShader01 = -1f;
             _lastAppliedMutationHueShader01 = -1f;
             _lastAppliedMutationTwitchShader01 = -1f;
+            _lastAppliedDamageBlendShader01 = -1f;
+            _lastAppliedEmissionStrength = -1f;
             _lastAppliedGeneticMask = ulong.MaxValue;
             _lastAppliedInfectionShaderSeverity01 = -1f;
             _lastAppliedInfectionShaderActive = false;
@@ -3112,11 +3114,11 @@ namespace Hecton8.AI
                 RestoreLeviathanBreachDragIfReady();
                 return;
             }
-            
+
             _steeringEngine.FixedTick(
-                fdt, 
-                desiredDirection, 
-                forceMultiplier, 
+                fdt,
+                desiredDirection,
+                forceMultiplier,
                 speedMultiplier,
                 turnMultiplier,
                 IsRetreatState(_stateMachine.currentState),
@@ -3207,6 +3209,9 @@ namespace Hecton8.AI
 
         public void LateFrameTick()
         {
+            if (!HasQueuedFaunaLateFrameWork())
+                return;
+
             UpdateSimulationBucketInterpolationAlpha();
             CompleteCorpseSinkingKinematicsIfReady();
             FlushQueuedAupPresentationPose();
@@ -3217,6 +3222,24 @@ namespace Hecton8.AI
             FlushLogicalLodPresentationState();
             FlushQueuedPresentationFeedback();
             FlushQueuedDespawnOrDeactivate();
+        }
+
+        private bool HasQueuedFaunaLateFrameWork()
+        {
+            return _corpseSinkJobScheduled ||
+                   _deathSpiralActive ||
+                   _pendingAupPresentationPoseDirty ||
+                   _pendingBiolumPresentationLightScaleDirty ||
+                   _pendingCorpseBloatShaderTimerDirty ||
+                   _pendingFaunaPresentationShaderStateDirty ||
+                   _pendingInfectionVisualsDirty ||
+                   _pendingLogicalLodPresentationDirty ||
+                   _pendingProceduralAudioEventDirty ||
+                   _pendingMimicAcousticDirty ||
+                   _pendingLeviathanRoarAcousticDirty ||
+                   _pendingPredatorImpactHapticDirty ||
+                   _pendingSelfDespawnOrDeactivate ||
+                   _pendingExternalDespawnOrDeactivate != null;
         }
 
         private void QueueMimicAcoustic(in AcousticPingSignal signal)
@@ -4421,13 +4444,23 @@ namespace Hecton8.AI
         private void CacheBiolumPresentationLights()
         {
             _biolumPresentationLightCount = 0;
-            _biolumPresentationLightScratch.Clear();
-            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+            if (_faunaMetadata != null)
+            {
+                if (_faunaMetadata.TryGetBiolumPresentationLights(out Light[] metadataLights, out int metadataLightCount))
+                    CopyBiolumPresentationLights(metadataLights, metadataLightCount);
+                else
+                    ClearBiolumPresentationLightCacheTail();
+                return;
+            }
 
-            int sourceCount = _biolumPresentationLightScratch.Count;
+            List<Light> scratch = s_biolumPresentationLightScratch;
+            scratch.Clear();
+            GetComponentsInChildren(true, scratch);
+
+            int sourceCount = scratch.Count;
             for (int i = 0; i < sourceCount && _biolumPresentationLightCount < MaxBiolumPresentationLights; i++)
             {
-                Light candidate = _biolumPresentationLightScratch[i];
+                Light candidate = scratch[i];
                 if (candidate == null)
                     continue;
 
@@ -4436,161 +4469,85 @@ namespace Hecton8.AI
                 _biolumPresentationLightCount++;
             }
 
+            ClearBiolumPresentationLightCacheTail();
+
+            scratch.Clear();
+        }
+
+        private void CopyBiolumPresentationLights(Light[] source, int sourceCount)
+        {
+            int safeSourceCount = source != null ? math.min(sourceCount, source.Length) : 0;
+            for (int i = 0; i < safeSourceCount && _biolumPresentationLightCount < MaxBiolumPresentationLights; i++)
+            {
+                Light candidate = source[i];
+                if (candidate == null)
+                    continue;
+
+                _biolumPresentationLights[_biolumPresentationLightCount] = candidate;
+                _biolumPresentationBaseIntensities[_biolumPresentationLightCount] = math.max(0f, candidate.intensity);
+                _biolumPresentationLightCount++;
+            }
+
+            ClearBiolumPresentationLightCacheTail();
+        }
+
+        private void ClearBiolumPresentationLightCacheTail()
+        {
             for (int i = _biolumPresentationLightCount; i < MaxBiolumPresentationLights; i++)
             {
                 _biolumPresentationLights[i] = null;
                 _biolumPresentationBaseIntensities[i] = 0f;
             }
-
-            _biolumPresentationLightScratch.Clear();
         }
 
-        private void EnsureFaunaPresentationMaterials()
+        private void InitializeFaunaPresentationPropertyBlock()
         {
-            _faunaPresentationOriginalMaterials.Clear();
-            _faunaPresentationRuntimeMaterials.Clear();
-            _faunaPresentationRuntimeMaterialMasks.Clear();
-            _faunaPresentationMaterialScratch.Clear();
             if (_renderer == null)
                 return;
 
-            _renderer.GetSharedMaterials(_faunaPresentationMaterialScratch);
-            int materialCount = _faunaPresentationMaterialScratch.Count;
-            bool materialSlotsChanged = false;
-            for (int i = 0; i < materialCount; i++)
-            {
-                Material sourceMaterial = _faunaPresentationMaterialScratch[i];
-                if (sourceMaterial == null)
-                    continue;
+            if (_authoredFaunaMaterial != null)
+                _renderer.sharedMaterial = _authoredFaunaMaterial;
 
-                ushort propertyMask = 0;
-                if (sourceMaterial.HasProperty(_FaunaBiolumDimShaderId))
-                    propertyMask |= FaunaPresentationBiolumMask;
-                if (sourceMaterial.HasProperty(_FaunaCamouflageTintShaderId))
-                    propertyMask |= FaunaPresentationCamouflageTintMask;
-                if (sourceMaterial.HasProperty(_FaunaCamouflageParamsShaderId))
-                    propertyMask |= FaunaPresentationCamouflageParamsMask;
-                if (sourceMaterial.HasProperty(_FaunaCamouflageStrengthShaderId))
-                    propertyMask |= FaunaPresentationCamouflageStrengthMask;
-                if (sourceMaterial.HasProperty(_DeathDitherFadeShaderId))
-                    propertyMask |= FaunaPresentationDeathDitherMask;
-                if (sourceMaterial.HasProperty(_CorpseBloatAgeShaderId))
-                    propertyMask |= FaunaPresentationCorpseBloatMask;
-                if (sourceMaterial.HasProperty(_CorpseBloatStartTimeShaderId))
-                    propertyMask |= FaunaPresentationCorpseBloatTimerMask;
-                if (sourceMaterial.HasProperty(_CorpseBloatDurationShaderId))
-                    propertyMask |= FaunaPresentationCorpseBloatDurationMask;
-                if (sourceMaterial.HasProperty(_DecayAmountShaderId))
-                    propertyMask |= FaunaPresentationDecayAmountMask;
-                if (sourceMaterial.HasProperty(_HitFlashShaderId))
-                    propertyMask |= FaunaPresentationHitFlashMask;
-                if (sourceMaterial.HasProperty(_FaunaMutationHueShaderId))
-                    propertyMask |= FaunaPresentationMutationHueMask;
-                if (sourceMaterial.HasProperty(_FaunaMutationTwitchShaderId))
-                    propertyMask |= FaunaPresentationMutationTwitchMask;
-                if (sourceMaterial.HasProperty(_ColorId))
-                    propertyMask |= FaunaPresentationColorMask;
-                if (sourceMaterial.HasProperty(_BaseColorId))
-                    propertyMask |= FaunaPresentationBaseColorMask;
-                if (sourceMaterial.HasProperty(_EmissionColorId))
-                    propertyMask |= FaunaPresentationEmissionColorMask;
-                if (sourceMaterial.HasProperty(_H8FaunaGeneticMaskBytes0ShaderId) &&
-                    sourceMaterial.HasProperty(_H8FaunaGeneticMaskBytes1ShaderId))
-                    propertyMask |= FaunaPresentationGeneticMaskMask;
-                if (propertyMask == 0)
-                    continue;
+            Material originalMaterial = _renderer.sharedMaterial;
+            _authoredFaunaColor = ResolveOriginalMaterialColor(originalMaterial, _ColorId, Color.white);
+            _authoredFaunaBaseColor = ResolveOriginalMaterialColor(originalMaterial, _BaseColorId, _authoredFaunaColor);
+            _authoredFaunaEmissionColor = ResolveOriginalMaterialColor(originalMaterial, _EmissionColorId, Color.black);
 
-                Material runtimeMaterial = new Material(sourceMaterial); // COLD ALLOC: Material[1] - per-fauna shader presentation state - owner: FaunaBrain
-                runtimeMaterial.hideFlags = HideFlags.DontSave;
-                if ((propertyMask & FaunaPresentationBiolumMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaBiolumDimShaderId, 1f);
-                if ((propertyMask & FaunaPresentationCamouflageTintMask) != 0)
-                    runtimeMaterial.SetVector(_FaunaCamouflageTintShaderId, ColorToVector(FaunaCamouflageTint));
-                if ((propertyMask & FaunaPresentationCamouflageParamsMask) != 0)
-                    runtimeMaterial.SetVector(_FaunaCamouflageParamsShaderId, FaunaCamouflageParams);
-                if ((propertyMask & FaunaPresentationCamouflageStrengthMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaCamouflageStrengthShaderId, FaunaCamouflageStrength);
-                if ((propertyMask & FaunaPresentationDeathDitherMask) != 0)
-                    runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, 0f);
-                if ((propertyMask & FaunaPresentationCorpseBloatMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, 0f);
-                if ((propertyMask & FaunaPresentationCorpseBloatTimerMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatStartTimeShaderId, -1f);
-                if ((propertyMask & FaunaPresentationCorpseBloatDurationMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, ResolveCorpsePresentationDurationSeconds());
-                if ((propertyMask & FaunaPresentationDecayAmountMask) != 0)
-                    runtimeMaterial.SetFloat(_DecayAmountShaderId, 0f);
-                if ((propertyMask & FaunaPresentationHitFlashMask) != 0)
-                    runtimeMaterial.SetFloat(_HitFlashShaderId, 0f);
-                if ((propertyMask & FaunaPresentationMutationHueMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaMutationHueShaderId, 0f);
-                if ((propertyMask & FaunaPresentationMutationTwitchMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaMutationTwitchShaderId, 0f);
-                if ((propertyMask & FaunaPresentationGeneticMaskMask) != 0)
-                {
-                    runtimeMaterial.SetVector(_H8FaunaGeneticMaskBytes0ShaderId, Vector4.zero);
-                    runtimeMaterial.SetVector(_H8FaunaGeneticMaskBytes1ShaderId, Vector4.zero);
-                }
-
-                _faunaPresentationMaterialScratch[i] = runtimeMaterial;
-                _faunaPresentationOriginalMaterials.Add(sourceMaterial);
-                _faunaPresentationRuntimeMaterials.Add(runtimeMaterial);
-                _faunaPresentationRuntimeMaterialMasks.Add(propertyMask);
-                materialSlotsChanged = true;
-            }
-
-            if (materialSlotsChanged)
-                _renderer.SetSharedMaterials(_faunaPresentationMaterialScratch);
-
-            _faunaPresentationMaterialScratch.Clear();
+            MaterialPropertyBlock block = ResolveFaunaPresentationPropertyBlock();
+            block.Clear();
+            _renderer.GetPropertyBlock(block);
+            block.SetFloat(_FaunaBiolumDimShaderId, 1f);
+            block.SetVector(_FaunaCamouflageTintShaderId, ColorToVector(FaunaCamouflageTint));
+            block.SetVector(_FaunaCamouflageParamsShaderId, FaunaCamouflageParams);
+            block.SetFloat(_FaunaCamouflageStrengthShaderId, FaunaCamouflageStrength);
+            block.SetFloat(_DeathDitherFadeShaderId, 0f);
+            block.SetFloat(_CorpseBloatAgeShaderId, 0f);
+            block.SetFloat(_CorpseBloatStartTimeShaderId, -1f);
+            block.SetFloat(_CorpseBloatDurationShaderId, ResolveCorpsePresentationDurationSeconds());
+            block.SetFloat(_DecayAmountShaderId, 0f);
+            block.SetFloat(_HitFlashShaderId, 0f);
+            block.SetFloat(_FaunaMutationHueShaderId, 0f);
+            block.SetFloat(_FaunaMutationTwitchShaderId, 0f);
+            block.SetVector(_H8FaunaGeneticMaskBytes0ShaderId, Vector4.zero);
+            block.SetVector(_H8FaunaGeneticMaskBytes1ShaderId, Vector4.zero);
+            block.SetFloat(_DamageBlendShaderId, 0f);
+            block.SetFloat(_EmissionStrengthShaderId, 1f);
+            _renderer.SetPropertyBlock(block);
         }
 
-        private void ReleaseFaunaPresentationMaterials()
+        private static MaterialPropertyBlock ResolveFaunaPresentationPropertyBlock()
         {
-            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
-            if (_renderer != null && runtimeMaterialCount > 0)
-            {
-                _faunaPresentationMaterialScratch.Clear();
-                _renderer.GetSharedMaterials(_faunaPresentationMaterialScratch);
-                int slotCount = _faunaPresentationMaterialScratch.Count;
-                bool restoredAnySlot = false;
-                for (int slotIndex = 0; slotIndex < slotCount; slotIndex++)
-                {
-                    Material slotMaterial = _faunaPresentationMaterialScratch[slotIndex];
-                    if (slotMaterial == null)
-                        continue;
+            if (s_faunaPresentationPropertyBlock == null)
+                s_faunaPresentationPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — shared presentation scratch copied by Renderer.SetPropertyBlock — owner: FaunaBrain
 
-                    for (int runtimeIndex = 0; runtimeIndex < runtimeMaterialCount; runtimeIndex++)
-                    {
-                        if (!ReferenceEquals(slotMaterial, _faunaPresentationRuntimeMaterials[runtimeIndex]))
-                            continue;
+            return s_faunaPresentationPropertyBlock;
+        }
 
-                        _faunaPresentationMaterialScratch[slotIndex] = _faunaPresentationOriginalMaterials[runtimeIndex];
-                        restoredAnySlot = true;
-                        break;
-                    }
-                }
+        private void ReleaseFaunaPresentationPropertyBlock()
+        {
+            if (_renderer != null)
+                _renderer.SetPropertyBlock(null);
 
-                if (restoredAnySlot)
-                    _renderer.SetSharedMaterials(_faunaPresentationMaterialScratch);
-            }
-
-            for (int i = 0; i < runtimeMaterialCount; i++)
-            {
-                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
-                if (runtimeMaterial == null)
-                    continue;
-
-                if (Application.isPlaying)
-                    Destroy(runtimeMaterial);
-                else
-                    DestroyImmediate(runtimeMaterial);
-            }
-
-            _faunaPresentationMaterialScratch.Clear();
-            _faunaPresentationOriginalMaterials.Clear();
-            _faunaPresentationRuntimeMaterials.Clear();
-            _faunaPresentationRuntimeMaterialMasks.Clear();
             _lastAppliedFaunaBiolumShader01 = -1f;
             _lastAppliedDeathDitherShader01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
@@ -4598,6 +4555,8 @@ namespace Hecton8.AI
             _lastAppliedHitFlashShader01 = -1f;
             _lastAppliedMutationHueShader01 = -1f;
             _lastAppliedMutationTwitchShader01 = -1f;
+            _lastAppliedDamageBlendShader01 = -1f;
+            _lastAppliedEmissionStrength = -1f;
             _lastAppliedGeneticMask = ulong.MaxValue;
             _lastAppliedInfectionShaderSeverity01 = -1f;
             _lastAppliedInfectionShaderActive = false;
@@ -4641,7 +4600,17 @@ namespace Hecton8.AI
             _hitFlash01 = math.max(0f, _hitFlash01 - (math.max(0f, dt) * HitFlashDecayPerSecond));
             float deathLightFade01 = 1f - math.saturate(_deathDitherFade01);
             ApplyBiolumPresentationLightScale(_faunaBiolumDim01 * deathLightFade01);
-            ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01, _hitFlash01, _whaleFallDecay01);
+            QueueCurrentFaunaPresentationShaderState();
+        }
+
+        private void QueueCurrentFaunaPresentationShaderState()
+        {
+            ApplyFaunaPresentationShaderState(
+                _faunaBiolumDim01,
+                _deathDitherFade01,
+                _corpseBloatAge01,
+                _hitFlash01,
+                _whaleFallDecay01);
         }
 
         private void ConsumeRetinalBlindPresentationSignals()
@@ -4695,11 +4664,39 @@ namespace Hecton8.AI
 
         private void ApplyFaunaPresentationShaderState(float biolumDim01, float deathDitherFade01, float corpseBloatAge01, float hitFlash01, float decayAmount01 = 0f)
         {
-            _pendingFaunaPresentationBiolumDim01 = math.saturate(biolumDim01);
-            _pendingFaunaPresentationDeathDitherFade01 = math.saturate(deathDitherFade01);
-            _pendingFaunaPresentationCorpseBloatAge01 = math.saturate(corpseBloatAge01);
-            _pendingFaunaPresentationHitFlash01 = math.saturate(hitFlash01);
-            _pendingFaunaPresentationDecayAmount01 = math.saturate(decayAmount01);
+            float resolvedBiolumDim01 = math.saturate(biolumDim01);
+            float resolvedDeathDitherFade01 = math.saturate(deathDitherFade01);
+            float resolvedCorpseBloatAge01 = math.saturate(corpseBloatAge01);
+            float resolvedHitFlash01 = math.saturate(hitFlash01);
+            float resolvedDecayAmount01 = math.saturate(decayAmount01);
+            float resolvedQuality01 = ResolveFaunaPresentationMaterialQuality01();
+            float resolvedMutationHue01 = _hasGeneticTraits ? math.saturate(_geneticTraits.MutationHueShift01) : 0f;
+            float resolvedMutationTwitch01 = _hasGeneticTraits ? math.saturate(_geneticTraits.MutationTwitch01) : 0f;
+            ulong resolvedGeneticMask = _hasGeneticTraits ? _geneticTraits.Genome : 0UL;
+            float resolvedDamageBlend01 = ResolveFaunaDamageBlend01(resolvedQuality01);
+            float resolvedEmissionStrength = ResolveFaunaEmissionStrength(resolvedBiolumDim01, resolvedQuality01);
+            if (!_pendingFaunaPresentationShaderStateDirty &&
+                math.abs(_pendingFaunaPresentationBiolumDim01 - resolvedBiolumDim01) < 0.001f &&
+                math.abs(_pendingFaunaPresentationDeathDitherFade01 - resolvedDeathDitherFade01) < 0.001f &&
+                math.abs(_pendingFaunaPresentationCorpseBloatAge01 - resolvedCorpseBloatAge01) < 0.001f &&
+                math.abs(_pendingFaunaPresentationHitFlash01 - resolvedHitFlash01) < 0.001f &&
+                math.abs(_pendingFaunaPresentationDecayAmount01 - resolvedDecayAmount01) < 0.001f &&
+                math.abs(_pendingFaunaPresentationQuality01 - resolvedQuality01) < 0.001f &&
+                math.abs(_lastAppliedMutationHueShader01 - resolvedMutationHue01) < 0.001f &&
+                math.abs(_lastAppliedMutationTwitchShader01 - resolvedMutationTwitch01) < 0.001f &&
+                math.abs(_lastAppliedDamageBlendShader01 - resolvedDamageBlend01) < 0.001f &&
+                math.abs(_lastAppliedEmissionStrength - resolvedEmissionStrength) < 0.001f &&
+                _lastAppliedGeneticMask == resolvedGeneticMask)
+            {
+                return;
+            }
+
+            _pendingFaunaPresentationBiolumDim01 = resolvedBiolumDim01;
+            _pendingFaunaPresentationDeathDitherFade01 = resolvedDeathDitherFade01;
+            _pendingFaunaPresentationCorpseBloatAge01 = resolvedCorpseBloatAge01;
+            _pendingFaunaPresentationHitFlash01 = resolvedHitFlash01;
+            _pendingFaunaPresentationDecayAmount01 = resolvedDecayAmount01;
+            _pendingFaunaPresentationQuality01 = resolvedQuality01;
             _pendingFaunaPresentationShaderStateDirty = true;
         }
 
@@ -4719,10 +4716,12 @@ namespace Hecton8.AI
 
         private void ApplyFaunaPresentationShaderStateImmediate(float biolumDim01, float deathDitherFade01, float corpseBloatAge01, float hitFlash01, float decayAmount01 = 0f)
         {
-            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
-            if (runtimeMaterialCount <= 0)
+            Renderer targetRenderer = _renderer;
+            if (targetRenderer == null)
                 return;
 
+            MaterialPropertyBlock block = ResolveFaunaPresentationPropertyBlock();
+            float quality01 = ResolveFaunaPresentationMaterialQuality01();
             float resolvedBiolumDim01 = math.saturate(biolumDim01);
             float resolvedDeathDitherFade01 = math.saturate(deathDitherFade01);
             float resolvedCorpseBloatAge01 = math.saturate(corpseBloatAge01);
@@ -4731,6 +4730,8 @@ namespace Hecton8.AI
             float resolvedMutationHue01 = _hasGeneticTraits ? math.saturate(_geneticTraits.MutationHueShift01) : 0f;
             float resolvedMutationTwitch01 = _hasGeneticTraits ? math.saturate(_geneticTraits.MutationTwitch01) : 0f;
             ulong resolvedGeneticMask = _hasGeneticTraits ? _geneticTraits.Genome : 0UL;
+            float resolvedDamageBlend01 = ResolveFaunaDamageBlend01(quality01);
+            float resolvedEmissionStrength = ResolveFaunaEmissionStrength(resolvedBiolumDim01, quality01);
             bool applyBiolum = math.abs(_lastAppliedFaunaBiolumShader01 - resolvedBiolumDim01) >= 0.001f;
             bool applyDeathDither = math.abs(_lastAppliedDeathDitherShader01 - resolvedDeathDitherFade01) >= 0.001f;
             bool applyCorpseBloat = math.abs(_lastAppliedCorpseBloatShader01 - resolvedCorpseBloatAge01) >= 0.001f;
@@ -4738,9 +4739,22 @@ namespace Hecton8.AI
             bool applyHitFlash = math.abs(_lastAppliedHitFlashShader01 - resolvedHitFlash01) >= 0.001f;
             bool applyMutationHue = math.abs(_lastAppliedMutationHueShader01 - resolvedMutationHue01) >= 0.001f;
             bool applyMutationTwitch = math.abs(_lastAppliedMutationTwitchShader01 - resolvedMutationTwitch01) >= 0.001f;
+            bool applyDamageBlend = math.abs(_lastAppliedDamageBlendShader01 - resolvedDamageBlend01) >= 0.001f;
+            bool applyEmissionStrength = math.abs(_lastAppliedEmissionStrength - resolvedEmissionStrength) >= 0.001f;
             bool applyGeneticMask = _lastAppliedGeneticMask != resolvedGeneticMask;
-            if (!applyBiolum && !applyDeathDither && !applyCorpseBloat && !applyDecayAmount && !applyHitFlash && !applyMutationHue && !applyMutationTwitch && !applyGeneticMask)
+            if (!applyBiolum &&
+                !applyDeathDither &&
+                !applyCorpseBloat &&
+                !applyDecayAmount &&
+                !applyHitFlash &&
+                !applyMutationHue &&
+                !applyMutationTwitch &&
+                !applyDamageBlend &&
+                !applyEmissionStrength &&
+                !applyGeneticMask)
+            {
                 return;
+            }
 
             _lastAppliedFaunaBiolumShader01 = resolvedBiolumDim01;
             _lastAppliedDeathDitherShader01 = resolvedDeathDitherFade01;
@@ -4749,36 +4763,63 @@ namespace Hecton8.AI
             _lastAppliedHitFlashShader01 = resolvedHitFlash01;
             _lastAppliedMutationHueShader01 = resolvedMutationHue01;
             _lastAppliedMutationTwitchShader01 = resolvedMutationTwitch01;
+            _lastAppliedDamageBlendShader01 = resolvedDamageBlend01;
+            _lastAppliedEmissionStrength = resolvedEmissionStrength;
             _lastAppliedGeneticMask = resolvedGeneticMask;
-            Vector4 geneticMaskBytes0 = applyGeneticMask ? PackGeneticMaskBytes0(resolvedGeneticMask) : Vector4.zero;
-            Vector4 geneticMaskBytes1 = applyGeneticMask ? PackGeneticMaskBytes1(resolvedGeneticMask) : Vector4.zero;
-            for (int i = 0; i < runtimeMaterialCount; i++)
-            {
-                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
-                if (runtimeMaterial == null)
-                    continue;
 
-                ushort propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
-                if (applyBiolum && (propertyMask & FaunaPresentationBiolumMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaBiolumDimShaderId, resolvedBiolumDim01);
-                if (applyDeathDither && (propertyMask & FaunaPresentationDeathDitherMask) != 0)
-                    runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, resolvedDeathDitherFade01);
-                if (applyCorpseBloat && (propertyMask & FaunaPresentationCorpseBloatMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, resolvedCorpseBloatAge01);
-                if (applyDecayAmount && (propertyMask & FaunaPresentationDecayAmountMask) != 0)
-                    runtimeMaterial.SetFloat(_DecayAmountShaderId, resolvedDecayAmount01);
-                if (applyHitFlash && (propertyMask & FaunaPresentationHitFlashMask) != 0)
-                    runtimeMaterial.SetFloat(_HitFlashShaderId, resolvedHitFlash01);
-                if (applyMutationHue && (propertyMask & FaunaPresentationMutationHueMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaMutationHueShaderId, resolvedMutationHue01);
-                if (applyMutationTwitch && (propertyMask & FaunaPresentationMutationTwitchMask) != 0)
-                    runtimeMaterial.SetFloat(_FaunaMutationTwitchShaderId, resolvedMutationTwitch01);
-                if (applyGeneticMask && (propertyMask & FaunaPresentationGeneticMaskMask) != 0)
-                {
-                    runtimeMaterial.SetVector(_H8FaunaGeneticMaskBytes0ShaderId, geneticMaskBytes0);
-                    runtimeMaterial.SetVector(_H8FaunaGeneticMaskBytes1ShaderId, geneticMaskBytes1);
-                }
+            block.Clear();
+            targetRenderer.GetPropertyBlock(block);
+            if (applyBiolum)
+                block.SetFloat(_FaunaBiolumDimShaderId, resolvedBiolumDim01);
+            if (applyDeathDither)
+                block.SetFloat(_DeathDitherFadeShaderId, resolvedDeathDitherFade01);
+            if (applyCorpseBloat)
+                block.SetFloat(_CorpseBloatAgeShaderId, resolvedCorpseBloatAge01);
+            if (applyDecayAmount)
+                block.SetFloat(_DecayAmountShaderId, resolvedDecayAmount01);
+            if (applyHitFlash)
+                block.SetFloat(_HitFlashShaderId, resolvedHitFlash01);
+            if (applyMutationHue)
+                block.SetFloat(_FaunaMutationHueShaderId, resolvedMutationHue01);
+            if (applyMutationTwitch)
+                block.SetFloat(_FaunaMutationTwitchShaderId, resolvedMutationTwitch01);
+            if (applyDamageBlend)
+                block.SetFloat(_DamageBlendShaderId, resolvedDamageBlend01);
+            if (applyEmissionStrength)
+                block.SetFloat(_EmissionStrengthShaderId, resolvedEmissionStrength);
+            if (applyGeneticMask)
+            {
+                block.SetVector(_H8FaunaGeneticMaskBytes0ShaderId, PackGeneticMaskBytes0(resolvedGeneticMask));
+                block.SetVector(_H8FaunaGeneticMaskBytes1ShaderId, PackGeneticMaskBytes1(resolvedGeneticMask));
             }
+
+            targetRenderer.SetPropertyBlock(block);
+        }
+
+        private static float ResolveFaunaPresentationMaterialQuality01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.select(0f, quality, math.isfinite(quality));
+            quality = math.saturate(quality);
+            return quality * quality * (3f - 2f * quality);
+        }
+
+        private float ResolveFaunaDamageBlend01(float quality01)
+        {
+            float safeMaxHealth = math.max(1f, _maxHealth);
+            float health01 = math.saturate(_currentHealth * math.rcp(safeMaxHealth));
+            float damage01 = 1f - health01;
+            return math.saturate(damage01 * math.saturate(quality01));
+        }
+
+        private float ResolveFaunaEmissionStrength(float biolumDim01, float quality01)
+        {
+            float aggressiveFlag = math.select(0f, 1f, isAggressive || _currentStateCache == AIState.Aggressive || _currentStateCache == AIState.ThreatDisplay);
+            float predatorIntent = math.select(0f, 1f, _utilityBrain.UsesPredatorRole != 0 || _utilityBrain.IsActivePredator != 0);
+            float aggression01 = math.saturate(math.max(aggressiveFlag, predatorIntent));
+            float quality = math.saturate(quality01);
+            float overkillPulse = math.lerp(1f, math.lerp(1f, 1.75f, aggression01), quality);
+            return math.saturate(biolumDim01) * overkillPulse;
         }
 
         private void ResetCorpseBloatShaderTimer()
@@ -4817,26 +4858,18 @@ namespace Hecton8.AI
 
         private void ApplyCorpseBloatShaderTimerImmediate(float startTimeSeconds)
         {
-            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
-            if (runtimeMaterialCount <= 0)
+            Renderer targetRenderer = _renderer;
+            if (targetRenderer == null)
                 return;
 
-            for (int i = 0; i < runtimeMaterialCount; i++)
-            {
-                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
-                if (runtimeMaterial == null)
-                    continue;
-
-                ushort propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
-                if ((propertyMask & FaunaPresentationCorpseBloatMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, 0f);
-                if ((propertyMask & FaunaPresentationCorpseBloatTimerMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatStartTimeShaderId, startTimeSeconds);
-                if ((propertyMask & FaunaPresentationCorpseBloatDurationMask) != 0)
-                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, ResolveCorpsePresentationDurationSeconds());
-                if ((propertyMask & FaunaPresentationDecayAmountMask) != 0)
-                    runtimeMaterial.SetFloat(_DecayAmountShaderId, 0f);
-            }
+            MaterialPropertyBlock block = ResolveFaunaPresentationPropertyBlock();
+            block.Clear();
+            targetRenderer.GetPropertyBlock(block);
+            block.SetFloat(_CorpseBloatAgeShaderId, 0f);
+            block.SetFloat(_CorpseBloatStartTimeShaderId, startTimeSeconds);
+            block.SetFloat(_CorpseBloatDurationShaderId, ResolveCorpsePresentationDurationSeconds());
+            block.SetFloat(_DecayAmountShaderId, 0f);
+            targetRenderer.SetPropertyBlock(block);
 
             _lastAppliedCorpseBloatShader01 = 0f;
             _lastAppliedDecayAmountShader01 = 0f;
@@ -5150,15 +5183,25 @@ namespace Hecton8.AI
                 return;
 
             if (_faunaKinematicsRuntime == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _faunaKinematicsRuntime = gameObject.AddComponent<FaunaKinematicsRuntime>();
+#else
+                return;
+#endif
+            }
 
             _faunaKinematicsRuntime.BindFromFauna(this, _rb);
 
             CreatureDamageManager creatureDamageManager = _creatureDamageManager;
             if (creatureDamageManager == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 creatureDamageManager = gameObject.AddComponent<CreatureDamageManager>();
                 _creatureDamageManager = creatureDamageManager;
+#else
+                return;
+#endif
             }
 
             creatureDamageManager.BindFromFauna(this);
@@ -6022,7 +6065,7 @@ namespace Hecton8.AI
         private void HandleAttackPerform(Transform target)
         {
             if (target == null || _isDead) return;
-            
+
             float damage = ResolveCurrentAttackDamage();
             bool hasTargetLogicPosition = TryResolveAttackTargetLogicPosition(target, out Vector3 targetLogicPosition);
 
@@ -6041,7 +6084,7 @@ namespace Hecton8.AI
                 _utilityBrain.SetHunger01(0f);
                 _stateMachine.currentState = AIState.Sated;
                 _currentStateCache = AIState.Sated;
-                
+
                 // [REQ] SHOAL SCATTERING (Panic Pulse)
                 // Trigger panic in all nearby prey within 10m
                 Vector3 preyPosition = hasTargetLogicPosition ? targetLogicPosition : predatorPosition + ResolveSelfLogicForward();
@@ -6396,6 +6439,7 @@ namespace Hecton8.AI
         {
             float impactFlash01 = math.saturate(0.28f + (normalizedDamage * 2.5f));
             _hitFlash01 = math.max(_hitFlash01, impactFlash01);
+            QueueCurrentFaunaPresentationShaderState();
         }
 
         /// <summary>
@@ -6458,7 +6502,7 @@ namespace Hecton8.AI
         public void TriggerPanicPulse(Vector3 predatorPos)
         {
             if (_isDead) return;
-            
+
             _sensorSuite.isScattering = true;
             Vector3 selfPosition = TryResolveSelfLogicPosition(out Vector3 resolvedSelfPosition)
                 ? resolvedSelfPosition
@@ -6467,10 +6511,10 @@ namespace Hecton8.AI
             _sensorSuite.scatterDirection = baseDir.sqrMagnitude > 0.0001f
                 ? ResolveDominantAxisDirection(baseDir)
                 : ResolveSelfLogicForward();
-            
+
             // [REQ] Audio Linking (Sound of Panic)
             OnPanicTriggered?.Invoke();
-            
+
             // StateMachine will handle the timer via _scatterTimer if it's in Flocking state
         }
 
@@ -6736,43 +6780,57 @@ namespace Hecton8.AI
 
         private void ScheduleCorpseSinkingKinematicStep(float fdt)
         {
-            if (_corpseSinkJobScheduled)
+            if (_corpseSinkJobScheduled || _corpseSinkMutationGuardHeld)
                 return;
-
-            if (!TryEnsureCorpseSinkingKinematicsBuffers(
-                    out NativeArray<CorpseSinkKinematicInput> corpseSinkInput,
-                    out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
-            {
-                return;
-            }
 
             double3 committedOriginOffset = ToCommittedOriginOffset();
             float3 position = AUPMath.ToRuntimeFloat3(in _corpseSinkAup, committedOriginOffset);
-            if (!_corpseFloorLatched)
+            bool latchFloor = !_corpseFloorLatched;
+            float floorY = latchFloor
+                ? ResolveCorpseFloorY(new Vector3(position.x, position.y, position.z))
+                : _corpseFloorY;
+
+            if (!TryAcquireRetainedCorpseSinkMutationGuard())
+                return;
+
+            bool scheduled = false;
+            try
             {
-                _corpseFloorY = ResolveCorpseFloorY(new Vector3(position.x, position.y, position.z));
+                if (!TryEnsureCorpseSinkingKinematicsBuffers(
+                        out NativeArray<CorpseSinkKinematicInput> corpseSinkInput,
+                        out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
+                {
+                    return;
+                }
+
+                _corpseFloorY = floorY;
                 _corpseFloorLatched = true;
+                corpseSinkInput[0] = new CorpseSinkKinematicInput
+                {
+                    PositionAup = _corpseSinkAup.ToAlignedBlit(),
+                    FloatingOriginOffset = committedOriginOffset,
+                    FloorY = _corpseFloorY,
+                    DeltaTime = fdt,
+                    SinkSpeedMetersPerSecond = CorpseSinkSpeedMetersPerSecond,
+                    FloorSettleOffsetMeters = CorpseFloorSettleOffsetMeters
+                };
+
+                _corpseSinkPoseDeltaTime = fdt;
+                _corpseSinkJobHandle = new CorpseSinkKinematicJob
+                {
+                    Input = corpseSinkInput,
+                    Output = corpseSinkOutput
+                }.Schedule();
+                _corpseSinkJobScheduled = true;
+                scheduled = true;
+                TryRegisterCorpseSinkLateFrame();
+                JobHandle.ScheduleBatchedJobs();
             }
-
-            corpseSinkInput[0] = new CorpseSinkKinematicInput
+            finally
             {
-                PositionAup = _corpseSinkAup.ToAlignedBlit(),
-                FloatingOriginOffset = committedOriginOffset,
-                FloorY = _corpseFloorY,
-                DeltaTime = fdt,
-                SinkSpeedMetersPerSecond = CorpseSinkSpeedMetersPerSecond,
-                FloorSettleOffsetMeters = CorpseFloorSettleOffsetMeters
-            };
-
-            _corpseSinkPoseDeltaTime = fdt;
-            _corpseSinkJobHandle = new CorpseSinkKinematicJob
-            {
-                Input = corpseSinkInput,
-                Output = corpseSinkOutput
-            }.Schedule();
-            _corpseSinkJobScheduled = true;
-            TryRegisterCorpseSinkLateFrame();
-            JobHandle.ScheduleBatchedJobs();
+                if (!scheduled)
+                    ReleaseCorpseSinkMutationGuard();
+            }
         }
 
         private float ResolveCorpseFloorY(Vector3 position)
@@ -6814,16 +6872,23 @@ namespace Hecton8.AI
                 return;
 
             _corpseSinkJobScheduled = false;
-            if (!TryReadCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
-                return;
+            try
+            {
+                if (!TryReadCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
+                    return;
 
-            CorpseSinkKinematicOutput output = corpseSinkOutput[0];
-            _corpseSinkAup = AbsoluteUniversePosition.FromAlignedBlit(in output.PositionAup);
-            Vector3 runtimePosition = new Vector3(output.RuntimePosition.x, output.RuntimePosition.y, output.RuntimePosition.z);
-            bool freezeMotion = output.FreezeMotion != 0;
-            ApplyCorpseKinematicPose(runtimePosition, _corpseSinkPoseDeltaTime, freezeMotion);
-            if (freezeMotion)
-                TryUnregisterCorpseSinkLateFrame();
+                CorpseSinkKinematicOutput output = corpseSinkOutput[0];
+                _corpseSinkAup = AbsoluteUniversePosition.FromAlignedBlit(in output.PositionAup);
+                Vector3 runtimePosition = new Vector3(output.RuntimePosition.x, output.RuntimePosition.y, output.RuntimePosition.z);
+                bool freezeMotion = output.FreezeMotion != 0;
+                ApplyCorpseKinematicPose(runtimePosition, _corpseSinkPoseDeltaTime, freezeMotion);
+                if (freezeMotion)
+                    TryUnregisterCorpseSinkLateFrame();
+            }
+            finally
+            {
+                ReleaseCorpseSinkMutationGuard();
+            }
         }
 
         private bool TryEnsureCorpseSinkingKinematicsBuffers(
@@ -6839,55 +6904,68 @@ namespace Hecton8.AI
                 return false;
             }
 
-            if (TryValidateCorpseSinkingKinematicsHandles(
-                    vault,
-                    in _corpseSinkInputHandle,
-                    in _corpseSinkOutputHandle,
-                    out corpseSinkInput,
-                    out corpseSinkOutput))
+            if (!TryEnterCorpseSinkMutationGuard(out vault, out bool acquiredGuard, allowRetainedOwner: true))
             {
-                return true;
+                ClearCorpseSinkingKinematicsDescriptors();
+                return false;
             }
 
-            if (vault.TryGetGenerationHandle<CorpseSinkKinematicInput>(
+            try
+            {
+                if (TryValidateCorpseSinkingKinematicsHandles(
+                        vault,
+                        in _corpseSinkInputHandle,
+                        in _corpseSinkOutputHandle,
+                        out corpseSinkInput,
+                        out corpseSinkOutput))
+                {
+                    return true;
+                }
+
+                if (vault.TryGetGenerationHandle<CorpseSinkKinematicInput>(
+                        BufferID.FaunaCorpseSinkKinematicInput,
+                        out VaultGenerationHandle<CorpseSinkKinematicInput> borrowedInput) &&
+                    vault.TryGetGenerationHandle<CorpseSinkKinematicOutput>(
+                        BufferID.FaunaCorpseSinkKinematicOutput,
+                        out VaultGenerationHandle<CorpseSinkKinematicOutput> borrowedOutput) &&
+                    TryValidateCorpseSinkingKinematicsHandles(vault, in borrowedInput, in borrowedOutput, out corpseSinkInput, out corpseSinkOutput))
+                {
+                    _corpseSinkInputHandle = borrowedInput;
+                    _corpseSinkOutputHandle = borrowedOutput;
+                    return true;
+                }
+
+                if (vault.IsAllocationLocked)
+                {
+                    ClearCorpseSinkingKinematicsDescriptors();
+                    return false;
+                }
+
+                VaultGenerationHandle<CorpseSinkKinematicInput> acquiredInput = vault.EnsureGenerationHandle<CorpseSinkKinematicInput>(
                     BufferID.FaunaCorpseSinkKinematicInput,
-                    out VaultGenerationHandle<CorpseSinkKinematicInput> borrowedInput) &&
-                vault.TryGetGenerationHandle<CorpseSinkKinematicOutput>(
+                    1,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+                VaultGenerationHandle<CorpseSinkKinematicOutput> acquiredOutput = vault.EnsureGenerationHandle<CorpseSinkKinematicOutput>(
                     BufferID.FaunaCorpseSinkKinematicOutput,
-                    out VaultGenerationHandle<CorpseSinkKinematicOutput> borrowedOutput) &&
-                TryValidateCorpseSinkingKinematicsHandles(vault, in borrowedInput, in borrowedOutput, out corpseSinkInput, out corpseSinkOutput))
-            {
-                _corpseSinkInputHandle = borrowedInput;
-                _corpseSinkOutputHandle = borrowedOutput;
+                    1,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+
+                if (!TryValidateCorpseSinkingKinematicsHandles(vault, in acquiredInput, in acquiredOutput, out corpseSinkInput, out corpseSinkOutput))
+                {
+                    ClearCorpseSinkingKinematicsDescriptors();
+                    return false;
+                }
+
+                _corpseSinkInputHandle = acquiredInput;
+                _corpseSinkOutputHandle = acquiredOutput;
                 return true;
             }
-
-            if (vault.IsAllocationLocked)
+            finally
             {
-                ClearCorpseSinkingKinematicsDescriptors();
-                return false;
+                ReleaseCorpseSinkMutationGuard(vault, acquiredGuard);
             }
-
-            VaultGenerationHandle<CorpseSinkKinematicInput> acquiredInput = vault.EnsureGenerationHandle<CorpseSinkKinematicInput>(
-                BufferID.FaunaCorpseSinkKinematicInput,
-                1,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<CorpseSinkKinematicOutput> acquiredOutput = vault.EnsureGenerationHandle<CorpseSinkKinematicOutput>(
-                BufferID.FaunaCorpseSinkKinematicOutput,
-                1,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-
-            if (!TryValidateCorpseSinkingKinematicsHandles(vault, in acquiredInput, in acquiredOutput, out corpseSinkInput, out corpseSinkOutput))
-            {
-                ClearCorpseSinkingKinematicsDescriptors();
-                return false;
-            }
-
-            _corpseSinkInputHandle = acquiredInput;
-            _corpseSinkOutputHandle = acquiredOutput;
-            return true;
         }
 
         private bool TryReadCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput)
@@ -6897,12 +6975,22 @@ namespace Hecton8.AI
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            return TryValidateCorpseSinkingKinematicsHandles(
-                vault,
-                in _corpseSinkInputHandle,
-                in _corpseSinkOutputHandle,
-                out _,
-                out corpseSinkOutput);
+            if (!TryEnterCorpseSinkMutationGuard(out vault, out bool acquiredGuard, allowRetainedOwner: true))
+                return false;
+
+            try
+            {
+                return TryValidateCorpseSinkingKinematicsHandles(
+                    vault,
+                    in _corpseSinkInputHandle,
+                    in _corpseSinkOutputHandle,
+                    out _,
+                    out corpseSinkOutput);
+            }
+            finally
+            {
+                ReleaseCorpseSinkMutationGuard(vault, acquiredGuard);
+            }
         }
 
         private static bool TryValidateCorpseSinkingKinematicsHandles(
@@ -6930,7 +7018,8 @@ namespace Hecton8.AI
             bool hasNativeState =
                 IsCorpseSinkVaultHandle(in _corpseSinkInputHandle, BufferID.FaunaCorpseSinkKinematicInput) ||
                 IsCorpseSinkVaultHandle(in _corpseSinkOutputHandle, BufferID.FaunaCorpseSinkKinematicOutput) ||
-                _corpseSinkJobScheduled;
+                _corpseSinkJobScheduled ||
+                _corpseSinkMutationGuardHeld;
             TryUnregisterCorpseSinkLateFrame();
             if (!hasNativeState)
             {
@@ -6940,11 +7029,14 @@ namespace Hecton8.AI
             }
 
             if (_corpseSinkJobScheduled)
+            {
                 DispatcherJobSwap.TryComplete(ref _corpseSinkJobHandle, forceComplete: true);
+                _corpseSinkJobScheduled = false;
+            }
 
+            ReleaseCorpseSinkMutationGuard();
             ClearCorpseSinkingKinematicsDescriptors();
             _corpseSinkJobHandle = default;
-            _corpseSinkJobScheduled = false;
             _corpseSinkPoseDeltaTime = 0f;
         }
 
@@ -6954,6 +7046,13 @@ namespace Hecton8.AI
             if (ReferenceEquals(_corpseSinkVault, vault))
                 return;
 
+            if (_corpseSinkJobScheduled)
+            {
+                DispatcherJobSwap.TryComplete(ref _corpseSinkJobHandle, forceComplete: true);
+                _corpseSinkJobScheduled = false;
+            }
+
+            ReleaseCorpseSinkMutationGuard();
             ClearCorpseSinkingKinematicsDescriptors();
             _corpseSinkVault = vault;
         }
@@ -6962,6 +7061,54 @@ namespace Hecton8.AI
         {
             _corpseSinkInputHandle = default;
             _corpseSinkOutputHandle = default;
+        }
+
+        private bool TryEnterCorpseSinkMutationGuard(out IDataVault vault, out bool acquired, bool allowRetainedOwner = false)
+        {
+            vault = _corpseSinkVault;
+            acquired = false;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (_corpseSinkMutationGuardHeld)
+                return allowRetainedOwner && ReferenceEquals(_corpseSinkMutationGuardVault, vault);
+
+            if (!vault.TryAcquireMutationGuard(CorpseSinkKinematicMutationGuardMask))
+                return false;
+
+            acquired = true;
+            return true;
+        }
+
+        private bool TryAcquireRetainedCorpseSinkMutationGuard()
+        {
+            IDataVault vault = _corpseSinkVault;
+            if (vault == null || vault.IsCompactionFenceActive || _corpseSinkMutationGuardHeld)
+                return false;
+
+            if (!vault.TryAcquireMutationGuard(CorpseSinkKinematicMutationGuardMask))
+                return false;
+
+            _corpseSinkMutationGuardVault = vault;
+            _corpseSinkMutationGuardHeld = true;
+            return true;
+        }
+
+        private static void ReleaseCorpseSinkMutationGuard(IDataVault vault, bool acquired)
+        {
+            if (acquired)
+                vault?.ReleaseMutationGuard(CorpseSinkKinematicMutationGuardMask);
+        }
+
+        private void ReleaseCorpseSinkMutationGuard()
+        {
+            IDataVault vault = _corpseSinkMutationGuardVault;
+            bool held = _corpseSinkMutationGuardHeld;
+            _corpseSinkMutationGuardVault = null;
+            _corpseSinkMutationGuardHeld = false;
+
+            if (held)
+                vault?.ReleaseMutationGuard(CorpseSinkKinematicMutationGuardMask);
         }
 
         private static bool IsCorpseSinkVaultHandle<T>(
@@ -6974,21 +7121,31 @@ namespace Hecton8.AI
                    handle.SystemID == (uint)SystemID.AnimationFauna;
         }
 
-        private void TryRegisterCorpseSinkLateFrame()
+        private void TryRegisterFaunaLateFrame()
         {
-            if (_corpseSinkLateFrameRegistered || !Application.isPlaying)
+            if (_faunaLateFrameRegistered || !Application.isPlaying)
                 return;
 
-            _corpseSinkLateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _faunaLateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterFaunaLateFrame()
+        {
+            if (!_faunaLateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _faunaLateFrameRegistered = false;
+        }
+
+        private void TryRegisterCorpseSinkLateFrame()
+        {
+            TryRegisterFaunaLateFrame();
         }
 
         private void TryUnregisterCorpseSinkLateFrame()
         {
-            if (!_corpseSinkLateFrameRegistered)
-                return;
-
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _corpseSinkLateFrameRegistered = false;
+            // Fauna late-frame is lifecycle-owned; corpse sink can stop without dropping visual sync.
         }
 
         private static double3 ToCommittedOriginOffset()
@@ -7355,6 +7512,7 @@ namespace Hecton8.AI
             _pendingFaunaPresentationCorpseBloatAge01 = 0f;
             _pendingFaunaPresentationHitFlash01 = 0f;
             _pendingFaunaPresentationDecayAmount01 = 0f;
+            _pendingFaunaPresentationQuality01 = -1f;
             _pendingBiolumPresentationLightScaleDirty = false;
             _pendingBiolumPresentationLightScale01 = 1f;
             _pendingCorpseBloatShaderTimerDirty = false;
@@ -7430,16 +7588,37 @@ namespace Hecton8.AI
 
         private void CacheLogicalLodComponents()
         {
-            _logicalLodColliderScratch.Clear();
-            GetComponentsInChildren(true, _logicalLodColliderScratch);
-            if (_logicalLodColliderScratch.Count > 0)
+            if (_faunaMetadata != null)
             {
-                _logicalLodColliders = new Collider[_logicalLodColliderScratch.Count]; // COLD ALLOC: Collider[_logicalLodColliderScratch.Count] - cached fauna colliders toggled by logical LOD - owner: FaunaBrain
-                for (int i = 0; i < _logicalLodColliderScratch.Count; i++)
-                    _logicalLodColliders[i] = _logicalLodColliderScratch[i];
+                _logicalLodColliders = Array.Empty<Collider>();
+                return;
             }
 
-            _logicalLodColliderScratch.Clear();
+            List<Collider> scratch = _logicalLodColliderScratch;
+            if (scratch == null)
+            {
+                scratch = new List<Collider>(LogicalLodColliderCacheCapacity); // COLD ALLOC: List<Collider>[17] - legacy no-metadata logical LOD collider cache - owner: FaunaBrain
+                _logicalLodColliderScratch = scratch;
+            }
+
+            scratch.Clear();
+            GetComponentsInChildren(true, scratch);
+            CopyLogicalLodColliderScratch(scratch);
+            scratch.Clear();
+        }
+
+        private void CopyLogicalLodColliderScratch(List<Collider> scratch)
+        {
+            if (scratch.Count > 0)
+            {
+                _logicalLodColliders = new Collider[scratch.Count]; // COLD ALLOC: Collider[scratch.Count] - cached fauna colliders toggled by legacy logical LOD - owner: FaunaBrain
+                for (int i = 0; i < scratch.Count; i++)
+                    _logicalLodColliders[i] = scratch[i];
+            }
+            else
+            {
+                _logicalLodColliders = Array.Empty<Collider>();
+            }
         }
 
         private void QueueLogicalLodPresentationState(FaunaLogicalLodTier logicalLodTier)
@@ -7464,11 +7643,18 @@ namespace Hecton8.AI
                 return;
 
             _logicalLodPresentationSuppressed = suppressPresentation;
-            for (int i = 0; i < _logicalLodColliders.Length; i++)
+            if (_faunaMetadata != null)
             {
-                Collider cachedCollider = _logicalLodColliders[i];
-                if (cachedCollider != null)
-                    cachedCollider.enabled = !suppressPresentation;
+                _faunaMetadata.SetLogicalColliderSuppression(suppressPresentation);
+            }
+            else
+            {
+                for (int i = 0; i < _logicalLodColliders.Length; i++)
+                {
+                    Collider cachedCollider = _logicalLodColliders[i];
+                    if (cachedCollider != null)
+                        cachedCollider.enabled = !suppressPresentation;
+                }
             }
 
             if (suppressPresentation && _rb != null && !_rb.IsSleeping())

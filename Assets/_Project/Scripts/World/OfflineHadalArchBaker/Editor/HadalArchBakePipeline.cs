@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Editor.ColliderOptimization1716;
 using Hecton8.World.OfflineHadalArchBaker;
 using Unity.Collections;
 using Unity.Jobs;
@@ -33,6 +34,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
         private const string DefaultMaterialPath = "Assets/_Project/Art/Materials/Mat_TriplanarRock.mat";
         private const string ReportPath = "Docs/Reports/HADAL_BAKE_REPORT.json";
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_215.bin";
+        private const float MinimumColliderAxisMeters1716 = 0.05f;
 
         public static bool BakeAsync(
             string assetName,
@@ -330,18 +332,64 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
                     new LOD(0.04f, new[] { r2 })
                 });
                 lodGroup.RecalculateBounds();
-                MeshCollider collider = root.AddComponent<MeshCollider>();
-                collider.sharedMesh = lod2 != null ? lod2 : lod1 != null ? lod1 : lod0;
-                collider.convex = false;
+                CreateCompoundArchColliderRoot(root.transform, ResolveColliderSourceBounds(lod0, lod1, lod2));
                 GameObjectUtility.SetStaticEditorFlags(root, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ContributeGI);
                 string prefabPath = AssetDatabase.GenerateUniqueAssetPath(BakedMeshFolder + "/GEN_" + assetName + ".prefab");
+                if (!ColliderOptimizerEngine1716.ValidatePrefabColliderBudget(root, out string colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed before save: " + colliderFailure);
+
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+
+                if (!ColliderOptimizerEngine1716.ValidatePrefabAssetTopology(prefabPath, out colliderFailure))
+                    throw new InvalidOperationException("1716 collider validation failed after save: " + colliderFailure);
+
                 return prefabPath;
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
+        }
+
+        private static void CreateCompoundArchColliderRoot(Transform root, Bounds sourceBounds)
+        {
+            GameObject colliderRoot = new GameObject("COL_CompoundProxy_1716");
+            colliderRoot.transform.SetParent(root, false);
+            Vector3 size = sourceBounds.size;
+            size.x = Mathf.Max(size.x, MinimumColliderAxisMeters1716);
+            size.y = Mathf.Max(size.y, MinimumColliderAxisMeters1716);
+            size.z = Mathf.Max(size.z, MinimumColliderAxisMeters1716);
+
+            Vector3 center = sourceBounds.center;
+            float pillarWidth = Mathf.Max(size.x * 0.18f, MinimumColliderAxisMeters1716);
+            float topHeight = Mathf.Max(size.y * 0.22f, MinimumColliderAxisMeters1716);
+            float pillarHeight = Mathf.Max(size.y - topHeight, MinimumColliderAxisMeters1716);
+            float leftX = center.x - size.x * 0.5f + pillarWidth * 0.5f;
+            float rightX = center.x + size.x * 0.5f - pillarWidth * 0.5f;
+            float pillarY = center.y - size.y * 0.5f + pillarHeight * 0.5f;
+            float topY = center.y + size.y * 0.5f - topHeight * 0.5f;
+
+            AddBoxCollider(colliderRoot, new Vector3(leftX, pillarY, center.z), new Vector3(pillarWidth, pillarHeight, size.z));
+            AddBoxCollider(colliderRoot, new Vector3(rightX, pillarY, center.z), new Vector3(pillarWidth, pillarHeight, size.z));
+            AddBoxCollider(colliderRoot, new Vector3(center.x, topY, center.z), new Vector3(size.x, topHeight, size.z));
+        }
+
+        private static void AddBoxCollider(GameObject root, Vector3 center, Vector3 size)
+        {
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.center = center;
+            collider.size = size;
+        }
+
+        private static Bounds ResolveColliderSourceBounds(Mesh lod0, Mesh lod1, Mesh lod2)
+        {
+            if (lod0 != null)
+                return lod0.bounds;
+            if (lod1 != null)
+                return lod1.bounds;
+            if (lod2 != null)
+                return lod2.bounds;
+            return new Bounds(Vector3.zero, Vector3.one);
         }
 
         private static Renderer CreateLodChild(Transform root, string name, Mesh mesh, Material material)

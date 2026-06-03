@@ -1,0 +1,37 @@
+---
+packet_id: P189_SUBOFFICE_PERSONNEL_SEEDS
+release_set_id: RS038_DEEP_REACH_TRUE_CAUSE_KNOWLEDGE
+article_id: deep_reach.suboffice_personnel_seeds
+unlock_id: unlock.suboffice_personnel_seeds
+poi_tags: poi.suboffice_name_seed_card;poi.loss_desk_badge
+biome_tags: biome.claim_admin;biome.relay_archive
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Seed-правило персонала suboffice
+
+Seed-правило персонала suboffice позволяет будущим миссиям добавить human texture без новой villain hierarchy.
+
+## Scanner
+
+Имена нижнего персонала Deep Reach должны быть seed signatures, привязанными к функции office.
+
+## Terminal
+
+PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board и Return Queue могут генерировать local signatures. Они не заменяют Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+
+## Audio
+
+Клерк может повредить жизнь, не владея всей катастрофой.
+
+## Field Note
+
+Использовать имена только когда они делают memo, stamp, badge или order более игровым.
+
+<!-- In-Game Wiki; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/ru_RU. -->

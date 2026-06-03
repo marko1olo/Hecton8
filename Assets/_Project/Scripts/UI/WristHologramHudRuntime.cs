@@ -11,7 +11,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Object = UnityEngine.Object;
 
 namespace Hecton8.UI
 {
@@ -295,30 +294,6 @@ namespace Hecton8.UI
         private static readonly int FontAtlasId = Shader.PropertyToID("_FontAtlas");
         private static readonly int BaseIntensityId = Shader.PropertyToID("_BaseIntensity");
         private static readonly int GlitchMultiplierId = Shader.PropertyToID("_GlitchMultiplier");
-        private static readonly Vector3[] RuntimeQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        }; // COLD ALLOC: Vector3[4] - immutable wrist HUD fallback quad vertices - owner: WristHologramHudRuntime
-        private static readonly Vector2[] RuntimeQuadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(1f, 1f),
-            new Vector2(0f, 1f)
-        }; // COLD ALLOC: Vector2[4] - immutable wrist HUD fallback quad UVs - owner: WristHologramHudRuntime
-        private static readonly int[] RuntimeQuadIndices =
-        {
-            0, 1, 2,
-            0, 2, 3
-        }; // COLD ALLOC: int[6] - immutable wrist HUD fallback quad indices - owner: WristHologramHudRuntime
-
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader";
-#endif
-
         [Header("Anchors")]
         [SerializeField] private Transform leftWristAnchor;
         [SerializeField] private Transform headsetAnchor;
@@ -339,7 +314,7 @@ namespace Hecton8.UI
 
         [Header("Rendering")]
         [SerializeField] private Mesh quadMesh;
-        [SerializeField] private Shader sdfShader;
+        [SerializeField] private Material sdfMaterial;
         [SerializeField] private Texture2D fontAtlasTexture;
         [SerializeField] private int renderLayer;
         [SerializeField, Range(0.1f, 8f)] private float baseIntensity = 1.65f;
@@ -873,21 +848,14 @@ namespace Hecton8.UI
 
         private void EnsureGraphicsResources()
         {
-            if (_runtimeQuadMesh == null)
-                _runtimeQuadMesh = quadMesh != null ? quadMesh : CreateQuadMesh();
-
-#if UNITY_EDITOR
-            if (sdfShader == null)
-                sdfShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
-            if (_runtimeMaterial == null && sdfShader != null)
-            {
-                _runtimeMaterial = new Material(sdfShader)
-                {
-                    enableInstancing = true,
-                    hideFlags = HideFlags.DontSave
-                }; // COLD ALLOC: Material[1] - wrist HUD SDF runtime material - owner: WristHologramHudRuntime
-            }
+            bool authoredMeshValid = quadMesh != null && quadMesh.subMeshCount > 0 && quadMesh.GetIndexCount(0) > 0u;
+            bool authoredMaterialValid = sdfMaterial != null &&
+                                         sdfMaterial.shader != null &&
+                                         sdfMaterial.enableInstancing;
+            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: WristHologramHudRuntime requires an authored indexed quad mesh.");
+            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: WristHologramHudRuntime requires an authored GPU-instanced SDF material.");
+            _runtimeQuadMesh = authoredMeshValid && authoredMaterialValid ? quadMesh : null;
+            _runtimeMaterial = authoredMeshValid && authoredMaterialValid ? sdfMaterial : null;
 
             int quadCount = math.max(1, _quadBufferCapacity > 0 ? _quadBufferCapacity : math.clamp(quadCapacity, 64, MaxDrawMeshInstancedBatch));
             EnsureGraphicsBuffer(ref _quadGpuBufferA, quadCount);
@@ -906,17 +874,8 @@ namespace Hecton8.UI
             ReleaseGraphicsBuffer(ref _quadGpuBufferA);
             ReleaseGraphicsBuffer(ref _quadGpuBufferB);
             _activeQuadGpuBuffer = null;
-            if (_runtimeMaterial != null)
-            {
-                DestroyUnityObject(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
-            if (quadMesh == null && _runtimeQuadMesh != null)
-            {
-                DestroyUnityObject(_runtimeQuadMesh);
-                _runtimeQuadMesh = null;
-            }
+            _runtimeMaterial = null;
+            _runtimeQuadMesh = null;
         }
 
         private void ApplyMaterialColdState()
@@ -2232,22 +2191,6 @@ namespace Hecton8.UI
                 Hecton8.Core.H8Debug.LogError("AcousticEchoTap stride mismatch.");
         }
 
-        private static Mesh CreateQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "WristHudInstancedQuad",
-                hideFlags = HideFlags.DontSave
-            };
-
-            mesh.SetVertices(RuntimeQuadVertices);
-            mesh.SetUVs(0, RuntimeQuadUvs);
-            mesh.SetTriangles(RuntimeQuadIndices, 0, false);
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(true);
-            return mesh;
-        }
-
         private void EnsureGraphicsBuffer(ref GraphicsBuffer buffer, int count)
         {
             if (buffer != null && buffer.IsValid() && buffer.count == count)
@@ -2293,20 +2236,6 @@ namespace Hecton8.UI
 
             buffer.Release();
             buffer = null;
-        }
-
-        private static void DestroyUnityObject(Object target)
-        {
-            if (target == null)
-                return;
-
-            if (Application.isPlaying)
-            {
-                Destroy(target);
-                return;
-            }
-
-            DestroyImmediate(target);
         }
 
         private static void ClearFixedString(ref FixedString64Bytes value)

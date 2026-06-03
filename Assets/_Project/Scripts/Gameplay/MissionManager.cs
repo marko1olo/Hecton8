@@ -11,7 +11,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class MissionManager : MonoBehaviour, IQuestEventListener, IGlobalRegistryHotSwapListener
     {
-        private const int MissionCacheCapacity = 32;
+        private const int MissionCacheCapacity = QuestDagRuntimeConstants.DefaultQuestStateCapacity;
         private static MissionManager s_activeRuntime;
 
         public sealed class MissionInstance
@@ -24,10 +24,12 @@ namespace Hecton8.Gameplay
             public string MissionId { get; }
         }
 
-        // COLD ALLOC: Dictionary<uint,MissionInstance>[32] - compatibility facade active mission cache keyed by FNV quest hash - owner: MissionManager
+        // COLD ALLOC: Dictionary<uint,MissionInstance>[64] - compatibility facade active mission cache keyed by FNV quest hash - owner: MissionManager
         private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(MissionCacheCapacity);
-        // COLD ALLOC: HashSet<uint>[32] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
+        // COLD ALLOC: HashSet<uint>[64] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
         private readonly HashSet<uint> _completedMissions = new HashSet<uint>(MissionCacheCapacity);
+        // COLD ALLOC: uint[64] - active quest hash scratch for cold quest-system cache resync - owner: MissionManager
+        private readonly uint[] _activeQuestHashScratch = new uint[MissionCacheCapacity];
         private IQuestSystem _questManager;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
@@ -82,6 +84,7 @@ namespace Hecton8.Gameplay
             {
                 s_activeRuntime = this;
                 _questManager = GlobalRegistry.QuestSystem;
+                RefreshMissionCacheFromQuestSystem();
             }
         }
 
@@ -94,6 +97,8 @@ namespace Hecton8.Gameplay
             _serviceRegistered = false;
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
+            _activeMissions.Clear();
+            _completedMissions.Clear();
             _questManager = null;
         }
 
@@ -201,7 +206,10 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.QuestRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.QuestSystem)
+            {
                 _questManager = currentService as IQuestSystem;
+                RefreshMissionCacheFromQuestSystem();
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -230,6 +238,7 @@ namespace Hecton8.Gameplay
             {
                 case QuestEventType.Activated:
                     _completedMissions.Remove(payload.QuestHashID);
+                    TryEnsureActiveInstance(payload.QuestHashID);
                     return;
 
                 case QuestEventType.Completed:
@@ -253,6 +262,54 @@ namespace Hecton8.Gameplay
             }
 
             return instance;
+        }
+
+        private bool TryEnsureActiveInstance(uint missionHash)
+        {
+            if (missionHash == 0u || _activeMissions.ContainsKey(missionHash))
+                return false;
+
+            IQuestSystem questManager = _questManager;
+            if (questManager == null ||
+                !questManager.IsActive(missionHash) ||
+                !questManager.TryGetQuestIdByHash(missionHash, out string missionId))
+            {
+                return false;
+            }
+
+            EnsureActiveInstance(missionHash, missionId);
+            return true;
+        }
+
+        private void RefreshMissionCacheFromQuestSystem()
+        {
+            _activeMissions.Clear();
+            _completedMissions.Clear();
+
+            IQuestSystem questManager = _questManager;
+            if (questManager == null)
+                return;
+
+            int copiedCount = questManager.CopyActiveQuestHashes(_activeQuestHashScratch);
+            if (copiedCount <= 0)
+                return;
+
+            int limit = copiedCount < _activeQuestHashScratch.Length
+                ? copiedCount
+                : _activeQuestHashScratch.Length;
+
+            for (int i = 0; i < limit; i++)
+            {
+                uint missionHash = _activeQuestHashScratch[i];
+                if (missionHash == 0u ||
+                    !questManager.IsActive(missionHash) ||
+                    !questManager.TryGetQuestIdByHash(missionHash, out string missionId))
+                {
+                    continue;
+                }
+
+                EnsureActiveInstance(missionHash, missionId);
+            }
         }
 
         private static uint ComputeMissionHash(string missionId)

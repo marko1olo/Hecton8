@@ -1412,12 +1412,13 @@ namespace Hecton8.Editor.ProceduralGen
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD2 triangle overflow at {path}. Triangles={lod2Triangles}.");
             }
 
-            MeshCollider[] colliders = prefab.GetComponentsInChildren<MeshCollider>(true);
+            MeshCollider[] meshColliders = prefab.GetComponentsInChildren<MeshCollider>(true);
             if (rock)
             {
-                ValidateRockCollider(path, colliders, lods, ref failures);
+                BoxCollider[] boxColliders = prefab.GetComponentsInChildren<BoxCollider>(true);
+                ValidateRockCollider(path, meshColliders, boxColliders, lods, ref failures);
             }
-            else if (colliders.Length != 0)
+            else if (meshColliders.Length != 0)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Flora has forbidden MeshCollider at {path}.");
@@ -1498,7 +1499,7 @@ namespace Hecton8.Editor.ProceduralGen
                 if (string.Equals(child.name, "LOD0", StringComparison.Ordinal)) lod0++;
                 else if (string.Equals(child.name, "LOD1", StringComparison.Ordinal)) lod1++;
                 else if (string.Equals(child.name, "LOD2", StringComparison.Ordinal)) lod2++;
-                else if (string.Equals(child.name, "Collision_LOD2", StringComparison.Ordinal)) collision++;
+                else if (string.Equals(child.name, "COL_CompoundProxy_1716", StringComparison.Ordinal)) collision++;
                 else unexpected++;
             }
 
@@ -1563,11 +1564,11 @@ namespace Hecton8.Editor.ProceduralGen
                         ScratchContainsComponent<MeshFilter>() &&
                         ScratchContainsComponent<MeshRenderer>();
             }
-            else if (rock && string.Equals(transform.name, "Collision_LOD2", StringComparison.Ordinal))
+            else if (rock && string.Equals(transform.name, "COL_CompoundProxy_1716", StringComparison.Ordinal))
             {
                 valid = ComponentScratch.Count == 2 &&
                         ScratchContainsComponent<Transform>() &&
-                        ScratchContainsComponent<MeshCollider>();
+                        ScratchContainsComponent<BoxCollider>();
             }
             else
             {
@@ -2147,15 +2148,12 @@ namespace Hecton8.Editor.ProceduralGen
             return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
-        private static void ValidateRockCollider(string path, MeshCollider[] colliders, LOD[] lods, ref int failures)
+        private static void ValidateRockCollider(string path, MeshCollider[] meshColliders, BoxCollider[] boxColliders, LOD[] lods, ref int failures)
         {
-            Mesh lod2Mesh = ResolveFirstMesh(lods[2].renderers);
-            if (colliders.Length != 1 ||
-                !colliders[0].enabled ||
-                colliders[0].isTrigger ||
-                !colliders[0].convex ||
-                colliders[0].sharedMesh == null ||
-                colliders[0].sharedMesh != lod2Mesh)
+            if (meshColliders.Length != 0 ||
+                boxColliders.Length != 1 ||
+                !boxColliders[0].enabled ||
+                boxColliders[0].isTrigger)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider contract failed at {path}.");
@@ -2170,19 +2168,29 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
             }
 
-            Vector3 delta = colliders[0].transform.localPosition - anchor.transform.localPosition;
+            Vector3 delta = boxColliders[0].transform.localPosition - anchor.transform.localPosition;
             if (delta.sqrMagnitude > 0.0001f)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider offset mismatch at {path}. DeltaSq={delta.sqrMagnitude:0.000000}.");
             }
 
-            if (!string.Equals(colliders[0].transform.name, "Collision_LOD2", StringComparison.Ordinal) ||
-                !Approximately(colliders[0].transform.localRotation, Quaternion.identity) ||
-                !Approximately(colliders[0].transform.localScale, Vector3.one))
+            if (!string.Equals(boxColliders[0].transform.name, "COL_CompoundProxy_1716", StringComparison.Ordinal) ||
+                !Approximately(boxColliders[0].transform.localRotation, Quaternion.identity) ||
+                !Approximately(boxColliders[0].transform.localScale, Vector3.one))
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider transform contract failed at {path}.");
+            }
+
+            if (!IsFinite(boxColliders[0].center) ||
+                !IsFinite(boxColliders[0].size) ||
+                boxColliders[0].size.x <= 0f ||
+                boxColliders[0].size.y <= 0f ||
+                boxColliders[0].size.z <= 0f)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider bounds contract failed at {path}.");
             }
         }
 

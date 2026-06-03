@@ -64,6 +64,7 @@ namespace Hecton8.Core
 
         private static IDataVault _cachedVault;
         private static VaultGenerationHandle<float4> _slotsHandle;
+        private static bool _slotsValidated;
         private static float4 _fallbackBiolumMasterPhase;
         private static float4 _fallbackAupTotalUniverseOffset;
         private static float4 _fallbackAupShiftOffset;
@@ -86,6 +87,7 @@ namespace Hecton8.Core
         {
             _cachedVault = null;
             _slotsHandle = default;
+            _slotsValidated = false;
             _fallbackBiolumMasterPhase = default;
             _fallbackAupTotalUniverseOffset = default;
             _fallbackAupShiftOffset = default;
@@ -440,12 +442,15 @@ namespace Hecton8.Core
                     if (IsSlotsHandleOwned(in _slotsHandle) &&
                         vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> slots) &&
                         slots.IsCreated &&
+                        slots.Length >= SlotCount &&
                         slot >= 0 &&
                         slot < slots.Length)
                     {
                         slots[slot] = value;
                         return slots[slot];
                     }
+
+                    InvalidateSlotsCache();
                 }
                 finally
                 {
@@ -474,11 +479,16 @@ namespace Hecton8.Core
                 return false;
 
             if (ReferenceEquals(vault, _cachedVault) &&
-                IsSlotsHandleOwned(in _slotsHandle) &&
-                vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> cachedSlots) &&
-                cachedSlots.IsCreated &&
-                cachedSlots.Length >= SlotCount)
+                IsSlotsHandleOwned(in _slotsHandle))
             {
+                if (!_slotsValidated &&
+                    !TryValidatePreparedSlotsGuarded(vault, in _slotsHandle))
+                {
+                    InvalidateSlotsCache();
+                    return false;
+                }
+
+                _slotsValidated = true;
                 return true;
             }
 
@@ -487,14 +497,13 @@ namespace Hecton8.Core
                 if (!IsSlotsHandleOwned(in existing))
                     return false;
 
-                if (vault.TryResolveHandle(in existing, out NativeArray<float4> existingSlots) &&
-                    existingSlots.IsCreated &&
-                    existingSlots.Length >= SlotCount)
-                {
-                    _cachedVault = vault;
-                    _slotsHandle = existing;
-                    return true;
-                }
+                if (!TryValidatePreparedSlotsGuarded(vault, in existing))
+                    return false;
+
+                _cachedVault = vault;
+                _slotsHandle = existing;
+                _slotsValidated = true;
+                return true;
             }
 
             if (!allowAllocation || vault.IsAllocationLocked)
@@ -506,14 +515,44 @@ namespace Hecton8.Core
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
             if (!IsSlotsHandleOwned(in allocated) ||
-                !vault.TryResolveHandle(in allocated, out NativeArray<float4> allocatedSlots) ||
-                !allocatedSlots.IsCreated ||
-                allocatedSlots.Length < SlotCount)
+                !TryValidatePreparedSlotsGuarded(vault, in allocated))
                 return false;
 
             _cachedVault = vault;
             _slotsHandle = allocated;
+            _slotsValidated = true;
             return true;
+        }
+
+        private static void InvalidateSlotsCache()
+        {
+            _cachedVault = null;
+            _slotsHandle = default;
+            _slotsValidated = false;
+        }
+
+        private static bool TryValidatePreparedSlotsGuarded(
+            IDataVault vault,
+            in VaultGenerationHandle<float4> handle)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsSlotsHandleOwned(in handle) ||
+                !vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                return vault.TryResolveHandle(in handle, out NativeArray<float4> slots) &&
+                       slots.IsCreated &&
+                       slots.Length >= SlotCount;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
+            }
         }
 
         internal static bool ValidateSharedSlotMap()

@@ -1060,38 +1060,54 @@ namespace Hecton8.Narrative.Prologue
             _stage = stage;
 
             IDataVault vault = _dataVault;
+            IPrologueSequenceRuntime runtime = _runtime;
             if (vault != null &&
-                IsVaultHandleCreated(in _blackBoxHandle) &&
-                vault.TryAcquireWriteLock(in _blackBoxHandle, OwnerSystemId, out NativeArray<PrologueSequenceTelemetryEntry> blackBox))
+                IsVaultHandleCreated(in _blackBoxHandle))
             {
-                try
+                uint telemetryFrame = runtime != null ? runtime.CurrentFrame : 0u;
+                ushort telemetrySequence = _lastComplete.Sequence != 0 ? _lastComplete.Sequence : _lastAtmosphericReentry.Sequence;
+                bool hasOrbitalSnapshot = _hasLastOrbitalSnapshot;
+                double universeSpeedMetersPerSecond = 0d;
+                double planetDistanceMeters = 0d;
+                if (hasOrbitalSnapshot)
                 {
-                    if (!blackBox.IsCreated || blackBox.Length < TelemetryCapacity)
-                        return;
-
-                    PrologueSequenceTelemetryEntry entry = default;
-                    entry.Frame = _runtime != null ? _runtime.CurrentFrame : 0u;
-                    entry.StateHash = stateHash;
-                    entry.Stage = (byte)stage;
-                    entry.Flags = flags;
-                    entry.Sequence = _lastComplete.Sequence != 0 ? _lastComplete.Sequence : _lastAtmosphericReentry.Sequence;
-                    if (_hasLastOrbitalSnapshot)
-                    {
-                        entry.UniverseSpeedMetersPerSecond = ResolveTelemetrySpeedMetersPerSecond();
-                        entry.PlanetDistanceMeters = _lastOrbital.PlanetDistanceMeters;
-                    }
-
-                    int index = math.clamp(_blackBoxCursor, 0, TelemetryCapacity - 1);
-                    blackBox[index] = entry;
-                    _blackBoxCursor = (index + 1) % TelemetryCapacity;
+                    universeSpeedMetersPerSecond = ResolveTelemetrySpeedMetersPerSecond();
+                    planetDistanceMeters = _lastOrbital.PlanetDistanceMeters;
                 }
-                finally
+
+                int blackBoxIndex = math.clamp(_blackBoxCursor, 0, TelemetryCapacity - 1);
+                int nextBlackBoxCursor = (blackBoxIndex + 1) % TelemetryCapacity;
+
+                if (vault.TryAcquireWriteLock(in _blackBoxHandle, OwnerSystemId, out NativeArray<PrologueSequenceTelemetryEntry> blackBox))
                 {
-                    vault.ReleaseWriteLock(in _blackBoxHandle, OwnerSystemId);
+                    try
+                    {
+                        if (!blackBox.IsCreated || blackBox.Length < TelemetryCapacity)
+                            return;
+
+                        PrologueSequenceTelemetryEntry entry = default;
+                        entry.Frame = telemetryFrame;
+                        entry.StateHash = stateHash;
+                        entry.Stage = (byte)stage;
+                        entry.Flags = flags;
+                        entry.Sequence = telemetrySequence;
+                        if (hasOrbitalSnapshot)
+                        {
+                            entry.UniverseSpeedMetersPerSecond = universeSpeedMetersPerSecond;
+                            entry.PlanetDistanceMeters = planetDistanceMeters;
+                        }
+
+                        blackBox[blackBoxIndex] = entry;
+                        _blackBoxCursor = nextBlackBoxCursor;
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in _blackBoxHandle, OwnerSystemId);
+                    }
                 }
             }
 
-            if (_runtime != null &&
+            if (runtime != null &&
                 (!_hasPublishedTelemetry ||
                  _lastPublishedStage != stage ||
                  _lastPublishedStateHash != stateHash ||

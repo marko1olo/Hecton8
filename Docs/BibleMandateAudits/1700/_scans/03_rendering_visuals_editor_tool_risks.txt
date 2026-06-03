@@ -1,16 +1,19 @@
-﻿Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:118:                _statusLabel.text = hasParameters ? RuntimeActiveLabel : RuntimeOfflineLabel;
+﻿Assets\_Project\Scripts\Rendering\Editor\HectonUberNoirMaterialConsolidator.cs:48:            Debug.Log($"[UberNoir] Consolidated {converted} hard-surface materials into {TargetShaderName}.");
+Assets\_Project\Scripts\Rendering\WaterOptics\Editor\PostProcess_Fog_Scanner.cs:22:            Debug.Log(string.Concat("Water optics fog scanner wrote ", reportPath));
+Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:16:                Debug.Log("13KRA caustics DTO layout audit passed.");
+Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:18:                Debug.LogError("13KRA caustics DTO layout audit failed.");
+Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:30:                Debug.Log(report);
+Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:34:            Debug.LogError(report);
+Assets\_Project\Scripts\Rendering\WaterOptics\Editor\AbyssalOpticsTunerWindow.cs:139:        private void Update()
+Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:118:                _statusLabel.text = hasParameters ? RuntimeActiveLabel : RuntimeOfflineLabel;
 Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:124:                    _depthLabel.text = DepthUnavailableLabel;
 Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:125:                    _qualityLabel.text = QualityUnavailableLabel;
 Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:141:                _depthLabel.text = s_depthLabels[depthTenths];
 Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:151:                _qualityLabel.text = s_qualityLabels[qualityMillis];
 Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsTunerWindow.cs:170:            _csvStatusLabel.text = loaded ? ProfilesLoadedLabel : ProfilesFailedLabel;
-Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:16:                Debug.Log("13KRA caustics DTO layout audit passed.");
-Assets\_Project\Scripts\Rendering\AbyssalCaustics\Editor\AbyssalCausticsLayoutAudit.cs:18:                Debug.LogError("13KRA caustics DTO layout audit failed.");
-Assets\_Project\Scripts\Rendering\WaterOptics\Editor\AbyssalOpticsTunerWindow.cs:139:        private void Update()
-Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:30:                Debug.Log(report);
-Assets\_Project\Scripts\Rendering\WaterOptics\Editor\WaterOpticsLayoutValidator.cs:34:            Debug.LogError(report);
-Assets\_Project\Scripts\Rendering\Editor\HectonUberNoirMaterialConsolidator.cs:48:            Debug.Log($"[UberNoir] Consolidated {converted} hard-surface materials into {TargetShaderName}.");
-Assets\_Project\Scripts\Rendering\WaterOptics\Editor\PostProcess_Fog_Scanner.cs:22:            Debug.Log(string.Concat("Water optics fog scanner wrote ", reportPath));
+Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:47:            int activeMaterialMutations = Count(baseDegradation, ".material") + Count(runtime, ".material") + Count(baseDegradation, "MaterialPropertyBlock");
+Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:49:            int legacyRendererMaterialSetFloat = CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "GetComponent<Renderer>().material.SetFloat") +
+Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:50:                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "GetComponent<Renderer>().material.SetFloat");
 Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs:141:            _runtimeLabel.text = bound ? "Runtime: GlobalDataVault bound, active " + activeCount : "Runtime: Play Mode bridge pending";
 Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs:142:            _uploadLabel.text = "Upload: " + uploadUs.ToString("0.0") + " us";
 Assets\_Project\Scripts\Graphics\Materials\Editor\VisualPressureAgingTunerWindow.cs:143:            _flagsLabel.text = "Flags: 0x" + flags.ToString("X8");
@@ -29,23 +32,21 @@ Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:168:
 Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:169:            _pointLabel.text = "Point-light culled: " + snapshot.PointLightCulledCount;
 Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:170:            _timingLabel.text = "Timing: " + snapshot.LastBurstWallTimeMs.ToString("0.000") + " ms / " + snapshot.LastUploadMicroseconds.ToString("0.0") + " us upload";
 Assets\_Project\Scripts\Graphics\Culling\Editor\AbyssalShadowTunerWindow.cs:194:            Debug.Log("Abyssal Shadow DTO layouts valid: state=32B, instance/counters/telemetry/runtime=64B, HZB=16B, indirect=32B.");
-Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:47:            int activeMaterialMutations = Count(baseDegradation, ".material") + Count(runtime, ".material") + Count(baseDegradation, "MaterialPropertyBlock");
-Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:49:            int legacyRendererMaterialSetFloat = CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "GetComponent<Renderer>().material.SetFloat") +
-Assets\_Project\Scripts\Graphics\Materials\Editor\Visual_Material_Inquisition.cs:50:                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "GetComponent<Renderer>().material.SetFloat");
+Assets\_Project\Scripts\VFX\JacobianFoam\Editor\JacobianFoamTunerWindow.cs:181:                _statusLabel.text = value;
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:30:            json.AppendLine("  \"scanner\": \"Zero-dependency scoped source parser for Camera.main transform / AnimationClip / AnimationCurve / Cinemachine impulse-source / managed random camera-shake routes\",");
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:64:            json.AppendLine("  \"manualProof\": \"Scanner covers Camera.main.transform, CinemachineImpulse, AnimationClip, AnimationCurve, Random.insideUnitSphere, Random.Range, and hot transform.localPosition/localRotation/localEulerAngles writes. Runtime route is projection DTO output, not hierarchy mutation.\"");
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:68:            Debug.Log($"[SHINOBU_354] OOP camera shake scan wrote {report} with {findings} findings.");
+Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:79:            AppendIfFound(file, text, source, "Camera.main.transform", "DIRECT_CAMERA_MAIN_TRANSFORM", ref findings, ref first, json);
+Assets\_Project\Scripts\VFX\Bioluminescence\Editor\BioluminescenceTunerWindow.cs:270:                    _speciesLabels[i].text = FormatSpeciesHash(tuning.SpeciesHash);
+Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:43:                ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
+Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:61:                MonoBehaviour[] behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(true);
 Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:111:            _traumaLabel.text = "Trauma: " + state.x.ToString("0.000");
 Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:112:            _translationLabel.text = "Max translation: " + state.y.ToString("0.0000") + " m";
 Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:113:            _signalsLabel.text = "Signals: " + ((int)state.z).ToString();
 Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:114:            _burstLabel.text = "Burst us: " + state.w.ToString("0.00");
 Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:122:            CameraJuiceSystem[] runtimes = Resources.FindObjectsOfTypeAll<CameraJuiceSystem>();
 Assets\_Project\Scripts\VFX\Editor\CinematicTraumaTunerWindow.cs:140:                _runtimeLabel.text = resolved ? "Runtime: CameraJuiceSystem" : "Runtime: unresolved";
-Assets\_Project\Scripts\VFX\Bioluminescence\Editor\BioluminescenceTunerWindow.cs:270:                    _speciesLabels[i].text = FormatSpeciesHash(tuning.SpeciesHash);
-Assets\_Project\Scripts\VFX\JacobianFoam\Editor\JacobianFoamTunerWindow.cs:181:                _statusLabel.text = value;
-Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:30:            json.AppendLine("  \"scanner\": \"Zero-dependency scoped source parser for Camera.main transform / AnimationClip / AnimationCurve / Cinemachine impulse-source / managed random camera-shake routes\",");
-Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:64:            json.AppendLine("  \"manualProof\": \"Scanner covers Camera.main.transform, CinemachineImpulse, AnimationClip, AnimationCurve, Random.insideUnitSphere, Random.Range, and hot transform.localPosition/localRotation/localEulerAngles writes. Runtime route is projection DTO output, not hierarchy mutation.\"");
-Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:68:            Debug.Log($"[SHINOBU_354] OOP camera shake scan wrote {report} with {findings} findings.");
-Assets\_Project\Scripts\VFX\Editor\OOP_CameraShake_Scanner.cs:79:            AppendIfFound(file, text, source, "Camera.main.transform", "DIRECT_CAMERA_MAIN_TRANSFORM", ref findings, ref first, json);
-Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:43:                ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
-Assets\_Project\Scripts\VFX\Parasites\Editor\Biological_Particle_Scanner.cs:61:                MonoBehaviour[] behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(true);
+Assets\_Project\Scripts\Lighting\Editor\OOP_Lighting_Scanner.cs:93:            Debug.Log("[13KRA] OOP lighting scanner wrote " + dedicatedReportPath);
 Assets\_Project\Scripts\Lighting\Editor\DayNightGIRelayTunerWindow.cs:126:                _status.text = "Runtime: missing";
 Assets\_Project\Scripts\Lighting\Editor\DayNightGIRelayTunerWindow.cs:127:                _lighting.text = "EnvironmentLightingDTO: unavailable";
 Assets\_Project\Scripts\Lighting\Editor\DayNightGIRelayTunerWindow.cs:128:                _telemetry.text = "Telemetry: unavailable";
@@ -59,101 +60,12 @@ Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:138:      
 Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:147:                Renderer[] renderers = selected[i].GetComponentsInChildren<Renderer>(true);
 Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:156:            Component[] components = Resources.FindObjectsOfTypeAll<Component>();
 Assets\_Project\Scripts\Lighting\Editor\AbyssalLightingTunerWindow.cs:169:            Debug.Log("[13KRA] Loaded-scene Unity probe group count: " + sceneGroups);
-Assets\_Project\Scripts\Lighting\Editor\OOP_Lighting_Scanner.cs:93:            Debug.Log("[13KRA] OOP lighting scanner wrote " + dedicatedReportPath);
 Assets\_Project\Scripts\Lighting\Editor\InteriorGITunerWindow.cs:164:                Renderer[] renderers = selected[i].GetComponentsInChildren<Renderer>(true);
 Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\ShinobuStormPropagationTunerWindow.cs:92:                    _status.text = "Vault state: tuning buffer unavailable";
 Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\ShinobuStormPropagationTunerWindow.cs:106:                _status.text = "Vault state: tuning buffer resolved. Graph: surface intensity vs attenuated depth energy.";
 Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\Weather_Event_Inquisition.cs:123:            Debug.Log("SHINOBU_234 Weather Event Inquisition wrote Docs/Reports/ENVIRONMENT_OPTIMIZATION_REPORT.json");
-Assets\_Project\Editor\GeminiWorldBuilder.cs:13:        Debug.Log("Gemini: Building Optimized Master-Grade World v3...");
-Assets\_Project\Editor\GeminiWorldBuilder.cs:162:        Debug.Log("Master-Grade v3 Build Complete! Organic, Spikeless 108-Biome Matrix deployed.");
-Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:35:            Debug.Log($"{LogPrefix} prefabFixes={prefabFixCount}, loadedSceneFixes={loadedSceneFixCount}.");
-Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:72:            LODGroup[] lodGroups = Resources.FindObjectsOfTypeAll<LODGroup>();
-Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:136:            root.GetComponentsInChildren(true, s_RendererScratch);
-Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:146:            Debug.LogWarning($"{LogPrefix} Missing expected renderer '{expectedName}' under '{root.name}'.");
-Assets\_Project\Editor\HectonMeshGenerator.cs:102:                Debug.Log(
-Assets\_Project\Editor\HectonMeshGenerator.cs:114:                Debug.Log(
-Assets\_Project\Editor\HectonMeshGenerator.cs:297:            Mesh mesh = new Mesh();
 Assets\_Project\Editor\Camera_Proliferation_Scanner.cs:33:            Debug.Log("Superfluous Cameras Eradicated: " + report.superfluousCamerasEradicated + " | Violations: " + report.violationCount);
 Assets\_Project\Editor\Camera_Proliferation_Scanner.cs:99:                Camera[] cameras = root.GetComponentsInChildren<Camera>(true);
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:28:                Debug.LogError("[DataMonolithBakerWindow] H8DataMonolithCompilerWindow.Open is missing.");
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:44:                Debug.LogError("[DataMonolithBakerWindow] H8DataMonolithCompiler.BakeAll is missing.");
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:53:                Debug.LogError("[DataMonolithBakerWindow] static_data.h8bin bake failed.");
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:71:            Debug.LogError("[DataMonolithBakerWindow] " + fullName + " was not found in " + DataMonolithAssemblyName + ".");
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:90:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message));
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:95:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:100:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:105:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
-Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:110:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
-Assets\_Project\Editor\HectonMeshSaver.cs:97:        Debug.Log(
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:301:                Debug.LogWarning("[TextureBaker1605] Select matching Texture2D assets named *_Albedo, *_Normal, *_MRAO, and optional Mesh/*_Mesh assets.");
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:307:                Debug.LogWarning("[TextureBaker1605] Selection is not a complete texture set group: " + selectionFailure);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:313:                Debug.LogError("[TextureBaker1605] Atlas pack failed: " + failure);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:315:                Debug.Log("[TextureBaker1605] Atlas packed. Efficiency=" + (result.PackingEfficiency01 * 100f).ToString("F2") + "%");
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:773:                vertexBytes = new NativeArray<byte>(vertexByteLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:774:                uvData = new NativeArray<float2>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:864:                vertexBytes = new NativeArray<byte>(vertexByteLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:894:                    vertexBytes = new NativeArray<byte>(snapshot.VertexBytes.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:903:                    Debug.LogWarning("[TextureBaker1605] Failed to restore mesh UV rollback snapshot for " + GetObjectNameNoThrow(snapshot.Mesh) + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:918:                Debug.LogWarning("[TextureBaker1605] Failed to save mesh UV rollback snapshots: " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:973:                vertexBytes = new NativeArray<byte>(vertexByteLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1283:                Debug.LogWarning("[TextureBaker1605] " + failure);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1715:                Debug.LogWarning("[TextureBaker1605] Failed to restore material rollback snapshot for " + GetObjectNameNoThrow(snapshot.Material) + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1760:                Debug.LogWarning("[TextureBaker1605] Failed to delete newly created atlas output " + assetPath + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1778:                Debug.LogWarning("[TextureBaker1605] Could not prove prior asset state for " + assetPath + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1802:                Debug.LogWarning("[TextureBaker1605] Could not resolve atlas output path " + assetPath + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1820:                Debug.LogWarning("[TextureBaker1605] Failed to destroy transient material after atlas failure: " + ex.Message);
-Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1872:                Debug.LogWarning("[TextureBaker1605] Failed to save restored material rollback snapshot for " + GetObjectNameNoThrow(material) + ": " + ex.Message);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherSelfTests.cs:18:                Debug.Log(report);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherSelfTests.cs:22:            Debug.LogError(report);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:109:                Debug.LogError("[TextureBaker1605] " + finalizeFailure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:135:                Debug.LogError("[TextureBaker1605] Compute shaders unsupported. Bake aborted.");
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:142:                Debug.LogError("[TextureBaker1605] Missing compute shader at " + ComputeShaderPath);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:149:                Debug.LogError("[TextureBaker1605] Insufficient VRAM for minimum bake size.");
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:155:                Debug.LogError("[TextureBaker1605] Invalid output folder: " + folderFailure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:171:                Debug.LogError("[TextureBaker1605] Output rollback capture failed: " + rollbackFailure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:215:                Debug.LogWarning("[TextureBaker1605] Insufficient compact VRAM for 4K bake; reducing to 2K.");
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:521:                Debug.LogError("[TextureBaker1605] " + kernelFailure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:543:                    Debug.LogError("[TextureBaker1605] RenderTexture allocation failed for " + kernelName + " at " + size + "x" + size);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:575:                    Debug.LogError("[TextureBaker1605] Invalid compute dispatch shape for " + kernelName + ": " + dispatchFailure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:596:                    Debug.LogError("[TextureBaker1605] M.R.A.O. verification failed: " + failure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:605:                    Debug.LogError("[TextureBaker1605] " + importFailure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:613:                Debug.LogWarning("[TextureBaker1605] File write failed: " + ex.Message);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:618:                Debug.LogWarning("[TextureBaker1605] File access denied: " + ex.Message);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:623:                Debug.LogError("[TextureBaker1605] Bake dispatch failed for " + kernelName + ": " + ex.GetType().Name + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:678:                Debug.LogError("[TextureBaker1605] PNG encoding returned no bytes for " + assetPath);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:684:                Debug.LogError("[TextureBaker1605] PNG byte ceiling exceeded for " + assetPath);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:691:            Debug.LogWarning("[TextureBaker1605] File write failed: " + failure);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:835:                Debug.LogWarning("[TextureBaker1605] Failed to restore asset rollback snapshot " + snapshot.AssetPath + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:915:                Debug.LogWarning("[TextureBaker1605] Failed to clean newly-created bake output " + assetPath + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:934:                Debug.LogWarning("[TextureBaker1605] Unknown bake output prior state for " + assetPath + ": " + ex.Message);
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:45:            ".GetComponent<",
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:46:            "GetComponent<",
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:51:            "Resources.Load",
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:52:            "FindObjectOfType",
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:53:            "GameObject.Find"
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:123:                Debug.LogError("[Apex1605] Source verification failed: " + result.FirstViolation);
-Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:127:            Debug.Log("[Apex1605] Source verification passed. Files=" + result.SourceFileCount + " HotMethods=" + result.HotMethodCount);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:220:            prefab.GetComponentsInChildren(true, s_meshFilterScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:351:            prefab.GetComponentsInChildren(true, s_meshFilterScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:547:            prefab.GetComponentsInChildren(true, s_rendererScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:617:            prefab.GetComponentsInChildren(true, s_rendererScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:680:            var native = new NativeArray<T>(values.Count, allocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:782:            prefab.GetComponentsInChildren(true, s_transformScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:989:            prefab.GetComponentsInChildren(true, s_rendererScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1117:                placements = new NativeArray<InstrumentPlacementDTO1608>(socketList.Count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1118:                counters = new NativeArray<InteriorBakeCountersDTO1608>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1248:            var vertices = new NativeArray<InteriorMeshVertexDTO1608>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1249:            var indices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1309:                renderVertices = new NativeArray<InteriorRenderVertexDTO1608>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1531:            var native = new NativeArray<T>(values.Count, allocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1561:                renderVertices = new NativeArray<InteriorRenderVertexDTO1608>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1644:            var normalPixels = new NativeArray<InteriorRgba32DTO1608>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1645:            var grimePixels = new NativeArray<InteriorRgba32DTO1608>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1702:            var colors = new NativeArray<Color32>(pixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2098:            root.GetComponentsInChildren(true, s_transformScratch);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2140:                var clear = new NativeArray<Color32>(size * size, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2557:            _lastResultLabel.text = _lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason;
-Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2558:            _metricsLabel.text = "Placement: " + _lastResult.Counters.PlacementMilliseconds.ToString("F2") +
 Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:119:                    Debug.LogWarning($"[GraphBuilder] Failed to set field '{fieldName}' on {type.Name}: {e.Message}");
 Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:152:                        Debug.LogWarning($"[GraphBuilder] Failed to set backing field '{pattern}' on {type.Name}: {e.Message}");
 Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:159:        Debug.LogWarning($"[GraphBuilder] Could not find any field matching '{fieldName}' on {target.GetType().Name}");
@@ -196,54 +108,46 @@ Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:1350:        D
 Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:1357:        Debug.Log("[GraphBuilder] Creating Node 18: Blend200 (Subtract canyons) -> FINAL...");
 Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:1368:        Debug.Log("[GraphBuilder] Creating Node 19: HeightOutput200...");
 Assets\_Project\Editor\AsymmetricContinentalDivideGraphBuilder.cs:1379:        Debug.Log(
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:130:            Debug.Log("[1614] BRG scatter bake complete. path=" + result.OutputPath + " instances=" + result.InstanceCount + " culled=" + result.CulledCount + " bytes=" + result.FileBytes);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:138:            Debug.Log("[1614] Scatter source scan complete. rules=" + result.SourceRuleCount + " prefabs=" + result.SourcePrefabCount + " mapMagicAssets=" + result.MapMagicAssetCount + " mapMagicFolder=" + result.MapMagicSourceFolder + " cullingFolder=" + result.CullingDatasetFolder);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:169:                Debug.LogError("[1614] Scatter bake failed: " + exception.GetType().Name + " " + exception.Message);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:188:                Debug.LogError("Culling Bounds Count Exceeds Bake Limits - Aborting Bake");
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:194:                Debug.LogError("Instance Count Exceeds GraphicsBuffer Limits - Aborting Bake");
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:234:                instances = new NativeArray<ScatterInstanceDTO>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:235:                importedBounds = new NativeArray<CullingBoundsDTO>(boundsCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:239:                bounds = new NativeArray<CullingBoundsDTO>(effectiveBoundsCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:253:                terrainNormalHeight = new NativeArray<float4>(terrainCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:254:                localPositions = new NativeArray<float3>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:255:                surfaceNormals = new NativeArray<float3>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:256:                matrices = new NativeArray<float4x4>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:257:                metadata = new NativeArray<BrgInstanceMetadataDTO>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:258:                qualityIndices = new NativeArray<int>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:259:                culledMask = new NativeArray<byte>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:260:                nonFiniteMask = new NativeArray<byte>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:261:                telemetry = new NativeArray<ScatterPolisherTelemetryEntry>(AbyssalScatterPolisherConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:306:                JobHandle.CombineDependencies(alignHandle, boundsHandle).Complete();
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:323:                cullHandle.Complete();
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:390:                counts = new NativeArray<int>(gridCellCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:412:                offsets = new NativeArray<int>(gridCellCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:420:                cursors = new NativeArray<int>(gridCellCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:421:                indices = new NativeArray<int>(math.max(1, (int)totalRefs), Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:437:                cellRanges = new NativeArray<int2>(gridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:438:                boundIndices = new NativeArray<int>(indices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:514:                bucketCounts = new NativeArray<int>(QualityBucketCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:515:                bucketOffsets = new NativeArray<int>(QualityBucketCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:516:                bucketCursors = new NativeArray<int>(QualityBucketCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:559:                seen = new NativeArray<byte>(count, Allocator.Temp, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:1148:                Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
-Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:1153:                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:74:            ".material"
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:83:                Debug.LogError("[FaunaApex1610] APEX AST verification failed. violations=" +
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:89:            Debug.Log("[FaunaApex1610] APEX AST verification passed. runtimeFiles=" +
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:775:                   expression.StartsWith("GetComponent<", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:781:                   expression.StartsWith("TryGetComponent<", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:784:                   expression.Equals("GetComponentsInChildren", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:785:                   expression.StartsWith("GetComponentsInChildren<", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:789:                   expression.IndexOf(".GetComponent<", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:795:                   expression.IndexOf(".TryGetComponent<", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:798:                   expression.EndsWith(".GetComponentsInChildren", StringComparison.Ordinal) ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:799:                   expression.IndexOf(".GetComponentsInChildren<", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1164:                       IsStaticTypeMember(expression, "Object", "FindObjectOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1165:                       IsStaticTypeMember(expression, "Object", "FindObjectsOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1169:                       EndsWithMemberName(expression, "FindObjectOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1170:                       EndsWithMemberName(expression, "FindObjectsOfType") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1180:                       IsStaticTypeMember(expression, "Resources", "FindObjectsOfTypeAll") ||
-Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1194:                return EndsWithMemberName(expression, "StartCoroutine") ||
+Assets\_Project\Editor\GeminiWorldBuilder.cs:13:        Debug.Log("Gemini: Building Optimized Master-Grade World v3...");
+Assets\_Project\Editor\GeminiWorldBuilder.cs:162:        Debug.Log("Master-Grade v3 Build Complete! Organic, Spikeless 108-Biome Matrix deployed.");
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:45:            ".GetComponent<",
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:46:            "GetComponent<",
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:51:            "Resources.Load",
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:52:            "FindObjectOfType",
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:53:            "GameObject.Find"
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:123:                Debug.LogError("[Apex1605] Source verification failed: " + result.FirstViolation);
+Assets\_Project\Editor\Bakers\ApexIntegratorVerifier1605.cs:127:            Debug.Log("[Apex1605] Source verification passed. Files=" + result.SourceFileCount + " HotMethods=" + result.HotMethodCount);
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:28:                Debug.LogError("[DataMonolithBakerWindow] H8DataMonolithCompilerWindow.Open is missing.");
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:44:                Debug.LogError("[DataMonolithBakerWindow] H8DataMonolithCompiler.BakeAll is missing.");
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:53:                Debug.LogError("[DataMonolithBakerWindow] static_data.h8bin bake failed.");
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:71:            Debug.LogError("[DataMonolithBakerWindow] " + fullName + " was not found in " + DataMonolithAssemblyName + ".");
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:90:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message));
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:95:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:100:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:105:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
+Assets\_Project\Editor\DataMonolith\DataMonolithBakerWindow.cs:110:                Debug.LogError("[DataMonolithBakerWindow] Failed to " + operation + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:109:                Debug.LogError("[TextureBaker1605] " + finalizeFailure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:135:                Debug.LogError("[TextureBaker1605] Compute shaders unsupported. Bake aborted.");
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:142:                Debug.LogError("[TextureBaker1605] Missing compute shader at " + ComputeShaderPath);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:149:                Debug.LogError("[TextureBaker1605] Insufficient VRAM for minimum bake size.");
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:155:                Debug.LogError("[TextureBaker1605] Invalid output folder: " + folderFailure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:171:                Debug.LogError("[TextureBaker1605] Output rollback capture failed: " + rollbackFailure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:215:                Debug.LogWarning("[TextureBaker1605] Insufficient compact VRAM for 4K bake; reducing to 2K.");
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:521:                Debug.LogError("[TextureBaker1605] " + kernelFailure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:543:                    Debug.LogError("[TextureBaker1605] RenderTexture allocation failed for " + kernelName + " at " + size + "x" + size);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:575:                    Debug.LogError("[TextureBaker1605] Invalid compute dispatch shape for " + kernelName + ": " + dispatchFailure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:596:                    Debug.LogError("[TextureBaker1605] M.R.A.O. verification failed: " + failure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:605:                    Debug.LogError("[TextureBaker1605] " + importFailure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:613:                Debug.LogWarning("[TextureBaker1605] File write failed: " + ex.Message);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:618:                Debug.LogWarning("[TextureBaker1605] File access denied: " + ex.Message);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:623:                Debug.LogError("[TextureBaker1605] Bake dispatch failed for " + kernelName + ": " + ex.GetType().Name + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:678:                Debug.LogError("[TextureBaker1605] PNG encoding returned no bytes for " + assetPath);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:684:                Debug.LogError("[TextureBaker1605] PNG byte ceiling exceeded for " + assetPath);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:691:            Debug.LogWarning("[TextureBaker1605] File write failed: " + failure);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:835:                Debug.LogWarning("[TextureBaker1605] Failed to restore asset rollback snapshot " + snapshot.AssetPath + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:915:                Debug.LogWarning("[TextureBaker1605] Failed to clean newly-created bake output " + assetPath + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\ProceduralTextureBaker.cs:934:                Debug.LogWarning("[TextureBaker1605] Unknown bake output prior state for " + assetPath + ": " + ex.Message);
+Assets\_Project\Editor\VisorOpaqueTextureEnsurer.cs:38:                Debug.LogWarning(
 Assets\_Project\Editor\HectonDevToolsMenu.cs:46:            Debug.Log("[Hecton Dev] Copied persistentDataPath:\n" + Application.persistentDataPath);
 Assets\_Project\Editor\HectonDevToolsMenu.cs:55:                Debug.LogWarning("[Hecton Dev] Application.consoleLogPath is empty.");
 Assets\_Project\Editor\HectonDevToolsMenu.cs:61:                Debug.LogWarning("[Hecton Dev] Editor.log not found yet:\n" + path);
@@ -300,223 +204,62 @@ Assets\_Project\Editor\HectonDevToolsMenu.cs:801:                Debug.LogWarnin
 Assets\_Project\Editor\HectonDevToolsMenu.cs:819:                Debug.LogWarning("[Hecton Dev] Tool smoke audit can only run in play mode.");
 Assets\_Project\Editor\HectonDevToolsMenu.cs:878:                Debug.LogWarning("[Hecton Dev] No active loaded scene for tool smoke.");
 Assets\_Project\Editor\HectonDevToolsMenu.cs:920:                Debug.LogWarning(
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:90:            ".GetComponent<",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:92:            "GetComponent<",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:102:            ".TryGetComponent<",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:104:            "TryGetComponent<",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:108:            "FindObjectOfType",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:109:            "FindObjectsOfType",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:110:            "GameObject.Find",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:111:            "Resources.Load"
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:123:            ".ToList(",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:124:            ".Select(",
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:125:            ".Where("
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:182:                Debug.LogError("[1614/APEX] Source verification failed: " + result.FirstViolation);
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:186:            Debug.Log(
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:556:                pipeline.IndexOf("root.GetComponentsInChildren<Collider>(true)", StringComparison.Ordinal) < 0 ||
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:557:                pipeline.IndexOf("root.GetComponentsInChildren<Renderer>(true)", StringComparison.Ordinal) < 0 ||
-Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:609:            if (bootstrap.IndexOf("StartCoroutine", StringComparison.Ordinal) >= 0 ||
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:380:            Debug.Log(BuildRawMeshLedgerSummary());
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:438:                Debug.LogError("[FaunaRigger1610] No source mesh selected.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:444:                Debug.LogError("[FaunaRigger1610] Source mesh is not readable. Enable Read/Write in import settings.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:450:                Debug.LogError("[FaunaRigger1610] Source mesh has fewer than three vertices.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:476:                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:477:                segments = new NativeArray<float4x4>(24, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:478:                weights = new NativeArray<BoneWeight1>(vertexCount * 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:479:                audits = new NativeArray<FaunaVertexWeightAuditDTO1610>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:487:                seedHandle.Complete();
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:506:                handle.Complete();
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:512:                    Debug.LogError("[FaunaRigger1610] 1M fuzzer failed. normalizationFailures=" + failures + " isolated=" + isolated);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:518:                    Debug.LogError("[FaunaRigger1610] 1M fuzzer exceeded 500ms static target. ms=" + stopwatch.Elapsed.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture));
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:522:                Debug.Log("[FaunaRigger1610] 1M fuzzer completed. vertices=1048576 ms=" + stopwatch.Elapsed.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture));
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:539:                Debug.LogError("[FaunaRigger1610] VAT precision assertion rejected. TextureFormat.RGBAFloat is unsupported by this graphics backend.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:553:                    Debug.LogError("[FaunaRigger1610] VAT precision assertion failed. error=" + error.ToString("F6", CultureInfo.InvariantCulture));
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:557:                Debug.Log("[FaunaRigger1610] VAT precision assertion passed. error=" + error.ToString("F6", CultureInfo.InvariantCulture));
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:578:                SkinnedMeshRenderer[] renderers = prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:587:                        Debug.LogError("[FaunaRigger1610] Bone limit violation. path=" + path + " bones=" + boneCount + " limit=" + limit);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:595:                Debug.LogWarning("[FaunaRigger1610] Bone limit audit found no generated skinned fauna prefabs. STATUS=NO_OUTPUT_TO_VERIFY.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:600:                Debug.Log("[FaunaRigger1610] Bone limit compliance audit passed for generated prefabs. STATUS=PENDING UNITY IMPORT VERIFICATION.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:606:            Debug.Log("[FaunaRigger1610] Bake metrics. prefab=" + output.PrefabPath +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:652:                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:657:                bonesPerVertex = new NativeArray<byte>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:658:                weights = new NativeArray<BoneWeight1>(vertexCount * 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:659:                audits = new NativeArray<FaunaVertexWeightAuditDTO1610>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:674:                handle.Complete();
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:680:                    Debug.LogError("[FaunaRigger1610] Vertex isolation after bounds-aware influence radius. isolated=" +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:689:                    Debug.LogError("[FaunaRigger1610] Weight normalization failure. count=" + failures);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:705:                        Debug.LogError("[FaunaRigger1610] Runtime Spine-IK metadata requires at least " +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:713:                        Debug.LogError("[FaunaRigger1610] FaunaKinematicsRuntime metadata injection failed. Generation rejected.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:720:                        Debug.LogError("[FaunaRigger1610] Spine metadata asset write failed. Generation rejected.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:726:                        Debug.LogError("[FaunaRigger1610] Generated H8LR TextAsset binding failed. Generation rejected.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:744:                    Debug.LogError("[FaunaRigger1610] Prefab save failed. path=" + prefabPath);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:795:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. TextureFormat.RGBAFloat is unsupported by this graphics backend.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:801:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. vertexCount=" +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:811:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. frameCount=" +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:823:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. pixels=" +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:840:                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:844:                pixels = new NativeArray<float4>(vertexCount * safeFrameCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:860:                handle.Complete();
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:885:                    Debug.LogError("[FaunaRigger1610] VAT prefab save failed. path=" + prefabPath);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1001:            NativeArray<float4x4> segments = new NativeArray<float4x4>(math.max(1, bones.Length), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1098:                Debug.LogError("[FaunaRigger1610] Spine metadata product asset write/import failed. path=" + assetPath +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1103:            Debug.Log("[FaunaRigger1610] Spine metadata baked into prefab route. token=" + token +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1117:            Debug.Log("[FaunaRigger1610] VAT metadata. format=RGBAFloat width=" +
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1142:                Debug.LogError("[FaunaRigger1610] FaunaKinematicsRuntime does not expose _generatedRigDefinitionBinary. Metadata route rejected.");
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1163:                Debug.LogError("[FaunaRigger1610] Generated H8LR TextAsset did not import. path=" + metadataPath);
-Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1170:                Debug.LogError("[FaunaRigger1610] FaunaKinematicsRuntime does not expose _generatedRigDefinitionBinary. Metadata route rejected.");
-Assets\_Project\Editor\VisorOpaqueTextureEnsurer.cs:38:                Debug.LogWarning(
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:160:                Debug.LogError("[FloraTopology1604] Seed pack generation failed. See previous fail-closed errors; successful entries remain valid generated assets.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:166:            Debug.Log("[FloraTopology1604] Seed pack generated successfully.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:178:                Debug.Log("[FloraTopology1604] Determinism self test passed. STATUS=PENDING UNITY IMPORT/PROFILER VERIFICATION.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:194:                Debug.LogError("[FloraTopology1604] 100K fuzzer failed to generate native mesh buffers.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:202:                Debug.LogError("[FloraTopology1604] 100K fuzzer under-produced vertices. VertexCount=" + metrics.Lod0Vertices);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:207:                Debug.LogWarning("[FloraTopology1604] 100K fuzzer exceeded 100ms static target. ms=" + metrics.Lod0Milliseconds.ToString("F3"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:209:            Debug.Log("[FloraTopology1604] 100K fuzzer completed. Vertices=" + metrics.Lod0Vertices + ", Tris=" + metrics.Lod0Triangles + ", ms=" + metrics.Lod0Milliseconds.ToString("F3"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:221:                Debug.Log("[FloraTopology1604] LOD silhouette audit passed for all presets.");
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:364:                    Debug.LogError("[FloraTopology1604] Mesh asset persistence failed for " + assetName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:378:                Debug.Log(
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:412:                nodes = new NativeArray<FloraNode>(genome.MaxNodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:413:                edges = new NativeArray<FloraEdge>(genome.MaxEdgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:414:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:425:                growthHandle.Complete();
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:431:                    Debug.LogError("[FloraTopology1604] Genome Complexity Exceeded Capacity. Nodes=" + growthCounters.NodeCount + ", Edges=" + growthCounters.EdgeCount + ", Overflow=" + growthCounters.Overflow);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:512:                vertices = new NativeArray<FloraVertexData>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:513:                indices = new NativeArray<uint>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:514:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:515:                bounds = new NativeArray<FloraBoundsDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:538:                skinHandle.Complete();
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:544:                    Debug.LogError("[FloraTopology1604] LOD build exceeded native capacity. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount + ", Overflow=" + skinCounters.Overflow);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:550:                    Debug.LogError("[FloraTopology1604] LOD build emitted out-of-range indices. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:558:                    Debug.LogError("[FloraTopology1604] LOD triangle budget exceeded. LOD=" + lod + ", Triangles=" + triangleCount + ", Budget=" + allowedTriangles);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:690:                Debug.LogError("[FloraTopology1604] Mesh asset save failed. Path=" + meshPath);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:722:                Debug.LogError("[FloraTopology1604] Failed to delete incomplete mesh asset. Path=" + meshPath);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:754:                Debug.LogError("[FloraTopology1604] Prefab save failed. Path=" + prefabPath);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:827:                Debug.LogError("[FloraTopology1604] Required flora material has wrong shader. Path=" + path + ", Shader=" + (material.shader != null ? material.shader.name : "<null>"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:829:                Debug.LogError("[FloraTopology1604] Required flora material missing. Path=" + path);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:868:                Debug.LogError("[FloraTopology1604] Determinism failure for " + preset + ". First=" + first.Lod0Hash.ToString("X16") + ", Second=" + second.Lod0Hash.ToString("X16"));
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:880:            Debug.Log("[FloraTopology1604] Silhouette audit " + preset
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:892:                Debug.LogError("[FloraTopology1604] LOD silhouette audit failed for " + label
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:995:            Debug.LogError("[FloraTopology1604] Layout size drift " + label + ". Expected=" + expectedBytes + ", Actual=" + actualBytes);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1005:            Debug.LogError("[FloraTopology1604] Layout offset drift " + typeof(T).Name + "." + fieldName + ". Expected=" + expectedOffset + ", Actual=" + actualOffset);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1657:            ".GetComponent<",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1659:            "GetComponent<",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1683:            ".ToList(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1685:            ".Where(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1686:            ".Select(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1695:            ".Complete(",
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1716:                Debug.Log("[FloraTopology1604] APEX_VERIFICATION PASS. Files=" + fileCount
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1721:            Debug.LogError("[FloraTopology1604] APEX_VERIFICATION FAIL. Files=" + fileCount
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1938:                    Debug.LogError("[FloraTopology1604] Hot lookup violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1954:                    Debug.LogError("[FloraTopology1604] Presentation phase violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1968:                    Debug.LogError("[FloraTopology1604] Hot zero-GC violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1982:                    Debug.LogError("[FloraTopology1604] Hot blocking call violation " + path + ":" + lineNumber + " in " + methodName);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2004:                    Debug.LogError("[FloraTopology1604] Nested DataVault write lock risk " + path + ":" + lineNumber);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2012:                    Debug.LogError("[FloraTopology1604] DataVault write lock lacks strict try/finally release " + path + ":" + lineNumber);
-Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2183:                _metricsBox.text = _lastMetrics;
-Assets\_Project\Editor\UnityReloadLogSummary.cs:54:                Debug.LogWarning($"[UnityReloadLogSummary] Editor.log not found: {logPath}");
-Assets\_Project\Editor\UnityReloadLogSummary.cs:166:            Debug.Log(sb.ToString());
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:173:            _lastBakeLabel.text = hasResult ? (_lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason) : "No bake executed in this window.";
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:174:            _vertexCountLabel.text = "Vertices: " + _lastResult.FinalVertexCount;
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:175:            _triangleCountLabel.text = "Triangles: " + _lastResult.FinalTriangleCount;
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:176:            _faultMaskLabel.text = "Fault Mask: 0x" + _lastResult.Counters.FaultFlags.ToString("X8");
-Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:203:                Debug.LogError(_lastResult.FailureReason);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:77:                UnityEngine.Debug.Log($"Deep Reach station baked: {result.PrefabPath} ({result.FinalVertexCount} verts, {result.FinalTriangleCount} tris).");
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:79:                UnityEngine.Debug.LogError($"Deep Reach station bake failed: {result.FailureReason}");
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:106:                grid = new NativeArray<StationWfcCellDTO>(ResolveCellCount(settings.GridDims), Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:107:                placements = new NativeArray<StationPlacementDTO>(settings.MaxPlacements, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:108:                counters = new NativeArray<StationBakeCountersDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:135:                transformedVertices = new NativeArray<StationMeshVertexDTO>(sourceVertexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:136:                rawIndices = new NativeArray<int>(sourceIndexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:137:                rawTriangleMaterials = new NativeArray<ushort>(sourceTriangleCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:138:                weldedVertices = new NativeArray<StationMeshVertexDTO>(sourceVertexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:139:                weldedIndices = new NativeArray<int>(sourceIndexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:140:                weldedTriangleMaterials = new NativeArray<ushort>(sourceTriangleCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:141:                remap = new NativeArray<int>(sourceVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:142:                buckets = new NativeArray<StationWeldBucketDTO>(ResolveBucketCapacity(sourceVertexCapacity), Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:442:                renderVertices = new NativeArray<StationRenderVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:443:                sortedIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:444:                materialIndexCounts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:445:                materialRemap = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:446:                activeSourceSlots = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:447:                subMeshStarts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:448:                subMeshCounts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:449:                subMeshWriteOffsets = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:314:            prefab.GetComponentsInChildren(true, filters);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:423:            prefab.GetComponentsInChildren(true, renderers);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:465:            ModuleSocket[] sockets = prefab.GetComponentsInChildren<ModuleSocket>(true);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:541:            prefab.GetComponentsInChildren(true, renderers);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:643:            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:736:            var result = new NativeArray<T>(source.Count, allocator, NativeArrayOptions.UninitializedMemory);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:42:                Debug.LogError(report.validationReason);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:46:            Debug.Log("1628 biome transition polish report: " + ReportPath);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:53:                Debug.LogError(reason);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:55:                Debug.Log(reason);
-Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:447:            Renderer[] renderers = Resources.FindObjectsOfTypeAll<Renderer>();
+Assets\_Project\Editor\HectonSkyAtlasGenerator.cs:254:                Debug.LogError("[AtlasPacker] Failed to read source textures.");
+Assets\_Project\Editor\HectonSkyAtlasGenerator.cs:385:            Debug.Log(
 Assets\_Project\Editor\ObjectSpawner.cs:63:        Debug.Log("[ObjectSpawner] Created deterministic debris batch.");
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:145:                Debug.LogWarning("[RuntimeProfiler] Play mode monitor can only start in play mode.");
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:172:                Debug.LogWarning("[RuntimeProfiler] Editor monitor could not resolve profiler stats.");
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:178:            Debug.Log("[RuntimeProfiler] Editor play-mode monitor started.");
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:198:            Debug.Log(DescribeStatus());
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:222:            Debug.Log(_reportBuilder.ToString());
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:391:                    Debug.LogWarning(_lastReport);
-Assets\_Project\Editor\PlayModePerformanceMonitor.cs:393:                    Debug.Log(_lastReport);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:301:                Debug.LogWarning("[TextureBaker1605] Select matching Texture2D assets named *_Albedo, *_Normal, *_MRAO, and optional Mesh/*_Mesh assets.");
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:307:                Debug.LogWarning("[TextureBaker1605] Selection is not a complete texture set group: " + selectionFailure);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:313:                Debug.LogError("[TextureBaker1605] Atlas pack failed: " + failure);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:315:                Debug.Log("[TextureBaker1605] Atlas packed. Efficiency=" + (result.PackingEfficiency01 * 100f).ToString("F2") + "%");
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:773:                vertexBytes = new NativeArray<byte>(vertexByteLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:774:                uvData = new NativeArray<float2>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:864:                vertexBytes = new NativeArray<byte>(vertexByteLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:894:                    vertexBytes = new NativeArray<byte>(snapshot.VertexBytes.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:903:                    Debug.LogWarning("[TextureBaker1605] Failed to restore mesh UV rollback snapshot for " + GetObjectNameNoThrow(snapshot.Mesh) + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:918:                Debug.LogWarning("[TextureBaker1605] Failed to save mesh UV rollback snapshots: " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:973:                vertexBytes = new NativeArray<byte>(vertexByteLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1283:                Debug.LogWarning("[TextureBaker1605] " + failure);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1715:                Debug.LogWarning("[TextureBaker1605] Failed to restore material rollback snapshot for " + GetObjectNameNoThrow(snapshot.Material) + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1760:                Debug.LogWarning("[TextureBaker1605] Failed to delete newly created atlas output " + assetPath + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1778:                Debug.LogWarning("[TextureBaker1605] Could not prove prior asset state for " + assetPath + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1802:                Debug.LogWarning("[TextureBaker1605] Could not resolve atlas output path " + assetPath + ": " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1820:                Debug.LogWarning("[TextureBaker1605] Failed to destroy transient material after atlas failure: " + ex.Message);
+Assets\_Project\Editor\Bakers\TextureAtlasPacker.cs:1872:                Debug.LogWarning("[TextureBaker1605] Failed to save restored material rollback snapshot for " + GetObjectNameNoThrow(material) + ": " + ex.Message);
 Assets\_Project\Editor\LeviathanProceduralAnimationTunerWindow.cs:138:            _layoutLabel.text =
 Assets\_Project\Editor\LeviathanProceduralAnimationTunerWindow.cs:149:                _runtimeLabel.text = "Runtime: no selected FaunaKinematicsRuntime";
 Assets\_Project\Editor\LeviathanProceduralAnimationTunerWindow.cs:154:            _runtimeLabel.text = $"Runtime bones {snapshot.ActiveSegmentCount} | Burst {snapshot.BurstSolveMicros:0.0} us | Iter {snapshot.ConstraintIterations} | Quality {snapshot.GlobalQualityWeight:0.00}";
-Assets\_Project\Editor\PropwashGpuTunerWindow.cs:159:                _statusLabel.text = value;
-Assets\_Project\Editor\PlayModeOptimizationAudit.cs:110:                Debug.LogWarning("[OptimizationAudit] Can only start in play mode.");
-Assets\_Project\Editor\PlayModeOptimizationAudit.cs:133:            Debug.Log("[OptimizationAudit] Started play-mode optimization audit.");
-Assets\_Project\Editor\PlayModeOptimizationAudit.cs:150:                Debug.Log(BuildSummary());
-Assets\_Project\Editor\PlayModeOptimizationAudit.cs:157:            Debug.Log(BuildSummary());
-Assets\_Project\Editor\HectonWaterGrid.cs:14:        Mesh mesh = new Mesh();
-Assets\_Project\Editor\HectonWaterGrid.cs:45:        mesh.RecalculateNormals();
-Assets\_Project\Editor\HectonWaterGrid.cs:59:        Debug.Log("Voda gotova: " + path);
-Assets\_Project\Editor\UnityReloadAuditReport.cs:87:                .ToList();
-Assets\_Project\Editor\UnityReloadAuditReport.cs:93:            Debug.Log($"[UnityReloadAudit] Report generated: {outputPath}");
-Assets\_Project\Editor\HectonUIBuilder.cs:68:        Debug.Log("[HectonUIBuilder] HUD_Master_V2 generated successfully inside: "
-Assets\_Project\Editor\HectonUIBuilder.cs:169:        tmpLabelTop.text            = labelText;
-Assets\_Project\Editor\HectonUIBuilder.cs:227:        tmpValue.text              = valueText;
-Assets\_Project\Editor\HectonUIBuilder.cs:283:        tmpDepth.text            = "DEPTH: 1,428 m";
-Assets\_Project\Editor\HectonUIBuilder.cs:302:        tmpPressure.text            = "PRESSURE: 2.5 atm";
-Assets\_Project\Editor\SinglePassOceanTunerWindow.cs:131:                _statusLabel.text = value;
-Assets\_Project\Editor\SaveSlotManagerWindow.cs:399:                Debug.LogWarning($"[SaveManagerTest] Simulated corruption on {slotName}. Primary file is now invalid.");
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:65:            "GetComponent<",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:66:            "TryGetComponent<",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:70:            "FindObjectOfType<",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:71:            "FindObjectsOfType<",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:72:            "GameObject.Find(",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:73:            "GameObject.FindWithTag(",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:74:            "Camera.main",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:92:            ".material =",
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:1457:                UnityEngine.Debug.Log(message);
-Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:1459:                UnityEngine.Debug.LogError(message);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherSelfTests.cs:18:                Debug.Log(report);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherSelfTests.cs:22:            Debug.LogError(report);
 Assets\_Project\Editor\HectonSurfacePainter.cs:933:            if (child != null && child.TryGetComponent<HectonSocketHelper>(out _))
 Assets\_Project\Editor\HectonSurfacePainter.cs:954:            if (!child.TryGetComponent<HectonSocketHelper>(out _))
 Assets\_Project\Editor\HectonSurfacePainter.cs:1067:        MeshFilter[] all = targetRoot.GetComponentsInChildren<MeshFilter>(true);
 Assets\_Project\Editor\HectonSurfacePainter.cs:1121:        MeshFilter[] filters = root.GetComponentsInChildren<MeshFilter>(true);
 Assets\_Project\Editor\HectonSurfacePainter.cs:1164:            MeshFilter[] filters = root.GetComponentsInChildren<MeshFilter>(true);
-Assets\_Project\Editor\HectonSkyAtlasGenerator.cs:254:                Debug.LogError("[AtlasPacker] Failed to read source textures.");
-Assets\_Project\Editor\HectonSkyAtlasGenerator.cs:385:            Debug.Log(
-Assets\_Project\Editor\HectonSphereGenerator.cs:125:                Debug.LogWarning("[HectonSphereGenerator] Radius was <= 0, reset to 500.");
-Assets\_Project\Editor\HectonSphereGenerator.cs:154:            Debug.Log(
-Assets\_Project\Editor\HectonSphereGenerator.cs:288:            Mesh mesh = new Mesh();
-Assets\_Project\Editor\HectonSphereGenerator.cs:329:                Debug.Log("[HectonSphereGenerator] Overwrote existing asset: " + assetPath);
-Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:21:        [MenuItem("HECTON-8/Physics/1609 Audit Prefab MeshColliders", false, 181)]
-Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:25:            Debug.Log("[ColliderOptimization1609] Audit complete. High-poly MeshColliders=" + report.HighPolyMeshColliders + ", meshCollidersFound=" + report.MeshCollidersFound + ", executionMs=" + report.ExecutionMilliseconds);
-Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:32:            Debug.Log("[ColliderOptimization1609] Flora purge complete. Deleted=" + report.FloraCollidersDeleted + ", modifiedPrefabs=" + report.PrefabsModified + ", executionMs=" + report.ExecutionMilliseconds);
-Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:84:            EditorGUILayout.LabelField("MeshColliders Found", lastReport.MeshCollidersFound.ToString());
-Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:85:            EditorGUILayout.LabelField("High-Poly MeshColliders", lastReport.HighPolyMeshColliders.ToString());
-Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:86:            EditorGUILayout.LabelField("MeshColliders Deleted", lastReport.MeshCollidersDeleted.ToString());
 Assets\_Project\Editor\HectonSkyTools.cs:197:            Debug.Log(
 Assets\_Project\Editor\HectonSkyTools.cs:356:            Mesh mesh = new Mesh();
 Assets\_Project\Editor\HectonSkyTools.cs:543:                                Debug.LogWarning(
 Assets\_Project\Editor\HectonSkyTools.cs:567:                Debug.LogError(
 Assets\_Project\Editor\HectonSkyTools.cs:626:            Debug.Log(
-Assets\_Project\Editor\RockDataBakerWindow.cs:200:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
-Assets\_Project\Editor\RockDataBakerWindow.cs:228:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
-Assets\_Project\Editor\RockDataBakerWindow.cs:323:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
-Assets\_Project\Editor\RockDataBakerWindow.cs:364:            // GetComponentsInChildren(true) finds inactive too
-Assets\_Project\Editor\RockDataBakerWindow.cs:366:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
+Assets\_Project\Editor\HectonWaterGrid.cs:14:        Mesh mesh = new Mesh();
+Assets\_Project\Editor\HectonWaterGrid.cs:45:        mesh.RecalculateNormals();
+Assets\_Project\Editor\HectonWaterGrid.cs:59:        Debug.Log("Voda gotova: " + path);
+Assets\_Project\Editor\UnityReloadLogSummary.cs:54:                Debug.LogWarning($"[UnityReloadLogSummary] Editor.log not found: {logPath}");
+Assets\_Project\Editor\UnityReloadLogSummary.cs:166:            Debug.Log(sb.ToString());
+Assets\_Project\Editor\PlayModeOptimizationAudit.cs:110:                Debug.LogWarning("[OptimizationAudit] Can only start in play mode.");
+Assets\_Project\Editor\PlayModeOptimizationAudit.cs:133:            Debug.Log("[OptimizationAudit] Started play-mode optimization audit.");
+Assets\_Project\Editor\PlayModeOptimizationAudit.cs:150:                Debug.Log(BuildSummary());
+Assets\_Project\Editor\PlayModeOptimizationAudit.cs:157:            Debug.Log(BuildSummary());
+Assets\_Project\Editor\HectonSphereGenerator.cs:125:                Debug.LogWarning("[HectonSphereGenerator] Radius was <= 0, reset to 500.");
+Assets\_Project\Editor\HectonSphereGenerator.cs:154:            Debug.Log(
+Assets\_Project\Editor\HectonSphereGenerator.cs:288:            Mesh mesh = new Mesh();
+Assets\_Project\Editor\HectonSphereGenerator.cs:329:                Debug.Log("[HectonSphereGenerator] Overwrote existing asset: " + assetPath);
+Assets\_Project\Editor\HectonUIBuilder.cs:68:        Debug.Log("[HectonUIBuilder] HUD_Master_V2 generated successfully inside: "
+Assets\_Project\Editor\HectonUIBuilder.cs:169:        tmpLabelTop.text            = labelText;
+Assets\_Project\Editor\HectonUIBuilder.cs:227:        tmpValue.text              = valueText;
+Assets\_Project\Editor\HectonUIBuilder.cs:283:        tmpDepth.text            = "DEPTH: 1,428 m";
+Assets\_Project\Editor\HectonUIBuilder.cs:302:        tmpPressure.text            = "PRESSURE: 2.5 atm";
+Assets\_Project\Editor\UnityReloadAuditReport.cs:87:                .ToList();
+Assets\_Project\Editor\UnityReloadAuditReport.cs:93:            Debug.Log($"[UnityReloadAudit] Report generated: {outputPath}");
 Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:605:                    MeshCollider mc = chunkObj.AddComponent<MeshCollider>();
 Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:607:                    mc.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation
 Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:608:                                     | MeshColliderCookingOptions.EnableMeshCleaning
@@ -531,15 +274,61 @@ Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:1097:            Undo.Recor
 Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:1101:        mc.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation
 Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:1102:                          | MeshColliderCookingOptions.EnableMeshCleaning
 Assets\_Project\Editor\HectonPhysicsSkinGenerator.cs:1103:                          | MeshColliderCookingOptions.WeldColocatedVertices;
-Assets\_Project\Editor\HectonMeshCleaner.cs:131:        if (!string.IsNullOrEmpty(reason)) Debug.Log($"[HectonCleaner] Reset: {reason}");
-Assets\_Project\Editor\HectonMeshCleaner.cs:405:        MeshCollider tempMC = tempGO.AddComponent<MeshCollider>();
-Assets\_Project\Editor\HectonMeshCleaner.cs:487:    private bool IsBlocked(Vector3 origin, Vector3 dir, MeshCollider target, int srcTri, int srcTriReversed, int layerMask)
-Assets\_Project\Editor\HectonMeshCleaner.cs:535:        Mesh ds = new Mesh();
-Assets\_Project\Editor\HectonMeshCleaner.cs:579:            mf.TryGetComponent(out MeshCollider mc);
-Assets\_Project\Editor\HectonMeshCleaner.cs:582:            // Also update MeshColliders on sibling/child objects referencing same mesh
-Assets\_Project\Editor\HectonMeshCleaner.cs:817:        Mesh result = new Mesh();
-Assets\_Project\Editor\HectonMeshCleaner.cs:836:        if (!hasNormals) result.RecalculateNormals();
-Assets\_Project\Editor\HectonMeshCleaner.cs:1004:            targetObject.GetComponentsInChildren<MeshFilter>(true, list);
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:145:                Debug.LogWarning("[RuntimeProfiler] Play mode monitor can only start in play mode.");
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:172:                Debug.LogWarning("[RuntimeProfiler] Editor monitor could not resolve profiler stats.");
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:178:            Debug.Log("[RuntimeProfiler] Editor play-mode monitor started.");
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:198:            Debug.Log(DescribeStatus());
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:222:            Debug.Log(_reportBuilder.ToString());
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:391:                    Debug.LogWarning(_lastReport);
+Assets\_Project\Editor\PlayModePerformanceMonitor.cs:393:                    Debug.Log(_lastReport);
+Assets\_Project\Editor\PropwashGpuTunerWindow.cs:159:                _statusLabel.text = value;
+Assets\_Project\Editor\SinglePassOceanTunerWindow.cs:131:                _statusLabel.text = value;
+Assets\_Project\Editor\HectonMeshSaver.cs:97:        Debug.Log(
+Assets\_Project\Editor\SaveSlotManagerWindow.cs:399:                Debug.LogWarning($"[SaveManagerTest] Simulated corruption on {slotName}. Primary file is now invalid.");
+Assets\_Project\Editor\HectonMeshGenerator.cs:102:                Debug.Log(
+Assets\_Project\Editor\HectonMeshGenerator.cs:114:                Debug.Log(
+Assets\_Project\Editor\HectonMeshGenerator.cs:297:            Mesh mesh = new Mesh();
+Assets\_Project\Editor\RockDataBakerWindow.cs:200:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
+Assets\_Project\Editor\RockDataBakerWindow.cs:228:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
+Assets\_Project\Editor\RockDataBakerWindow.cs:323:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
+Assets\_Project\Editor\RockDataBakerWindow.cs:364:            // GetComponentsInChildren(true) finds inactive too
+Assets\_Project\Editor\RockDataBakerWindow.cs:366:            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:130:            Debug.Log("[1614] BRG scatter bake complete. path=" + result.OutputPath + " instances=" + result.InstanceCount + " culled=" + result.CulledCount + " bytes=" + result.FileBytes);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:138:            Debug.Log("[1614] Scatter source scan complete. rules=" + result.SourceRuleCount + " prefabs=" + result.SourcePrefabCount + " mapMagicAssets=" + result.MapMagicAssetCount + " mapMagicFolder=" + result.MapMagicSourceFolder + " cullingFolder=" + result.CullingDatasetFolder);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:169:                Debug.LogError("[1614] Scatter bake failed: " + exception.GetType().Name + " " + exception.Message);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:188:                Debug.LogError("Culling Bounds Count Exceeds Bake Limits - Aborting Bake");
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:194:                Debug.LogError("Instance Count Exceeds GraphicsBuffer Limits - Aborting Bake");
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:234:                instances = new NativeArray<ScatterInstanceDTO>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:235:                importedBounds = new NativeArray<CullingBoundsDTO>(boundsCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:239:                bounds = new NativeArray<CullingBoundsDTO>(effectiveBoundsCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:253:                terrainNormalHeight = new NativeArray<float4>(terrainCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:254:                localPositions = new NativeArray<float3>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:255:                surfaceNormals = new NativeArray<float3>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:256:                matrices = new NativeArray<float4x4>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:257:                metadata = new NativeArray<BrgInstanceMetadataDTO>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:258:                qualityIndices = new NativeArray<int>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:259:                culledMask = new NativeArray<byte>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:260:                nonFiniteMask = new NativeArray<byte>(config.InstanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:261:                telemetry = new NativeArray<ScatterPolisherTelemetryEntry>(AbyssalScatterPolisherConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:306:                JobHandle.CombineDependencies(alignHandle, boundsHandle).Complete();
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:323:                cullHandle.Complete();
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:390:                counts = new NativeArray<int>(gridCellCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:412:                offsets = new NativeArray<int>(gridCellCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:420:                cursors = new NativeArray<int>(gridCellCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:421:                indices = new NativeArray<int>(math.max(1, (int)totalRefs), Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:437:                cellRanges = new NativeArray<int2>(gridCellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:438:                boundIndices = new NativeArray<int>(indices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:514:                bucketCounts = new NativeArray<int>(QualityBucketCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:515:                bucketOffsets = new NativeArray<int>(QualityBucketCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:516:                bucketCursors = new NativeArray<int>(QualityBucketCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:559:                seen = new NativeArray<byte>(count, Allocator.Temp, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:1148:                Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+Assets\_Project\Editor\Generators\World\AbyssalScatterPolisherPipeline.cs:1153:                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:42:                Debug.LogError(report.validationReason);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:46:            Debug.Log("1628 biome transition polish report: " + ReportPath);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:53:                Debug.LogError(reason);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:55:                Debug.Log(reason);
+Assets\_Project\Editor\Generators\Graphics\BiomeTransitionPolisher.cs:447:            Renderer[] renderers = Resources.FindObjectsOfTypeAll<Renderer>();
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:25:        public int MeshCollidersFound;
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:26:        public int HighPolyMeshColliders;
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:27:        public int MeshCollidersDeleted;
@@ -608,7 +397,386 @@ Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:1197:          
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:1204:        private static void ExpandMeshColliderRootBounds(
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:1205:            MeshCollider meshCollider,
 Assets\_Project\Editor\Physics\ColliderOptimizationEngine1609.cs:1214:                MeshFilter filter = meshCollider != null ? meshCollider.GetComponent<MeshFilter>() : null;
-Tools\PresentationDecouplingAudit\Program.cs:678:            (left.EndsWith(".color", StringComparison.Ordinal) || left.EndsWith(".material", StringComparison.Ordinal) || left.EndsWith(".materials", StringComparison.Ordinal)))
+Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:21:        [MenuItem("HECTON-8/Physics/1609 Audit Prefab MeshColliders", false, 181)]
+Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:25:            Debug.Log("[ColliderOptimization1609] Audit complete. High-poly MeshColliders=" + report.HighPolyMeshColliders + ", meshCollidersFound=" + report.MeshCollidersFound + ", executionMs=" + report.ExecutionMilliseconds);
+Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:32:            Debug.Log("[ColliderOptimization1609] Flora purge complete. Deleted=" + report.FloraCollidersDeleted + ", modifiedPrefabs=" + report.PrefabsModified + ", executionMs=" + report.ExecutionMilliseconds);
+Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:84:            EditorGUILayout.LabelField("MeshColliders Found", lastReport.MeshCollidersFound.ToString());
+Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:85:            EditorGUILayout.LabelField("High-Poly MeshColliders", lastReport.HighPolyMeshColliders.ToString());
+Assets\_Project\Editor\Physics\ColliderOptimizationWindow1609.cs:86:            EditorGUILayout.LabelField("MeshColliders Deleted", lastReport.MeshCollidersDeleted.ToString());
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:173:            _lastBakeLabel.text = hasResult ? (_lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason) : "No bake executed in this window.";
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:174:            _vertexCountLabel.text = "Vertices: " + _lastResult.FinalVertexCount;
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:175:            _triangleCountLabel.text = "Triangles: " + _lastResult.FinalTriangleCount;
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:176:            _faultMaskLabel.text = "Fault Mask: 0x" + _lastResult.Counters.FaultFlags.ToString("X8");
+Assets\_Project\Editor\Generators\Structures\DeepReachStationArchitectWindow.cs:203:                Debug.LogError(_lastResult.FailureReason);
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:90:            ".GetComponent<",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:92:            "GetComponent<",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:102:            ".TryGetComponent<",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:104:            "TryGetComponent<",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:108:            "FindObjectOfType",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:109:            "FindObjectsOfType",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:110:            "GameObject.Find",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:111:            "Resources.Load"
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:123:            ".ToList(",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:124:            ".Select(",
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:125:            ".Where("
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:182:                Debug.LogError("[1614/APEX] Source verification failed: " + result.FirstViolation);
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:186:            Debug.Log(
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:556:                pipeline.IndexOf("root.GetComponentsInChildren<Collider>(true)", StringComparison.Ordinal) < 0 ||
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:557:                pipeline.IndexOf("root.GetComponentsInChildren<Renderer>(true)", StringComparison.Ordinal) < 0 ||
+Assets\_Project\Editor\Generators\World\AbyssalScatterApexIntegratorVerifier1614.cs:609:            if (bootstrap.IndexOf("StartCoroutine", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\HectonMeshCleaner.cs:131:        if (!string.IsNullOrEmpty(reason)) Debug.Log($"[HectonCleaner] Reset: {reason}");
+Assets\_Project\Editor\HectonMeshCleaner.cs:405:        MeshCollider tempMC = tempGO.AddComponent<MeshCollider>();
+Assets\_Project\Editor\HectonMeshCleaner.cs:487:    private bool IsBlocked(Vector3 origin, Vector3 dir, MeshCollider target, int srcTri, int srcTriReversed, int layerMask)
+Assets\_Project\Editor\HectonMeshCleaner.cs:535:        Mesh ds = new Mesh();
+Assets\_Project\Editor\HectonMeshCleaner.cs:579:            mf.TryGetComponent(out MeshCollider mc);
+Assets\_Project\Editor\HectonMeshCleaner.cs:582:            // Also update MeshColliders on sibling/child objects referencing same mesh
+Assets\_Project\Editor\HectonMeshCleaner.cs:817:        Mesh result = new Mesh();
+Assets\_Project\Editor\HectonMeshCleaner.cs:836:        if (!hasNormals) result.RecalculateNormals();
+Assets\_Project\Editor\HectonMeshCleaner.cs:1004:            targetObject.GetComponentsInChildren<MeshFilter>(true, list);
+Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:35:            Debug.Log($"{LogPrefix} prefabFixes={prefabFixCount}, loadedSceneFixes={loadedSceneFixCount}.");
+Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:72:            LODGroup[] lodGroups = Resources.FindObjectsOfTypeAll<LODGroup>();
+Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:136:            root.GetComponentsInChildren(true, s_RendererScratch);
+Assets\_Project\Editor\HectonLodGroupConflictResolver.cs:146:            Debug.LogWarning($"{LogPrefix} Missing expected renderer '{expectedName}' under '{root.name}'.");
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:220:            prefab.GetComponentsInChildren(true, s_meshFilterScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:351:            prefab.GetComponentsInChildren(true, s_meshFilterScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:547:            prefab.GetComponentsInChildren(true, s_rendererScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:617:            prefab.GetComponentsInChildren(true, s_rendererScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:680:            var native = new NativeArray<T>(values.Count, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:782:            prefab.GetComponentsInChildren(true, s_transformScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:989:            prefab.GetComponentsInChildren(true, s_rendererScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1117:                placements = new NativeArray<InstrumentPlacementDTO1608>(socketList.Count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1118:                counters = new NativeArray<InteriorBakeCountersDTO1608>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1248:            var vertices = new NativeArray<InteriorMeshVertexDTO1608>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1249:            var indices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1309:                renderVertices = new NativeArray<InteriorRenderVertexDTO1608>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1531:            var native = new NativeArray<T>(values.Count, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1561:                renderVertices = new NativeArray<InteriorRenderVertexDTO1608>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1644:            var normalPixels = new NativeArray<InteriorRgba32DTO1608>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1645:            var grimePixels = new NativeArray<InteriorRgba32DTO1608>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:1702:            var colors = new NativeArray<Color32>(pixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2098:            root.GetComponentsInChildren(true, s_transformScratch);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2140:                var clear = new NativeArray<Color32>(size * size, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2557:            _lastResultLabel.text = _lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason;
+Assets\_Project\Editor\Generators\Interiors\InteriorFinisherStudio1608.cs:2558:            _metricsLabel.text = "Placement: " + _lastResult.Counters.PlacementMilliseconds.ToString("F2") +
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:88:                telemetry = new NativeArray<SculptTelemetryEntry>(BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:90:                sdf = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:91:                erodedSdf = new NativeArray<float>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:116:                erosionHandle.Complete();
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:131:                Debug.Log("RockSculptorEngine1713 bake complete: " + prefabPath);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:136:                Debug.LogError("RockSculptorEngine1713 bake failed: " + ex.Message);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:204:            vertices = new NativeArray<RockVertex>(maxFaces * 4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:205:            indices = new NativeArray<int>(maxFaces * 6, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:206:            NativeArray<byte> faceMasks = new NativeArray<byte>(res * res * res, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:218:                classifyJob.Schedule(faceMasks.Length, 64).Complete();
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:454:            NativeArray<RockVertex> mutableVertices = new NativeArray<RockVertex>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:455:            NativeArray<QuadricError> quadrics = new NativeArray<QuadricError>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:456:            NativeArray<int> vertexParents = new NativeArray<int>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:457:            NativeArray<byte> activeVertices = new NativeArray<byte>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:458:            NativeArray<EdgeCollapseCandidate> candidates = new NativeArray<EdgeCollapseCandidate>(indexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:459:            NativeArray<RockVertex> compactedVertices = new NativeArray<RockVertex>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:460:            NativeArray<int> compactMap = new NativeArray<int>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:461:            NativeArray<int> decimated = new NativeArray<int>(targetTriangles * 3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:515:            NativeArray<int> decimated = new NativeArray<int>(outputIndexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:881:            NativeArray<RockVertex> vertices = new NativeArray<RockVertex>(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:882:            NativeArray<int> indices = new NativeArray<int>(36, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Geology\RockSculptorEngine1713.cs:993:                MeshCollider collider = proxy.AddComponent<MeshCollider>();
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:76:                    Debug.Log($"[ModuleArchitect1712] baked prefabs={result.PrefabCount} verts={result.VertexCount} tris={result.TriangleCount}");
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:78:                    Debug.LogError("[ModuleArchitect1712] bake failed: " + result.FailureReason);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:85:                Debug.Log($"[ModuleArchitect1712] baked prefabs={result.PrefabCount} verts={result.VertexCount} tris={result.TriangleCount}");
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:87:                Debug.LogError("[ModuleArchitect1712] bake failed: " + result.FailureReason);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:222:            using NativeArray<float3> positions = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:223:            using NativeArray<float3> normals = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\ModuleArchitect1712.cs:224:            using NativeArray<uint> packed = new NativeArray<uint>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:64:                UnityEngine.Debug.LogError(result.FailureReason);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:66:                UnityEngine.Debug.Log(result.PrefabPath);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:100:                    UnityEngine.Debug.LogError(result.FailureReason);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:102:                    UnityEngine.Debug.Log(result.PrefabPath);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:147:                validation = new NativeArray<TopologyValidationResult1715>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:297:            var cableVertices = new NativeArray<EquipmentPropVertex1715>(cableVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:298:            var cableIndices = new NativeArray<int>(cableIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Interiors\EquipmentPropBaker1715.cs:299:            var cableMetrics = new NativeArray<float2>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:77:                UnityEngine.Debug.Log($"Deep Reach station baked: {result.PrefabPath} ({result.FinalVertexCount} verts, {result.FinalTriangleCount} tris).");
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:79:                UnityEngine.Debug.LogError($"Deep Reach station bake failed: {result.FailureReason}");
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:106:                grid = new NativeArray<StationWfcCellDTO>(ResolveCellCount(settings.GridDims), Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:107:                placements = new NativeArray<StationPlacementDTO>(settings.MaxPlacements, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:108:                counters = new NativeArray<StationBakeCountersDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:135:                transformedVertices = new NativeArray<StationMeshVertexDTO>(sourceVertexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:136:                rawIndices = new NativeArray<int>(sourceIndexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:137:                rawTriangleMaterials = new NativeArray<ushort>(sourceTriangleCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:138:                weldedVertices = new NativeArray<StationMeshVertexDTO>(sourceVertexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:139:                weldedIndices = new NativeArray<int>(sourceIndexCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:140:                weldedTriangleMaterials = new NativeArray<ushort>(sourceTriangleCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:141:                remap = new NativeArray<int>(sourceVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:142:                buckets = new NativeArray<StationWeldBucketDTO>(ResolveBucketCapacity(sourceVertexCapacity), Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:442:                renderVertices = new NativeArray<StationRenderVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:443:                sortedIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:444:                materialIndexCounts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:445:                materialRemap = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:446:                activeSourceSlots = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:447:                subMeshStarts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:448:                subMeshCounts = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationFabricator.cs:449:                subMeshWriteOffsets = new NativeArray<int>(materialCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:65:            "GetComponent<",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:66:            "TryGetComponent<",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:70:            "FindObjectOfType<",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:71:            "FindObjectsOfType<",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:72:            "GameObject.Find(",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:73:            "GameObject.FindWithTag(",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:74:            "Camera.main",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:92:            ".material =",
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:1457:                UnityEngine.Debug.Log(message);
+Assets\_Project\Editor\QA\SceneIntegrityValidator1627.cs:1459:                UnityEngine.Debug.LogError(message);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:380:            Debug.Log(BuildRawMeshLedgerSummary());
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:438:                Debug.LogError("[FaunaRigger1610] No source mesh selected.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:444:                Debug.LogError("[FaunaRigger1610] Source mesh is not readable. Enable Read/Write in import settings.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:450:                Debug.LogError("[FaunaRigger1610] Source mesh has fewer than three vertices.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:476:                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:477:                segments = new NativeArray<float4x4>(24, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:478:                weights = new NativeArray<BoneWeight1>(vertexCount * 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:479:                audits = new NativeArray<FaunaVertexWeightAuditDTO1610>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:487:                seedHandle.Complete();
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:506:                handle.Complete();
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:512:                    Debug.LogError("[FaunaRigger1610] 1M fuzzer failed. normalizationFailures=" + failures + " isolated=" + isolated);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:518:                    Debug.LogError("[FaunaRigger1610] 1M fuzzer exceeded 500ms static target. ms=" + stopwatch.Elapsed.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture));
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:522:                Debug.Log("[FaunaRigger1610] 1M fuzzer completed. vertices=1048576 ms=" + stopwatch.Elapsed.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture));
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:539:                Debug.LogError("[FaunaRigger1610] VAT precision assertion rejected. TextureFormat.RGBAFloat is unsupported by this graphics backend.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:553:                    Debug.LogError("[FaunaRigger1610] VAT precision assertion failed. error=" + error.ToString("F6", CultureInfo.InvariantCulture));
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:557:                Debug.Log("[FaunaRigger1610] VAT precision assertion passed. error=" + error.ToString("F6", CultureInfo.InvariantCulture));
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:578:                SkinnedMeshRenderer[] renderers = prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:587:                        Debug.LogError("[FaunaRigger1610] Bone limit violation. path=" + path + " bones=" + boneCount + " limit=" + limit);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:595:                Debug.LogWarning("[FaunaRigger1610] Bone limit audit found no generated skinned fauna prefabs. STATUS=NO_OUTPUT_TO_VERIFY.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:600:                Debug.Log("[FaunaRigger1610] Bone limit compliance audit passed for generated prefabs. STATUS=PENDING UNITY IMPORT VERIFICATION.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:606:            Debug.Log("[FaunaRigger1610] Bake metrics. prefab=" + output.PrefabPath +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:652:                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:657:                bonesPerVertex = new NativeArray<byte>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:658:                weights = new NativeArray<BoneWeight1>(vertexCount * 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:659:                audits = new NativeArray<FaunaVertexWeightAuditDTO1610>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:674:                handle.Complete();
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:680:                    Debug.LogError("[FaunaRigger1610] Vertex isolation after bounds-aware influence radius. isolated=" +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:689:                    Debug.LogError("[FaunaRigger1610] Weight normalization failure. count=" + failures);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:705:                        Debug.LogError("[FaunaRigger1610] Runtime Spine-IK metadata requires at least " +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:713:                        Debug.LogError("[FaunaRigger1610] FaunaKinematicsRuntime metadata injection failed. Generation rejected.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:720:                        Debug.LogError("[FaunaRigger1610] Spine metadata asset write failed. Generation rejected.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:726:                        Debug.LogError("[FaunaRigger1610] Generated H8LR TextAsset binding failed. Generation rejected.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:744:                    Debug.LogError("[FaunaRigger1610] Prefab save failed. path=" + prefabPath);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:795:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. TextureFormat.RGBAFloat is unsupported by this graphics backend.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:801:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. vertexCount=" +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:811:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. frameCount=" +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:823:                Debug.LogError("[FaunaRigger1610] VAT bake rejected. pixels=" +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:840:                vertices = new NativeArray<float3>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:844:                pixels = new NativeArray<float4>(vertexCount * safeFrameCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:860:                handle.Complete();
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:885:                    Debug.LogError("[FaunaRigger1610] VAT prefab save failed. path=" + prefabPath);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1001:            NativeArray<float4x4> segments = new NativeArray<float4x4>(math.max(1, bones.Length), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1098:                Debug.LogError("[FaunaRigger1610] Spine metadata product asset write/import failed. path=" + assetPath +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1103:            Debug.Log("[FaunaRigger1610] Spine metadata baked into prefab route. token=" + token +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1117:            Debug.Log("[FaunaRigger1610] VAT metadata. format=RGBAFloat width=" +
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1142:                Debug.LogError("[FaunaRigger1610] FaunaKinematicsRuntime does not expose _generatedRigDefinitionBinary. Metadata route rejected.");
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1163:                Debug.LogError("[FaunaRigger1610] Generated H8LR TextAsset did not import. path=" + metadataPath);
+Assets\_Project\Editor\Generators\Fauna\AbyssalAnatomyStudio1610.cs:1170:                Debug.LogError("[FaunaRigger1610] FaunaKinematicsRuntime does not expose _generatedRigDefinitionBinary. Metadata route rejected.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:95:                Debug.LogWarning("[FaunaRigBuilder1714] Requested bone count pruned to 96 for URP mobile/VR compatibility.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:113:                bonesPerVertex = new NativeArray<byte>(vertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:114:                boneWeights = new NativeArray<BoneWeight1>(vertices.Length * MaxInfluencesPerVertex, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:115:                weightSums = new NativeArray<float>(vertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:116:                failureFlags = new NativeArray<int>(vertices.Length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:140:                armorHandle.Complete();
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:145:                    Debug.LogError("Invalid bone weights detected in procedural rig!");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:182:                Debug.Log("[FaunaRigBuilder1714] Rigged fauna prefab saved: " + prefabPath);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:225:                positionPixels = new NativeArray<float4>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:226:                normalPixels = new NativeArray<float4>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:243:                vatJob.Schedule(pixelCount, 128).Complete();
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:283:                Debug.Log("[FaunaRigBuilder1714] VAT swarm prefab saved: " + prefabPath);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:301:                Debug.LogError("[FaunaRigBuilder1714] Source mesh missing.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:307:                Debug.LogError("[FaunaRigBuilder1714] Source mesh has no vertices.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:319:            Debug.LogError("[FaunaRigBuilder1714] Shared fauna material missing. Rigged fauna must serialize one authored shared material.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:328:            Debug.LogError("[FaunaRigBuilder1714] VAT material template missing. Refusing editor fallback new Material path.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:340:                sourceVertices = new NativeArray<Vector3>(meshData.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:342:                vertices = new NativeArray<float3>(sourceVertices.Length, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:355:            normals = new NativeArray<float3>(vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:375:                sourceNormals = new NativeArray<Vector3>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:389:            colors = new NativeArray<Color32>(vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:407:                sourceColors = new NativeArray<Color32>(vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:430:            NativeArray<float3> points = new NativeArray<float3>(boneCount, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:460:            NativeArray<Matrix4x4> bindPoseNative = new NativeArray<Matrix4x4>(bones.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:509:                Debug.LogError("[FaunaRigBuilder1714] Invalid mesh bounds. Procedural output rejected.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:525:                Debug.LogError("[FaunaRigBuilder1714] VAT dimensions exceed current GPU texture limit.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:532:                Debug.LogError("[FaunaRigBuilder1714] VAT pixel count exceeds signed 32-bit texture payload limit.");
+Assets\_Project\Editor\Generators\Fauna\FaunaRigBuilder1714.cs:651:            Debug.LogError("[FaunaRigBuilder1714] Unmanaged editor DTO alignment rejected. Struct sizes must be multiples of 8 bytes.");
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:74:            ".material"
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:83:                Debug.LogError("[FaunaApex1610] APEX AST verification failed. violations=" +
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:89:            Debug.Log("[FaunaApex1610] APEX AST verification passed. runtimeFiles=" +
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:775:                   expression.StartsWith("GetComponent<", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:781:                   expression.StartsWith("TryGetComponent<", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:784:                   expression.Equals("GetComponentsInChildren", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:785:                   expression.StartsWith("GetComponentsInChildren<", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:789:                   expression.IndexOf(".GetComponent<", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:795:                   expression.IndexOf(".TryGetComponent<", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:798:                   expression.EndsWith(".GetComponentsInChildren", StringComparison.Ordinal) ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:799:                   expression.IndexOf(".GetComponentsInChildren<", StringComparison.Ordinal) >= 0 ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1164:                       IsStaticTypeMember(expression, "Object", "FindObjectOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1165:                       IsStaticTypeMember(expression, "Object", "FindObjectsOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1169:                       EndsWithMemberName(expression, "FindObjectOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1170:                       EndsWithMemberName(expression, "FindObjectsOfType") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1180:                       IsStaticTypeMember(expression, "Resources", "FindObjectsOfTypeAll") ||
+Assets\_Project\Editor\Generators\Fauna\FaunaApexIntegratorVerifier1610.cs:1194:                return EndsWithMemberName(expression, "StartCoroutine") ||
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:314:            prefab.GetComponentsInChildren(true, filters);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:423:            prefab.GetComponentsInChildren(true, renderers);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:465:            ModuleSocket[] sockets = prefab.GetComponentsInChildren<ModuleSocket>(true);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:541:            prefab.GetComponentsInChildren(true, renderers);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:643:            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+Assets\_Project\Editor\Generators\Structures\DeepReachStationModuleLibrary.cs:736:            var result = new NativeArray<T>(source.Count, allocator, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:89:                Debug.LogError("[FloraTopology1711] Seed pack generation failed. Missing authored output must be fixed before player build.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:93:            Debug.Log("[FloraTopology1711] Static seed pack generated under Topology1711.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:110:                Debug.Log("[FloraTopology1711] Dry verification passed. Runtime geometry factories remain editor-only.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:193:                Debug.LogError("[FloraTopology1711] " + label + " emitted empty LOD mesh.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:199:                Debug.LogError("[FloraTopology1711] " + label + " exceeded LOD0 budget. tris=" + metrics.Lod0Triangles + " budget=" + profile.Lod0TriangleBudget);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:205:                Debug.LogError("[FloraTopology1711] " + label + " LOD chain is not monotonic.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:236:                        Debug.LogError("[FloraTopology1711] MeshData stream length mismatch on " + mesh.name);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:240:                    remappedColors = new NativeArray<Color32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:308:                Debug.LogError("[FloraTopology1711] Missing or incompatible " + attribute + " stream on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:317:                Debug.LogError("[FloraTopology1711] Non-dedicated " + attribute + " stream on " + label + ". offset=" + offset + " stride=" + stride);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:345:                    Debug.LogError("[FloraTopology1711] Invalid vertex position/normal on " + label + " vertex=" + i);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:368:            Debug.LogError("[FloraTopology1711] Vertex color contract failed on " + label + ". Expected R=sway, G=bioluminescence, B=AO, A=wear.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:433:                        Debug.LogError("[FloraTopology1711] Index out of range on " + label + " submesh=" + subMeshIndex);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:453:                Debug.LogError("[FloraTopology1711] Invalid submesh topology/index range on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:472:                Debug.LogError("[FloraTopology1711] Index out of range on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:483:            Debug.LogError("[FloraTopology1711] Degenerate triangle detected on " + label);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:495:            Debug.LogError("[FloraTopology1711] Invalid recalculated bounds on " + mesh.name);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:581:                lSystemTokens = new NativeArray<uint>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:582:                probes = new NativeArray<FloraProbeVertex1711>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:583:                ao = new NativeArray<float>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:584:                quadricKeep = new NativeArray<int>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:622:                handle.Complete();
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1711.cs:659:            Debug.LogError("[FloraTopology1711] " + label + " layout size must be 8-byte aligned. size=" + size);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:66:        public int MeshCollidersFound;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:67:        public int HighPolyMeshColliders;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:68:        public int VisualLod0MeshCollidersRemoved;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:69:        public int MeshCollidersDeleted;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:140:        public const int MeshColliderFatalTriangleLimit = 500;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:159:        private const int MeshColliderScratchCapacity = 384;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:166:        private static readonly List<MeshCollider> s_MeshColliderScratch = new List<MeshCollider>(MeshColliderScratchCapacity);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:220:            Debug.Log("[ColliderOptimizer1716] Audit complete. Prefabs=" + report.PrefabsVisited +
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:221:                      " MeshColliders=" + report.MeshCollidersFound +
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:222:                      " HighPoly=" + report.HighPolyMeshColliders +
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:230:            Debug.Log("[ColliderOptimizer1716] Optimize complete. PrefabsModified=" + report.PrefabsModified +
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:231:                      " MeshDeleted=" + report.MeshCollidersDeleted +
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:300:            prefab.GetComponentsInChildren(true, s_MeshColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:303:                for (int i = 0; i < s_MeshColliderScratch.Count; i++)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:305:                    MeshCollider meshCollider = s_MeshColliderScratch[i];
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:312:                        failure = prefab.name + " owns MeshCollider over 200 triangles: " + triangles;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:316:                    if (IsPrimaryVisualMeshCollider(meshCollider))
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:318:                        failure = prefab.name + " still has MeshCollider on a primary visual LOD0 mesh.";
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:325:                s_MeshColliderScratch.Clear();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:344:            compound.GetComponentsInChildren(true, s_ColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:400:            prefab.GetComponentsInChildren(true, s_MeshColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:403:                for (int i = 0; i < s_MeshColliderScratch.Count; i++)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:405:                    MeshCollider meshCollider = s_MeshColliderScratch[i];
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:409:                    report.MeshCollidersFound++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:411:                    if (triangles > MeshColliderFatalTriangleLimit || IsPrimaryVisualMeshCollider(meshCollider))
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:413:                        report.HighPolyMeshColliders++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:415:                            Debug.LogError("[ColliderOptimizer1716] Illegal MeshCollider: " + prefabPath + " triangles=" + triangles, prefab);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:421:                s_MeshColliderScratch.Clear();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:435:                Debug.LogError("[ColliderOptimizer1716] Failed prefab optimization: " + prefabPath + " " + exception.GetType().Name + ": " + exception.Message);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:480:                    Debug.LogError("[ColliderOptimizer1716] Validator failure before save: " + prefabPath + " :: " + failure, root);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:499:            root.GetComponentsInChildren(true, s_MeshColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:502:                report.MeshCollidersFound += s_MeshColliderScratch.Count;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:503:                for (int i = 0; i < s_MeshColliderScratch.Count; i++)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:505:                    MeshCollider meshCollider = s_MeshColliderScratch[i];
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:510:                    if (triangles > MeshColliderFatalTriangleLimit || IsPrimaryVisualMeshCollider(meshCollider))
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:511:                        report.HighPolyMeshColliders++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:516:                s_MeshColliderScratch.Clear();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:519:            RecordTrace(3, prefabPath, (int)mode, report.HighPolyMeshColliders, 0f);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:524:            bool changed = StripMeshColliders(root, false, ref report);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:530:            root.GetComponentsInChildren(true, s_MeshFilterScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:592:            bool changed = StripMeshColliders(root, false, ref report);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:600:                Debug.LogError("[ColliderOptimizer1716] Convex proxy rejected for " + prefabPath + ": " + failure, root);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:611:            MeshCollider collider = generatedRoot.AddComponent<MeshCollider>();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:615:            collider.cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation |
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:616:                                      MeshColliderCookingOptions.EnableMeshCleaning |
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:617:                                      MeshColliderCookingOptions.WeldColocatedVertices;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:623:        private static bool StripMeshColliders(GameObject root, bool onlyIllegal, ref ColliderOptimizerReport1716 report)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:626:            root.GetComponentsInChildren(true, s_MeshColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:629:                for (int i = s_MeshColliderScratch.Count - 1; i >= 0; i--)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:631:                    MeshCollider meshCollider = s_MeshColliderScratch[i];
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:635:                    report.MeshCollidersFound++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:637:                    bool primaryVisual = IsPrimaryVisualMeshCollider(meshCollider);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:638:                    bool illegal = triangles > MeshColliderFatalTriangleLimit || primaryVisual || !IsGeneratedCollisionName(SafeName(meshCollider.sharedMesh));
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:639:                    if (triangles > MeshColliderFatalTriangleLimit)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:640:                        report.HighPolyMeshColliders++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:647:                        report.VisualLod0MeshCollidersRemoved++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:650:                    report.MeshCollidersDeleted++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:656:                s_MeshColliderScratch.Clear();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:665:            root.GetComponentsInChildren(true, s_ColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:674:                    if (collider is MeshCollider meshCollider)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:677:                        report.MeshCollidersDeleted++;
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:823:            NativeArray<float3> vertices = new NativeArray<float3>(sourceCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:824:            NativeArray<float3> directions = new NativeArray<float3>(directionCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:825:            NativeArray<float3> supportPoints = new NativeArray<float3>(directionCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:841:                job.Schedule(directionCount, 4).Complete();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:862:                    hull.RecalculateNormals();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1009:            root.GetComponentsInChildren(true, s_MeshFilterScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1082:            mesh.RecalculateNormals();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1099:            NavMeshObstacle obstacle = generatedRoot.GetComponent<NavMeshObstacle>();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1116:            root.GetComponentsInChildren(true, s_ColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1150:            root.GetComponentsInChildren(true, s_ColliderScratch);
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1254:            Renderer renderer = meshFilter.GetComponent<Renderer>();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1275:        private static bool IsPrimaryVisualMeshCollider(MeshCollider collider)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1280:            MeshFilter filter = collider.GetComponent<MeshFilter>();
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1356:                    if (IsRuntimeMeshColliderCommitLine(sourceLine))
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1362:        private static bool IsRuntimeMeshColliderCommitLine(string sourceLine)
+Assets\_Project\Editor\Physics\ColliderOptimizerEngine1716.cs:1595:            s_TelemetryRing = new NativeArray<OptimizerTelemetryEntry1716>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:160:                Debug.LogError("[FloraTopology1604] Seed pack generation failed. See previous fail-closed errors; successful entries remain valid generated assets.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:166:            Debug.Log("[FloraTopology1604] Seed pack generated successfully.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:178:                Debug.Log("[FloraTopology1604] Determinism self test passed. STATUS=PENDING UNITY IMPORT/PROFILER VERIFICATION.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:194:                Debug.LogError("[FloraTopology1604] 100K fuzzer failed to generate native mesh buffers.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:202:                Debug.LogError("[FloraTopology1604] 100K fuzzer under-produced vertices. VertexCount=" + metrics.Lod0Vertices);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:207:                Debug.LogWarning("[FloraTopology1604] 100K fuzzer exceeded 100ms static target. ms=" + metrics.Lod0Milliseconds.ToString("F3"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:209:            Debug.Log("[FloraTopology1604] 100K fuzzer completed. Vertices=" + metrics.Lod0Vertices + ", Tris=" + metrics.Lod0Triangles + ", ms=" + metrics.Lod0Milliseconds.ToString("F3"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:221:                Debug.Log("[FloraTopology1604] LOD silhouette audit passed for all presets.");
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:364:                    Debug.LogError("[FloraTopology1604] Mesh asset persistence failed for " + assetName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:378:                Debug.Log(
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:412:                nodes = new NativeArray<FloraNode>(genome.MaxNodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:413:                edges = new NativeArray<FloraEdge>(genome.MaxEdgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:414:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:425:                growthHandle.Complete();
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:431:                    Debug.LogError("[FloraTopology1604] Genome Complexity Exceeded Capacity. Nodes=" + growthCounters.NodeCount + ", Edges=" + growthCounters.EdgeCount + ", Overflow=" + growthCounters.Overflow);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:512:                vertices = new NativeArray<FloraVertexData>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:513:                indices = new NativeArray<uint>(indexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:514:                counters = new NativeArray<FloraGenerationCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:515:                bounds = new NativeArray<FloraBoundsDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:538:                skinHandle.Complete();
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:544:                    Debug.LogError("[FloraTopology1604] LOD build exceeded native capacity. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount + ", Overflow=" + skinCounters.Overflow);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:550:                    Debug.LogError("[FloraTopology1604] LOD build emitted out-of-range indices. LOD=" + lod + ", Vertices=" + skinCounters.VertexCount + ", Indices=" + skinCounters.IndexCount);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:558:                    Debug.LogError("[FloraTopology1604] LOD triangle budget exceeded. LOD=" + lod + ", Triangles=" + triangleCount + ", Budget=" + allowedTriangles);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:690:                Debug.LogError("[FloraTopology1604] Mesh asset save failed. Path=" + meshPath);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:722:                Debug.LogError("[FloraTopology1604] Failed to delete incomplete mesh asset. Path=" + meshPath);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:754:                Debug.LogError("[FloraTopology1604] Prefab save failed. Path=" + prefabPath);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:827:                Debug.LogError("[FloraTopology1604] Required flora material has wrong shader. Path=" + path + ", Shader=" + (material.shader != null ? material.shader.name : "<null>"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:829:                Debug.LogError("[FloraTopology1604] Required flora material missing. Path=" + path);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:868:                Debug.LogError("[FloraTopology1604] Determinism failure for " + preset + ". First=" + first.Lod0Hash.ToString("X16") + ", Second=" + second.Lod0Hash.ToString("X16"));
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:880:            Debug.Log("[FloraTopology1604] Silhouette audit " + preset
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:892:                Debug.LogError("[FloraTopology1604] LOD silhouette audit failed for " + label
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:995:            Debug.LogError("[FloraTopology1604] Layout size drift " + label + ". Expected=" + expectedBytes + ", Actual=" + actualBytes);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1005:            Debug.LogError("[FloraTopology1604] Layout offset drift " + typeof(T).Name + "." + fieldName + ". Expected=" + expectedOffset + ", Actual=" + actualOffset);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1657:            ".GetComponent<",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1659:            "GetComponent<",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1683:            ".ToList(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1685:            ".Where(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1686:            ".Select(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1695:            ".Complete(",
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1716:                Debug.Log("[FloraTopology1604] APEX_VERIFICATION PASS. Files=" + fileCount
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1721:            Debug.LogError("[FloraTopology1604] APEX_VERIFICATION FAIL. Files=" + fileCount
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1938:                    Debug.LogError("[FloraTopology1604] Hot lookup violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1954:                    Debug.LogError("[FloraTopology1604] Presentation phase violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1968:                    Debug.LogError("[FloraTopology1604] Hot zero-GC violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:1982:                    Debug.LogError("[FloraTopology1604] Hot blocking call violation " + path + ":" + lineNumber + " in " + methodName);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2004:                    Debug.LogError("[FloraTopology1604] Nested DataVault write lock risk " + path + ":" + lineNumber);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2012:                    Debug.LogError("[FloraTopology1604] DataVault write lock lacks strict try/finally release " + path + ":" + lineNumber);
+Assets\_Project\Editor\Generators\Flora\FloraTopologyStudio1604.cs:2183:                _metricsBox.text = _lastMetrics;
+Tools\VoxelRuntimeHotPathAudit\Program.cs:15:        ".Select(",
+Tools\VoxelRuntimeHotPathAudit\Program.cs:16:        ".Where(",
+Tools\VoxelRuntimeHotPathAudit\Program.cs:27:        ".ToList(",
+Tools\VoxelRuntimeHotPathAudit\Program.cs:176:                : text.Contains("Allocator.Persistent", StringComparison.Ordinal)
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:81:                .Where(ShouldScanFile)
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:180:        string attributeText = string.Join(" ", structure.AttributeLists.Select(static list => list.ToString()));
 Tools\SignalArchitectureOptimizationAuditX001\Program.cs:397:            .ToList();
@@ -632,11 +800,7 @@ Tools\SignalArchitectureOptimizationAuditX001\Program.cs:740:            .ToList
 Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:340:                .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))
 Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:342:                .ToList();
 Tools\DataMonolithBakeCli\DataMonolithSourceInventoryProbe.cs:356:                Sections = selected.Select(s => s.Name).ToArray()
-Tools\VoxelRuntimeHotPathAudit\Program.cs:15:        ".Select(",
-Tools\VoxelRuntimeHotPathAudit\Program.cs:16:        ".Where(",
-Tools\VoxelRuntimeHotPathAudit\Program.cs:27:        ".ToList(",
-Tools\VoxelRuntimeHotPathAudit\Program.cs:176:                : text.Contains("Allocator.Persistent", StringComparison.Ordinal)
-Tools\VaultNativeAliasRoslynAudit\Program.cs:130:            string attributes = string.Join(" ", field.AttributeLists.Select(static list => list.ToString()));
+Tools\PresentationDecouplingAudit\Program.cs:678:            (left.EndsWith(".color", StringComparison.Ordinal) || left.EndsWith(".material", StringComparison.Ordinal) || left.EndsWith(".materials", StringComparison.Ordinal)))
 Tools\SignalBusContractAuditCli\Program.cs:29:    private static readonly Regex UnityLookupRegex = new(@"(?:Try)?GetComponent\s*(?:<|\()|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
 Tools\SignalBusContractAuditCli\Program.cs:31:    private static readonly Regex MaterialMutationRegex = new(@"\.material\b|Material\.Set(Float|Int|Color|Vector|Texture)|\.Set(Float|Int|Color|Vector|Texture)\s*\(", RegexOptions.Compiled);
 Tools\SignalBusContractAuditCli\Program.cs:251:            var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
@@ -656,3 +820,4 @@ Tools\SignalBusContractAuditCli\Program.cs:1525:            ".material",
 Tools\SignalBusContractAuditCli\Program.cs:1737:        if (code.Contains(".material", StringComparison.Ordinal))
 Tools\SignalBusContractAuditCli\Program.cs:2129:            rawText.Contains("new NativeArray", StringComparison.Ordinal);
 Tools\SignalBusContractAuditCli\Program.cs:2198:        return "(?:" + string.Join("|", aliases.Select(Regex.Escape)) + ")";
+Tools\VaultNativeAliasRoslynAudit\Program.cs:130:            string attributes = string.Join(" ", field.AttributeLists.Select(static list => list.ToString()));

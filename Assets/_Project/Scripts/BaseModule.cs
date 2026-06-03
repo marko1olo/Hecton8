@@ -3923,8 +3923,12 @@ namespace Hecton8.Gameplay
 
             if (_habitatIntegrityManager == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!TryGetComponent(out _habitatIntegrityManager))
                     _habitatIntegrityManager = gameObject.AddComponent<HabitatIntegrityManager>();
+#else
+                TryGetComponent(out _habitatIntegrityManager);
+#endif
             }
 
             if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.IsAtmosphereRuntimeActive)
@@ -3967,10 +3971,19 @@ namespace Hecton8.Gameplay
         private bool EnsureUnmooredRigidbody()
         {
             if (_moduleRigidbody == null)
-                _moduleRigidbody = gameObject.AddComponent<Rigidbody>();
+            {
+                TryGetComponent(out _moduleRigidbody);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (_moduleRigidbody == null)
+                    _moduleRigidbody = gameObject.AddComponent<Rigidbody>();
+#endif
+            }
+
+            if (_moduleRigidbody == null)
+                return false;
 
             CaptureModuleRigidbodyDefaults();
-            return _moduleRigidbody != null;
+            return true;
         }
 
         private void CaptureModuleRigidbodyDefaults()

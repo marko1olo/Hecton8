@@ -251,6 +251,15 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return 0f;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, 0.0001f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SensoryImpairmentTuningDTO BuildDefaultTuning()
         {
             SensoryImpairmentTuningDTO tuning = default;

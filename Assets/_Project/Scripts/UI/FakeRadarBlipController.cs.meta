@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: 7ea5a244e6d46b74191231eb834f113e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - radarBlipMesh: {fileID: 4300000, guid: e3c0ca1bd90ba584b9f54e07368cc80e, type: 2}
+  - radarBlipMaterial: {fileID: 2100000, guid: 8fc0bd2bb75d4019a5c6c2ae30f897d6, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -8,7 +8,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 {
     internal static class OfflineWreckageBlackBox
     {
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_209.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1717.bin";
         private const uint DumpMagic = 0x5742524Bu; // WBRK
         private const uint DumpVersion = 1u;
         private static OfflineWreckageTelemetryEntry[] s_ring;

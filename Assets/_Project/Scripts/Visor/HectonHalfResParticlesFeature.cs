@@ -10,10 +10,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering.Universal;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine.Serialization;
 
 namespace Hecton8.Visor
 {
@@ -22,9 +19,6 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonHalfResParticlesFeature : ScriptableRendererFeature
     {
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HalfResParticleComposite.shader";
-#endif
         private const int HalfResParticlesGlobalsStrideBytes = 16;
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
@@ -37,8 +31,9 @@ namespace Hecton8.Visor
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Hidden fullscreen shader used to composite the half-resolution transparent FX target.")]
-            public Shader compositeShader = null;
+            [Tooltip("Authored fullscreen material used to composite the half-resolution transparent FX target.")]
+            [FormerlySerializedAs("compositeShader")]
+            public Material material = null;
 
             [Tooltip("Injection point. Before post keeps FXAA/TAA/post operating on the composited result.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
@@ -454,24 +449,19 @@ namespace Hecton8.Visor
 
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.compositeShader == null)
-                settings.compositeShader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
+            HectonDrsRenderFeatureGate.PrimeCold();
 
-            Shader shader = settings != null ? settings.compositeShader : null;
-            if (shader == null)
-                RuntimeShaderReferenceCatalog.TryGetHalfResParticleCompositeShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Hidden/Hecton8/HalfResParticleComposite");
-#endif
-            RecreateMaterial(ref _compositeMaterial, shader);
+            _compositeMaterial = settings != null ? settings.material : null;
             _pass ??= new HalfResParticlesPass();
             CacheGraphicsCapabilitiesCold();
-            if (Application.isPlaying)
-                _pass.PrepareResources();
-            else
+            if (_compositeMaterial == null)
+            {
+                _pass.Dispose();
+                SetGlobalActive(0f);
+                return;
+            }
+
+            if (!Application.isPlaying)
                 _pass.Dispose();
         }
 
@@ -483,7 +473,14 @@ namespace Hecton8.Visor
                 return;
             }
 
-            if (settings == null || _pass == null || _compositeMaterial == null || settings.compositeStrength <= 0.0001f)
+            if (settings == null || _pass == null || settings.compositeStrength <= 0.0001f)
+            {
+                SetGlobalActive(0f);
+                return;
+            }
+
+            _compositeMaterial = settings.material;
+            if (_compositeMaterial == null)
             {
                 SetGlobalActive(0f);
                 return;
@@ -508,7 +505,7 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
-            DisposeMaterial(ref _compositeMaterial);
+            _compositeMaterial = null;
             SetGlobalActive(0f);
         }
 
@@ -528,28 +525,5 @@ namespace Hecton8.Visor
             _lastPublishedActive = value;
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                DisposeMaterial(ref material);
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            DisposeMaterial(ref material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
-
-        private static void DisposeMaterial(ref Material material)
-        {
-            if (material == null)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = null;
-        }
     }
 }

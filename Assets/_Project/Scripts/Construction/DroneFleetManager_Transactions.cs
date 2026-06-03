@@ -475,7 +475,8 @@ namespace Hecton8.Construction
             NativeArray<float3> positionsSoA,
             NativeArray<byte> stateBytes,
             NativeArray<DroneStateDTO> stateDtos,
-            NativeArray<DroneTargetDTO> targetDtos)
+            NativeArray<DroneTargetDTO> targetDtos,
+            in DroneFleetTuningConstants tuning)
         {
             if (commandCount <= 0 ||
                 !serviceCommands.IsCreated ||
@@ -512,7 +513,8 @@ namespace Hecton8.Construction
                     aupSnapshots,
                     integrity,
                     results,
-                    commandConsumed);
+                    commandConsumed,
+                    in tuning);
                 if (transactionCount <= 0)
                     return;
 
@@ -557,7 +559,8 @@ namespace Hecton8.Construction
                     positionsSoA,
                     stateBytes,
                     stateDtos,
-                    targetDtos);
+                    targetDtos,
+                    in tuning);
             }
 
             s_DroneTransactionJobHandle = default;
@@ -569,13 +572,15 @@ namespace Hecton8.Construction
 
         private static bool CompleteScheduledDroneServiceTransactionBatch(bool force)
         {
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
             return CompleteScheduledDroneServiceTransactionBatch(
                 force,
                 default,
                 default,
                 default,
                 default,
-                default);
+                default,
+                in tuning);
         }
 
         private static bool CompleteScheduledDroneServiceTransactionBatch(
@@ -584,7 +589,8 @@ namespace Hecton8.Construction
             NativeArray<float3> positionsSoA,
             NativeArray<byte> stateBytes,
             NativeArray<DroneStateDTO> stateDtos,
-            NativeArray<DroneTargetDTO> targetDtos)
+            NativeArray<DroneTargetDTO> targetDtos,
+            in DroneFleetTuningConstants tuning)
         {
             if (!s_DroneTransactionJobScheduled)
                 return true;
@@ -647,11 +653,12 @@ namespace Hecton8.Construction
                         positionsSoA,
                         stateBytes,
                         stateDtos,
-                        targetDtos);
+                        targetDtos,
+                        in tuning);
                 }
                 else
                 {
-                    ApplyDroneTransactionResults(s_DroneTransactionScheduledCommandCount, readOnlyResults);
+                    ApplyDroneTransactionResults(s_DroneTransactionScheduledCommandCount, readOnlyResults, in tuning);
                 }
             }
 
@@ -741,7 +748,8 @@ namespace Hecton8.Construction
             NativeArray<DroneTransactionAupSnapshotDTO> aupSnapshots,
             NativeArray<DroneTransactionIntegrityDTO> integrity,
             NativeArray<DroneTransactionResultDTO> results,
-            NativeArray<byte> commandConsumed)
+            NativeArray<byte> commandConsumed,
+            in DroneFleetTuningConstants tuning)
         {
             int prepared = 0;
             for (int i = 0; i < commandCount; i++)
@@ -796,7 +804,7 @@ namespace Hecton8.Construction
 
                 DroneFleetTaskKind kind = s_DroneTaskKindsBySlot[slot];
                 bool accepted = kind == DroneFleetTaskKind.MineNode
-                    ? PrepareMiningTransaction(commandIndex, in command, droneStates, tasks, integrity)
+                    ? PrepareMiningTransaction(commandIndex, in command, droneStates, tasks, integrity, in tuning)
                     : kind == DroneFleetTaskKind.RepairModule && PrepareRepairTransaction(commandIndex, in command, droneStates, tasks, integrity);
 
                 if (!accepted)
@@ -989,15 +997,21 @@ namespace Hecton8.Construction
             in DroneServiceCommand command,
             NativeArray<HeadlessDroneState> droneStates,
             NativeArray<DroneTaskDTO> tasks,
-            NativeArray<DroneTransactionIntegrityDTO> integrity)
+            NativeArray<DroneTransactionIntegrityDTO> integrity,
+            in DroneFleetTuningConstants tuning)
         {
             int slot = command.Slot;
             if ((uint)slot >= (uint)HeadlessDroneCapacity)
                 return false;
 
             HeadlessDroneState drone = droneStates[slot];
-            DroneFleetTuningConstants tuning = ResolveDroneTuning();
-            DroneChassisSpecDTO chassis = ResolveLaunchDroneChassisSpec(DroneFleetTaskKind.MineNode, in tuning);
+            if (!TryResolveLaunchDroneChassisSpec(DroneFleetTaskKind.MineNode, in tuning, out DroneChassisSpecDTO chassis))
+            {
+                FailCloseDroneForUnavailableChassis(ref drone);
+                droneStates[slot] = drone;
+                return false;
+            }
+
             float holdSeconds = Mathf.Max(0.01f, chassis.MiningHoldSeconds);
             float progress = Mathf.Clamp01(drone.RepairAccumulator / holdSeconds);
             int sourceId = drone.TargetModuleId != 0
@@ -1028,6 +1042,15 @@ namespace Hecton8.Construction
             int commandCount,
             NativeArray<DroneTransactionResultDTO>.ReadOnly results)
         {
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            ApplyDroneTransactionResults(commandCount, results, in tuning);
+        }
+
+        private static void ApplyDroneTransactionResults(
+            int commandCount,
+            NativeArray<DroneTransactionResultDTO>.ReadOnly results,
+            in DroneFleetTuningConstants tuning)
+        {
             if (!TryAcquireDroneCoreMirrorMutationViews(
                     out NativeArray<HeadlessDroneState> droneStates,
                     out _,
@@ -1051,7 +1074,8 @@ namespace Hecton8.Construction
                     positionsSoA,
                     stateBytes,
                     stateDtos,
-                    targetDtos);
+                    targetDtos,
+                    in tuning);
             }
             finally
             {
@@ -1066,7 +1090,8 @@ namespace Hecton8.Construction
             NativeArray<float3> positionsSoA,
             NativeArray<byte> stateBytes,
             NativeArray<DroneStateDTO> stateDtos,
-            NativeArray<DroneTargetDTO> targetDtos)
+            NativeArray<DroneTargetDTO> targetDtos,
+            in DroneFleetTuningConstants tuning)
         {
             if (!droneStates.IsCreated ||
                 !positionsSoA.IsCreated ||
@@ -1109,7 +1134,7 @@ namespace Hecton8.Construction
                 else if (result.TaskTypeHash == DroneMiningTaskTypeHash &&
                          currentKind == DroneFleetTaskKind.MineNode)
                 {
-                    ApplyMiningTransactionResult(slot, ref drone, in result);
+                    ApplyMiningTransactionResult(slot, ref drone, in result, in tuning);
                 }
                 else
                 {
@@ -1210,10 +1235,15 @@ namespace Hecton8.Construction
         private static void ApplyMiningTransactionResult(
             int slot,
             ref HeadlessDroneState drone,
-            in DroneTransactionResultDTO result)
+            in DroneTransactionResultDTO result,
+            in DroneFleetTuningConstants tuning)
         {
-            DroneFleetTuningConstants tuning = ResolveDroneTuning();
-            DroneChassisSpecDTO chassis = ResolveLaunchDroneChassisSpec(DroneFleetTaskKind.MineNode, in tuning);
+            if (!TryResolveLaunchDroneChassisSpec(DroneFleetTaskKind.MineNode, in tuning, out DroneChassisSpecDTO chassis))
+            {
+                FailCloseDroneForUnavailableChassis(ref drone);
+                return;
+            }
+
             float holdSeconds = Mathf.Max(0.01f, chassis.MiningHoldSeconds);
             int sourceId = drone.TargetModuleId != 0
                 ? drone.TargetModuleId

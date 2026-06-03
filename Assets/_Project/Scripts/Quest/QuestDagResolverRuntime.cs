@@ -35,7 +35,9 @@ namespace Hecton8.Quest
             int stateChunkCount = QuestDagRuntimeConstants.DefaultStateChunkCount,
             int itemLinkCapacity = QuestDagRuntimeConstants.DefaultItemLinkCapacity,
             int playerItemCapacity = QuestDagRuntimeConstants.DefaultPlayerItemCapacity,
-            int factionCapacity = QuestDagRuntimeConstants.DefaultFactionCapacity)
+            int factionCapacity = QuestDagRuntimeConstants.DefaultFactionCapacity,
+            int questStateCapacity = QuestDagRuntimeConstants.DefaultQuestStateCapacity,
+            int dependencyLinkCapacity = QuestDagRuntimeConstants.DefaultDependencyLinkCapacity)
         {
             QuestDagBufferHandles handles = default;
             if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
@@ -47,6 +49,8 @@ namespace Hecton8.Quest
             itemLinkCapacity = math.max(1, itemLinkCapacity);
             playerItemCapacity = math.max(1, playerItemCapacity);
             factionCapacity = math.max(1, factionCapacity);
+            questStateCapacity = math.max(1, questStateCapacity);
+            dependencyLinkCapacity = math.max(1, dependencyLinkCapacity);
 
             handles.NodeCapacity = nodeCapacity;
             handles.TriggerCapacity = triggerCapacity;
@@ -54,6 +58,8 @@ namespace Hecton8.Quest
             handles.ItemLinkCapacity = itemLinkCapacity;
             handles.PlayerItemCapacity = playerItemCapacity;
             handles.FactionCapacity = factionCapacity;
+            handles.QuestStateCapacity = questStateCapacity;
+            handles.DependencyLinkCapacity = dependencyLinkCapacity;
 
             handles.GlobalStateMasks = vault.EnsureGenerationHandle<ulong>(
                 BufferID.QuestDagGlobalStateMasks,
@@ -130,6 +136,16 @@ namespace Hecton8.Quest
                 nodeCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
+            handles.QuestStates = vault.EnsureGenerationHandle<QuestStateDTO>(
+                BufferID.QuestDagQuestStates,
+                questStateCapacity,
+                VaultOwnerSystem,
+                NativeArrayOptions.ClearMemory);
+            handles.DependencyLinks = vault.EnsureGenerationHandle<QuestDependencyLinkDTO>(
+                BufferID.QuestDagDependencyLinks,
+                dependencyLinkCapacity,
+                VaultOwnerSystem,
+                NativeArrayOptions.ClearMemory);
             handles.CsvMonitor = vault.EnsureGenerationHandle<long>(
                 BufferID.QuestDagCsvMonitor,
                 2,
@@ -183,6 +199,8 @@ namespace Hecton8.Quest
                 !TryResolveQuestDagBuffer(vault, in handles.Counters, BufferID.QuestDagCounters, QuestDagRuntimeConstants.CounterCount, out buffers.Counters) ||
                 !TryResolveQuestDagBuffer(vault, in handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices, handles.TriggerCapacity, out buffers.TriggerNodeIndices) ||
                 !TryResolveQuestDagBuffer(vault, in handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices, handles.NodeCapacity, out buffers.NoTriggerNodeIndices) ||
+                !TryResolveQuestDagBuffer(vault, in handles.QuestStates, BufferID.QuestDagQuestStates, handles.QuestStateCapacity, out buffers.QuestStates) ||
+                !TryResolveQuestDagBuffer(vault, in handles.DependencyLinks, BufferID.QuestDagDependencyLinks, handles.DependencyLinkCapacity, out buffers.DependencyLinks) ||
                 !TryResolveQuestDagBuffer(vault, in handles.CsvMonitor, BufferID.QuestDagCsvMonitor, 2, out buffers.CsvMonitor))
             {
                 buffers = default;
@@ -203,8 +221,10 @@ namespace Hecton8.Quest
         {
             mask = 0UL;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 (uint)chunkIndex >= (uint)handles.StateChunkCount ||
                 !vault.TryReadOnlyHandle(in handles.GlobalStateMasks, out NativeArray<ulong>.ReadOnly masks) ||
+                vault.IsCompactionFenceActive ||
                 (uint)chunkIndex >= (uint)masks.Length)
             {
                 return false;
@@ -220,12 +240,14 @@ namespace Hecton8.Quest
         public static ref ulong GetStateMaskRef(IDataVault vault, ref QuestDagBufferHandles handles, int chunkIndex)
         {
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 (uint)chunkIndex >= (uint)handles.StateChunkCount)
             {
                 FatalMemoryException.ThrowStaleVaultHandle();
             }
 
             if (!vault.TryResolveHandle(in handles.GlobalStateMasks, out NativeArray<ulong> masks) ||
+                vault.IsCompactionFenceActive ||
                 (uint)chunkIndex >= (uint)masks.Length)
             {
                 FatalMemoryException.ThrowStaleVaultHandle();
@@ -287,6 +309,8 @@ namespace Hecton8.Quest
             released &= ReleaseQuestDagVaultHandle(vault, ref handles.Counters, BufferID.QuestDagCounters);
             released &= ReleaseQuestDagVaultHandle(vault, ref handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices);
             released &= ReleaseQuestDagVaultHandle(vault, ref handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices);
+            released &= ReleaseQuestDagVaultHandle(vault, ref handles.QuestStates, BufferID.QuestDagQuestStates);
+            released &= ReleaseQuestDagVaultHandle(vault, ref handles.DependencyLinks, BufferID.QuestDagDependencyLinks);
             released &= ReleaseQuestDagVaultHandle(vault, ref handles.CsvMonitor, BufferID.QuestDagCsvMonitor);
             return released;
         }
@@ -515,8 +539,12 @@ namespace Hecton8.Quest
     /// </summary>
     public sealed class QuestDagResolverService : IDisposable
     {
+        private static int s_x001QuestDagResolverServiceSignalPushDropCount;
         private const string OwnerLabel = nameof(QuestDagResolverService);
         private const string SpatialHashLabel = "_triggerSpatialHash";
+        private const float ZeigarnikHapticLow01 = 0.18f;
+        private const float ZeigarnikHapticHigh01 = 0.95f;
+        private const float ZeigarnikHapticSeconds = 0.085f;
         private const uint ScheduledPinGlobalStateMasks = 1u << 0;
         private const uint ScheduledPinOldStateMasks = 1u << 1;
         private const uint ScheduledPinNodes = 1u << 2;
@@ -532,6 +560,8 @@ namespace Hecton8.Quest
         private const uint ScheduledPinCounters = 1u << 12;
         private const uint ScheduledPinTriggerNodeIndices = 1u << 13;
         private const uint ScheduledPinNoTriggerNodeIndices = 1u << 14;
+        private const uint ScheduledPinQuestStates = 1u << 15;
+        private const uint ScheduledPinDependencyLinks = 1u << 16;
         private readonly IDataVault _vault;
         private QuestDagBufferHandles _handles;
         private NativeParallelMultiHashMap<int, int> _triggerSpatialHash;
@@ -578,6 +608,7 @@ namespace Hecton8.Quest
                 lowTierFrameSignals: 64,
                 laneHash: QuestDagRuntimeConstants.SignalSourceHash);
             SignalBus<StateChangedSignal>.EnsureInitialized();
+            SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
         }
 
         /// <summary>Current vault handles, exposed for editor and save bridges.</summary>
@@ -675,6 +706,8 @@ namespace Hecton8.Quest
                     TelemetryCursor = buffers.TelemetryCursor,
                     Counters = buffers.Counters,
                     NoTriggerNodeIndices = buffers.NoTriggerNodeIndices,
+                    QuestStates = buffers.QuestStates,
+                    DependencyLinks = buffers.DependencyLinks,
                     SpatialHash = _triggerSpatialHash,
                     StateChangedWriter = SignalBus<StateChangedSignal>.ParallelWriter,
                     StateChangedWriterBudget = SignalBus<StateChangedSignal>.ParallelWriterBudget,
@@ -689,6 +722,12 @@ namespace Hecton8.Quest
                     NoTriggerNodeCount = math.min(
                         ReadCounter(buffers.Counters, QuestDagRuntimeConstants.CounterSlot.NoTriggerNodeCount),
                         buffers.NoTriggerNodeIndices.Length),
+                    QuestStateCount = math.min(
+                        ReadCounter(buffers.Counters, QuestDagRuntimeConstants.CounterSlot.QuestStateCount),
+                        buffers.QuestStates.Length),
+                    DependencyLinkCount = math.min(
+                        ReadCounter(buffers.Counters, QuestDagRuntimeConstants.CounterSlot.DependencyLinkCount),
+                        buffers.DependencyLinks.Length),
                     StateChunkCount = math.min(stateChunkCount, buffers.GlobalStateMasks.Length),
                     ResolverCadenceFrames = _resolverCadenceFrames
                 };
@@ -729,14 +768,31 @@ namespace Hecton8.Quest
 
             PatchLastComputeTime(telemetryCursor);
             QuestDagTelemetryEntry last = ReadLastTelemetry(telemetryCursor);
+            if ((last.Flags & (ushort)QuestDagTelemetryFlags.ZeigarnikInjected) != 0)
+                PublishZeigarnikHaptic();
+
             if ((last.Flags & (ushort)QuestDagTelemetryFlags.FixedPointLimitHit) != 0)
                 DumpTelemetry(QuestDagRuntimeConstants.DeadlockDumpPath);
+        }
+
+        private static void PublishZeigarnikHaptic()
+        {
+            HapticPulseSignal pulse = new HapticPulseSignal
+            {
+                LowFrequencyMotor01 = ZeigarnikHapticLow01,
+                HighFrequencyMotor01 = ZeigarnikHapticHigh01,
+                DurationSeconds = ZeigarnikHapticSeconds,
+                PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                    HapticPulseSignal.PriorityTool,
+                    QuestDagRuntimeConstants.SignalSourceHash)
+            };
+            SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001QuestDagResolverServiceSignalPushDropCount);
         }
 
         private void PatchPendingScheduleDrops()
         {
             IDataVault vault = _vault;
-            if (_pendingScheduleDropCount == 0 || vault == null)
+            if (_pendingScheduleDropCount == 0 || vault == null || vault.IsCompactionFenceActive)
                 return;
 
             if (!vault.TryAcquireWriteLock(in _handles.Counters, SystemID.QuestDag, out NativeArray<int> counters))
@@ -760,7 +816,7 @@ namespace Hecton8.Quest
         private void PatchSpatialHashRebuildCount()
         {
             IDataVault vault = _vault;
-            if (_pendingSpatialHashRebuildCount == 0 || vault == null)
+            if (_pendingSpatialHashRebuildCount == 0 || vault == null || vault.IsCompactionFenceActive)
                 return;
 
             if (!vault.TryAcquireWriteLock(in _handles.Counters, SystemID.QuestDag, out NativeArray<int> counters))
@@ -820,6 +876,7 @@ namespace Hecton8.Quest
 
             IDataVault vault = _vault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in _handles.Counters, SystemID.QuestDag, out NativeArray<int> counters))
             {
                 return;
@@ -960,7 +1017,9 @@ namespace Hecton8.Quest
                     !TryLockScheduledBuffer(vault, BufferID.QuestDagTelemetryCursor, ScheduledPinTelemetryCursor) ||
                     !TryLockScheduledBuffer(vault, BufferID.QuestDagCounters, ScheduledPinCounters) ||
                     !TryLockScheduledBuffer(vault, BufferID.QuestDagTriggerNodeIndices, ScheduledPinTriggerNodeIndices) ||
-                    !TryLockScheduledBuffer(vault, BufferID.QuestDagNoTriggerNodeIndices, ScheduledPinNoTriggerNodeIndices))
+                    !TryLockScheduledBuffer(vault, BufferID.QuestDagNoTriggerNodeIndices, ScheduledPinNoTriggerNodeIndices) ||
+                    !TryLockScheduledBuffer(vault, BufferID.QuestDagQuestStates, ScheduledPinQuestStates) ||
+                    !TryLockScheduledBuffer(vault, BufferID.QuestDagDependencyLinks, ScheduledPinDependencyLinks))
                 {
                     return false;
                 }
@@ -984,6 +1043,8 @@ namespace Hecton8.Quest
             if (vault == null || pinMask == 0u)
                 return;
 
+            TryUnlockScheduledBuffer(vault, pinMask, ScheduledPinDependencyLinks, BufferID.QuestDagDependencyLinks);
+            TryUnlockScheduledBuffer(vault, pinMask, ScheduledPinQuestStates, BufferID.QuestDagQuestStates);
             TryUnlockScheduledBuffer(vault, pinMask, ScheduledPinNoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices);
             TryUnlockScheduledBuffer(vault, pinMask, ScheduledPinTriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices);
             TryUnlockScheduledBuffer(vault, pinMask, ScheduledPinCounters, BufferID.QuestDagCounters);
@@ -1049,8 +1110,10 @@ namespace Hecton8.Quest
         private bool TryReadLastTelemetryCursor(out int telemetryCursor)
         {
             telemetryCursor = 0;
-            if (_vault == null ||
-                !_vault.TryReadOnlyHandle(in _handles.TelemetryCursor, out NativeArray<int>.ReadOnly cursorView) ||
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _handles.TelemetryCursor, out NativeArray<int>.ReadOnly cursorView) ||
                 cursorView.Length <= 0)
             {
                 return false;
@@ -1064,6 +1127,7 @@ namespace Hecton8.Quest
         {
             IDataVault vault = _vault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in _handles.TelemetryRing, SystemID.QuestDag, out NativeArray<QuestDagTelemetryEntry> telemetryRing))
             {
                 return;
@@ -1095,8 +1159,10 @@ namespace Hecton8.Quest
 
         private QuestDagTelemetryEntry ReadLastTelemetry(int telemetryCursor)
         {
-            if (_vault == null ||
-                !_vault.TryReadOnlyHandle(in _handles.TelemetryRing, out NativeArray<QuestDagTelemetryEntry>.ReadOnly telemetryRing) ||
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _handles.TelemetryRing, out NativeArray<QuestDagTelemetryEntry>.ReadOnly telemetryRing) ||
                 telemetryRing.Length <= 0)
             {
                 return default;
@@ -1174,6 +1240,8 @@ namespace Hecton8.Quest
         [NoAlias] public NativeArray<int> TelemetryCursor;
         [NoAlias] public NativeArray<int> Counters;
         [ReadOnly] [NoAlias] public NativeArray<int> NoTriggerNodeIndices;
+        [NoAlias] public NativeArray<QuestStateDTO> QuestStates;
+        [ReadOnly] [NoAlias] public NativeArray<QuestDependencyLinkDTO> DependencyLinks;
         [ReadOnly] [NoAlias] public NativeParallelMultiHashMap<int, int> SpatialHash;
         [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<StateChangedSignal>.ParallelWriter StateChangedWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> StateChangedWriterBudget;
@@ -1184,6 +1252,8 @@ namespace Hecton8.Quest
         public int TriggerCount;
         public int PlayerItemCount;
         public int NoTriggerNodeCount;
+        public int QuestStateCount;
+        public int DependencyLinkCount;
         public int StateChunkCount;
         public int ResolverCadenceFrames;
 
@@ -1199,6 +1269,8 @@ namespace Hecton8.Quest
             TriggerCount = math.min(TriggerCount, TriggerVolumes.Length);
             PlayerItemCount = math.min(PlayerItemCount, math.min(PlayerItemHashes.Length, PlayerItemQuantities.Length));
             NoTriggerNodeCount = math.min(NoTriggerNodeCount, NoTriggerNodeIndices.Length);
+            QuestStateCount = math.min(QuestStateCount, QuestStates.Length);
+            DependencyLinkCount = math.min(DependencyLinkCount, DependencyLinks.Length);
 
             bool invalidAup = !QuestDagSpatialHash.IsAupCellRangeSafe(PlayerAUP);
             bool changed = false;
@@ -1235,10 +1307,91 @@ namespace Hecton8.Quest
             if (ResolverCadenceFrames > 1)
                 flags |= (ushort)QuestDagTelemetryFlags.ToasterDilated;
 
+            EvaluateQuestOverlap(ref flags);
             EmitStateChanges(stateChunkCount);
             uint playerCellHash = invalidAup ? 0u : unchecked((uint)QuestDagSpatialHash.HashAupToCell(PlayerAUP));
             uint stateHash = ComputeStateHash(stateChunkCount);
             WriteTelemetry(evaluatedNodes, spatialCandidateCount, bitsFlipped, iterations, flags, deadlockNode, playerCellHash, stateHash);
+        }
+
+        private void EvaluateQuestOverlap(ref ushort flags)
+        {
+            if (!QuestStates.IsCreated || !DependencyLinks.IsCreated || QuestStateCount <= 0)
+                return;
+
+            int stateCount = math.min(QuestStateCount, QuestStates.Length);
+            int linkCount = math.min(DependencyLinkCount, DependencyLinks.Length);
+            int injectedCount = 0;
+            int failClosedCount = 0;
+
+            for (int i = 0; i < stateCount; i++)
+            {
+                QuestStateDTO state = QuestStates[i];
+                float progress = math.saturate(math.select(0f, state.CompletionProgress, math.isfinite(state.CompletionProgress)));
+                uint activeMask = BoolToUInt(state.ActiveQuestHashID != 0u);
+                uint pendingMask = BoolToUInt(state.InjectedSubQuestHashID == 0u);
+                uint progressMask = BoolToUInt(progress >= QuestDagRuntimeConstants.ZeigarnikPreCompletionProgressThreshold);
+                uint overlapMask = activeMask & pendingMask & progressMask;
+                uint linkedQuestHash = FindDependencyChildHash(state.ActiveQuestHashID, linkCount);
+                uint linkedMask = BoolToUInt(linkedQuestHash != 0u);
+                uint injectMask = overlapMask & linkedMask;
+                uint failMask = overlapMask & (linkedMask ^ 1u);
+
+                state.CompletionProgress = progress;
+                state.InjectedSubQuestHashID = math.select(state.InjectedSubQuestHashID, linkedQuestHash, injectMask != 0u);
+                state.StateFlags |= ((uint)QuestStateFlags.ZeigarnikProgressArmed * overlapMask) |
+                                    ((uint)QuestStateFlags.ZeigarnikInjected * injectMask) |
+                                    ((uint)QuestStateFlags.ZeigarnikDependencyMissing * failMask);
+                QuestStates[i] = state;
+
+                injectedCount += (int)injectMask;
+                failClosedCount += (int)failMask;
+            }
+
+            if (injectedCount > 0)
+                flags |= (ushort)QuestDagTelemetryFlags.ZeigarnikInjected;
+            if (failClosedCount > 0)
+                flags |= (ushort)QuestDagTelemetryFlags.ZeigarnikFailClosed;
+
+            WriteCounter(QuestDagRuntimeConstants.CounterSlot.ZeigarnikInjectedCount, injectedCount);
+            WriteCounter(QuestDagRuntimeConstants.CounterSlot.ZeigarnikFailClosedCount, failClosedCount);
+        }
+
+        private uint FindDependencyChildHash(uint parentQuestHash, int linkCount)
+        {
+            if (parentQuestHash == 0u || linkCount <= 0)
+                return 0u;
+
+            int low = 0;
+            int high = math.min(linkCount, DependencyLinks.Length) - 1;
+            uint childHash = 0u;
+            while (low <= high)
+            {
+                int mid = low + ((high - low) >> 1);
+                QuestDependencyLinkDTO link = DependencyLinks[mid];
+                if (link.ParentQuestHashID < parentQuestHash)
+                {
+                    low = mid + 1;
+                    continue;
+                }
+
+                if (link.ParentQuestHashID > parentQuestHash)
+                {
+                    high = mid - 1;
+                    continue;
+                }
+
+                childHash = link.ChildQuestHashID;
+                high = mid - 1;
+            }
+
+            return childHash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint BoolToUInt(bool value)
+        {
+            return math.select(0u, 1u, value);
         }
 
         private bool EvaluateSpatialCandidates(

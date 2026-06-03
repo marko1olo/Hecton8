@@ -1,0 +1,37 @@
+---
+packet_id: P161_DOMAIN_DISTANCE_SCALE
+release_set_id: RS033_DOMAIN_EPHEMERIS_ROUTE_TABLE
+article_id: domain_table.domain_distance_scale
+unlock_id: unlock.domain_distance_scale
+poi_tags: poi.domain_route_table;poi.ran_aegir_distance_plate
+biome_tags: biome.relay_archive;biome.black_keel_orbit
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Шкала дистанций доменов
+
+Дистанция доменов - игровая грамматика: кто имеет право говорить, какой корабль может двигаться и какой ответ приходит слишком поздно.
+
+## Scanner
+
+Карта доменов использует диапазоны дистанций, а не удобные романтические прыжки.
+
+## Terminal
+
+DOMAIN SCALE: Sol, Centauri, Barnard, Tau Ceti, Luyten и Ran/Aegir пишутся как маршрутные диапазоны. Ran/Aegir остается целью класса примерно 10.5 световых лет.
+
+## Audio
+
+Десять световых лет - число. Счет за маршрут - история.
+
+## Field Note
+
+Масштаб нужен как давление. Точная эфемерида может дождаться табличной настройки.
+
+<!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/ru_RU. -->

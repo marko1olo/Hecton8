@@ -1,0 +1,1879 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "TEXT_EXPANSION_GT_1_35": 66,
+    "TEXT_OVERFLOW_LINES": 213
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Публичная дистанционная полоса Ran/Aegir",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Публичная дистанционная полоса Ran/Aegir",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Публичная астрономическая полоса: Ran/Aegir считается no-FTL целью класса 10.5 светового года от Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EPHEMERIS BAND: в публичном тексте использовать класс 10.5 ly до заморозки точных констант в celestial table. Без FTL, ansible и мгновенного спасения.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "en_US",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Локальная системная полоса: трансферы Aegir/HECTON-8 ограничены окнами от часов до дней, а не мгновенным orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase и legal handshake должны совпасть до полезного ascent call.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Публичная полоса лунной лестницы HECTON-8",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Лунная лестница Aegir: HECTON-8 - один средний claim среди функциональных лун, а не единственное тело системы.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON и Mute - публичные role labels. Точные orbital elements принадлежат таблице.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ID LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "KO LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "HE LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PT LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC HOLD: HECTON-8 Moon Ladder Public Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: Aegir moon ladder: HECTON-8 is one middle claim among other functional moons, not the only body in the system.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "NL LOC HOLD: MOON LADDER: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute are public role labels. Exact orbital elements remain table-owned.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Carrier band: Black Keel держится на высокой Aegir transfer path, а не на удобной низкой орбите над HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "JA LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ZH LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "FR LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "ES LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "DE LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "PL LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: Carrier band: Black Keel loiters on a high Aegir transfer path, not a convenient low orbit above HECTON-8.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "UK LOC HOLD: CARRIER ORBIT: high transfer custody lane, cold tug stack, legal beacon, limited descent mass and weather-gated bathydrop return.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "AR LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC HOLD: Black Keel Transfer Orbit Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [
+    {
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json",
+      "change": "shortened draft native-pass prefix"
+    }
+  ],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

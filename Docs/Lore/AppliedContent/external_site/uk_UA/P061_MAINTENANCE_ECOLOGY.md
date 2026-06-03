@@ -1,30 +1,37 @@
 ---
 packet_id: P061_MAINTENANCE_ECOLOGY
+release_set_id: RS013_COLONY_ATLAS_MAINTENANCE
 article_id: hecton8.maintenance_ecology
+unlock_id: unlock.first_maintenance_ecology
+poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
+biome_tags: biome.cable_reef;biome.repair_fauna
 locale: uk_UA
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Maintenance Ecology
 
-Draft UK localization pending native pass. Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
+Maintenance Ecology is the core biomechanical rule for HECTON-8: biology becomes infrastructure without becoming magic. It supports horror, scanning, fauna behavior, visual motifs and replayable POI variation.
 
 ## Scanner
 
-Draft UK localization pending native pass. Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
+Atlas is not speaking through the ocean. It is using biofilm, shell, fauna, vent heat and drones as a repair bus.
 
 ## Terminal
 
-Draft UK localization pending native pass. ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
+ATLAS ECOLOGY: conductive biofilm bridge stable. Filter colony repeats acoustic pulse. Shell sealant closing fracture. Fauna tag returns sensor packets. Drone service interval overdue.
 
 ## Audio
 
-Draft UK localization pending native pass. The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
+The ocean is not thinking like you. Atlas learned which parts of it carry a signal.
 
 ## Field Note
 
-Draft UK localization pending native pass. Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
+Do not call it a hive. A hive has a social reason. This is maintenance with meat in the loop.
 
 <!-- External Site; generated from P061_MAINTENANCE_ECOLOGY/uk_UA. -->

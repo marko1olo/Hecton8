@@ -1,0 +1,37 @@
+---
+packet_id: P260_RTL_CJK_FONT_RISK_CARD
+release_set_id: RS052_LOCALIZATION_GLOSSARY_AUDIO_STYLE
+article_id: applied_lore.rtl_cjk_font_risk_card
+unlock_id: unlock.rtl_cjk_font_risk_card
+poi_tags: poi.font_risk_card;poi.rtl_layout_sample
+biome_tags: biome.localization;biome.ui
+locale: ru_RU
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Карта риска RTL и CJK шрифтов
+
+Публичная статья: RTL And CJK Font Risk Card defines the localization proof needed before HECTON-8's multilingual pages and in-game wiki can be called release-ready.
+
+## Scanner
+
+Сканер: A text box is also a pressure vessel.
+
+## Terminal
+
+Терминал: FONT RISK: validate RTL flow, CJK wrapping, Arabic/Hebrew shaping, fallback glyphs and terminal width.
+
+## Audio
+
+Аудио: The wrong font can erase the witness.
+
+## Field Note
+
+Полевая заметка: RTL and CJK passes must prove font coverage, line length, numeric labels, spoiler gates and terminal monospace equivalents.
+
+<!-- External Site; generated from P260_RTL_CJK_FONT_RISK_CARD/ru_RU. -->

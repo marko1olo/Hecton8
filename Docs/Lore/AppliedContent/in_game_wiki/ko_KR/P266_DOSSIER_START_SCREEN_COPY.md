@@ -1,0 +1,37 @@
+---
+packet_id: P266_DOSSIER_START_SCREEN_COPY
+release_set_id: RS054_DOSSIER_CONTRACT_UI_COPY_DECK
+article_id: applied_lore.dossier_start_screen_copy
+unlock_id: unlock.dossier_start_screen_copy
+poi_tags: poi.dossier_start_copy_card;poi.marauder_profile_slate
+biome_tags: biome.ui;biome.dossier
+locale: ko_KR
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
+---
+
+# Dossier Start Screen Copy
+
+Dossier Start Screen Copy defines the main profile language for replay setup.
+
+## Scanner
+
+Known context is not immunity.
+
+## Terminal
+
+DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.
+
+## Audio
+
+You remember procedure. The ocean does not owe you a shortcut.
+
+## Field Note
+
+Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.
+
+<!-- In-Game Wiki; generated from P266_DOSSIER_START_SCREEN_COPY/ko_KR. -->

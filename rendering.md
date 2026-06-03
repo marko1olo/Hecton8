@@ -9,6 +9,16 @@ Rendering carries most of HECTON-8's realism. It must make darkness, pressure, w
 
 The render path is a visual fake engine. It sells believable consequences faster than physical simulation.
 
+## Surface And Celestial Brightness Boundary
+
+Noir darkness is a depth, cave, storm, interior, and pressure-event tool. It is not the default grade for surface water, coastline, sky, Aegir, moons, or photic shallows.
+
+Surface rendering must preserve daylight or motivated celestial/atmospheric light, readable terrain material, ocean color, sky gradients, cloud structure, and gas-giant/moon texture detail. Auto exposure, LUTs, fog, post-process, and tone mapping must not crush the surface into muddy darkness.
+
+Compact may reduce reflection resolution, cloud layers, distant detail, and secondary shafts, but it must still look intentionally beautiful. High and Ultra use the budget for richer atmosphere, volumetric shafts, cloud depth, reflections, foam, wet material response, and celestial texture detail.
+
+Surface, photic-shallow, and medium-depth hero-route captures must meet or beat the Subnautica-level floor for readability, beauty, water color, terrain material detail, and scenic composition. Compact reduces density and resolution; it must not downgrade art direction into a dark, flat, muddy, or placeholder-looking scene.
+
 ## Truth Ownership
 
 Rendering owns visibility, material response, light/fog/VFX presentation, render feature scheduling, GPU resource proof, and screenshot/capture truth. It does not own gameplay pressure, water fill, AI state, vehicle state, save state, or interaction truth.
@@ -66,7 +76,7 @@ Reject empty black screens, bright aquarium haze, and fog used to hide bad asset
 
 ## Lighting And Shadows
 
-Darkness is default. Light is an expensive exception.
+In abyss, caves, interiors, and pressure-event routes, darkness is baseline pressure and motivated light is an expensive exception. On the surface, shoreline, ocean skin, photic shallows, sky, Aegir, and moons, motivated daylight, sky light, celestial light, and reflected water light are mandatory readability and beauty tools.
 
 Required:
 
@@ -159,6 +169,7 @@ Reject:
 - shader variants without budget;
 - render features with no proof artifact;
 - screenshots that hide bad models behind darkness.
+- surface, photic-shallow, or medium-depth captures below the Subnautica-level visual floor.
 
 ## Acceptance Sentence
 

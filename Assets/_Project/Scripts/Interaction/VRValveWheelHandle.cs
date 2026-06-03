@@ -22,6 +22,7 @@ namespace Hecton8.Interaction
 
         [Header("Valve")]
         [SerializeField] private Transform wheelVisual;
+        [SerializeField] private Transform grabPivot;
         [SerializeField] private Vector3 localRotationAxis = Vector3.forward;
         [SerializeField, Min(1f)] private float degreesToOpen = 360f;
         [SerializeField, Range(0f, 1f)] private float initialOpen01;
@@ -301,7 +302,8 @@ namespace Hecton8.Interaction
         private void CacheGrabPose()
         {
             EnsureReferences();
-            _cachedPivotWorldPosition = _cachedTransform.position;
+            Transform pivot = grabPivot != null ? grabPivot : _cachedTransform;
+            _cachedPivotWorldPosition = pivot.position;
             if (!IsFiniteVector(_cachedPivotWorldPosition))
                 _cachedPivotWorldPosition = Vector3.zero;
 
@@ -524,6 +526,18 @@ namespace Hecton8.Interaction
         }
 
 #if UNITY_EDITOR
+        public void ConfigureEditorBake(Transform bakedWheelVisual, Transform bakedGrabPivot, Vector3 bakedLocalRotationAxis, float bakedDegreesToOpen, float bakedInitialOpen01)
+        {
+            wheelVisual = bakedWheelVisual;
+            grabPivot = bakedGrabPivot;
+            localRotationAxis = bakedLocalRotationAxis;
+            degreesToOpen = bakedDegreesToOpen;
+            initialOpen01 = bakedInitialOpen01;
+            CacheScalarConfig();
+            EnsureReferences();
+            RefreshCachedLocalAxis();
+        }
+
         private void OnValidate()
         {
             if (!math.isfinite(degreesToOpen) || degreesToOpen < 1f)

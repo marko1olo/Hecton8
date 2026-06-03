@@ -236,6 +236,29 @@ public static class ModuleStatusEvents
         _isDispatching = false;
     }
 
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoadMethod]
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void RegisterEditorPlayModeTeardown()
+    {
+        UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+        UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ResetStaticState;
+        UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ResetStaticState;
+        UnityEditor.EditorApplication.quitting -= ResetStaticState;
+        UnityEditor.EditorApplication.quitting += ResetStaticState;
+    }
+
+    private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange change)
+    {
+        if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+            change == UnityEditor.PlayModeStateChange.EnteredEditMode)
+        {
+            ResetStaticState();
+        }
+    }
+#endif
+
     /// <summary>
     /// Registers a module status listener.
     /// </summary>
@@ -244,6 +267,11 @@ public static class ModuleStatusEvents
     {
         if (listener == null)
             return;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+            return;
+#endif
 
         EnsureInitialized();
         if (!_listeners.Contains(listener))
@@ -365,6 +393,11 @@ public static class ModuleStatusEvents
     {
         if (module == null)
             return false;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+            return false;
+#endif
 
         if (!TryReserveReferenceSlot(out int referenceSlot))
         {

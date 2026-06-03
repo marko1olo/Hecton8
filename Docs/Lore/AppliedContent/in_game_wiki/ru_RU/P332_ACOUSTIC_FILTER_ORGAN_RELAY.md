@@ -1,0 +1,37 @@
+---
+packet_id: P332_ACOUSTIC_FILTER_ORGAN_RELAY
+release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
+article_id: applied_lore.acoustic_filter_organ_relay
+unlock_id: unlock.acoustic_filter_organ_relay
+poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
+biome_tags: biome.atlas;biome.comms
+locale: ru_RU
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
+---
+
+# Acoustic filter organ relay
+
+Acoustic filter organ relay делает фауну route-relevant. Некоторые формы жизни - не враг и не декор, а часть поврежденного diagnostic loop.
+
+## Scanner
+
+Organ resonance matches damaged relay cadence. Echo useful, not safe.
+
+## Terminal
+
+ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+
+## Audio
+
+Если оно отвечает как оборудование, считай это оборудованием, которое может кровоточить.
+
+## Field Note
+
+Использовать с sonar, scanner и route-warning UI.
+
+<!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ru_RU. -->

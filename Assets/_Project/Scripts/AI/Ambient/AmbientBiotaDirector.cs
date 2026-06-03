@@ -82,26 +82,6 @@ namespace Hecton8.AI.Ambient
         private const uint BiotaJobPinAups = 1u << 0;
         private const uint BiotaJobPinVelocities = 1u << 1;
         private const uint BiotaJobPinStates = 1u << 2;
-        private static readonly Vector3[] FallbackQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f)
-        }; // COLD ALLOC: Vector3[4] - immutable fallback ambient quad vertices - owner: AMBIENT_BIOTA_DIRECTOR
-        private static readonly Vector2[] FallbackQuadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(0f, 1f),
-            new Vector2(1f, 1f),
-            new Vector2(1f, 0f)
-        }; // COLD ALLOC: Vector2[4] - immutable fallback ambient quad UVs - owner: AMBIENT_BIOTA_DIRECTOR
-        private static readonly int[] FallbackQuadIndices =
-        {
-            0, 1, 2,
-            0, 2, 3
-        }; // COLD ALLOC: int[6] - immutable fallback ambient quad indices - owner: AMBIENT_BIOTA_DIRECTOR
-
         [Header("Biota Capacity")]
         [FormerlySerializedAs("lowTierCapacity")]
         [SerializeField, Tooltip("Minimum survival ambient biota slots requested from the GlobalDataVault."), Min(128)] private int survivalCapacity = 2048;
@@ -133,9 +113,7 @@ namespace Hecton8.AI.Ambient
         private GraphicsBuffer _gpuInstanceBufferB;
         private GraphicsBuffer _indirectArgsBufferA;
         private GraphicsBuffer _indirectArgsBufferB;
-        private Material _biotaRuntimeMaterial;
-        private Material _biotaRuntimeMaterialSource;
-        private Mesh _runtimeFallbackMesh;
+        private MaterialPropertyBlock _biotaDrawProperties; // COLD ALLOC: MaterialPropertyBlock[1] - ambient biota indirect draw payload - owner: AMBIENT_BIOTA_DIRECTOR
         private Mesh _indirectArgsMesh;
         private JobHandle _activeJobHandle;
         private AbsoluteUniversePosition _lastPlayerAup;
@@ -164,7 +142,6 @@ namespace Hecton8.AI.Ambient
         private int _gpuBufferIndex;
         private int _indirectArgsBufferIndex;
         private int _indirectArgsCapacity = -1;
-        private Material _publishedBiotaMaterial;
         private GraphicsBuffer _publishedBiotaInstanceBuffer;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private Vector4 _publishedBiotaFlowVector;
@@ -223,11 +200,10 @@ namespace Hecton8.AI.Ambient
             if (!Application.isPlaying)
                 return;
 
+            EnsureBiotaDrawPropertiesCold();
             CacheDependencies();
             RefreshQualityPolicy();
             EnsureVaultBuffers();
-            EnsureFallbackDrawMeshReady();
-            EnsureBiotaRuntimeMaterialReady();
             EnsureSignalLanesReady();
             TryRegisterHotSwapListener();
             RegisterRuntime();
@@ -239,7 +215,6 @@ namespace Hecton8.AI.Ambient
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
-            ReleaseBiotaRuntimeMaterial();
             ReleaseMacroScratch();
             ReleaseVaultHandles(_vault);
             ClearVaultHandles();
@@ -1631,9 +1606,8 @@ namespace Hecton8.AI.Ambient
             if (!enableIndirectDraw || _capacity <= 0 || _activeBiotaCount <= 0)
                 return;
 
-            Material material = _biotaRuntimeMaterial;
+            Material material = biotaMaterial;
             if (material == null ||
-                !ReferenceEquals(_biotaRuntimeMaterialSource, biotaMaterial) ||
                 !TryResolveDrawMesh(out Mesh mesh) ||
                 !HasGraphicsResources(_capacity))
             {
@@ -1654,7 +1628,10 @@ namespace Hecton8.AI.Ambient
                 return;
             }
 
-            PublishBiotaDrawMaterial(material, instanceBuffer, drawCount);
+            if (_biotaDrawProperties == null)
+                return;
+
+            PublishBiotaDrawProperties(_biotaDrawProperties, instanceBuffer, drawCount);
 
             float radius = ResolveSimulationRadiusMeters();
             Bounds drawBounds = new Bounds(
@@ -1666,7 +1643,8 @@ namespace Hecton8.AI.Ambient
                 layer = renderLayer,
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = false,
-                motionVectorMode = MotionVectorGenerationMode.Object
+                motionVectorMode = MotionVectorGenerationMode.Object,
+                matProps = _biotaDrawProperties
             };
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, indirectArgsBuffer, 1, 0);
         }
@@ -1725,95 +1703,70 @@ namespace Hecton8.AI.Ambient
                    AreIndirectArgsBuffersValid();
         }
 
-        private bool EnsureBiotaRuntimeMaterialReady()
-        {
-            Material source = biotaMaterial;
-            if (source == null)
-            {
-                ReleaseBiotaRuntimeMaterial();
-                return false;
-            }
-
-            if (_biotaRuntimeMaterial != null && ReferenceEquals(_biotaRuntimeMaterialSource, source))
-                return true;
-
-            ReleaseBiotaRuntimeMaterial();
-            _biotaRuntimeMaterial = new Material(source); // COLD ALLOC: Material[1] - owner-local ambient indirect draw state copy - owner: AMBIENT_BIOTA_DIRECTOR
-            _biotaRuntimeMaterialSource = source;
-            ResetBiotaDrawMaterialCache();
-            return true;
-        }
-
-        private void PublishBiotaDrawMaterial(
-            Material material,
+        private void PublishBiotaDrawProperties(
+            MaterialPropertyBlock properties,
             GraphicsBuffer instanceBuffer,
             int drawCount)
         {
-            if (!ReferenceEquals(_publishedBiotaMaterial, material))
-            {
-                ResetBiotaDrawMaterialCache();
-                _publishedBiotaMaterial = material;
-            }
-
             if (!_biotaDrawMaterialPublished || !ReferenceEquals(_publishedBiotaInstanceBuffer, instanceBuffer))
             {
-                material.SetBuffer(BiotaInstancesShaderId, instanceBuffer);
+                properties.SetBuffer(BiotaInstancesShaderId, instanceBuffer);
                 _publishedBiotaInstanceBuffer = instanceBuffer;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaCapacity != _capacity)
             {
-                material.SetInt(BiotaCapacityShaderId, _capacity);
+                properties.SetInt(BiotaCapacityShaderId, _capacity);
                 _publishedBiotaCapacity = _capacity;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaActiveCount != drawCount)
             {
-                material.SetInt(BiotaActiveCountShaderId, drawCount);
+                properties.SetInt(BiotaActiveCountShaderId, drawCount);
                 _publishedBiotaActiveCount = drawCount;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaBiomeHash != _currentBiomeHash)
             {
-                material.SetFloat(BiotaBiomeHashShaderId, (float)_currentBiomeHash);
+                properties.SetFloat(BiotaBiomeHashShaderId, (float)_currentBiomeHash);
                 _publishedBiotaBiomeHash = _currentBiomeHash;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaQualityWeight != _cachedQualityWeight01)
             {
-                material.SetFloat(BiotaQualityWeightShaderId, _cachedQualityWeight01);
+                properties.SetFloat(BiotaQualityWeightShaderId, _cachedQualityWeight01);
                 _publishedBiotaQualityWeight = _cachedQualityWeight01;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaSystemStress != _cachedSystemStress01)
             {
-                material.SetFloat(BiotaSystemStressShaderId, _cachedSystemStress01);
+                properties.SetFloat(BiotaSystemStressShaderId, _cachedSystemStress01);
                 _publishedBiotaSystemStress = _cachedSystemStress01;
             }
 
             Vector4 flowVector = new Vector4(_flowVector.x, _flowVector.y, _flowVector.z, 0f);
             if (!_biotaDrawMaterialPublished || !SameVector4(in _publishedBiotaFlowVector, in flowVector))
             {
-                material.SetVector(BiotaFlowVectorShaderId, flowVector);
+                properties.SetVector(BiotaFlowVectorShaderId, flowVector);
                 _publishedBiotaFlowVector = flowVector;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaOverkill != _visualOverkillWeight01)
             {
-                material.SetFloat(BiotaOverkillShaderId, _visualOverkillWeight01);
+                properties.SetFloat(BiotaOverkillShaderId, _visualOverkillWeight01);
                 _publishedBiotaOverkill = _visualOverkillWeight01;
             }
 
             if (!_biotaDrawMaterialPublished || _publishedBiotaVisualTime != _telemetryClockSeconds)
             {
-                material.SetFloat(BiotaVisualTimeShaderId, _telemetryClockSeconds);
+                properties.SetFloat(BiotaVisualTimeShaderId, _telemetryClockSeconds);
                 _publishedBiotaVisualTime = _telemetryClockSeconds;
             }
 
             Vector4 originWs = new Vector4(_lastPlayerRuntimePosition.x, _lastPlayerRuntimePosition.y, _lastPlayerRuntimePosition.z, 1f);
             if (!_biotaDrawMaterialPublished || !SameVector4(in _publishedBiotaOriginWs, in originWs))
             {
-                material.SetVector(BiotaOriginWsShaderId, originWs);
+                properties.SetVector(BiotaOriginWsShaderId, originWs);
                 _publishedBiotaOriginWs = originWs;
             }
 
@@ -1830,7 +1783,6 @@ namespace Hecton8.AI.Ambient
 
         private void ResetBiotaDrawMaterialCache()
         {
-            _publishedBiotaMaterial = null;
             _publishedBiotaInstanceBuffer = null;
             _publishedBiotaCapacity = -1;
             _publishedBiotaActiveCount = -1;
@@ -1842,6 +1794,16 @@ namespace Hecton8.AI.Ambient
             _publishedBiotaFlowVector = default;
             _publishedBiotaOriginWs = default;
             _biotaDrawMaterialPublished = false;
+            if (_biotaDrawProperties != null)
+                _biotaDrawProperties.Clear();
+        }
+
+        private void EnsureBiotaDrawPropertiesCold()
+        {
+            if (_biotaDrawProperties != null)
+                return;
+
+            _biotaDrawProperties = new MaterialPropertyBlock();
         }
 
         private static GraphicsBuffer CreateIndirectArgsBuffer()
@@ -2077,19 +2039,7 @@ namespace Hecton8.AI.Ambient
         private bool TryResolveDrawMesh(out Mesh mesh)
         {
             mesh = biotaQuadMesh;
-            if (mesh != null)
-                return true;
-
-            mesh = _runtimeFallbackMesh;
             return mesh != null;
-        }
-
-        private void EnsureFallbackDrawMeshReady()
-        {
-            if (!enableIndirectDraw || biotaQuadMesh != null || _runtimeFallbackMesh != null)
-                return;
-
-            _runtimeFallbackMesh = CreateFallbackQuadMesh();
         }
 
         private static void EnsureSignalLanesReady()
@@ -2097,19 +2047,6 @@ namespace Hecton8.AI.Ambient
             SignalBus<BiomeChangedSignal>.EnsureInitialized();
             SignalBus<EntitySpawnSignal>.EnsureInitialized();
             SignalBus<DebrisSpawnSignal>.EnsureInitialized();
-        }
-
-        private static Mesh CreateFallbackQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "H8_AmbientBiota_IndirectQuad"
-            }; // COLD ALLOC: Mesh[1] - fallback ambient biota indirect quad - owner: AMBIENT_BIOTA_DIRECTOR
-            mesh.SetVertices(FallbackQuadVertices);
-            mesh.SetUVs(0, FallbackQuadUvs);
-            mesh.SetTriangles(FallbackQuadIndices, 0, false);
-            mesh.RecalculateBounds();
-            return mesh;
         }
 
         private void ReleaseGraphicsResources()
@@ -2127,23 +2064,6 @@ namespace Hecton8.AI.Ambient
             _indirectArgsCapacity = -1;
             ResetBiotaDrawMaterialCache();
 
-            if (_runtimeFallbackMesh != null)
-            {
-                Destroy(_runtimeFallbackMesh);
-                _runtimeFallbackMesh = null;
-            }
-        }
-
-        private void ReleaseBiotaRuntimeMaterial()
-        {
-            if (_biotaRuntimeMaterial != null)
-            {
-                Destroy(_biotaRuntimeMaterial);
-                _biotaRuntimeMaterial = null;
-            }
-
-            _biotaRuntimeMaterialSource = null;
-            ResetBiotaDrawMaterialCache();
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

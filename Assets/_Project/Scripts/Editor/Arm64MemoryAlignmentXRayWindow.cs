@@ -199,7 +199,7 @@ namespace Hecton8.Editor
         private static List<Arm64LayoutRecord> ScanRecords()
         {
             List<Arm64LayoutRecord> records = new List<Arm64LayoutRecord>(256);
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
             {
                 Type[] types;

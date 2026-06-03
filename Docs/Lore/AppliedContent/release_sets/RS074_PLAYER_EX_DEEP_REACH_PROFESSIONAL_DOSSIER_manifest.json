@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS074_PLAYER_EX_DEEP_REACH_PROFESSIONAL_DOSSIER",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P366_FIELD_SYSTEMS_SPECIALIST_RECORD",
+    "P367_REVOKED_ACCESS_LANGUAGE_TRACE",
+    "P368_OLD_PROCEDURE_RECOGNITION_CUE",
+    "P369_DEBT_BLACKLIST_CONTRACT_PRESSURE",
+    "P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS074_PLAYER_EX_DEEP_REACH_PROFESSIONAL_DOSSIER.packets.json"
+  ]
+}

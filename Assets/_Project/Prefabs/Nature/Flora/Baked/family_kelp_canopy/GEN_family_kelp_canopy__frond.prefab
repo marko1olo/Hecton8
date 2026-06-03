@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2369217068050735009}
   - component: {fileID: 7571305754733163419}
+  - component: {fileID: 4975517165895208067}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__frond
   m_TagString: Untagged
@@ -133,8 +134,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3908609421256634165}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.92390466, y: 2.537274, z: 0.1466775}
-  m_Size: 5.074548
+  m_LocalReferencePoint: {x: -1.0004793, y: 2.6046298, z: 0.25592792}
+  m_Size: 5.2092595
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -153,6 +154,19 @@ LODGroup:
     - renderer: {fileID: 6061462584608201362}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &4975517165895208067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3908609421256634165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 73aeaa6a462b7fc42accf1bdde164c4c, type: 2}
 --- !u!1 &4531620253923646594
 GameObject:
   m_ObjectHideFlags: 0

@@ -81,7 +81,7 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Legacy load from a registered AssetBundle or raw PNG fallback; returns null while envelope-only UGC is enforced.
+        /// Legacy load from a registered AssetBundle or dev-only raw PNG fallback; returns null while envelope-only UGC is enforced.
         /// </summary>
         internal static Texture2D LoadTexture(string modId, string assetName)
         {
@@ -147,6 +147,9 @@ namespace Hecton8.Modding
 
         private static Texture2D LoadRawTexture(string modId, string assetName)
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return null;
+#else
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
                 return null;
 
@@ -211,6 +214,7 @@ namespace Hecton8.Modding
 
             _rawTextures[cacheKey] = texture;
             return texture;
+#endif
         }
 
         private static bool TryValidateRawTextureFile(string filePath)

@@ -482,93 +482,85 @@ namespace Hecton8.Rendering
             if (!_isInitialized || !_vaultStateReady)
                 return dependsOn;
 
-            bool parametersLocked = false;
-            IDataVault parametersVault = null;
-            uint failureFlags = 0u;
-            UpscalerTelemetryEntry telemetryEntry = default;
-            bool hasTelemetryEntry = false;
-            try
-            {
-                if (!TryAcquireVaultWriteBuffer(
-                        in _parametersHandle,
-                        BufferID.Shinobu236BilateralDrsParams,
-                        BilateralDrsUpscalerConstants.ParameterCapacity,
-                        out NativeArray<UpscalerParamsDTO> parameters,
-                        out parametersVault))
-                {
-                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
-                    return dependsOn;
-                }
-
-                parametersLocked = true;
-
-                if (!TryReadVaultBuffer(
-                        in _tuningHandle,
-                        BufferID.Shinobu236BilateralDrsTuning,
-                        1,
-                        out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
-                {
-                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
-                    return dependsOn;
-                }
-
-                if (!TryReadVaultBuffer(
-                        in _profilesHandle,
-                        BufferID.Shinobu236BilateralDrsProfiles,
-                        BilateralDrsUpscalerConstants.ProfileCapacity,
-                        out NativeArray<UpscalerProfileDTO>.ReadOnly profiles))
-                {
-                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
-                    return dependsOn;
-                }
-
-                ResolutionScaleState scaleState = default;
-                bool hasScaleState = _resolutionScaler != null && _resolutionScaler.TryGetScaleState(out scaleState);
-                DrsStateDTO mockStateSnapshot = default;
-                bool useMock = !hasScaleState;
-                if (useMock)
-                    mockStateSnapshot = BuildMockDrsStateSnapshot(context.Frame);
-
-                CalculateUpscalerParamsJob job;
-                job.Parameters = parameters;
-                job.Telemetry = default;
-                job.TelemetryCursor = default;
-                job.Tuning = tuning;
-                job.Profiles = profiles;
-                job.ScaleStateSnapshot = scaleState;
-                job.MockStateSnapshot = mockStateSnapshot;
-                job.SubmittedLowWidth = _submittedLowWidth;
-                job.SubmittedLowHeight = _submittedLowHeight;
-                job.SubmittedFullWidth = _submittedFullWidth;
-                job.SubmittedFullHeight = _submittedFullHeight;
-                job.SubmittedJitterX = _submittedJitterX;
-                job.SubmittedJitterY = _submittedJitterY;
-                job.FallbackQuality01 = ResolveGlobalQualityWeight01();
-                job.FrameIndex = context.Frame;
-                job.OutputIndex = BilateralDrsUpscalerConstants.PendingParameterIndex;
-                job.HasScaleState = hasScaleState ? (byte)1 : (byte)0;
-                job.UseMockState = useMock ? (byte)1 : (byte)0;
-                job.LastTelemetry = default;
-                job.HasLastTelemetry = 0;
-                job.Execute();
-                hasTelemetryEntry = job.HasLastTelemetry != 0;
-                telemetryEntry = job.LastTelemetry;
-            }
-            finally
-            {
-                if (parametersLocked)
-                    parametersVault?.ReleaseWriteLock(in _parametersHandle, OwnerSystemId);
-                if (failureFlags != 0u)
-                    FailClosedRuntimeRoute(failureFlags);
-            }
-
-            if (!hasTelemetryEntry)
+            if (!TryReadVaultBuffer(
+                    in _tuningHandle,
+                    BufferID.Shinobu236BilateralDrsTuning,
+                    1,
+                    out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
             {
                 FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
                 return dependsOn;
             }
 
-            _pendingTelemetryEntry = telemetryEntry;
+            if (!TryReadVaultBuffer(
+                    in _profilesHandle,
+                    BufferID.Shinobu236BilateralDrsProfiles,
+                    BilateralDrsUpscalerConstants.ProfileCapacity,
+                    out NativeArray<UpscalerProfileDTO>.ReadOnly profiles))
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return dependsOn;
+            }
+
+            ResolutionScaleState scaleState = default;
+            bool hasScaleState = _resolutionScaler != null && _resolutionScaler.TryGetScaleState(out scaleState);
+            DrsStateDTO mockStateSnapshot = default;
+            bool useMock = !hasScaleState;
+            if (useMock)
+                mockStateSnapshot = BuildMockDrsStateSnapshot(context.Frame);
+
+            CalculateUpscalerParamsJob job;
+            job.Parameters = default;
+            job.Telemetry = default;
+            job.TelemetryCursor = default;
+            job.Tuning = tuning;
+            job.Profiles = profiles;
+            job.ScaleStateSnapshot = scaleState;
+            job.MockStateSnapshot = mockStateSnapshot;
+            job.SubmittedLowWidth = _submittedLowWidth;
+            job.SubmittedLowHeight = _submittedLowHeight;
+            job.SubmittedFullWidth = _submittedFullWidth;
+            job.SubmittedFullHeight = _submittedFullHeight;
+            job.SubmittedJitterX = _submittedJitterX;
+            job.SubmittedJitterY = _submittedJitterY;
+            job.FallbackQuality01 = ResolveGlobalQualityWeight01();
+            job.FrameIndex = context.Frame;
+            job.OutputIndex = BilateralDrsUpscalerConstants.PendingParameterIndex;
+            job.HasScaleState = hasScaleState ? (byte)1 : (byte)0;
+            job.UseMockState = useMock ? (byte)1 : (byte)0;
+            job.LastTelemetry = default;
+            job.HasLastTelemetry = 0;
+            job.LastParameters = default;
+            job.HasLastParameters = 0;
+            job.Execute();
+            if (job.HasLastTelemetry == 0 || job.HasLastParameters == 0)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return dependsOn;
+            }
+
+            UpscalerParamsDTO pendingParameters = job.LastParameters;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _parametersHandle,
+                    BufferID.Shinobu236BilateralDrsParams,
+                    BilateralDrsUpscalerConstants.ParameterCapacity,
+                    out NativeArray<UpscalerParamsDTO> parameters,
+                    out IDataVault parametersVault))
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return dependsOn;
+            }
+
+            try
+            {
+                parameters[BilateralDrsUpscalerConstants.PendingParameterIndex] = pendingParameters;
+            }
+            finally
+            {
+                parametersVault?.ReleaseWriteLock(in _parametersHandle, OwnerSystemId);
+            }
+
+            _pendingTelemetryEntry = job.LastTelemetry;
             _pendingTelemetryEntryValid = true;
             _simulationPendingPublish = true;
             return dependsOn;

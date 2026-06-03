@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P431_PDA_EVIDENCE_TIER_LABEL_RULE",
+    "P432_SCANNER_STAGE_COPY_ESCALATION_RULE",
+    "P433_TERMINAL_OPERATOR_SURFACE_RULE",
+    "P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE",
+    "P435_LOCALIZED_OVERFLOW_PRESENTATION_RULE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS087_PDA_CODEX_PRESENTATION_RULES.packets.json"
+  ]
+}

@@ -1,10 +1,10 @@
 #ifndef HECTON_CELESTIAL_ATMOSPHERE_INCLUDED
 #define HECTON_CELESTIAL_ATMOSPHERE_INCLUDED
 
-TEXTURE2D(_CelestialAtmosphereLUT);
-SAMPLER(sampler_CelestialAtmosphereLUT);
 TEXTURE2D(_HectonAtmosphereScatteringLUT);
 SAMPLER(sampler_HectonAtmosphereScatteringLUT);
+#define HECTON_CELESTIAL_ATMOSPHERE_LUT_SAMPLE_COUNT 16
+float4 _CelestialAtmosphereLUTSamples[HECTON_CELESTIAL_ATMOSPHERE_LUT_SAMPLE_COUNT];
 float _AtmosphereExposure;
 float _CelestialAtmosphereBlendPower;
 float _CelestialAtmosphereLUTReady;
@@ -63,10 +63,14 @@ float4 SampleHectonCelestialAtmosphere(
 
     if (_CelestialAtmosphereLUTReady >= 0.5)
     {
-        authoredSample = SAMPLE_TEXTURE2D(
-            _CelestialAtmosphereLUT,
-            sampler_CelestialAtmosphereLUT,
-            float2(elevation01, 0.5));
+        float samplePosition = saturate(elevation01) * (HECTON_CELESTIAL_ATMOSPHERE_LUT_SAMPLE_COUNT - 1);
+        float lowerSample = floor(samplePosition);
+        uint lowerIndex = (uint)min(lowerSample, (float)(HECTON_CELESTIAL_ATMOSPHERE_LUT_SAMPLE_COUNT - 1));
+        uint upperIndex = min(lowerIndex + 1u, (uint)(HECTON_CELESTIAL_ATMOSPHERE_LUT_SAMPLE_COUNT - 1));
+        authoredSample = lerp(
+            _CelestialAtmosphereLUTSamples[lowerIndex],
+            _CelestialAtmosphereLUTSamples[upperIndex],
+            frac(samplePosition));
     }
 
     if (_HectonAtmosphereScatteringLUTReady < 0.5)

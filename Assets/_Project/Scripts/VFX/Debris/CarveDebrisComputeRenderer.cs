@@ -118,6 +118,8 @@ namespace Hecton8.VFX.Debris
         [SerializeField] private Vector4 voxelSdfInvDoubleHalfExtents = Vector4.zero;
         [SerializeField, Range(0f, 1f)] private float solidDensityThreshold = 0.5f;
         [SerializeField] private Texture3D abyssalFlowTextureOverride;
+        [SerializeField, Tooltip("Authored 1x1x1 clear Texture3D bound when SDF/flow is inactive. Runtime Texture3D synthesis is forbidden.")]
+        private Texture3D emptySdfFlowTexture3D;
 
         [Header("Render")]
         [SerializeField] private Mesh debrisMesh;
@@ -146,7 +148,6 @@ namespace Hecton8.VFX.Debris
         private GraphicsBuffer _emptyFlowBuffer;
         private Texture _cachedGlobalSdfTexture;
         private Texture3D _emptyTexture3D;
-        private Mesh _ownedMesh;
         private Material _ownedMaterial;
         private Material _ownedMaterialSource;
         private Material _boundRenderMaterial;
@@ -190,7 +191,6 @@ namespace Hecton8.VFX.Debris
         private int _configuredMaxActiveDebris = MaxCarveDebrisCount;
         private bool _gpuReady;
         private bool _blackBoxDumped;
-        private bool _materialFallbackAttempted;
         private bool _lastFlowActive;
         private bool _lastSdfActive;
         private bool _lastWakeActive;
@@ -537,6 +537,12 @@ namespace Hecton8.VFX.Debris
             if (fluidAdvectionCompute == null || !_coldSupportsComputeShaders)
                 return false;
 
+            if (emptySdfFlowTexture3D == null)
+            {
+                UnityEngine.Assertions.Assert.IsNotNull(emptySdfFlowTexture3D, "Fatal: Missing authored neutral CarveDebris SDF/flow Texture3D.");
+                return false;
+            }
+
             IDataVault vault = _registryDataVault;
             if (vault == null)
                 return false;
@@ -596,7 +602,7 @@ namespace Hecton8.VFX.Debris
             }
 
             AllocateGraphicsBuffers();
-            CreateEmptyResources();
+            ResolveEmptyResources();
             ClearMirrorsAndUpload(debrisPositions, debrisVelocities, carveRequests, jobState, blackBox);
             _gpuReady = IsGpuStateValid();
             return _gpuReady;
@@ -923,19 +929,12 @@ namespace Hecton8.VFX.Debris
             return GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<T>(math.max(1, count)); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU-write lane; dirty CPU ranges use SetData fallback because UAV forbids LockBufferForWrite - owner: VFX_SDF_CARVE_DEBRIS
         }
 
-        private void CreateEmptyResources()
+        private void ResolveEmptyResources()
         {
-            if (_emptyTexture3D != null)
+            if (ReferenceEquals(_emptyTexture3D, emptySdfFlowTexture3D))
                 return;
 
-            _emptyTexture3D = new Texture3D(1, 1, 1, TextureFormat.RGBAFloat, false)
-            {
-                name = "Hecton Empty CarveDebris 3D Texture",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Point
-            }; // COLD ALLOC: Texture3D[1] - zero fallback for unbound SDF/flow 3D textures - owner: VFX_SDF_CARVE_DEBRIS
-            _emptyTexture3D.SetPixel(0, 0, 0, Color.clear);
-            _emptyTexture3D.Apply(false, true);
+            _emptyTexture3D = emptySdfFlowTexture3D;
         }
 
         private void ClearMirrorsAndUpload(
@@ -1790,8 +1789,6 @@ namespace Hecton8.VFX.Debris
         {
             if (debrisMesh != null)
                 return debrisMesh;
-            if (_ownedMesh != null)
-                return _ownedMesh;
 
             QueueFallbackRenderResourceRepair();
             return null;
@@ -1825,60 +1822,27 @@ namespace Hecton8.VFX.Debris
 
         private void EnsureFallbackRenderResources()
         {
-            if (debrisMesh == null && _ownedMesh == null)
-                _ownedMesh = BuildOctahedronMesh();
-
             EnsureOwnedMaterial();
             _fallbackRenderResourceRepairRequested = false;
         }
 
         private void EnsureOwnedMaterial()
         {
-            if (debrisMaterial != null)
-            {
-                if (_ownedMaterial != null && ReferenceEquals(_ownedMaterialSource, debrisMaterial))
-                    return;
-
-                if (IsSupportedDebrisMaterial(debrisMaterial))
-                {
-                    DestroyOwnedMaterial();
-                    _ownedMaterial = new Material(debrisMaterial)
-                    {
-                        name = debrisMaterial.name + " Runtime Carve Debris Material"
-                    }; // COLD ALLOC: Material[1] - private indirect debris material copy, avoids shared material mutation and MPB geometry path - owner: VFX_SDF_CARVE_DEBRIS
-                    _ownedMaterialSource = debrisMaterial;
-                    _materialFallbackAttempted = false;
-                    return;
-                }
-
-                if (_ownedMaterial != null && _ownedMaterialSource == null && _materialFallbackAttempted)
-                    return;
-
-                DestroyOwnedMaterial();
-                _materialFallbackAttempted = false;
-            }
-            else if (_ownedMaterialSource != null)
+            if (debrisMaterial == null || !IsSupportedDebrisMaterial(debrisMaterial))
             {
                 DestroyOwnedMaterial();
-                _materialFallbackAttempted = false;
+                return;
             }
 
-            if (_ownedMaterial != null || _materialFallbackAttempted)
-                return;
-
-            _materialFallbackAttempted = true;
-            RuntimeShaderReferenceCatalog.TryGetCarveDebrisIndirectShader(out Shader shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find(DebrisShaderName);
-#endif
-            if (shader == null)
-                return;
-
-            _ownedMaterial = new Material(shader)
+            if (ReferenceEquals(_ownedMaterial, debrisMaterial) &&
+                ReferenceEquals(_ownedMaterialSource, debrisMaterial))
             {
-                name = "Hecton Runtime Carve Debris Material"
-            }; // COLD ALLOC: Material[1] - fallback first-party indirect debris material - owner: VFX_SDF_CARVE_DEBRIS
+                return;
+            }
+
+            DestroyOwnedMaterial();
+            _ownedMaterial = debrisMaterial;
+            _ownedMaterialSource = debrisMaterial;
         }
 
         private static bool IsSupportedDebrisMaterial(Material material)
@@ -1890,22 +1854,7 @@ namespace Hecton8.VFX.Debris
 
         private Material ResolveMaterial()
         {
-            if (debrisMaterial != null)
-            {
-                if (_ownedMaterial != null && ReferenceEquals(_ownedMaterialSource, debrisMaterial))
-                    return _ownedMaterial;
-
-                QueueFallbackRenderResourceRepair();
-                return null;
-            }
-
-            if (_ownedMaterialSource != null)
-            {
-                QueueFallbackRenderResourceRepair();
-                return null;
-            }
-
-            if (_ownedMaterial == null && !_materialFallbackAttempted)
+            if (_ownedMaterial == null || !ReferenceEquals(_ownedMaterialSource, debrisMaterial))
             {
                 QueueFallbackRenderResourceRepair();
                 return null;
@@ -1931,7 +1880,7 @@ namespace Hecton8.VFX.Debris
         {
             InvalidateRenderMaterialBindings();
 
-            if (_ownedMaterial != null)
+            if (_ownedMaterial != null && !ReferenceEquals(_ownedMaterial, _ownedMaterialSource))
                 DestroyUnityObject(_ownedMaterial);
 
             _ownedMaterial = null;
@@ -2312,12 +2261,7 @@ namespace Hecton8.VFX.Debris
             ReleaseBuffer(ref _visibleIndicesBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
             ReleaseBuffer(ref _emptyFlowBuffer);
-            if (_ownedMesh != null)
-                DestroyUnityObject(_ownedMesh);
             DestroyOwnedMaterial();
-            if (_emptyTexture3D != null)
-                DestroyUnityObject(_emptyTexture3D);
-            _ownedMesh = null;
             _cachedGlobalSdfTexture = null;
             _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
             _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
@@ -2339,7 +2283,6 @@ namespace Hecton8.VFX.Debris
             _lastFlowActive = false;
             _lastSdfActive = false;
             _lastWakeActive = false;
-            _materialFallbackAttempted = false;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -2360,40 +2303,6 @@ namespace Hecton8.VFX.Debris
                 UnityEngine.Object.Destroy(unityObject);
             else
                 UnityEngine.Object.DestroyImmediate(unityObject);
-        }
-
-        private static Mesh BuildOctahedronMesh()
-        {
-            Mesh mesh = new Mesh // COLD ALLOC: Mesh[1] - fallback low-poly indirect debris chip mesh - owner: VFX_SDF_CARVE_DEBRIS
-            {
-                name = "Hecton Carve Debris Octahedron"
-            };
-            Vector3[] vertices = // COLD ALLOC: Vector3[6] - fallback octahedron vertices - owner: VFX_SDF_CARVE_DEBRIS
-            {
-                new Vector3(0f, 1f, 0f),
-                new Vector3(1f, 0f, 0f),
-                new Vector3(0f, 0f, 1f),
-                new Vector3(-1f, 0f, 0f),
-                new Vector3(0f, 0f, -1f),
-                new Vector3(0f, -1f, 0f)
-            };
-            int[] indices = // COLD ALLOC: int[24] - fallback octahedron index buffer - owner: VFX_SDF_CARVE_DEBRIS
-            {
-                0, 2, 1,
-                0, 3, 2,
-                0, 4, 3,
-                0, 1, 4,
-                5, 1, 2,
-                5, 2, 3,
-                5, 3, 4,
-                5, 4, 1
-            };
-            mesh.SetVertices(vertices);
-            mesh.SetTriangles(indices, 0, false);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(true);
-            return mesh;
         }
 
         private static void UploadRange<T>(GraphicsBuffer destination, NativeArray<T> source, int start, int count)

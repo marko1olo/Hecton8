@@ -1,30 +1,37 @@
 ---
 packet_id: P090_DEEP_REACH_PRIORITY_HOOK
+release_set_id: RS018_CARRIER_DEBT_CLAIM_AUTHORITY
 article_id: carrier.deep_reach_priority_hook
+unlock_id: unlock.first_deep_reach_priority_hook
+poi_tags: poi.priority_hook_clause;poi.deep_reach_old_certificate
+biome_tags: biome.drowned_admin;biome.carrier_link
 locale: he_IL
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Deep Reach Priority Hook
 
-Draft HE localization pending native pass. Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
+Deep Reach Priority Hook keeps the antagonist grounded: present-tense corporate power operates through clauses, legacy certificates, proxy packets and payload priority rather than instant FTL control.
 
 ## Scanner
 
-Draft HE localization pending native pass. Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Old certificate hook. Deep Reach does not own the ship; it owns the clause.
 
 ## Terminal
 
-Draft HE localization pending native pass. ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token or evidence suppression queue under Aegir claim law.
 
 ## Audio
 
-Draft HE localization pending native pass. They do not need to be on the bridge to steer the answer.
+They do not need to be on the bridge to steer the answer.
 
 ## Field Note
 
-Draft HE localization pending native pass. This is cleaner than conspiracy: the paperwork is still alive.
+This is cleaner than conspiracy: the paperwork is still alive.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/he_IL. -->

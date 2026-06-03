@@ -19,7 +19,13 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(QuestDagLayoutAudit.QuestNodeDTOSize, UnsafeUtility.SizeOf<QuestNodeDTO>());
             Assert.AreEqual(QuestDagLayoutAudit.TriggerVolumeDTOSize, UnsafeUtility.SizeOf<TriggerVolumeDTO>());
             Assert.AreEqual(QuestDagLayoutAudit.QuestNodeRuntimeDTOSize, UnsafeUtility.SizeOf<QuestNodeRuntimeDTO>());
+            Assert.AreEqual(QuestDagLayoutAudit.QuestStateDTOSize, UnsafeUtility.SizeOf<QuestStateDTO>());
+            Assert.AreEqual(QuestDagLayoutAudit.QuestDependencyLinkDTOSize, UnsafeUtility.SizeOf<QuestDependencyLinkDTO>());
             Assert.AreEqual(QuestDagLayoutAudit.QuestDagTelemetryEntrySize, UnsafeUtility.SizeOf<QuestDagTelemetryEntry>());
+            Assert.AreEqual(0, Marshal.OffsetOf<QuestStateDTO>(nameof(QuestStateDTO.ActiveQuestHashID)).ToInt32());
+            Assert.AreEqual(4, Marshal.OffsetOf<QuestStateDTO>(nameof(QuestStateDTO.CompletionProgress)).ToInt32());
+            Assert.AreEqual(8, Marshal.OffsetOf<QuestStateDTO>(nameof(QuestStateDTO.InjectedSubQuestHashID)).ToInt32());
+            Assert.AreEqual(12, Marshal.OffsetOf<QuestStateDTO>(nameof(QuestStateDTO.StateFlags)).ToInt32());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<StateChangedSignal>());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<MockStoryEventSignal>());
             Assert.AreEqual(40, UnsafeUtility.SizeOf<MockPlayerPositionSignal>());
@@ -28,6 +34,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(16, Marshal.OffsetOf<QuestSaveHeader>(nameof(QuestSaveHeader.Timestamp)).ToInt32());
             Assert.AreEqual(0, UnsafeUtility.SizeOf<QuestNodeDTO>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<TriggerVolumeDTO>() & 7);
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<QuestStateDTO>() & 7);
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<QuestDependencyLinkDTO>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<QuestDagTelemetryEntry>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<QuestSaveHeader>() & 7);
         }
@@ -109,6 +117,36 @@ namespace Hecton8.Tests.Editor
                 QuestDagVault.TryResolveBuffers(vault, ref handles, out QuestDagBuffers buffers);
                 Assert.AreEqual(10, buffers.RequiredItemQuantities[1]);
                 Assert.AreEqual(42UL, buffers.NodeRuntime[1].TargetTimestamp);
+            }
+        }
+
+        [Test]
+        public void Resolver_ZeigarnikOverlap_InjectsLinkedQuestHash()
+        {
+            using (GlobalDataVault vault = GlobalDataVault.Create(64, 16L * 1024L * 1024L))
+            using (QuestDagResolverService resolver = new QuestDagResolverService(vault, 16, 16))
+            {
+                MockQuestDatabase.GenerateEmergencyMockDAG(vault, ref resolver.Handles, 8, out _);
+                QuestDagVault.TryResolveBuffers(vault, ref resolver.Handles, out QuestDagBuffers buffers);
+
+                buffers.QuestStates[0] = new QuestStateDTO
+                {
+                    ActiveQuestHashID = 0x51000000u,
+                    CompletionProgress = 0.96f,
+                    InjectedSubQuestHashID = 0u,
+                    StateFlags = 0u
+                };
+                buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.QuestStateCount] = 1;
+
+                resolver.Schedule(new double3(0d, 0d, 0d), 999UL, 30u, 0.1f, default);
+                resolver.CompleteScheduled();
+
+                QuestStateDTO resolved = buffers.QuestStates[0];
+                QuestDagTelemetryEntry entry = ReadLastTelemetry(buffers);
+                Assert.AreEqual(0x51000001u, resolved.InjectedSubQuestHashID);
+                Assert.AreNotEqual(0u, resolved.StateFlags & (uint)QuestStateFlags.ZeigarnikInjected);
+                Assert.AreEqual(1, buffers.Counters[(int)QuestDagRuntimeConstants.CounterSlot.ZeigarnikInjectedCount]);
+                Assert.AreNotEqual(0, entry.Flags & (ushort)QuestDagTelemetryFlags.ZeigarnikInjected);
             }
         }
 

@@ -989,13 +989,13 @@ namespace Hecton8.Atmosphere
                 float wavelength = math.abs(ReadFloatLE(scratch, offset + 12));
                 float steepness = math.abs(ReadFloatLE(scratch, offset + 16));
                 float safeWavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
-                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / safeWavelength;
+                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi * math.rcp(safeWavelength);
 
                 int waveIndex = i / OceanSurfaceAtmosphereConstants.WavesPerParameters;
                 int laneIndex = i - (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters);
                 WaveParametersDTO wave = waves[waveIndex];
                 float resolvedSteepness = math.max(math.saturate(steepness), math.saturate(amplitude * waveNumber));
-                float phaseSpeed = math.sqrt(9.81f * waveNumber);
+                float phaseSpeed = HectonOceanSurfaceMath.FastSqrtNonNegative(OceanSurfaceAtmosphereConstants.GravityMetersPerSecondSq * waveNumber);
                 float4 lane = HectonOceanSurfaceMath.CreateWaveLaneFromDirection(new float2(dirX, dirZ), resolvedSteepness, safeWavelength, phaseSpeed);
                 HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
                 waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
@@ -1317,8 +1317,8 @@ namespace Hecton8.Atmosphere
                 return true;
             }
 
-            float ny = math.sqrt(math.max(0.0001f, 1f - math.saturate(lateralSq)));
-            normal = math.normalize(new float3(nx, ny, nz));
+            float ny = HectonOceanSurfaceMath.FastSqrtNonNegative(math.max(0.0001f, 1f - math.saturate(lateralSq)));
+            normal = HectonOceanSurfaceMath.Normalize3OrDefault(new float3(nx, ny, nz), new float3(0f, 1f, 0f));
             return math.all(math.isfinite(normal));
         }
 
@@ -2480,7 +2480,7 @@ namespace Hecton8.Atmosphere
         {
             float safeTime = math.max(0f, math.isfinite(rawSimulationTimeSeconds) ? rawSimulationTimeSeconds : 0f);
             float step = ResolveWaveEvaluationStepSeconds(globalQualityWeight);
-            return math.floor((safeTime + 0.000001f) / step) * step;
+            return math.floor((safeTime + 0.000001f) * math.rcp(step)) * step;
         }
 
         private static float ResolveWaveEvaluationStepSeconds(float globalQualityWeight)
@@ -2488,7 +2488,7 @@ namespace Hecton8.Atmosphere
             float q = HectonOceanSurfaceMath.SanitizeQualityWeight(globalQualityWeight);
             float curve = q * q * (3f - (2f * q));
             float hz = math.lerp(MinWaveEvaluationHz, MaxWaveEvaluationHz, curve);
-            return 1f / math.max(MinWaveEvaluationHz, hz);
+            return math.rcp(math.max(MinWaveEvaluationHz, hz));
         }
 
         private void ResolveCameraTransformCold()

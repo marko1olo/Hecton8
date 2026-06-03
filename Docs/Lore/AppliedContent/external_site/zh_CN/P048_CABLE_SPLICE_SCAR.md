@@ -1,30 +1,37 @@
 ---
 packet_id: P048_CABLE_SPLICE_SCAR
+release_set_id: RS010_PRESSURE_MACHINERY_RETURN_ROUTE
 article_id: hecton8.cable_splice_scar
+unlock_id: unlock.first_cable_splice_scar
+poi_tags: poi.cable_splice;poi.atlas_repair_scar
+biome_tags: biome.service_corridor;biome.cable_reef
 locale: zh_CN
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Cable Splice Scar
 
-Draft CN localization pending native pass. Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
+Cable Splice Scar connects repair gameplay, Atlas behavior and cable-reef escalation through one readable prop family.
 
 ## Scanner
 
-Draft CN localization pending native pass. The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
+The splice is too clean for colony repair and too ugly for factory work. Atlas learned to keep power moving by hurting the cable less than the room.
 
 ## Terminal
 
-Draft CN localization pending native pass. Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
+Power trace: nonstandard splice accepted after human routing failed. Repair pattern repeats across later cable reefs with lower insulation loss.
 
 ## Audio
 
-Draft CN localization pending native pass. Something fixed the cable after everyone stopped asking permission.
+Something fixed the cable after everyone stopped asking permission.
 
 ## Field Note
 
-Draft CN localization pending native pass. Atlas repair should look useful before it looks alive.
+Atlas repair should look useful before it looks alive.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/zh_CN. -->

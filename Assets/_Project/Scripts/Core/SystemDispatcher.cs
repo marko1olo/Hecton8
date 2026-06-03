@@ -329,7 +329,7 @@ namespace Hecton8.Core
             new RegistryBucket<ILateFrameTickable>(128),
             new RegistryBucket<ILateFrameTickable>(128),
             new RegistryBucket<ILateFrameTickable>(96),
-            new RegistryBucket<ILateFrameTickable>(32),
+            new RegistryBucket<ILateFrameTickable>(128),
         };
         private static readonly RegistryBucket<IPostFixedTickable>[] _postFixedPriorityLanes =
         {
@@ -1949,8 +1949,13 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (!TryClaimActiveRuntimeAfterReloadCold())
+                return;
+
             _runtimeGameplayBootstrapGateActive = Application.isPlaying;
-            if (_serviceRegistered)
+            if (Application.isPlaying)
+                InitializeService();
+            else if (_serviceRegistered)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
@@ -2067,6 +2072,9 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            if (!TryClaimActiveRuntimeAfterReloadCold())
+                return;
+
             if (_serviceRegistered)
                 return;
 
@@ -2090,9 +2098,27 @@ namespace Hecton8.Core
             GlobalRegistry.TryRegisterHotSwapListener(this);
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
+            if (_serviceRegistered && GameTickManager.ActiveRuntimeInstance != null)
+                GameTickManager.ActiveRuntimeInstance.InitializeService();
             CombatDamageRuntime.Prewarm();
             EnsureDispatcherPlayerLoopInstalled();
             PublishTimeDilationState(0u);
+        }
+
+        private bool TryClaimActiveRuntimeAfterReloadCold()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return true;
+
+            if (ActiveRuntimeInstance == null)
+            {
+                ActiveRuntimeInstance = this;
+                return true;
+            }
+
+            _serviceRegistered = false;
+            enabled = false;
+            return false;
         }
 
         private void InitializeMasterDispatcherRuntime()

@@ -51,6 +51,8 @@ namespace Hecton8.World
 
         [Header("Presentation")]
         [SerializeField, Min(0.05f)] private float chunkFadeInDuration = 0.5f;
+        [Tooltip("Dedicated authored material instances for voxel chunk dissolve fade. Runtime material cloning is forbidden; provide at least maxRuntimeVolumes materials with _ChunkDissolveFade.")]
+        [SerializeField] private Material[] authoredChunkFadeMaterialPool;
 
         private const int MaxRuntimeVolumeCapacity = 32;
         private const int MaxDesiredRequestCapacity = MaxRuntimeVolumeCapacity * 2;
@@ -95,7 +97,7 @@ namespace Hecton8.World
         private const uint ChunkFadeMaterialPoolMissingWarningHash = 0x8D4A6E29u;
         private const uint ChunkFadePendingQueueFullWarningHash = 0x6F9D2C41u;
         private const uint VolumeDespawnPendingQueueFullWarningHash = 0xBA71E4D3u;
-        // COLD ALLOC: Material[32] - pooled voxel chunk fade material clones; owner: HectonVoxelStreamingBridge.
+        // COLD ALLOC: Material[32] - authored voxel chunk fade material pool references; owner: HectonVoxelStreamingBridge.
         private readonly Material[] _chunkFadeMaterialPool = new Material[MaxChunkFadeStateCapacity];
         // COLD ALLOC: bool[32] - pooled fade material occupancy flags; owner: HectonVoxelStreamingBridge.
         private readonly bool[] _chunkFadeMaterialPoolInUse = new bool[MaxChunkFadeStateCapacity];
@@ -615,16 +617,41 @@ namespace Hecton8.World
             if (material == null || !material.HasProperty(ChunkDissolveFadeId))
                 return;
 
-            _chunkFadePoolSourceMaterial = material;
-            for (int i = 0; i < _chunkFadeMaterialPool.Length; i++)
+            int requestedPoolCount = Mathf.Clamp(maxRuntimeVolumes, 1, MaxChunkFadeStateCapacity);
+            if (authoredChunkFadeMaterialPool == null || authoredChunkFadeMaterialPool.Length < requestedPoolCount)
+                return;
+
+            int writeIndex = 0;
+            for (int sourceIndex = 0;
+                 sourceIndex < authoredChunkFadeMaterialPool.Length && writeIndex < requestedPoolCount;
+                 sourceIndex++)
             {
-                Material runtimeMaterial = new Material(material); // COLD ALLOC: Material[32] - prewarmed voxel fade pool; owner: HectonVoxelStreamingBridge.
-                runtimeMaterial.SetFloat(ChunkDissolveFadeId, 1f);
-                _chunkFadeMaterialPool[i] = runtimeMaterial;
-                _chunkFadeMaterialPoolInUse[i] = false;
+                Material authoredMaterial = authoredChunkFadeMaterialPool[sourceIndex];
+                if (!IsValidChunkFadePoolMaterial(material, authoredMaterial))
+                    continue;
+
+                authoredMaterial.SetFloat(ChunkDissolveFadeId, 1f);
+                _chunkFadeMaterialPool[writeIndex] = authoredMaterial;
+                _chunkFadeMaterialPoolInUse[writeIndex] = false;
+                writeIndex++;
             }
 
-            _chunkFadeMaterialPoolCount = _chunkFadeMaterialPool.Length;
+            if (writeIndex <= 0)
+                return;
+
+            _chunkFadePoolSourceMaterial = material;
+            _chunkFadeMaterialPoolCount = writeIndex;
+        }
+
+        private static bool IsValidChunkFadePoolMaterial(Material sourceMaterial, Material poolMaterial)
+        {
+            if (sourceMaterial == null || poolMaterial == null)
+                return false;
+
+            if (poolMaterial.shader == null || !poolMaterial.HasProperty(ChunkDissolveFadeId))
+                return false;
+
+            return ReferenceEquals(poolMaterial.shader, sourceMaterial.shader);
         }
 
         private bool TryAcquireChunkFadeMaterial(Material sourceMaterial, out Material runtimeMaterial, out int poolIndex)
@@ -670,8 +697,7 @@ namespace Hecton8.World
             for (int i = 0; i < _chunkFadeMaterialPoolCount; i++)
             {
                 if (_chunkFadeMaterialPool[i] != null)
-                    Destroy(_chunkFadeMaterialPool[i]);
-
+                    _chunkFadeMaterialPool[i].SetFloat(ChunkDissolveFadeId, 1f);
                 _chunkFadeMaterialPool[i] = null;
                 _chunkFadeMaterialPoolInUse[i] = false;
             }

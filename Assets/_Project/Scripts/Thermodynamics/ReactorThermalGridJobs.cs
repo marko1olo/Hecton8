@@ -35,11 +35,21 @@ namespace Hecton8.Thermodynamics
         public const uint TelemetryFlagAtomicAbort = 1u << 8;
         public const uint SourceHashShinobu342 = 0x53333432u; // S342
         public const uint ProfileHashNuclearDefault = 0x4E524854u; // NRHT
+        private const float LengthEpsilonSq = 0.000000000001f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FiniteOr(float value, float fallback)
         {
             return math.select(fallback, value, math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return float.NaN;
+
+            return lengthSq * math.rsqrt(math.max(lengthSq, LengthEpsilonSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -78,7 +88,7 @@ namespace Hecton8.Thermodynamics
             double3 localDouble = aup - originAup;
             float safeCell = math.max(0.001f, FiniteOr(cellSizeMeters, 8f));
             float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
-            int3 raw = (int3)math.floor(local / safeCell);
+            int3 raw = (int3)math.floor(local * math.rcp(safeCell));
             bool inside = math.all(raw >= int3.zero) && math.all(raw < resolution);
             cell = math.clamp(raw, int3.zero, math.max(int3.zero, resolution - 1));
             return inside && math.all(math.isfinite(local));
@@ -88,12 +98,13 @@ namespace Hecton8.Thermodynamics
         public static float CellKernelWeight(int3 offset, float radiusCells, float globalQualityWeight)
         {
             float quality = math.saturate(FiniteOr(globalQualityWeight, 1f));
-            float distance = math.length(new float3(offset.x, offset.y, offset.z));
+            float lengthSq = (offset.x * offset.x) + (offset.y * offset.y) + (offset.z * offset.z);
+            float distance = FastLengthFromSq(lengthSq);
             int manhattan = math.abs(offset.x) + math.abs(offset.y) + math.abs(offset.z);
             float axialMask = math.step((float)manhattan, 1.5f);
             float diagonalShell = math.smoothstep(0.55f, 0.95f, quality);
             float shellMask = math.max(axialMask, diagonalShell);
-            return math.saturate(1f - distance / math.max(0.0001f, radiusCells)) * shellMask;
+            return math.saturate(1f - distance * math.rcp(math.max(0.0001f, radiusCells))) * shellMask;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -825,7 +836,7 @@ namespace Hecton8.Thermodynamics
             signal.PositionAup = math.all(math.isfinite(aup)) ? AbsoluteUniversePosition.FromAbsolutePosition(aup) : default;
             float severity = math.max(1f, coreTemp * math.rcp(math.max(1f, meltdownTemp)));
             signal.Intensity = math.max(1f, ReactorThermalMath.FiniteOr(Tuning.RadiationIntensityBase, 48f) * severity);
-            signal.RadiusMeters = math.max(1f, ReactorThermalMath.FiniteOr(Tuning.RadiationRadiusMeters, 120f) * math.sqrt(severity));
+            signal.RadiusMeters = math.max(1f, ReactorThermalMath.FiniteOr(Tuning.RadiationRadiusMeters, 120f) * ReactorThermalMath.FastLengthFromSq(severity));
             signal.SourceId = unchecked((int)reactorHash);
             signal.Operation = RadiationSourceSignal.OperationUpsert;
             signal.Flags = 0;
@@ -944,22 +955,22 @@ namespace Hecton8.Thermodynamics
             float coreTemp = ReactorThermalMath.FiniteOr(reactor.CurrentCoreTempCelsius, ambientTemp);
             float3 finiteVelocity = math.select(float3.zero, velocity, math.isfinite(velocity));
             float speedSq = math.lengthsq(finiteVelocity);
-            float speed = math.sqrt(math.max(0f, speedSq));
             float convectiveMultiplier = ResolveConvectionMultiplier(speedSq);
             float heatCapacity = math.max(1f, ReactorThermalMath.FiniteOr(Tuning.CoreHeatCapacityJoulesPerCelsius, 1250000f));
+            float invHeatCapacity = math.rcp(heatCapacity);
             float baseRate = math.max(0f, ReactorThermalMath.FiniteOr(Tuning.BaseDissipationRate, 0.085f));
             float stateRate = math.max(0f, ReactorThermalMath.FiniteOr(reactor.ThermalDissipationRate, baseRate));
             float dt = math.clamp(ReactorThermalMath.FiniteOr(DeltaTime, 1f / 60f), 0.0001f, 0.2f);
             float generatedJoules = math.max(0f, ReactorThermalMath.FiniteOr(reactor.TargetPowerOutputMW, 0f)) * 1000000f * stateRate * dt;
-            float postGenerationCore = coreTemp + generatedJoules / heatCapacity;
+            float postGenerationCore = coreTemp + generatedJoules * invHeatCapacity;
             float thermalHeadroomJoules = math.max(0f, (postGenerationCore - ambientTemp) * heatCapacity);
             float gradientJoules = thermalHeadroomJoules * baseRate * convectiveMultiplier * dt;
             float coolingJoules = math.min(gradientJoules, thermalHeadroomJoules);
             float totalJoules = math.max(0f, coolingJoules);
-            float coreCooling = coolingJoules / heatCapacity;
+            float coreCooling = coolingJoules * invHeatCapacity;
             float nextCore = math.max(ambientTemp, postGenerationCore - coreCooling);
 
-            if (!math.isfinite(totalJoules + generatedJoules + nextCore + speed + convectiveMultiplier))
+            if (!math.isfinite(totalJoules + generatedJoules + nextCore + speedSq + convectiveMultiplier))
             {
                 reactor.Flags = flags | ReactorStateDTO.FlagNonFinite;
                 scratch.Flags = ReactorStateDTO.FlagNonFinite;
@@ -1000,7 +1011,7 @@ namespace Hecton8.Thermodynamics
             scratch.JoulesInjected = totalJoules;
             scratch.CoreCoolingCelsius = coreCooling;
             scratch.CoreTempCelsius = nextCore;
-            scratch.SpeedMetersPerSecond = speed;
+            scratch.SpeedMetersPerSecond = ReactorThermalMath.FastLengthFromSq(math.max(0f, speedSq));
             scratch.ConvectiveMultiplier = convectiveMultiplier;
             scratch.CenterCellIndex = (uint)centerIndex;
             scratch.Flags = flags;
@@ -1092,7 +1103,7 @@ namespace Hecton8.Thermodynamics
 
                         int cellIndex = AbyssalThermalMath.Index(cell.x, cell.y, cell.z, resolution);
                         ThermalCellDTO* target = Injection + cellIndex;
-                        float celsiusDelta = (joules * weight / weightSum) / waterCapacity;
+                        float celsiusDelta = joules * weight * math.rcp(weightSum) * math.rcp(waterCapacity);
                         celsiusDelta = math.min(celsiusDelta, math.max(1f, ReactorThermalMath.FiniteOr(Tuning.GridTemperatureClampCelsius, 2200f)));
                         ReactorThermalMath.AtomicAddFloat(&target->TemperatureCelsius, celsiusDelta);
                         ReactorThermalMath.AtomicAddFloat(&target->ConvectionVelocityY, celsiusDelta * convectionGain);
@@ -1126,7 +1137,7 @@ namespace Hecton8.Thermodynamics
         {
             float safe = ReactorThermalMath.FiniteOr(Tuning.SafeCoreTempCelsius, 760f);
             float critical = math.max(safe + 1f, ReactorThermalMath.FiniteOr(Tuning.MeltdownCoreTempCelsius, 1850f));
-            float severity01 = math.saturate((coreTemp - safe) / math.max(1f, critical - safe));
+            float severity01 = math.saturate((coreTemp - safe) * math.rcp(math.max(1f, critical - safe)));
             ThermalStateChangedSignal signal = default;
             signal.SourceHash = reactor.ReactorHashID != 0u ? reactor.ReactorHashID : ReactorThermalMath.SourceHash;
             signal.Frame = Frame;

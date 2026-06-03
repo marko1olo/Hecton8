@@ -151,10 +151,11 @@ namespace Hecton8.Editor.GeologyForge
         private static bool ValidateGeneratedPrefab(string path, GameObject prefab, StringBuilder failures)
         {
             bool valid = true;
-            MeshCollider collider = prefab.GetComponent<MeshCollider>();
+            Transform colliderRoot = prefab.transform.Find("COL_ConvexProxy_1716");
+            MeshCollider collider = colliderRoot != null ? colliderRoot.GetComponent<MeshCollider>() : null;
             if (collider == null || collider.sharedMesh == null)
             {
-                AppendFailure(failures, path, "PREFAB_MISSING_COL_MESHCOLLIDER");
+                AppendFailure(failures, path, "PREFAB_MISSING_COL_CONVEX_PROXY_1716");
                 return false;
             }
 

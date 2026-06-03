@@ -1,10 +1,17 @@
 ---
 packet_id: P057_GREAT_TIDE_LIABILITY_CHAIN
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.great_tide_liability_chain
+unlock_id: unlock.first_great_tide_liability_chain
+poi_tags: poi.tide_model;poi.evacuated_shift_board
+biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Great Tide Liability Chain

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -50,51 +49,9 @@ namespace Hecton8.Construction
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    public struct GenerateMockSeafloorSDFJob : IJobParallelFor
-    {
-        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Distances;
-        public FoundationSdfConfigDTO Config;
-
-        public void Execute(int index)
-        {
-            if (!Distances.IsCreated ||
-                (uint)index >= (uint)Distances.Length ||
-                Config.SizeX <= 1 ||
-                Config.SizeY <= 1 ||
-                Config.SizeZ <= 1)
-            {
-                return;
-            }
-
-            long slice64 = (long)Config.SizeX * Config.SizeY;
-            long volume64 = slice64 * Config.SizeZ;
-            if (slice64 <= 0L ||
-                slice64 > int.MaxValue ||
-                volume64 <= 0L ||
-                (long)index >= volume64)
-            {
-                return;
-            }
-
-            int slice = (int)slice64;
-            int z = index / slice;
-            int rem = index - z * slice;
-            int y = rem / Config.SizeX;
-            int x = rem - y * Config.SizeX;
-            float centeredX = x - (Config.SizeX - 1) * 0.5f;
-            float centeredZ = z - (Config.SizeZ - 1) * 0.5f;
-            float terrainY = Config.MockBaseY + centeredX * Config.MockSlopeX + centeredZ * Config.MockSlopeZ;
-            float signedDistance = (y - terrainY) * math.max(0.0001f, Config.VoxelSizeMeters);
-            Distances[index] = signedDistance;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CalculateFoundationPylonsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<FoundationModuleAupDTO> Modules;
-        [ReadOnly, NoAlias] public NativeArray<float> MockSdfDistances;
         [ReadOnly, NoAlias] public NativeArray<byte> EncodedVoxelSdfTexture3D;
         [ReadOnly, NoAlias] public NativeArray<FoundationRayOriginDTO> RayOrigins;
         [ReadOnly, NoAlias] public NativeArray<FoundationProfileRangeDTO> ProfileRanges;
@@ -108,7 +65,6 @@ namespace Hecton8.Construction
         public int ModuleCount;
         public int ProfileCount;
         public int RayOriginCount;
-        public int UseEncodedByteSdf;
 
         public void Execute(int moduleIndex)
         {
@@ -134,7 +90,6 @@ namespace Hecton8.Construction
             float epsilon = math.max(0.001f, Tuning.SdfHitEpsilonMeters);
             float maxStep = math.max(epsilon, Tuning.MaxMarchStepMeters);
             float sdfInterpolationWeight = FoundationSnappingCalculatorRuntime.ResolveSdfInterpolationWeight(Tuning);
-            float proxyBlend = 1f - sdfInterpolationWeight;
 
             if ((module.Flags & FoundationPylonFlags.NonFinite) != 0u ||
                 !math.all(math.isfinite(module.CenterAup)) ||
@@ -145,6 +100,16 @@ namespace Hecton8.Construction
                 counters.Flags |= FoundationPylonFlags.NonFinite;
                 for (int ray = 0; ray < FoundationSnappingCalculatorRuntime.MaxRaysPerModule; ray++)
                     WriteInvisible(baseSlot + ray, module, ray, FoundationPylonFlags.NonFinite);
+                WriteCounter(moduleIndex, counters);
+                return;
+            }
+
+            if (!IsRealSdfPayloadValid())
+            {
+                counters.Flags |= FoundationPylonFlags.SnapFailed_NoSubstrate;
+                for (int ray = 0; ray < FoundationSnappingCalculatorRuntime.MaxRaysPerModule; ray++)
+                    WriteInvisible(baseSlot + ray, module, ray, FoundationPylonFlags.SnapFailed_NoSubstrate | FoundationPylonFlags.PresentationOnly | FoundationPylonFlags.RollbackExcluded);
+
                 WriteCounter(moduleIndex, counters);
                 return;
             }
@@ -177,16 +142,7 @@ namespace Hecton8.Construction
                 else
                 {
                     float startOffset = math.max(0f, Tuning.RayStartYOffsetMeters);
-                    float proxyLength = math.clamp(firstDistance - startOffset, 0f, maxLength + epsilon);
-                    double3 proxyHitAup = topAup + new double3(0d, -proxyLength, 0d);
-                    bool proxyHit = proxyLength > epsilon && firstDistance <= maxLength + startOffset + epsilon;
-                    if (sdfInterpolationWeight <= 0.0001f)
-                    {
-                        resolvedLength = proxyLength;
-                        hitAup = proxyHit ? proxyHitAup : rayStartAup;
-                        hit = proxyHit;
-                    }
-                    else
+                    if (firstDistance <= maxLength + startOffset + epsilon)
                     {
                         bool marchHit = false;
                         double3 marchHitAup = rayStartAup;
@@ -213,35 +169,17 @@ namespace Hecton8.Construction
                             t += march;
                         }
 
-                        if (marchHit && proxyHit)
-                        {
-                            resolvedLength = math.lerp(marchLength, proxyLength, proxyBlend);
-                            double invProxyBlend = 1d - proxyBlend;
-                            hitAup = new double3(
-                                marchHitAup.x * invProxyBlend + proxyHitAup.x * proxyBlend,
-                                marchHitAup.y * invProxyBlend + proxyHitAup.y * proxyBlend,
-                                marchHitAup.z * invProxyBlend + proxyHitAup.z * proxyBlend);
-                            hit = true;
-                        }
-                        else if (marchHit)
+                        if (marchHit)
                         {
                             resolvedLength = marchLength;
                             hitAup = marchHitAup;
-                            hit = true;
-                        }
-                        else if (proxyHit && proxyBlend > 0.0001f)
-                        {
-                            resolvedLength = proxyLength;
-                            hitAup = proxyHitAup;
                             hit = true;
                         }
                     }
                 }
 
                 uint flags = FoundationPylonFlags.PresentationOnly | FoundationPylonFlags.RollbackExcluded;
-                flags |= UseEncodedByteSdf != 0 ? FoundationPylonFlags.RealVoxelSdf : FoundationPylonFlags.MockSdfFallback;
-                if (proxyBlend > 0.0001f)
-                    flags |= FoundationPylonFlags.ApproximateSdf;
+                flags |= FoundationPylonFlags.RealVoxelSdf;
                 if (outOfBounds)
                     flags |= FoundationPylonFlags.OutOfSdfBounds;
 
@@ -317,6 +255,19 @@ namespace Hecton8.Construction
             }
 
             WriteCounter(moduleIndex, counters);
+        }
+
+        private bool IsRealSdfPayloadValid()
+        {
+            return (SdfConfig.Flags & FoundationPylonFlags.RealVoxelSdf) != 0u &&
+                   EncodedVoxelSdfTexture3D.IsCreated &&
+                   math.all(math.isfinite(SdfConfig.OriginAup)) &&
+                   math.isfinite(SdfConfig.VoxelSizeMeters) &&
+                   math.isfinite(SdfConfig.SdfRangeMeters) &&
+                   SdfConfig.VoxelSizeMeters > 0.0001f &&
+                   SdfConfig.SdfRangeMeters > 0.0001f &&
+                   TryResolveSdfVoxelCount(out int voxelCount) &&
+                   EncodedVoxelSdfTexture3D.Length >= voxelCount;
         }
 
         private double3 ResolvePylonTopAup(FoundationModuleAupDTO module, int ray)
@@ -465,17 +416,41 @@ namespace Hecton8.Construction
                 return SdfConfig.SdfRangeMeters;
 
             int index = (int)indexLong;
-            if (UseEncodedByteSdf != 0 &&
-                EncodedVoxelSdfTexture3D.IsCreated &&
+            if (EncodedVoxelSdfTexture3D.IsCreated &&
                 (uint)index < (uint)EncodedVoxelSdfTexture3D.Length)
             {
                 return ((EncodedVoxelSdfTexture3D[index] * 0.0039215686274509803f) * 2f - 1f) * SdfConfig.SdfRangeMeters;
             }
 
-            if (MockSdfDistances.IsCreated && (uint)index < (uint)MockSdfDistances.Length)
-                return MockSdfDistances[index];
-
             return SdfConfig.SdfRangeMeters;
+        }
+
+        private bool TryResolveSdfVoxelCount(out int voxelCount)
+        {
+            voxelCount = 0;
+            if (SdfConfig.SizeX <= 1 ||
+                SdfConfig.SizeY <= 1 ||
+                SdfConfig.SizeZ <= 1)
+            {
+                return false;
+            }
+
+            long sx = SdfConfig.SizeX;
+            long sy = SdfConfig.SizeY;
+            long sz = SdfConfig.SizeZ;
+            if (sx > int.MaxValue / sy)
+                return false;
+
+            long slice = sx * sy;
+            if (slice > int.MaxValue / sz)
+                return false;
+
+            long resolved = slice * sz;
+            if (resolved <= 0L || resolved > int.MaxValue)
+                return false;
+
+            voxelCount = (int)resolved;
+            return true;
         }
 
         private float3 ResolveSdfNormal(double3 hitAup, float gradientStep, float interpolationWeight)
@@ -484,17 +459,44 @@ namespace Hecton8.Construction
                 return new float3(0f, 1f, 0f);
 
             float step = math.max(0.05f, math.isfinite(gradientStep) ? gradientStep : 0.35f);
-            TrySampleSdf(hitAup + new double3(step, 0d, 0d), interpolationWeight, out float xp);
-            TrySampleSdf(hitAup + new double3(-step, 0d, 0d), interpolationWeight, out float xm);
-            TrySampleSdf(hitAup + new double3(0d, step, 0d), interpolationWeight, out float yp);
-            TrySampleSdf(hitAup + new double3(0d, -step, 0d), interpolationWeight, out float ym);
-            TrySampleSdf(hitAup + new double3(0d, 0d, step), interpolationWeight, out float zp);
-            TrySampleSdf(hitAup + new double3(0d, 0d, -step), interpolationWeight, out float zm);
-            float3 normal = new float3(xp - xm, yp - ym, zp - zm);
+            bool centerOk = TrySampleSdf(hitAup, interpolationWeight, out float center);
+            bool xpOk = TrySampleSdf(hitAup + new double3(step, 0d, 0d), interpolationWeight, out float xp);
+            bool xmOk = TrySampleSdf(hitAup + new double3(-step, 0d, 0d), interpolationWeight, out float xm);
+            bool ypOk = TrySampleSdf(hitAup + new double3(0d, step, 0d), interpolationWeight, out float yp);
+            bool ymOk = TrySampleSdf(hitAup + new double3(0d, -step, 0d), interpolationWeight, out float ym);
+            bool zpOk = TrySampleSdf(hitAup + new double3(0d, 0d, step), interpolationWeight, out float zp);
+            bool zmOk = TrySampleSdf(hitAup + new double3(0d, 0d, -step), interpolationWeight, out float zm);
+            float3 normal = new float3(
+                ResolveSdfGradientAxis(xp, xm, center, xpOk, xmOk, centerOk),
+                ResolveSdfGradientAxis(yp, ym, center, ypOk, ymOk, centerOk),
+                ResolveSdfGradientAxis(zp, zm, center, zpOk, zmOk, centerOk));
             float lenSq = math.lengthsq(normal);
             if (!math.isfinite(lenSq) || lenSq <= 0.000001f)
                 return new float3(0f, 1f, 0f);
             return normal * math.rsqrt(math.max(lenSq, 0.000001f));
+        }
+
+        private static float ResolveSdfGradientAxis(
+            float positive,
+            float negative,
+            float center,
+            bool positiveOk,
+            bool negativeOk,
+            bool centerOk)
+        {
+            if (positiveOk && negativeOk && math.isfinite(positive) && math.isfinite(negative))
+                return positive - negative;
+
+            if (!centerOk || !math.isfinite(center))
+                return 0f;
+
+            if (positiveOk && math.isfinite(positive))
+                return (positive - center) * 2f;
+
+            if (negativeOk && math.isfinite(negative))
+                return (center - negative) * 2f;
+
+            return 0f;
         }
 
         private void WriteInvisible(int slot, FoundationModuleAupDTO module, int ray, uint flags)

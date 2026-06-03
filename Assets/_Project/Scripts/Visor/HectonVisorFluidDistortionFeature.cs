@@ -15,10 +15,6 @@ using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.Visor
 {
     /// <summary>
@@ -48,16 +44,11 @@ namespace Hecton8.Visor
         private const uint BlackBoxFlagNonFiniteInput = 1u << 4;
         private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin";
 
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader";
-        private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticVisorLens.compute";
-#endif
-
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Hidden fullscreen shader used for procedural visor droplets and hull-stress leaks.")]
-            public Shader shader = null;
+            [Tooltip("Authored fullscreen material used for procedural visor droplets and hull-stress leaks.")]
+            [FormerlySerializedAs("shader")] public Material material = null;
 
             [Tooltip("Compute shader that resolves compact diegetic lens masks from CPU visor scalars.")]
             public ComputeShader lensComputeShader = null;
@@ -434,7 +425,7 @@ namespace Hecton8.Visor
 
             private bool UpdateVisorFluidGlobals(FeatureSettings settings, RuntimeState runtimeState, bool lensMaskActive, float lensMaskBlend)
             {
-                if (!HasVisorFluidGlobalsBuffer())
+                if (!EnsureVisorFluidGlobalsBuffer(allowAllocation: true))
                     return false;
 
                 float effectIntensity = Sanitize01(runtimeState.EffectIntensity);
@@ -585,7 +576,7 @@ namespace Hecton8.Visor
             private bool UpdateLensComputeGlobals(in RuntimeState runtimeState, float lensMaskBlend, out GraphicsBuffer globalsBuffer)
             {
                 globalsBuffer = null;
-                if (!HasLensComputeGlobalsBuffer())
+                if (!EnsureLensComputeGlobalsBuffer(allowAllocation: true))
                     return false;
 
                 LensComputeGlobalsDTO globals = new LensComputeGlobalsDTO(
@@ -963,31 +954,15 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-            if (settings != null && settings.lensComputeShader == null)
-                settings.lensComputeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
-#endif
-
             _pass ??= new VisorFluidPass();
             CacheGraphicsCapabilitiesCold();
-            _pass.PrewarmVisorFluidGlobalsBuffer();
             TryRegisterLateFrameTickable();
             TryRegisterBlackBoxHotSwapListener();
             BindBlackBoxVaultForLifecycle(GlobalRegistry.DataVault);
             EnsureBlackBoxLeaseCold();
             CacheRenderDependenciesCold();
             CachePresentationGlobalsLate();
-            Shader shader = settings != null ? settings.shader : null;
-            if (shader == null)
-            {
-                CoreUtils.Destroy(_material);
-                _material = null;
-                return;
-            }
-
-            RecreateMaterial(ref _material, shader);
+            _material = settings != null ? settings.material : null;
         }
 
         /// <inheritdoc />
@@ -1012,7 +987,6 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
-            CoreUtils.Destroy(_material);
             _material = null;
             _playerContext = null;
             _fluidSimulation = null;
@@ -1813,20 +1787,5 @@ namespace Hecton8.Visor
             BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
-        private static void RecreateMaterial(ref Material material, Shader shader)
-        {
-            if (shader == null)
-            {
-                CoreUtils.Destroy(material);
-                material = null;
-                return;
-            }
-
-            if (material != null && material.shader == shader)
-                return;
-
-            CoreUtils.Destroy(material);
-            material = CoreUtils.CreateEngineMaterial(shader);
-        }
     }
 }

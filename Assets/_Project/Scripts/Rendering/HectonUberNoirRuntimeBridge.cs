@@ -135,10 +135,12 @@ namespace Hecton8.Core
             if (!Application.isPlaying || s_runtimeInstance != null)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             // COLD ALLOC: GameObject[1] - fallback scene runtime bridge - owner: HectonUberNoirRuntimeBridge
             GameObject host = new GameObject("H8_UberNoirRuntimeBridge");
             host.hideFlags = HideFlags.DontSave;
             host.AddComponent<HectonUberNoirRuntimeBridge>();
+#endif
         }
 
         private void Awake()
@@ -366,30 +368,31 @@ namespace Hecton8.Core
             if (!TryResolveTelemetryBufferReady())
                 return;
 
+            uint qualityByte = EncodeQualityWeightByte(quality01);
+            uint stressBucket = (uint)math.round(math.saturate(stress01) * 1000f);
+            uint highCostBucket = (uint)math.round(math.saturate(highCostAllowed01) * 1000f);
+            uint overkillBucket = (uint)math.round(math.saturate(visualOverkill01) * 1000f);
+            uint survivalPressureBucket = (uint)math.round(math.saturate(survivalPressureWeight01) * 1000f);
+            UberNoirShaderTelemetryEntry entry = default;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.FeatureMask = featureMask;
+            entry.SystemStress01 = stress01;
+            entry.HighCostAllowed01 = highCostAllowed01;
+            entry.VisualOverkill01 = visualOverkill01;
+            entry.QualityWeightByte = qualityByte;
+            entry.Flags = 0u;
+            entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (survivalPressureBucket << 4));
+            entry.PomEnabled01 = math.saturate(highCostAllowed01);
+            entry.ReservedVisualDetail01 = math.saturate(visualOverkill01);
+            entry.Refraction01 = math.saturate(highCostAllowed01);
+            entry.Reserved0 = math.saturate(survivalPressureWeight01);
+
             IDataVault vault = _dataVault;
             if (!TryAcquireTelemetryWriteBuffer(vault, in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> ring))
                 return;
 
             try
             {
-                uint qualityByte = EncodeQualityWeightByte(quality01);
-                UberNoirShaderTelemetryEntry entry = default;
-                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-                entry.FeatureMask = featureMask;
-                entry.SystemStress01 = stress01;
-                entry.HighCostAllowed01 = highCostAllowed01;
-                entry.VisualOverkill01 = visualOverkill01;
-                entry.QualityWeightByte = qualityByte;
-                entry.Flags = 0u;
-                uint stressBucket = (uint)math.round(math.saturate(stress01) * 1000f);
-                uint highCostBucket = (uint)math.round(math.saturate(highCostAllowed01) * 1000f);
-                uint overkillBucket = (uint)math.round(math.saturate(visualOverkill01) * 1000f);
-                uint survivalPressureBucket = (uint)math.round(math.saturate(survivalPressureWeight01) * 1000f);
-                entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (survivalPressureBucket << 4));
-                entry.PomEnabled01 = math.saturate(highCostAllowed01);
-                entry.ReservedVisualDetail01 = math.saturate(visualOverkill01);
-                entry.Refraction01 = math.saturate(highCostAllowed01);
-                entry.Reserved0 = math.saturate(survivalPressureWeight01);
                 ring[_telemetryCursor] = entry;
 
                 _telemetryCursor++;

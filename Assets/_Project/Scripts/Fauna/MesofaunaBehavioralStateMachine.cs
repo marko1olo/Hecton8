@@ -179,6 +179,11 @@ namespace Hecton8.AI
         internal const uint DumpFailureTelemetryHash = 0x4D44464Cu; // MDFL
         internal const uint DumpReasonFaultHash = 0x4D464C54u; // MFLT
         internal const uint DumpReasonOverBudgetHash = 0x4D425544u; // MBUD
+        internal const float DirectionLengthSqEpsilon = 0.0001f;
+        internal const double InvAupSectorMeters = 0.00390625d;
+        internal const float InvThree = 0.3333333333333333f;
+        internal const float InvThirtyTwo = 0.03125f;
+        internal const float InvByteMax = 0.00392156862745098f;
 
         internal static bool ValidateLayout()
         {
@@ -262,6 +267,15 @@ namespace Hecton8.AI
         {
             float x = math.saturate(value);
             return x * x * (3f - (2f * x));
+        }
+
+        internal static float FastLengthFromSq(float lengthSq, float minLengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return 0f;
+
+            float safeLengthSq = math.max(lengthSq, minLengthSq);
+            return safeLengthSq > 0f ? safeLengthSq * math.rsqrt(safeLengthSq) : 0f;
         }
     }
 
@@ -444,11 +458,10 @@ namespace Hecton8.AI
         {
             if (!math.all(math.isfinite(aup)))
                 return 0x4D534543u; // MSEC
-            double invSectorMeters = 1.0 / 256.0;
             int3 sector = new int3(
-                (int)math.floor(aup.x * invSectorMeters),
-                (int)math.floor(aup.y * invSectorMeters),
-                (int)math.floor(aup.z * invSectorMeters));
+                (int)math.floor(aup.x * MesofaunaBehaviorConstants.InvAupSectorMeters),
+                (int)math.floor(aup.y * MesofaunaBehaviorConstants.InvAupSectorMeters),
+                (int)math.floor(aup.z * MesofaunaBehaviorConstants.InvAupSectorMeters));
             unchecked
             {
                 uint hash = 2166136261u;
@@ -461,11 +474,16 @@ namespace Hecton8.AI
 
         private static float3 ResolveDirection(float3 direction, float3 fallback)
         {
-            if (!IsFinite(direction) || math.lengthsq(direction) <= 0.0001f)
+            float lengthSq = IsFinite(direction) ? math.lengthsq(direction) : 0f;
+            if (!math.isfinite(lengthSq) || lengthSq <= MesofaunaBehaviorConstants.DirectionLengthSqEpsilon)
+            {
                 direction = fallback;
-            if (!IsFinite(direction) || math.lengthsq(direction) <= 0.0001f)
+                lengthSq = IsFinite(direction) ? math.lengthsq(direction) : 0f;
+            }
+
+            if (!math.isfinite(lengthSq) || lengthSq <= MesofaunaBehaviorConstants.DirectionLengthSqEpsilon)
                 return new float3(0f, 0f, 1f);
-            return direction * math.rsqrt(math.max(math.lengthsq(direction), 0.0001f));
+            return direction * math.rsqrt(math.max(lengthSq, MesofaunaBehaviorConstants.DirectionLengthSqEpsilon));
         }
 
         private static uint Hash(int slot, int speciesId, uint salt)
@@ -849,7 +867,11 @@ namespace Hecton8.AI
         private void ApplyContinuity(int slot, in CognitionInput input, ref MesofaunaStateDTO state)
         {
             float3 direction = ResolveDirection(state.Velocity, ResolveDirection(input.Forward, new float3(0f, 0f, 1f)));
-            float speed = math.clamp(math.length(state.Velocity) * math.rcp(math.max(0.5f, Tuning.BaseSpeedMetersPerSecond)), 0.45f, 1.35f);
+            float speed = math.clamp(
+                MesofaunaBehaviorConstants.FastLengthFromSq(math.lengthsq(state.Velocity), 0f) *
+                math.rcp(math.max(0.5f, Tuning.BaseSpeedMetersPerSecond)),
+                0.45f,
+                1.35f);
             if (state.CurrentState == MesofaunaBehaviorConstants.StateIdle)
                 speed = math.min(speed, 0.55f);
             if (state.StateTimerTicks < ushort.MaxValue)
@@ -1073,7 +1095,7 @@ namespace Hecton8.AI
 
             float probeDistance = math.lerp(1.75f, 4.5f, quality);
             float3 probe = position + (ResolveDirection(desiredDirection, new float3(0f, 0f, 1f)) * probeDistance);
-            float3 cell = (probe - ThreatVoxelOrigin) / math.max(ThreatVoxelCellSize, new float3(0.001f));
+            float3 cell = (probe - ThreatVoxelOrigin) * math.rcp(math.max(ThreatVoxelCellSize, new float3(0.001f)));
             int3 c = new int3((int)math.floor(cell.x), (int)math.floor(cell.y), (int)math.floor(cell.z));
             if (!InVoxelBounds(c))
                 return false;
@@ -1087,10 +1109,10 @@ namespace Hecton8.AI
             float gz = SignedVoxel(c + new int3(0, 0, 1)) - SignedVoxel(c + new int3(0, 0, -1));
             float3 gradient = new float3(gx, gy, gz);
             repulsion = ResolveDirection(-gradient, -desiredDirection);
-            float meanCellMeters = math.max(0.1f, (ThreatVoxelCellSize.x + ThreatVoxelCellSize.y + ThreatVoxelCellSize.z) * (1f / 3f));
+            float meanCellMeters = math.max(0.1f, (ThreatVoxelCellSize.x + ThreatVoxelCellSize.y + ThreatVoxelCellSize.z) * MesofaunaBehaviorConstants.InvThree);
             float sdfDistance = ThreatVoxelUsesSignedDistanceEncoding != 0
-                ? math.max(0.1f, math.abs(center - 128f) * meanCellMeters * (1f / 32f))
-                : math.max(0.1f, (1f - math.saturate(center * (1f / 255f))) * probeDistance);
+                ? math.max(0.1f, math.abs(center - 128f) * meanCellMeters * MesofaunaBehaviorConstants.InvThirtyTwo)
+                : math.max(0.1f, (1f - math.saturate(center * MesofaunaBehaviorConstants.InvByteMax)) * probeDistance);
             float reciprocalPressure = math.rcp(math.max(0.1f, sdfDistance));
             pressure01 = math.saturate(reciprocalPressure * math.lerp(0.2f, 0.45f, quality));
             return true;
@@ -1104,7 +1126,7 @@ namespace Hecton8.AI
             float3 fallbackForward)
         {
             float3 delta = AupDeltaToFloat3(targetAup - state.AUP_Position);
-            float distance = math.sqrt(math.max(math.lengthsq(delta), 0.0001f));
+            float distance = MesofaunaBehaviorConstants.FastLengthFromSq(math.lengthsq(delta), MesofaunaBehaviorConstants.DirectionLengthSqEpsilon);
             float leadSeconds = math.clamp(distance * math.rcp(math.max(1f, Tuning.BaseSpeedMetersPerSecond * math.lerp(0.8f, 1.35f, quality))), 0.05f, math.lerp(0.25f, 1.1f, quality));
             float3 predictedLocalDelta = delta + (targetVelocity * leadSeconds);
             return ResolveDirection(predictedLocalDelta, fallbackForward);
@@ -1163,7 +1185,7 @@ namespace Hecton8.AI
             float sign = math.select(1f, -1f, secondHalf);
             float shape = mirrored * (math.PI - mirrored);
             float denominator = math.max(0.0001f, (5f * math.PI * math.PI) - (4f * shape));
-            return math.clamp(sign * ((16f * shape) / denominator), -1f, 1f);
+            return math.clamp(sign * (16f * shape) * math.rcp(denominator), -1f, 1f);
         }
 
         private float ResolveSpeedScalar(byte state, in CognitionInput input, float quality, float aggressionMultiplier, float speedMultiplier)
@@ -1245,7 +1267,7 @@ namespace Hecton8.AI
                 : (ushort)0;
             visual.TargetAup = validTargetAup ? targetAup : state.AUP_Position;
             visual.TargetDistanceMeters = validTargetAup
-                ? math.sqrt(math.max(math.lengthsq(AupDeltaToFloat3(visual.TargetAup - state.AUP_Position)), 0f))
+                ? MesofaunaBehaviorConstants.FastLengthFromSq(math.lengthsq(AupDeltaToFloat3(visual.TargetAup - state.AUP_Position)), 0f)
                 : 0f;
             visual.TargetFlags = validTargetAup ? MesofaunaBehaviorConstants.VisualTargetFlagValid : 0u;
             if ((uint)slot < (uint)VisualSync.Length)
@@ -1391,11 +1413,16 @@ namespace Hecton8.AI
 
         private static float3 ResolveDirection(float3 direction, float3 fallback)
         {
-            if (!IsFinite(direction) || math.lengthsq(direction) <= 0.0001f)
+            float lengthSq = IsFinite(direction) ? math.lengthsq(direction) : 0f;
+            if (!math.isfinite(lengthSq) || lengthSq <= MesofaunaBehaviorConstants.DirectionLengthSqEpsilon)
+            {
                 direction = fallback;
-            if (!IsFinite(direction) || math.lengthsq(direction) <= 0.0001f)
+                lengthSq = IsFinite(direction) ? math.lengthsq(direction) : 0f;
+            }
+
+            if (!math.isfinite(lengthSq) || lengthSq <= MesofaunaBehaviorConstants.DirectionLengthSqEpsilon)
                 return new float3(0f, 0f, 1f);
-            return direction * math.rsqrt(math.max(math.lengthsq(direction), 0.0001f));
+            return direction * math.rsqrt(math.max(lengthSq, MesofaunaBehaviorConstants.DirectionLengthSqEpsilon));
         }
     }
 }

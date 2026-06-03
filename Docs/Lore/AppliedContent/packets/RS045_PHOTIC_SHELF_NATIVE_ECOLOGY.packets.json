@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS045_PHOTIC_SHELF_NATIVE_ECOLOGY",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P221_PHOTIC_MAT_BASELINE",
+      "release_set_id": "RS045_PHOTIC_SHELF_NATIVE_ECOLOGY",
+      "article_id": "ecology.photic_mat_baseline",
+      "title_key": "applied_lore.photic_mat_baseline.title",
+      "unlock": {
+        "primary": "unlock.photic_mat_baseline",
+        "poi_tags": [
+          "poi.photic_mat_scan_panel",
+          "poi.shallow_rock_scrape",
+          "poi.oxygen_skin_edge"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.shallow_reef"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Photic Mat Baseline",
+          "scanner": "Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "ru_RU": {
+          "title": "Базовый фотический мат",
+          "scanner": "Тонкие живые маты делают первый шельф ярким, насыщенным кислородом и читаемым; они же показывают, что химия давления уже ненормальна.",
+          "field_note": "Базовый мат: минеральная пленка, мелководная кислородная кожа, соляной край, слабый акустический рисунок. Красота здесь является уликой, а не безопасностью.",
+          "terminal": "ECOLOGY BASELINE: фотические маты держат первые карманы безопасной воды. Не классифицировать шельф как безвредный.",
+          "audio": "Он выглядит чистым, потому что работает на пределе. Это не значит, что он безопасен.",
+          "in_game_wiki": "Базовый фотический мат задает контраст мелководья HECTON-8: яркая вода, твердая минеральная пленка, живая кислородная кожа и химия давления в одном объекте.",
+          "external_site": "Базовый фотический мат является публичной экологической опорой стартовой зоны HECTON-8. Мелководный шельф яркий и читаемый, но каждая светлая поверхность работает как инструмент выживания: водоросле-минеральная пленка, кислородный обмен, акустическая фактура и раннее доказательство промышленно измененного океана."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft JP localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft JP localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft JP localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft JP localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft JP localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft JP localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft CN localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft CN localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft CN localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft CN localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft CN localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft CN localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft FR localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft FR localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft FR localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft FR localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft FR localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft FR localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft ES localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft ES localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft ES localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft ES localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft ES localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft ES localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft DE localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft DE localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft DE localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft DE localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft DE localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft DE localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft PL localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft PL localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft PL localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft PL localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft PL localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft PL localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft UA localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft UA localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft UA localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft UA localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft UA localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft UA localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft AR localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft AR localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft AR localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft AR localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft AR localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft AR localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft ID localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft ID localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft ID localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft ID localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft ID localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft ID localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft KO localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft KO localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft KO localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft KO localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft KO localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft KO localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft HE localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft HE localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft HE localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft HE localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft HE localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft HE localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft PT localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft PT localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft PT localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft PT localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft PT localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft PT localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Photic Mat Baseline",
+          "scanner": "Draft NL localization pending native pass. Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.",
+          "field_note": "Draft NL localization pending native pass. Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.",
+          "terminal": "Draft NL localization pending native pass. ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.",
+          "audio": "Draft NL localization pending native pass. It looks clean because it is working hard. That is not the same as safe.",
+          "in_game_wiki": "Draft NL localization pending native pass. Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.",
+          "external_site": "Draft NL localization pending native pass. Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered."
+        }
+      }
+    },
+    {
+      "packet_id": "P222_GLASS_GRAZER_SCHOOLS",
+      "release_set_id": "RS045_PHOTIC_SHELF_NATIVE_ECOLOGY",
+      "article_id": "ecology.glass_grazer_schools",
+      "title_key": "applied_lore.glass_grazer_schools.title",
+      "unlock": {
+        "primary": "unlock.glass_grazer_schools",
+        "poi_tags": [
+          "poi.glass_grazer_school",
+          "poi.scraped_pressure_glass",
+          "poi.clear_shell_trace"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.cable_reef"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Glass Grazer Schools",
+          "scanner": "Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "ru_RU": {
+          "title": "Стаи стеклянных скребцов",
+          "scanner": "Мелкие прозрачные скребцы снимают минеральную пленку с pressure glass и оставляют читаемые маршрутные шрамы.",
+          "field_note": "Стая скребцов: по одному почти безвредны, но показывают рост pressure glass, внимание хищников и недавнее движение воды.",
+          "terminal": "FAUNA: glass grazers избегают теплого sealant и собираются на свежей минеральной пленке. Их отсутствие тоже является данными.",
+          "audio": "Слышишь тиканье по скорлупе? Это еда, карта и предупреждение одним звуком.",
+          "in_game_wiki": "Стаи стеклянных скребцов учат читать живое движение как ресурсную улику и контекст для хищников.",
+          "external_site": "Стаи стеклянных скребцов являются первой не враждебной фауной HECTON-8 с механической ценностью. Их прозрачные тела и скребущее поведение показывают пленку pressure glass, недавнее нарушение маршрута и звуковой язык мелководного шельфа."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft JP localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft JP localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft JP localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft JP localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft JP localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft JP localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft CN localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft CN localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft CN localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft CN localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft CN localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft CN localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft FR localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft FR localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft FR localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft FR localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft FR localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft FR localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft ES localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft ES localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft ES localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft ES localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft ES localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft ES localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft DE localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft DE localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft DE localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft DE localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft DE localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft DE localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft PL localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft PL localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft PL localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft PL localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft PL localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft PL localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft UA localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft UA localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft UA localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft UA localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft UA localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft UA localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft AR localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft AR localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft AR localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft AR localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft AR localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft AR localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft ID localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft ID localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft ID localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft ID localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft ID localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft ID localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft KO localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft KO localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft KO localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft KO localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft KO localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft KO localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft HE localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft HE localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft HE localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft HE localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft HE localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft HE localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft PT localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft PT localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft PT localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft PT localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft PT localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft PT localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Glass Grazer Schools",
+          "scanner": "Draft NL localization pending native pass. Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.",
+          "field_note": "Draft NL localization pending native pass. Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.",
+          "terminal": "Draft NL localization pending native pass. FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.",
+          "audio": "Draft NL localization pending native pass. Hear the ticking on the shell? That is lunch, map and warning in the same sound.",
+          "in_game_wiki": "Draft NL localization pending native pass. Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.",
+          "external_site": "Draft NL localization pending native pass. Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf."
+        }
+      }
+    },
+    {
+      "packet_id": "P223_LANTERN_DRIFT_BLOOM",
+      "release_set_id": "RS045_PHOTIC_SHELF_NATIVE_ECOLOGY",
+      "article_id": "ecology.lantern_drift_bloom",
+      "title_key": "applied_lore.lantern_drift_bloom.title",
+      "unlock": {
+        "primary": "unlock.lantern_drift_bloom",
+        "poi_tags": [
+          "poi.lantern_drift_bloom",
+          "poi.biolu_current_line",
+          "poi.shallow_visibility_gate"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.open_shallow_water"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Lantern Drift Bloom",
+          "scanner": "A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "ru_RU": {
+          "title": "Цветение фонарного дрейфа",
+          "scanner": "Яркий планктонный дрейф очерчивает течение, скрывает мелкие угрозы и может притянуть хищников к шуму инструмента.",
+          "field_note": "Фонарный дрейф не декорация. Это событие видимости с акустическими последствиями.",
+          "terminal": "VISIBILITY NOTE: lantern bloom улучшает чтение силуэта, но повышает акустическое внимание при работе cutter, pump или pinger.",
+          "audio": "Красивая вода все равно вода. Она несет твой шум.",
+          "in_game_wiki": "Цветение фонарного дрейфа превращает красоту мелководья в маршрутное решение: больше света, меньше скрытности, другой риск навигации.",
+          "external_site": "Цветение фонарного дрейфа объясняет, почему HECTON-8 может быть ярким и при этом давящим. Биолюминесцентный планктон делает воду читаемой, но также скрывает угрозы и разносит шум инструментов через пищевую сеть."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft JP localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft JP localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft JP localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft JP localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft JP localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft JP localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft CN localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft CN localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft CN localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft CN localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft CN localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft CN localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft FR localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft FR localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft FR localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft FR localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft FR localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft FR localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft ES localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft ES localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft ES localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft ES localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft ES localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft ES localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft DE localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft DE localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft DE localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft DE localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft DE localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft DE localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft PL localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft PL localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft PL localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft PL localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft PL localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft PL localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft UA localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft UA localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft UA localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft UA localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft UA localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft UA localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft AR localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft AR localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft AR localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft AR localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft AR localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft AR localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft ID localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft ID localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft ID localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft ID localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft ID localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft ID localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft KO localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft KO localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft KO localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft KO localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft KO localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft KO localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft HE localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft HE localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft HE localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft HE localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft HE localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft HE localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft PT localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft PT localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft PT localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft PT localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft PT localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft PT localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Lantern Drift Bloom",
+          "scanner": "Draft NL localization pending native pass. A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.",
+          "field_note": "Draft NL localization pending native pass. Lantern drift is not decoration. It is a visibility event with acoustic consequences.",
+          "terminal": "Draft NL localization pending native pass. VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.",
+          "audio": "Draft NL localization pending native pass. Pretty water is still water. It carries your noise.",
+          "in_game_wiki": "Draft NL localization pending native pass. Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.",
+          "external_site": "Draft NL localization pending native pass. Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web."
+        }
+      }
+    },
+    {
+      "packet_id": "P224_SHELL_CLAMP_REEF",
+      "release_set_id": "RS045_PHOTIC_SHELF_NATIVE_ECOLOGY",
+      "article_id": "ecology.shell_clamp_reef",
+      "title_key": "applied_lore.shell_clamp_reef.title",
+      "unlock": {
+        "primary": "unlock.shell_clamp_reef",
+        "poi_tags": [
+          "poi.shell_clamp_cluster",
+          "poi.reef_clamp_metal_edge",
+          "poi.shallow_anchor_line"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.cable_reef"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shell Clamp Reef",
+          "scanner": "Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "The reef has learned the shape of bolts.",
+          "in_game_wiki": "Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "ru_RU": {
+          "title": "Риф створчатых зажимов",
+          "scanner": "Створчатые зажимы цепляются за камень, кабель и обшивку капсулы; мелководный риф уже принимает машины как среду обитания.",
+          "field_note": "Риф зажимов: маршрутный знак, добываемая раковина, раннее доказательство того, что металл больше не чужой для экологии.",
+          "terminal": "REEF NOTE: сцепление shell clamp растет у стертых кабельных рубашек и открытых швов pressure glass.",
+          "audio": "Риф выучил форму болтов.",
+          "in_game_wiki": "Риф створчатых зажимов показывает первое размытие границы: местные организмы заселяют металл до того, как Atlas превращает эту привычку в ремонтную логику.",
+          "external_site": "Риф створчатых зажимов является важным визуальным и сюжетным мостом HECTON-8. Он сохраняет яркость и тактильность раннего шельфа, но доказывает, что местная жизнь уже встроила человеческий металл в собственные структуры."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft JP localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft JP localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft JP localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft JP localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft JP localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft JP localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft CN localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft CN localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft CN localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft CN localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft CN localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft CN localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft FR localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft FR localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft FR localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft FR localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft FR localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft ES localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft ES localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft ES localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft ES localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft ES localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft DE localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft DE localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft DE localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft DE localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft DE localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft PL localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft PL localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft PL localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft PL localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft PL localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft UA localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft UA localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft UA localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft UA localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft UA localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft UA localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft AR localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft AR localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft AR localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft AR localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft AR localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft ID localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft ID localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft ID localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft ID localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft ID localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft KO localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft KO localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft KO localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft KO localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft KO localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft HE localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft HE localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft HE localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft HE localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft HE localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft PT localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft PT localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft PT localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft PT localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft PT localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Shell Clamp Reef",
+          "scanner": "Draft NL localization pending native pass. Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.",
+          "field_note": "Draft NL localization pending native pass. Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.",
+          "terminal": "Draft NL localization pending native pass. REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.",
+          "audio": "Draft NL localization pending native pass. The reef has learned the shape of bolts.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.",
+          "external_site": "Draft NL localization pending native pass. Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures."
+        }
+      }
+    },
+    {
+      "packet_id": "P225_SHALLOW_PREDATOR_SHADOW_RULE",
+      "release_set_id": "RS045_PHOTIC_SHELF_NATIVE_ECOLOGY",
+      "article_id": "ecology.shallow_predator_shadow_rule",
+      "title_key": "applied_lore.shallow_predator_shadow_rule.title",
+      "unlock": {
+        "primary": "unlock.shallow_predator_shadow_rule",
+        "poi_tags": [
+          "poi.predator_shadow_pass",
+          "poi.sonar_bite_warning",
+          "poi.grazer_silence_patch"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.open_shallow_water"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shallow Predator Shadow Rule",
+          "scanner": "A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "ru_RU": {
+          "title": "Правило тени мелководного хищника",
+          "scanner": "Пропавшая полоса скребцов, провал в шуме bloom и широкая тень являются первым предупреждением о хищнике.",
+          "field_note": "Не показывать мелководного хищника сначала мордой. Сначала отсутствие, звуковой провал, силуэт, затем последствие.",
+          "terminal": "CONTACT RULE: evidence мелководного хищника должен давить на выбор маршрута до принудительного боя.",
+          "audio": "Когда маленькие рты перестают тикать, перестань двигаться.",
+          "in_game_wiki": "Правило тени мелководного хищника задает ранний ужас существ как читаемое системное давление: тишина, тень и смена маршрута до атаки.",
+          "external_site": "Правило тени мелководного хищника удерживает HECTON-8 от галереи монстров. Первый хищник проектируется через пропавшую фауну, измененный звук и давление силуэта до прямого контакта."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft JP localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft JP localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft JP localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft JP localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft JP localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft JP localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft CN localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft CN localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft CN localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft CN localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft CN localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft CN localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft FR localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft FR localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft FR localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft FR localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft FR localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft ES localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft ES localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft ES localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft ES localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft ES localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft DE localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft DE localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft DE localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft DE localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft DE localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft PL localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft PL localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft PL localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft PL localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft PL localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft UA localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft UA localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft UA localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft UA localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft UA localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft UA localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft AR localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft AR localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft AR localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft AR localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft AR localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft ID localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft ID localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft ID localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft ID localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft ID localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft KO localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft KO localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft KO localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft KO localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft KO localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft HE localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft HE localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft HE localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft HE localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft HE localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft PT localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft PT localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft PT localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft PT localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft PT localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Shallow Predator Shadow Rule",
+          "scanner": "Draft NL localization pending native pass. A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.",
+          "field_note": "Draft NL localization pending native pass. Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.",
+          "terminal": "Draft NL localization pending native pass. CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.",
+          "audio": "Draft NL localization pending native pass. When the little mouths stop ticking, stop moving.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.",
+          "external_site": "Draft NL localization pending native pass. Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact."
+        }
+      }
+    }
+  ]
+}

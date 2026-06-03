@@ -5,6 +5,8 @@
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
+        "Hecton8.World.StaticCaveSdfBaker",
+        "Hecton8.World.StaticCaveSdfBaker.Editor",
         "Hecton8.Plugins",
         "Hecton8.Crest.Bridge.Editor",
         "Hecton8.Rendering.OceanSinglePass",

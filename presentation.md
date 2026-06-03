@@ -9,6 +9,12 @@ Presentation must reveal pressure, machinery, route, scale, and evidence. It mus
 
 Visual quality is not a post stack. It is composition plus material truth plus readable silhouettes plus controlled sensory pressure.
 
+## 0.1 Surface Capture Law
+
+Above-water and photic-zone captures are beauty proof, not noir proof. They must show bright ocean, readable terrain, wet material detail, sky/cloud structure, Aegir scale, moon silhouettes, and attractive approach routes.
+
+Reject surface screenshots that are black, muddy, over-fogged, one-note blue, procedural-looking, or hiding weak geometry. Surface tension comes from visible weather, orbital timing, wave state, radiation warnings, engineering risk, and descent contrast. The abyss earns darkness later.
+
 ## 1. Noir Lighting
 
 Lighting should be scarce, motivated, and useful:
@@ -131,7 +137,7 @@ Reject if:
 - low-tier capture collapses into mud;
 - profiler/render proof is absent after implementation.
 
-## 9. Truth Boundary
+## 9. Truth Ownership And Boundary
 
 Presentation consumes truth from rendering, physics, world, AI, audio, UI, and gameplay owners. It does not invent damage, route state, threat state, lighting eligibility, or objective truth.
 

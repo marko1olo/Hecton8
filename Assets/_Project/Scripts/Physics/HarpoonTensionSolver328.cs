@@ -146,6 +146,7 @@ namespace Hecton8.Physics
     {
         public const uint Active = 1u << 0;
         public const uint Snapped = 1u << 1;
+        public const uint Fractured = Snapped;
         public const uint NonFiniteRecovered = 1u << 2;
         public const uint ConstraintFault = 1u << 3;
         public const uint NetcodeFence = 1u << 4;
@@ -872,7 +873,7 @@ namespace Hecton8.Physics
                     if (SignalBus<TetherTensionSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HarpoonTensionSolver328))
                         pushed++;
                 }
-                else if ((state.Flags & TetherStateFlags328.Snapped) != 0u &&
+                else if ((state.Flags & TetherStateFlags328.Fractured) != 0u &&
                          stressSeconds >= snapSeconds &&
                          tension > HarpoonTensionSolver328Constants.Epsilon)
                 {
@@ -1824,7 +1825,7 @@ namespace Hecton8.Physics
                 if (!IsFinite(deltaAup))
                 {
                     state.Flags &= ~TetherStateFlags328.Active;
-                    state.Flags |= TetherStateFlags328.NonFiniteRecovered | TetherStateFlags328.Snapped;
+                    state.Flags |= TetherStateFlags328.NonFiniteRecovered | TetherStateFlags328.Fractured;
                     state.CurrentTension = 0f;
                     States[index] = state;
                     ClearStress(index);
@@ -1880,7 +1881,7 @@ namespace Hecton8.Physics
                 if (stressSeconds >= snapSeconds)
                 {
                     state.Flags &= ~TetherStateFlags328.Active;
-                    state.Flags |= TetherStateFlags328.Snapped;
+                    state.Flags |= TetherStateFlags328.Fractured;
                     state.CurrentTension = tension;
                     States[index] = state;
                     stress.Flags = state.Flags;

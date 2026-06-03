@@ -18,6 +18,7 @@ namespace Hecton8.Interaction
         private const float MaximumRepairAmountPerSecond = 100f;
         private const float MaximumPatchHoldDecayPerSecond = 10f;
         private const float MaximumAcousticGuideRadiusMeters = 5000f;
+        private const uint LeakPatchMaintenanceSourceHash = 0x4c505743u; // LPWC
         private const byte MaximumMissedPatchContactTicks = 3;
 
         [Header("Leak")]
@@ -31,6 +32,7 @@ namespace Hecton8.Interaction
         [SerializeField, Min(0.05f)] private float requiredWeldSeconds = 2.0f;
         [SerializeField, Min(0f)] private float repairAmountPerSecond = 18f;
         [SerializeField, Min(0f)] private float patchHoldDecayPerSecond = 0.65f;
+        [SerializeField, Range(0, 63)] private int vesselMaintenancePanelBitIndex = 3;
 
         private Vector3 _lastPatchContactPoint;
         private Vector3 _lastPatchContactNormal;
@@ -40,6 +42,7 @@ namespace Hecton8.Interaction
         private float _weldSeconds;
         private Transform _cachedTransform;
         private Transform _targetModuleTransform;
+        private SubmarineCoreDirector _submarineCore;
         private bool _patchInContact;
         private bool _patchFlushAligned;
         private bool _sealed;
@@ -67,6 +70,7 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             RefreshCachedTransforms();
+            RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
 
             InteractableRegistry.RegisterTree(this);
@@ -80,6 +84,7 @@ namespace Hecton8.Interaction
             TryUnregisterHotSwapListener();
             ClearPatchContactImmediate();
             ClearAcousticGuide();
+            _submarineCore = null;
             _patchHoldSeconds = 0f;
             _missedPatchContactTicks = 0;
             TryUnregisterPatchHoldDecayTick();
@@ -210,6 +215,7 @@ namespace Hecton8.Interaction
                 _sealed = true;
                 _patchHoldSeconds = 0f;
                 ClearAcousticGuide();
+                TryRecordVesselMaintenanceSeal();
                 TryUnregisterPatchHoldDecayTick();
             }
 
@@ -336,6 +342,9 @@ namespace Hecton8.Interaction
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Submarine)
+                _submarineCore = currentService as SubmarineCoreDirector;
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registeredPhysicsPayloadReader = false;
@@ -346,6 +355,27 @@ namespace Hecton8.Interaction
                     RefreshPatchHoldDecayRegistration();
                 }
             }
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _submarineCore = GlobalRegistry.Submarine as SubmarineCoreDirector;
+        }
+
+        private void TryRecordVesselMaintenanceSeal()
+        {
+            SubmarineCoreDirector core = _submarineCore;
+            if (core == null)
+            {
+                RefreshColdRegistryReferences();
+                core = _submarineCore;
+            }
+
+            if (core == null)
+                return;
+
+            uint panelBit = (uint)math.clamp(vesselMaintenancePanelBitIndex, 0, 63);
+            core.TryRecordVesselMaintenanceAction(panelBit, LeakPatchMaintenanceSourceHash);
         }
 
         private void ClearAcousticGuide()
@@ -522,6 +552,7 @@ namespace Hecton8.Interaction
             if (!math.isfinite(patchHoldDecayPerSecond) || patchHoldDecayPerSecond < 0f)
                 patchHoldDecayPerSecond = 0f;
             patchHoldDecayPerSecond = math.min(patchHoldDecayPerSecond, MaximumPatchHoldDecayPerSecond);
+            vesselMaintenancePanelBitIndex = math.clamp(vesselMaintenancePanelBitIndex, 0, 63);
         }
 #endif
     }

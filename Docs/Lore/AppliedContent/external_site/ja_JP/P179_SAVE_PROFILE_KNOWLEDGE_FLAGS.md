@@ -1,0 +1,37 @@
+---
+packet_id: P179_SAVE_PROFILE_KNOWLEDGE_FLAGS
+release_set_id: RS036_DOSSIER_SAVE_PRESENTATION_RULES
+article_id: dossier_save.save_profile_knowledge_flags
+unlock_id: unlock.save_profile_knowledge_flags
+poi_tags: poi.knowledge_flag_manifest;poi.save_profile_stamp
+biome_tags: biome.black_keel_orbit;biome.claim_admin
+locale: ja_JP
+surface: external_site
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
+---
+
+# Save Profile Knowledge Flags
+
+Save Profile Knowledge Flags defines persistence-safe replay memory.
+
+## Scanner
+
+Save persistence should remember knowledge categories, not hot inventory.
+
+## Terminal
+
+SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.
+
+## Audio
+
+Memory is allowed. Power is not.
+
+## Field Note
+
+Knowledge flags must not change truth ownership or DTO layout.
+
+<!-- External Site; generated from P179_SAVE_PROFILE_KNOWLEDGE_FLAGS/ja_JP. -->

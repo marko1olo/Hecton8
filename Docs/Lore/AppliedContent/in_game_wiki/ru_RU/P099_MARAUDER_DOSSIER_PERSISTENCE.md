@@ -1,10 +1,17 @@
 ---
 packet_id: P099_MARAUDER_DOSSIER_PERSISTENCE
+release_set_id: RS020_ATLAS_ENDING_AGENCY_DOSSIER
 article_id: progression.marauder_dossier_persistence
+unlock_id: unlock.first_marauder_dossier_persistence
+poi_tags: poi.marauder_dossier_terminal;poi.ending_record_spool
+biome_tags: biome.carrier_link;biome.drowned_admin
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Marauder Dossier Persistence

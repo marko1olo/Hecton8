@@ -31,11 +31,18 @@ namespace Hecton8.Gameplay
         internal static HectonHazardManager EnsureRuntimeInstance()
         {
             EnvironmentRuntimeContextService environmentService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
+            if (environmentService == null)
+                return null;
+
             environmentService.InitializeService();
 
             if (!environmentService.TryGetComponent(out HectonHazardManager bridge))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 bridge = environmentService.gameObject.AddComponent<HectonHazardManager>(); // COLD ALLOC: HectonHazardManager[1] - compatibility bridge hosted by environment runtime context - owner: EnvironmentRuntimeContextService
+#else
+                return null;
+#endif
             }
 
             return bridge;
@@ -172,6 +179,9 @@ namespace Hecton8.Gameplay
                 return environmentContext.HazardZones;
 
             EnvironmentRuntimeContextService environmentService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
+            if (environmentService == null)
+                return GlobalRegistry.HazardZones;
+
             environmentService.InitializeService();
             return environmentService.HazardZones;
         }

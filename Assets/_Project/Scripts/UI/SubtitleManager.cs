@@ -311,6 +311,14 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 return;
 
+            SubtitleManager authoredSubtitleManager = targetCanvas.GetComponentInChildren<SubtitleManager>(true);
+            if (authoredSubtitleManager != null)
+            {
+                s_activeInstance = authoredSubtitleManager;
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameObject owner = new GameObject("SubtitleManager", typeof(RectTransform));
             owner.layer = targetCanvas.gameObject.layer;
 
@@ -318,6 +326,7 @@ namespace Hecton8.UI
             rect.SetParent(targetCanvas.transform, false);
 
             owner.AddComponent<SubtitleManager>();
+#endif
         }
 
         private void Awake()

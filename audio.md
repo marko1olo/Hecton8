@@ -124,6 +124,18 @@ Audio systems must obey:
 
 High-end may add richer convolution, layers, or detail, but compact must keep route, warning, and threat information.
 
+### 8.1 Managed Audio Callback Boundary
+
+Release audio must not synthesize, decode, mix, lock DataVault views, acquire mutation guards, run `Stopwatch`, or touch gameplay-owned state inside Unity managed `OnAudioFilterRead(float[] data, int channels)` callbacks. The approved production route is native/DSPGraph output or a native audio-kernel bridge fed by preallocated SPSC rings and double-buffered parameter snapshots.
+
+If a transitional component still contains `OnAudioFilterRead`, it is blocked from release acceptance until one of these is proven:
+
+- the component is excluded from release player builds;
+- the callback is only a measured transfer shim from a prefilled native ring and carries no synthesis, decoding, locking, allocation, string work, file IO, scene lookup, or gameplay query;
+- the route has an explicit waiver and a DSP profiler capture showing no underrun, no GC, no blocking, and no budget breach on compact hardware.
+
+Mock audio banks, emergency procedural profiles, missing mixer-parameter fallbacks, and runtime-added audio components are recovery paths only. Production scenes must ship authored banks, mixer bindings, listener components, audio roots, and warmed pools before gameplay begins.
+
 ## 9. Audio QA Gates
 
 Reject if:
@@ -135,6 +147,8 @@ Reject if:
 - UI audio feels like app chrome;
 - no low-tier mix exists;
 - hot path allocates;
+- release player uses unmanaged-unproven `OnAudioFilterRead` synthesis or decode paths;
+- production audio depends on mock banks, emergency profiles, or runtime component repair;
 - cue lookup uses strings;
 - silence is never used;
 - player cannot infer anything from the sound.
@@ -159,6 +173,8 @@ Audio work must provide:
 - spam suppression rule;
 - low-tier mix path;
 - hot-path allocation note;
+- managed audio callback/native bridge status;
+- authored bank, mixer binding, and runtime component prewarm proof;
 - capture or test scene where practical;
 - subtitle/caption route for critical speech or warnings.
 

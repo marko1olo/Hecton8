@@ -384,6 +384,8 @@ namespace Hecton8.Physics
         private const string PhysicsCullingBlackBoxRelativePath1337 = "Docs/AgentLogs/Dump_1337_PhysicsCulling.bin";
         private const float PhysicsCullingWakeRadiusSqScale = 0.81f;
         private const uint PhysicsCullingDtoExemptFlag = 1u;
+        private const uint PhysicsCullingFrameTelemetryMockBodiesFlag = 1u;
+        private const uint PhysicsCullingFrameTelemetryColliderTransitionsFlag = 1u << 1;
 #if UNITY_EDITOR
         private const string PhysicsCullingProfilesRelativePath = "Docs/Modding/physics_culling_profiles.csv";
 #endif
@@ -438,6 +440,7 @@ namespace Hecton8.Physics
         private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6]; // COLD ALLOC: Plane[6] - Unity frustum API scratch for GeometryUtility.CalculateFrustumPlanes(Camera, Plane[]) - owner: GlobalPhysicsStateManager
         private int _physicsCullingFrameTelemetryWriteIndex;
         private int _physicsCullingMockBodyCount;
+        private int _physicsCullingColliderToggleTransitionsThisFrame;
         private uint _physicsCullingSimulationFrame;
         private byte _physicsMockSeismicPending;
         private int _physicsSpatialHashLastCount = -1;
@@ -1253,6 +1256,24 @@ namespace Hecton8.Physics
             return radiusScale * radiusScale;
         }
 
+        private static double ResolveColliderLodCompoundToSimpleDistanceSq(float qualityWeight)
+        {
+            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
+            float smooth = q * q * (3f - 2f * q);
+            float meters = math.lerp(20f, ColliderLodCompoundToSimpleDistanceMeters, smooth);
+            return (double)meters * meters;
+        }
+
+        private static double ResolveColliderLodSimpleToCompoundDistanceSq(float qualityWeight)
+        {
+            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
+            float smooth = q * q * (3f - 2f * q);
+            float compoundMeters = math.lerp(20f, ColliderLodCompoundToSimpleDistanceMeters, smooth);
+            float restoreGapMeters = math.lerp(4f, ColliderLodCompoundToSimpleDistanceMeters - ColliderLodSimpleToCompoundDistanceMeters, smooth);
+            float meters = math.max(4f, compoundMeters - restoreGapMeters);
+            return (double)meters * meters;
+        }
+
         private static float ResolvePhysicsCullingQualityWeight01()
         {
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
@@ -1391,19 +1412,48 @@ namespace Hecton8.Physics
             if (body == null || (uint)bodyIndex >= (uint)MaxTrackedBodies)
                 return 0;
 
-            _sleepColliderScratch.Clear();
-            body.GetComponentsInChildren(false, _sleepColliderScratch);
             int baseIndex = bodyIndex * MaxSleepCollidersPerBody;
-            int count = math.min(_sleepColliderScratch.Count, MaxSleepCollidersPerBody);
             for (int i = 0; i < MaxSleepCollidersPerBody; i++)
             {
                 int slot = baseIndex + i;
-                _trackedSleepColliders[slot] = i < count ? _sleepColliderScratch[i] : null;
+                _trackedSleepColliders[slot] = null;
                 _trackedSleepColliderEnabledBeforeSleep[slot] = 0;
             }
 
-            _sleepColliderScratch.Clear();
+            if (!TryResolvePhysicsCullingColliderCache(body, out IPhysicsCullingColliderCache colliderCache) ||
+                !colliderCache.TryGetPhysicsCullingColliders(out Collider[] colliders, out int colliderCount))
+            {
+                return 0;
+            }
+
+            int readCount = colliders != null ? math.min(colliderCount, colliders.Length) : 0;
+            int count = 0;
+            for (int i = 0; i < readCount && count < MaxSleepCollidersPerBody; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null || collider is MeshCollider)
+                    continue;
+
+                _trackedSleepColliders[baseIndex + count] = collider;
+                count++;
+            }
+
             return (byte)count;
+        }
+
+        private static bool TryResolvePhysicsCullingColliderCache(Rigidbody body, out IPhysicsCullingColliderCache colliderCache)
+        {
+            colliderCache = null;
+            if (body == null)
+                return false;
+
+            if (body.TryGetComponent(out colliderCache) && colliderCache != null)
+                return true;
+
+            Transform bodyTransform = body.transform;
+            return bodyTransform != null &&
+                   TryResolveComponentInParents(bodyTransform.parent, out colliderCache) &&
+                   colliderCache != null;
         }
 
         private void DisableSleepColliders(int bodyIndex, ref RigidbodyState bodyState)
@@ -1423,8 +1473,13 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                _trackedSleepColliderEnabledBeforeSleep[slot] = collider.enabled ? (byte)1 : (byte)0;
-                collider.enabled = false;
+                bool wasEnabled = collider.enabled;
+                _trackedSleepColliderEnabledBeforeSleep[slot] = wasEnabled ? (byte)1 : (byte)0;
+                if (wasEnabled)
+                {
+                    collider.enabled = false;
+                    RecordPhysicsColliderToggleTransition();
+                }
             }
 
             bodyState.CollidersDisabledByDistanceSleep = 1;
@@ -1442,11 +1497,34 @@ namespace Hecton8.Physics
                 int slot = baseIndex + i;
                 Collider collider = _trackedSleepColliders[slot];
                 if (collider != null)
-                    collider.enabled = _trackedSleepColliderEnabledBeforeSleep[slot] != 0;
+                {
+                    bool shouldEnable = _trackedSleepColliderEnabledBeforeSleep[slot] != 0;
+                    if (collider.enabled != shouldEnable)
+                    {
+                        collider.enabled = shouldEnable;
+                        RecordPhysicsColliderToggleTransition();
+                    }
+                }
+
                 _trackedSleepColliderEnabledBeforeSleep[slot] = 0;
             }
 
             bodyState.CollidersDisabledByDistanceSleep = 0;
+        }
+
+        private void RecordPhysicsColliderToggleTransition()
+        {
+            if (_physicsCullingColliderToggleTransitionsThisFrame < int.MaxValue)
+                _physicsCullingColliderToggleTransitionsThisFrame++;
+        }
+
+        private void RecordPhysicsColliderToggleTransitions(int transitionCount)
+        {
+            if (transitionCount <= 0 || _physicsCullingColliderToggleTransitionsThisFrame >= int.MaxValue)
+                return;
+
+            int remaining = int.MaxValue - _physicsCullingColliderToggleTransitionsThisFrame;
+            _physicsCullingColliderToggleTransitionsThisFrame += math.min(transitionCount, remaining);
         }
 
         private void MoveSleepColliderRefs(int fromIndex, int toIndex)
@@ -2017,6 +2095,7 @@ namespace Hecton8.Physics
             float qualityWeight = ResolvePhysicsCullingQualityWeight01();
             float radiusSqScale = ResolvePhysicsCullingHardwareRadiusSqScale(qualityWeight);
             int lockContentions = _physicsCullingLockContentionsThisFrame;
+            int colliderToggleTransitions = _physicsCullingColliderToggleTransitionsThisFrame;
 
             if (!_physicsCullingFrameTelemetry.TryAcquireWriteLock(out NativeArray<PhysicsCullingFrameTelemetry> frameTelemetry))
             {
@@ -2061,14 +2140,17 @@ namespace Hecton8.Physics
                     GlobalQualityWeight = qualityWeight,
                     ChangedIndices = changedIndices,
                     LockContentions = lockContentions,
-                    Flags = _physicsCullingMockBodyCount > 0 ? 1u : 0u,
+                    Flags = (_physicsCullingMockBodyCount > 0 ? PhysicsCullingFrameTelemetryMockBodiesFlag : 0u) |
+                            (colliderToggleTransitions > 0 ? PhysicsCullingFrameTelemetryColliderTransitionsFlag : 0u),
                     StateHash = stateHash,
                     RadiusSqScale = radiusSqScale,
-                    FrameHash = stateHash ^ unchecked(frame * 16777619u)
+                    FrameHash = stateHash ^ unchecked(frame * 16777619u),
+                    Reserved0 = unchecked((uint)colliderToggleTransitions)
                 };
 
                 _physicsCullingLastJobMicroseconds = 0f;
                 _physicsCullingLockContentionsThisFrame = 0;
+                _physicsCullingColliderToggleTransitionsThisFrame = 0;
                 int next = index + 1;
                 _physicsCullingFrameTelemetryWriteIndex = next >= capacity ? 0 : next;
             }

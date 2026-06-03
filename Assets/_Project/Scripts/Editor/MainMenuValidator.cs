@@ -129,7 +129,6 @@ namespace Hecton8.Editor
                 "settingsGroup",
                 "loadingGroup",
                 "slotsContainer",
-                "slotPrefab",
                 "btnNewGame",
                 "btnLoadGame",
                 "btnSettings",

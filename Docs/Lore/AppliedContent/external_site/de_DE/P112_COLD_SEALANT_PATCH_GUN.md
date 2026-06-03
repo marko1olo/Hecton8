@@ -1,30 +1,37 @@
 ---
 packet_id: P112_COLD_SEALANT_PATCH_GUN
+release_set_id: RS023_FIRST_TOOL_CHAIN_SURVIVAL_GATE
 article_id: first_hour.cold_sealant_patch_gun
+unlock_id: unlock.first_cold_sealant_patch_gun
+poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
+biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: de_DE
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Cold Sealant Patch Gun
 
-Draft DE localization pending native pass. Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
+Cold Sealant Patch Gun turns engineering horror into readable gameplay. It gives the player agency while preserving pressure as a constant threat.
 
 ## Scanner
 
-Draft DE localization pending native pass. Patch gun. Rated for pinholes, not miracles.
+Patch gun. Rated for pinholes, not miracles.
 
 ## Terminal
 
-Draft DE localization pending native pass. PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
+PATCH LIMIT: cold sealant cartridge bonds under wet low-depth pressure. Do not apply to active shear cracks, warm blue-debt bloom or moving cable seams.
 
 ## Audio
 
-Draft DE localization pending native pass. A patch is not safety. It is a countdown that looks solid.
+A patch is not safety. It is a countdown that looks solid.
 
 ## Field Note
 
-Draft DE localization pending native pass. Sealant repairs should buy time, not erase pressure.
+Sealant repairs should buy time, not erase pressure.
 
 <!-- External Site; generated from P112_COLD_SEALANT_PATCH_GUN/de_DE. -->

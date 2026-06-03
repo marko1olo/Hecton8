@@ -1,0 +1,786 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P151_BLACK_KEEL_CONTRACT_APPROACH",
+      "article_id": "first_hour.black_keel_contract_approach",
+      "title_key": "applied_lore.black_keel_contract_approach.title",
+      "unlock": {
+        "primary": "unlock.black_keel_contract_approach",
+        "poi_tags": [
+          "poi.black_keel_contract_console",
+          "poi.claim_acceptance_stamp",
+          "poi.pre_drop_lien_screen"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "The player starts by accepting a bad professional decision.",
+          "terminal": "OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "ru_RU": {
+          "title": "Подход контракта Black Keel",
+          "scanner": "Первая сцена - contract machine, не heroic briefing.",
+          "field_note": "Игрок начинает с плохого профессионального решения.",
+          "terminal": "OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Корабль не приветствует. Он рассчитывает.",
+          "in_game_wiki": "Открытие должно сделать игрока working Marauder до появления океана. Работа достаточно легальна для запуска и достаточно грязная, чтобы иметь значение.",
+          "external_site": "Подход контракта Black Keel задает первое playable pressure: contract before catastrophe."
+        },
+        "ja_JP": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft JP localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft JP localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft JP localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft JP localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft JP localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft JP localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "zh_CN": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft CN localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft CN localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft CN localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft CN localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft CN localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft CN localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "fr_FR": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft FR localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft FR localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft FR localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft FR localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft FR localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft FR localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "es_ES": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft ES localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft ES localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft ES localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft ES localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft ES localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft ES localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "de_DE": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft DE localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft DE localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft DE localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft DE localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft DE localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft DE localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "pl_PL": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft PL localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft PL localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft PL localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft PL localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft PL localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft PL localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "uk_UA": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft UA localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft UA localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft UA localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft UA localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft UA localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft UA localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "ar_SA": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft AR localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft AR localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft AR localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft AR localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft AR localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft AR localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "id_ID": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft ID localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft ID localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft ID localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft ID localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft ID localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft ID localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "ko_KR": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft KO localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft KO localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft KO localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft KO localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft KO localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft KO localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "he_IL": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft HE localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft HE localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft HE localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft HE localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft HE localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft HE localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "pt_BR": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft PT localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft PT localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft PT localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft PT localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft PT localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft PT localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        },
+        "nl_NL": {
+          "title": "Black Keel Contract Approach",
+          "scanner": "Draft NL localization pending native pass. The first scene is a contract machine, not a heroic briefing.",
+          "field_note": "Draft NL localization pending native pass. The player starts by accepting a bad professional decision.",
+          "terminal": "Draft NL localization pending native pass. OPENING BEAT: Black Keel presents a claim, lien relief, oxygen addenda, payload custody and a narrow orbital window. The player accepts because debt and blacklist pressure make refusal expensive.",
+          "audio": "Draft NL localization pending native pass. The ship does not welcome you. It calculates you.",
+          "in_game_wiki": "Draft NL localization pending native pass. The opening should make the player a working Marauder before the ocean appears. The job is legal enough to launch and dirty enough to matter.",
+          "external_site": "Draft NL localization pending native pass. Black Keel Contract Approach defines the first playable pressure: contract before catastrophe."
+        }
+      },
+      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    },
+    {
+      "packet_id": "P152_DROP_CAPSULE_DAMAGE_SEQUENCE",
+      "article_id": "first_hour.drop_capsule_damage_sequence",
+      "title_key": "applied_lore.drop_capsule_damage_sequence.title",
+      "unlock": {
+        "primary": "unlock.drop_capsule_damage_sequence",
+        "poi_tags": [
+          "poi.drop_capsule_damage_panel",
+          "poi.warped_crush_frame",
+          "poi.torn_flotation_ring"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.photic_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Crash damage must be readable before it is explained.",
+          "terminal": "DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "ru_RU": {
+          "title": "Повреждения drop capsule",
+          "scanner": "Ловушка инженерная: descent package выжил, потратив дорогу домой.",
+          "field_note": "Crash damage должно читаться до объяснения.",
+          "terminal": "DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. Capsule can keep you alive; it cannot leave.",
+          "audio": "Океан не запер дверь. Он согнул петлю.",
+          "in_game_wiki": "Первый час нуждается в физической причине остаться. Каждая сломанная часть должна стать будущим repair object или route pressure.",
+          "external_site": "Повреждения drop capsule делают stranded state видимым и ремонтируемым."
+        },
+        "ja_JP": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft JP localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft JP localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft JP localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft JP localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft JP localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft JP localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "zh_CN": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft CN localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft CN localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft CN localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft CN localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft CN localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft CN localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "fr_FR": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft FR localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft FR localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft FR localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft FR localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft FR localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft FR localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "es_ES": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft ES localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft ES localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft ES localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft ES localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft ES localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft ES localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "de_DE": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft DE localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft DE localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft DE localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft DE localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft DE localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft DE localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "pl_PL": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft PL localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft PL localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft PL localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft PL localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft PL localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft PL localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "uk_UA": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft UA localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft UA localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft UA localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft UA localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft UA localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft UA localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "ar_SA": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft AR localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft AR localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft AR localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft AR localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft AR localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft AR localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "id_ID": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft ID localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft ID localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft ID localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft ID localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft ID localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft ID localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "ko_KR": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft KO localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft KO localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft KO localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft KO localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft KO localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft KO localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "he_IL": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft HE localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft HE localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft HE localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft HE localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft HE localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft HE localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "pt_BR": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft PT localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft PT localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft PT localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft PT localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft PT localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft PT localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        },
+        "nl_NL": {
+          "title": "Drop Capsule Damage Sequence",
+          "scanner": "Draft NL localization pending native pass. The trap is engineering: the descent package survives by spending its way home.",
+          "field_note": "Draft NL localization pending native pass. Crash damage must be readable before it is explained.",
+          "terminal": "Draft NL localization pending native pass. DAMAGE SEQUENCE: warped crush-frame, lost high-gain, flooded ascent avionics, torn flotation/heat-shield ring and unreliable emergency buoy. The capsule can keep you alive; it cannot leave.",
+          "audio": "Draft NL localization pending native pass. The ocean did not lock the door. It bent the hinge.",
+          "in_game_wiki": "Draft NL localization pending native pass. The first hour needs a physical reason for staying. Every broken part should become a future repair object or route pressure.",
+          "external_site": "Draft NL localization pending native pass. Drop Capsule Damage Sequence makes stranding visible and repairable."
+        }
+      },
+      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    },
+    {
+      "packet_id": "P153_SHALLOW_ANNEX_P63_PUMP_ROOM",
+      "article_id": "first_hour.shallow_annex_p63_pump_room",
+      "title_key": "applied_lore.shallow_annex_p63_pump_room.title",
+      "unlock": {
+        "primary": "unlock.shallow_annex_p63_pump_room",
+        "poi_tags": [
+          "poi.shallow_annex_p63_pump",
+          "poi.manual_bilge_kit",
+          "poi.first_safe_pressure_door"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.photic_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "The first safe room is a machine that barely wins.",
+          "field_note": "Safety should feel maintained, not cozy.",
+          "terminal": "P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "A room is alive here only while something works.",
+          "in_game_wiki": "Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "ru_RU": {
+          "title": "Насосная Shallow Annex P-63",
+          "scanner": "Первая безопасная комната - машина, которая едва выигрывает.",
+          "field_note": "Безопасность должна ощущаться обслуживаемой, не уютной.",
+          "terminal": "P-63 BEAT: player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. Annex is safe because a machine is still arguing with the sea.",
+          "audio": "Комната здесь жива только пока что-то работает.",
+          "in_game_wiki": "Shallow Annex P-63 учит HECTON-8 действием: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Насосная Shallow Annex P-63 - first-hour survival tutorial без ощущения tutorial room."
+        },
+        "ja_JP": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft JP localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft JP localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft JP localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft JP localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft JP localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft JP localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "zh_CN": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft CN localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft CN localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft CN localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft CN localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft CN localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft CN localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "fr_FR": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft FR localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft FR localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft FR localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft FR localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft FR localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft FR localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "es_ES": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft ES localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft ES localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft ES localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft ES localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft ES localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft ES localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "de_DE": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft DE localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft DE localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft DE localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft DE localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft DE localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft DE localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "pl_PL": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft PL localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft PL localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft PL localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft PL localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft PL localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft PL localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "uk_UA": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft UA localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft UA localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft UA localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft UA localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft UA localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft UA localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "ar_SA": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft AR localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft AR localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft AR localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft AR localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft AR localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft AR localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "id_ID": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft ID localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft ID localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft ID localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft ID localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft ID localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft ID localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "ko_KR": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft KO localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft KO localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft KO localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft KO localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft KO localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft KO localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "he_IL": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft HE localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft HE localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft HE localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft HE localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft HE localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft HE localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "pt_BR": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft PT localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft PT localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft PT localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft PT localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft PT localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft PT localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        },
+        "nl_NL": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "Draft NL localization pending native pass. The first safe room is a machine that barely wins.",
+          "field_note": "Draft NL localization pending native pass. Safety should feel maintained, not cozy.",
+          "terminal": "Draft NL localization pending native pass. P-63 BEAT: the player hand-pumps floodwater, seats a cold seal, reads a drifting gauge and earns a dry pocket. The annex is safe because a machine is still arguing with the sea.",
+          "audio": "Draft NL localization pending native pass. A room is alive here only while something works.",
+          "in_game_wiki": "Draft NL localization pending native pass. Shallow Annex P-63 teaches HECTON-8 through action: pump, seal, read pressure, distrust clean labels.",
+          "external_site": "Draft NL localization pending native pass. Shallow Annex P-63 Pump Room is the first-hour survival tutorial without turning into a tutorial room."
+        }
+      },
+      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    },
+    {
+      "packet_id": "P154_FIRST_SANITIZED_ACCIDENT_PACKET",
+      "article_id": "first_hour.first_sanitized_accident_packet",
+      "title_key": "applied_lore.first_sanitized_accident_packet.title",
+      "unlock": {
+        "primary": "unlock.first_sanitized_accident_packet",
+        "poi_tags": [
+          "poi.sanitized_accident_packet",
+          "poi.deep_reach_status_notice",
+          "poi.redacted_worker_count"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "The first lie should sound useful.",
+          "field_note": "Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "The packet says incident. The room says people.",
+          "in_game_wiki": "The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "ru_RU": {
+          "title": "Первый очищенный accident packet",
+          "scanner": "Первая ложь должна звучать полезно.",
+          "field_note": "Корпоративный текст страшен, когда комната ему противоречит.",
+          "terminal": "FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Пакет говорит incident. Комната говорит people.",
+          "in_game_wiki": "Первая ложь не должна dump lore. Она дает игроку чистую фразу, которую физические доказательства сразу повреждают.",
+          "external_site": "Первый очищенный accident packet фиксирует правило evidence-before-exposition."
+        },
+        "ja_JP": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft JP localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft JP localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft JP localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft JP localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft JP localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft JP localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "zh_CN": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft CN localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft CN localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft CN localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft CN localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft CN localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft CN localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "fr_FR": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft FR localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft FR localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft FR localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft FR localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft FR localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft FR localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "es_ES": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft ES localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft ES localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft ES localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft ES localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft ES localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft ES localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "de_DE": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft DE localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft DE localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft DE localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft DE localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft DE localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft DE localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "pl_PL": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft PL localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft PL localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft PL localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft PL localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft PL localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft PL localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "uk_UA": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft UA localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft UA localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft UA localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft UA localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft UA localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft UA localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "ar_SA": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft AR localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft AR localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft AR localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft AR localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft AR localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft AR localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "id_ID": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft ID localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft ID localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft ID localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft ID localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft ID localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft ID localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "ko_KR": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft KO localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft KO localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft KO localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft KO localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft KO localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft KO localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "he_IL": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft HE localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft HE localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft HE localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft HE localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft HE localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft HE localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "pt_BR": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft PT localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft PT localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft PT localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft PT localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft PT localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft PT localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        },
+        "nl_NL": {
+          "title": "First Sanitized Accident Packet",
+          "scanner": "Draft NL localization pending native pass. The first lie should sound useful.",
+          "field_note": "Draft NL localization pending native pass. Corporate text becomes frightening when the room contradicts it.",
+          "terminal": "Draft NL localization pending native pass. FIRST LIE: Deep Reach calls the failure a localized geotechnical cascade, evacuation authorization failure and data loss. Nearby damage shows flood timing, missing names and Atlas repair traces.",
+          "audio": "Draft NL localization pending native pass. The packet says incident. The room says people.",
+          "in_game_wiki": "Draft NL localization pending native pass. The first lie should not dump lore. It should give the player a clean phrase that physical evidence immediately damages.",
+          "external_site": "Draft NL localization pending native pass. First Sanitized Accident Packet defines the game's evidence-before-exposition rule."
+        }
+      },
+      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    },
+    {
+      "packet_id": "P155_FIRST_ATLAS_REPAIR_TRACE",
+      "article_id": "first_hour.first_atlas_repair_trace",
+      "title_key": "applied_lore.first_atlas_repair_trace.title",
+      "unlock": {
+        "primary": "unlock.first_atlas_repair_trace",
+        "poi_tags": [
+          "poi.life_sealed_machine_joint",
+          "poi.sensor_tagged_fauna",
+          "poi.atlas_repair_filament"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.cable_reef"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Beauty turns wrong when it is doing maintenance.",
+          "field_note": "The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "The sea learned the manual badly.",
+          "in_game_wiki": "The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "ru_RU": {
+          "title": "Первый след ремонта Atlas",
+          "scanner": "Красота становится неправильной, когда занимается maintenance.",
+          "field_note": "Первый знак Atlas должен быть малым, полезным и этически грязным.",
+          "terminal": "FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas repairs a system, not honors a person.",
+          "audio": "Море плохо выучило manual.",
+          "in_game_wiki": "Первый след Atlas должен сохранить красоту мелководья и показать damaged repair logic, которая захватит глубину.",
+          "external_site": "Первый след ремонта Atlas вводит biomechanical horror до настоящей темноты."
+        },
+        "ja_JP": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft JP localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft JP localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft JP localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft JP localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft JP localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft JP localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "zh_CN": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft CN localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft CN localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft CN localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft CN localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft CN localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft CN localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "fr_FR": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft FR localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft FR localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft FR localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft FR localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft FR localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft FR localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "es_ES": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft ES localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft ES localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft ES localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft ES localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft ES localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft ES localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "de_DE": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft DE localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft DE localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft DE localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft DE localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft DE localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft DE localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "pl_PL": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft PL localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft PL localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft PL localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft PL localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft PL localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft PL localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "uk_UA": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft UA localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft UA localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft UA localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft UA localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft UA localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft UA localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "ar_SA": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft AR localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft AR localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft AR localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft AR localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft AR localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft AR localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "id_ID": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft ID localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft ID localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft ID localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft ID localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft ID localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft ID localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "ko_KR": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft KO localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft KO localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft KO localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft KO localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft KO localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft KO localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "he_IL": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft HE localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft HE localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft HE localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft HE localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft HE localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft HE localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "pt_BR": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft PT localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft PT localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft PT localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft PT localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft PT localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft PT localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        },
+        "nl_NL": {
+          "title": "First Atlas Repair Trace",
+          "scanner": "Draft NL localization pending native pass. Beauty turns wrong when it is doing maintenance.",
+          "field_note": "Draft NL localization pending native pass. The first Atlas sign should be small, useful and ethically dirty.",
+          "terminal": "Draft NL localization pending native pass. FIRST TRACE: biofilm seals a cable wound around a human object; tiny organisms repeat acoustic pings; a drone ignores the body and services the joint. Atlas is repairing a system, not honoring a person.",
+          "audio": "Draft NL localization pending native pass. The sea learned the manual badly.",
+          "in_game_wiki": "Draft NL localization pending native pass. The first Atlas trace should preserve shallow beauty while revealing the damaged repair logic that will dominate the deep.",
+          "external_site": "Draft NL localization pending native pass. First Atlas Repair Trace introduces biomechanical horror before the player reaches real darkness."
+        }
+      },
+      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    }
+  ]
+}

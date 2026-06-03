@@ -1,0 +1,28 @@
+﻿{
+  "schema": "HECTON8_DATA_MONOLITH_CORRUPTION_FUZZER_V1",
+  "agent": "1313",
+  "status": "PASS",
+  "passCount": 18,
+  "failCount": 0,
+  "setupError": "",
+  "cases": [
+    { "case": "bad_magic", "passed": true, "valid": false, "expectedErrorToken": "magic", "error": "Header magic mismatch: 0x4D4438B7", "path": "Temp/DataMonolithFuzzer/bad_magic.h8bin" },
+    { "case": "bad_stored_checksum", "passed": true, "valid": false, "expectedErrorToken": "checksum", "error": "XXHash3 checksum mismatch: stored=0x0000000000000000 computed=0xF0FA4FC21B399DD7", "path": "Temp/DataMonolithFuzzer/bad_stored_checksum.h8bin" },
+    { "case": "bad_payload_checksum", "passed": true, "valid": false, "expectedErrorToken": "checksum", "error": "XXHash3 checksum mismatch: stored=0xF0FA4FC21B399DD7 computed=0xC6D11337DC53644B", "path": "Temp/DataMonolithFuzzer/bad_payload_checksum.h8bin" },
+    { "case": "truncated_blob", "passed": true, "valid": false, "expectedErrorToken": "mismatch", "error": "Header schema range mismatch: blob=8212352 dirOffset=64 dirBytes=64 tableOffset=128 sections=28 flags=0x00000001 schema=0x33313332 reserved=0/0/0", "path": "Temp/DataMonolithFuzzer/truncated_blob.h8bin" },
+    { "case": "bad_header_unknown_flags", "passed": true, "valid": false, "expectedErrorToken": "flags", "error": "Header schema range mismatch: blob=8212352 dirOffset=64 dirBytes=64 tableOffset=128 sections=28 flags=0x00000003 schema=0x33313332 reserved=0/0/0", "path": "Temp/DataMonolithFuzzer/bad_header_unknown_flags.h8bin" },
+    { "case": "bad_header_reserved", "passed": true, "valid": false, "expectedErrorToken": "reserved", "error": "Header schema range mismatch: blob=8212352 dirOffset=64 dirBytes=64 tableOffset=128 sections=28 flags=0x00000001 schema=0x33313332 reserved=1/0/0", "path": "Temp/DataMonolithFuzzer/bad_header_reserved.h8bin" },
+    { "case": "bad_directory_reserved", "passed": true, "valid": false, "expectedErrorToken": "reserved", "error": "Header/directory identity mismatch: flags=0x00000001 worldSeed=0 appHash=0x75536758 reserved=1/0/0/0/0", "path": "Temp/DataMonolithFuzzer/bad_directory_reserved.h8bin" },
+    { "case": "bad_header_section_count", "passed": true, "valid": false, "expectedErrorToken": "sections", "error": "Header schema range mismatch: blob=8212352 dirOffset=64 dirBytes=64 tableOffset=128 sections=25 flags=0x00000001 schema=0x33313332 reserved=0/0/0", "path": "Temp/DataMonolithFuzzer/bad_header_section_count.h8bin" },
+    { "case": "bad_header_section_table_offset", "passed": true, "valid": false, "expectedErrorToken": "tableOffset", "error": "Header schema range mismatch: blob=8212352 dirOffset=64 dirBytes=64 tableOffset=192 sections=28 flags=0x00000001 schema=0x33313332 reserved=0/0/0", "path": "Temp/DataMonolithFuzzer/bad_header_section_table_offset.h8bin" },
+    { "case": "bad_section_table_offset", "passed": true, "valid": false, "expectedErrorToken": "Section table range", "error": "Section table range mismatch: offset=144 bytes=448", "path": "Temp/DataMonolithFuzzer/bad_section_table_offset.h8bin" },
+    { "case": "bad_directory_magic", "passed": true, "valid": false, "expectedErrorToken": "Directory magic", "error": "Directory magic mismatch: 0x4D443812", "path": "Temp/DataMonolithFuzzer/bad_directory_magic.h8bin" },
+    { "case": "bad_directory_identity", "passed": true, "valid": false, "expectedErrorToken": "identity", "error": "Header/directory identity mismatch: flags=0x00000000 worldSeed=0 appHash=0x75536758 reserved=0/0/0/0/0", "path": "Temp/DataMonolithFuzzer/bad_directory_identity.h8bin" },
+    { "case": "bad_data_start_offset", "passed": true, "valid": false, "expectedErrorToken": "Data start", "error": "Data start offset mismatch or alignment failure: 577", "path": "Temp/DataMonolithFuzzer/bad_data_start_offset.h8bin" },
+    { "case": "bad_section_record_size", "passed": true, "valid": false, "expectedErrorToken": "record size mismatch", "error": "Items record size mismatch: 1 expected 80", "path": "Temp/DataMonolithFuzzer/bad_section_record_size.h8bin" },
+    { "case": "bad_section_unaligned_offset", "passed": true, "valid": false, "expectedErrorToken": "aligned", "error": "Items section offset is not 64-byte aligned: 577", "path": "Temp/DataMonolithFuzzer/bad_section_unaligned_offset.h8bin" },
+    { "case": "bad_section_out_of_bounds", "passed": true, "valid": false, "expectedErrorToken": "range exceeds", "error": "Items section range exceeds blob length.", "path": "Temp/DataMonolithFuzzer/bad_section_out_of_bounds.h8bin" },
+    { "case": "bad_section_overlap", "passed": true, "valid": false, "expectedErrorToken": "canonical", "error": "Creatures section offset is not canonical: got=576 expected=896", "path": "Temp/DataMonolithFuzzer/bad_section_overlap.h8bin" },
+    { "case": "bad_localization_directory", "passed": true, "valid": false, "expectedErrorToken": "localization", "error": "Directory localization range does not match section table.", "path": "Temp/DataMonolithFuzzer/bad_localization_directory.h8bin" }
+  ]
+}

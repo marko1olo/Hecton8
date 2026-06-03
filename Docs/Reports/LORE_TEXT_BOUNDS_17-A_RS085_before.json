@@ -1,0 +1,1875 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "DRAFT_PREFIX_LONG": 455,
+    "TEXT_EXPANSION_GT_1_35": 183,
+    "TEXT_OVERFLOW_LINES": 213
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Публичная дистанционная полоса Ran/Aegir",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Публичная дистанционная полоса Ran/Aegir",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Публичная астрономическая полоса: Ran/Aegir считается no-FTL целью класса 10.5 светового года от Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "EPHEMERIS BAND: в публичном тексте использовать класс 10.5 ly до заморозки точных констант в celestial table. Без FTL, ansible и мгновенного спасения.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JA localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JA localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JA localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JA localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JA localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JA localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ja_JP",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ZH localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ZH localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ZH localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ZH localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ZH localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ZH localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "zh_CN",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft FR localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft FR localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft FR localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft FR localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "fr_FR",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft FR localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ES localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ES localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ES localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ES localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "es_ES",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ES localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft DE localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft DE localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft DE localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft DE localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "de_DE",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft DE localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PL localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PL localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PL localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PL localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pl_PL",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PL localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft UK localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UK localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft UK localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UK localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft UK localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft UK localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "uk_UA",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft UK localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft AR localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft AR localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft AR localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft AR localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ar_SA",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft AR localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ID localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ID localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ID localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ID localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "id_ID",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ID localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft KO localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KO localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft KO localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KO localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft KO localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft KO localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "ko_KR",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft KO localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft HE localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft HE localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft HE localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft HE localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "he_IL",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft HE localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PT localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PT localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft PT localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft PT localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "pt_BR",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft PT localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft NL localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Ran/Aegir Public Distance Band",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft NL localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Public astronomy band: Ran/Aegir is treated as a 10.5 light-year class no-FTL destination from Sol.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft NL localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. EPHEMERIS BAND: use 10.5 ly class in public copy until the owned celestial table freezes exact constants. No FTL, no ansible, no instant ",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft NL localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Ten light-years is close on a map and brutal for a contract.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Ran/Aegir remains a hard-sci-fi near-star target. The player-facing value is a distance band, not final simulation ephemeris.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. The Aegir system sits in a reachable but punishing no-FTL range: close enough for industry, far enough for abandonment to matter.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+      "locale": "nl_NL",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft NL localization pending native pass. Use for site astronomy primer and codex route map. Do not claim final ephemeris constants.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "en_US",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "en_US",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is useful.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ru_RU",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Локальная системная полоса: трансферы Aegir/HECTON-8 ограничены окнами от часов до дней, а не мгновенным orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ru_RU",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase и legal handshake должны совпасть до полезного ascent call.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JA localization pending native pass. Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JA localization pending native pass. Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JA localization pending native pass. Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JA localization pending native pass. Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft JA localization pending native pass. WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft JA localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "audio",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "in_game_wiki",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Local windows turn orbital mechanics into gameplay pressure. A repaired capsule still needs timing, relay and weather permission.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "external_site",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Aegir's local traffic is governed by narrow transfer bands around radiation, eclipse and relay geometry.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "ja_JP",
+      "field": "field_note",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft JA localization pending native pass. Use for Black Keel timing UI, in-game wiki and spoiler-light site systems page.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ZH localization pending native pass. Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ZH localization pending native pass. Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Aegir Local Window Band Table",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ZH localization pending native pass. Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ZH localization pending native pass. Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "scanner",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. Local-system band: Aegir/HECTON-8 transfers are constrained by hours-to-days windows, not instant orbital rescue.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "TEXT_OVERFLOW_LINES",
+      "detail": "Draft ZH localization pending native pass. WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "terminal",
+      "code": "DRAFT_PREFIX_LONG",
+      "detail": "Draft ZH localization pending native pass. WINDOW BAND: radiation shutter, eclipse, relay line, storm column, carrier phase and legal handshake must align before any ascent call is",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    },
+    {
+      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+      "locale": "zh_CN",
+      "field": "audio",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "Draft ZH localization pending native pass. The carrier can hear you and still be in the wrong sky.",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

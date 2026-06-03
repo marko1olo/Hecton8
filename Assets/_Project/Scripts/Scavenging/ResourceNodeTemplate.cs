@@ -264,6 +264,16 @@ namespace Hecton8.Scavenging
 
         [Header("Presentation")]
         [SerializeField]
+        [Tooltip("Authored pooled ResourceNode prefab used by runtime directors. Leave empty only when a director-level fallback PFB_Ore is assigned.")]
+        private GameObject runtimeNodePrefab;
+
+        [NonSerialized]
+        private GameObject _validatedRuntimeNodePrefab;
+
+        [NonSerialized]
+        private bool _runtimeNodePrefabValidationReady;
+
+        [SerializeField]
         [Tooltip("Optional authored mesh used by the runtime node root. If empty, the spawner applies the ghost-box standard.")]
         private Mesh nodeMesh;
 
@@ -379,6 +389,7 @@ namespace Hecton8.Scavenging
         [SerializeField, HideInInspector] private int validationDuplicateRarityDropKeyCount;
         [SerializeField, HideInInspector] private int validationFirstDuplicateRarityDropKeyIndex = -1;
         [SerializeField, HideInInspector] private int validationRuntimeRarityDropCount;
+        [NonSerialized] private int _cachedStableHashId;
 
         /// <summary>Stable authored identifier used by persistence-facing systems.</summary>
         public string StableId => stableId;
@@ -387,7 +398,13 @@ namespace Hecton8.Scavenging
         public string DisplayName => displayName;
 
         /// <summary>Stable runtime hash used by scanner, save, and placement tables.</summary>
-        public int StableHashId => string.IsNullOrWhiteSpace(stableId) ? 0 : LocHash.Compute(stableId);
+        public int StableHashId => _cachedStableHashId;
+
+        public int ResolveStableHashIdCold()
+        {
+            CacheStableHashIdCold();
+            return _cachedStableHashId;
+        }
 
         public int ValidationInvalidYieldEntryCount => validationInvalidYieldEntryCount;
         public int ValidationFirstInvalidYieldEntryIndex => validationFirstInvalidYieldEntryIndex;
@@ -477,6 +494,12 @@ namespace Hecton8.Scavenging
 
         /// <summary>Optional authored mesh for the runtime node root.</summary>
         public Mesh NodeMesh => nodeMesh;
+
+        /// <summary>Authored pooled ResourceNode prefab consumed by runtime directors.</summary>
+        public GameObject RuntimeNodePrefab => _runtimeNodePrefabValidationReady ? _validatedRuntimeNodePrefab : null;
+
+        /// <summary>True when authoring data contains a prefab reference, even if cold validation later rejects it.</summary>
+        public bool HasRuntimeNodePrefabAssignment => runtimeNodePrefab != null;
 
         /// <summary>Optional authored shared material paired with the node mesh.</summary>
         public Material NodeMaterial => nodeMaterial;
@@ -756,6 +779,12 @@ namespace Hecton8.Scavenging
             RebuildValidationState();
         }
 
+        public bool ValidateRuntimeNodePrefabCold()
+        {
+            CacheRuntimeNodePrefabCold();
+            return _validatedRuntimeNodePrefab != null;
+        }
+
         private void OnEnable()
         {
             RebuildValidationState();
@@ -763,6 +792,8 @@ namespace Hecton8.Scavenging
 
         private void RebuildValidationState()
         {
+            CacheStableHashIdCold();
+            CacheRuntimeNodePrefabCold();
             validationInvalidYieldEntryCount = 0;
             validationFirstInvalidYieldEntryIndex = -1;
             validationDuplicateYieldItemHashCount = 0;
@@ -939,6 +970,14 @@ namespace Hecton8.Scavenging
             physicalSize.x = math.max(0.1f, physicalSize.x);
             physicalSize.y = math.max(0.1f, physicalSize.y);
             physicalSize.z = math.max(0.1f, physicalSize.z);
+            CacheRuntimeNodePrefabCold();
+            if (runtimeNodePrefab != null && _validatedRuntimeNodePrefab == null)
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[ResourceNodeTemplate] runtimeNodePrefab has no ResourceNode component. Runtime directors will fail closed for this prefab.",
+                    this);
+            }
+
             int originalValidLayerMask = validLayers.value;
             validLayers = SanitizeValidLayerMask(originalValidLayerMask);
             if (HectonLayerMasks.IsEverythingLayerMask(originalValidLayerMask))
@@ -955,6 +994,19 @@ namespace Hecton8.Scavenging
         private static int SanitizeValidLayerMask(int layerMask)
         {
             return HectonLayerMasks.SanitizeAuthoringLayerMask(layerMask);
+        }
+
+        private void CacheRuntimeNodePrefabCold()
+        {
+            _validatedRuntimeNodePrefab = runtimeNodePrefab != null && runtimeNodePrefab.GetComponent<ResourceNode>() != null
+                ? runtimeNodePrefab
+                : null;
+            _runtimeNodePrefabValidationReady = true;
+        }
+
+        private void CacheStableHashIdCold()
+        {
+            _cachedStableHashId = string.IsNullOrWhiteSpace(stableId) ? 0 : LocHash.Compute(stableId);
         }
     }
 }

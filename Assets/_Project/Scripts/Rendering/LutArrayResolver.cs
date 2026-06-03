@@ -1,11 +1,9 @@
 using System;
 using System.IO;
-using System.Threading;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.Networking;
 
 namespace Hecton8.Core
 {
@@ -25,12 +23,9 @@ namespace Hecton8.Core
         private const float DefaultMaxTurbidity = 2.5f;
         private const float DefaultStrength = 1f;
         private const int StreamingReadChunkBytes = 128 * 1024;
-        private const int StreamingUriTimeoutSeconds = 30;
         private const int AnalyticalFallbackGraphicsMemoryMb = 2048;
         private const string MatrixProjectRelativePath = "Data/Visuals/Water_Extinction_Matrix.bin";
         private const string MatrixStreamingRelativePath = "Data/Visuals/Water_Extinction_Matrix.bin";
-        private const string MatrixCacheDirectoryName = "Hecton8/WaterExtinction";
-        private const string MatrixFileName = "Water_Extinction_Matrix.bin";
 
         private static readonly int _ExtinctionLutId = Shader.PropertyToID("_ExtinctionLUT");
 
@@ -179,9 +174,9 @@ namespace Hecton8.Core
                 if (File.Exists(streamingLocation))
                     return streamingLocation;
             }
-            else if (Application.isEditor && TryStageStreamingUriToCache(streamingLocation, out string cachedStreamingPath))
+            else if (Application.isEditor)
             {
-                return cachedStreamingPath;
+                LogStreamingUriFailure("StreamingAssets is not a filesystem path; using persistent/project/fallback routes.");
             }
 
             string persistentPath = Path.Combine(Application.persistentDataPath, MatrixStreamingRelativePath);
@@ -203,70 +198,6 @@ namespace Hecton8.Core
 
             string normalizedRoot = root.EndsWith("/", StringComparison.Ordinal) ? root : root + "/";
             return normalizedRoot + MatrixStreamingRelativePath.Replace('\\', '/');
-        }
-
-        private static bool TryStageStreamingUriToCache(string streamingUri, out string cachedPath)
-        {
-            cachedPath = null;
-            if (string.IsNullOrEmpty(streamingUri) || IsFilesystemPath(streamingUri))
-                return false;
-
-            string cachePath = null;
-            string tempPath = null;
-            try
-            {
-                string cacheDirectory = Path.Combine(Application.temporaryCachePath, MatrixCacheDirectoryName);
-                Directory.CreateDirectory(cacheDirectory);
-                cachePath = Path.Combine(cacheDirectory, MatrixFileName);
-                tempPath = cachePath + ".tmp";
-
-                if (File.Exists(cachePath) &&
-                    TryGetMatrixFileByteCount(cachePath, out long cachedByteCount) &&
-                    cachedByteCount == MatrixByteCount)
-                {
-                    cachedPath = cachePath;
-                    return true;
-                }
-
-                TryDeleteFileCold(tempPath);
-                using UnityWebRequest request = new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET);
-                request.downloadHandler = new DownloadHandlerFile(tempPath)
-                {
-                    removeFileOnAbort = true
-                };
-                request.disposeDownloadHandlerOnDispose = true;
-                request.timeout = StreamingUriTimeoutSeconds;
-
-                UnityWebRequestAsyncOperation operation = request.SendWebRequest();
-                while (!operation.isDone)
-                    Thread.Sleep(1);
-
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    LogStreamingUriFailure(request.error);
-                    TryDeleteFileCold(tempPath);
-                    return false;
-                }
-
-                if (!TryGetMatrixFileByteCount(tempPath, out long stagedByteCount) ||
-                    stagedByteCount != MatrixByteCount)
-                {
-                    LogInvalidByteCount(stagedByteCount);
-                    TryDeleteFileCold(tempPath);
-                    return false;
-                }
-
-                TryDeleteFileCold(cachePath);
-                File.Move(tempPath, cachePath);
-                cachedPath = cachePath;
-                return true;
-            }
-            catch (Exception exception)
-            {
-                LogLoadException(exception);
-                TryDeleteFileCold(tempPath);
-                return false;
-            }
         }
 
         private static bool TryGetMatrixFileByteCount(string matrixPath, out long byteCount)
@@ -427,22 +358,6 @@ namespace Hecton8.Core
             int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
             return graphicsMemoryMb > 0 && graphicsMemoryMb <= AnalyticalFallbackGraphicsMemoryMb;
 #endif
-        }
-
-        private static void TryDeleteFileCold(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return;
-
-            try
-            {
-                if (File.Exists(path))
-                    File.Delete(path);
-            }
-            catch (Exception exception)
-            {
-                LogLoadException(exception);
-            }
         }
 
         private static byte HalfToByte01(ushort halfBits)

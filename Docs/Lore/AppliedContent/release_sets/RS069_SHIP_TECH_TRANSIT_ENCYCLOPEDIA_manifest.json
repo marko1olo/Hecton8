@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P341_NEEDLEPROBE_PRECURSOR_PROGRAM",
+    "P342_BEAM_SAIL_AND_PELLET_LANE",
+    "P343_SEED_SHIP_BRAKING_ARCHITECTURE",
+    "P344_SYSTEM_CARRIER_TUG_STACK",
+    "P345_BLACK_KEEL_BATHYDROP_INTERFACE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA.packets.json"
+  ]
+}

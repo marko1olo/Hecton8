@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT",
+      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+      "article_id": "tuning.resource_table_placeholder_contract",
+      "title_key": "applied_lore.resource_table_placeholder_contract.title",
+      "unlock": {
+        "primary": "unlock.resource_table_placeholder_contract",
+        "poi_tags": [
+          "poi.resource_table_contract_card",
+          "poi.balance_owner_stamp",
+          "poi.source_data_gate"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Do not hide fake math inside flavor.",
+          "in_game_wiki": "Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "ru_RU": {
+          "title": "Контракт placeholder для ресурсных таблиц",
+          "scanner": "Точные resource yields, stack limits и rarity curves принадлежат таблицам.",
+          "field_note": "Лор определяет categories, pressure behavior и evidence meaning. Balance владеет числами.",
+          "terminal": "TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy и route_tag принадлежат DataMonolith source tables.",
+          "audio": "Не прячь фейковую математику внутри flavor.",
+          "in_game_wiki": "Владение ресурсных таблиц не дает прозе заморозить плохой numeric balance.",
+          "external_site": "Контракт placeholder для ресурсных таблиц отделяет canon resource identity от будущей numeric tuning."
+        },
+        "ja_JP": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft JP localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft JP localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft JP localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft JP localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft JP localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft JP localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "zh_CN": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft CN localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft CN localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft CN localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft CN localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft CN localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft CN localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "fr_FR": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft FR localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft FR localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft FR localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft FR localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft FR localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft FR localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "es_ES": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft ES localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft ES localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft ES localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft ES localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft ES localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft ES localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "de_DE": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft DE localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft DE localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft DE localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft DE localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft DE localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft DE localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "pl_PL": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft PL localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft PL localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft PL localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft PL localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft PL localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft PL localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "uk_UA": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft UA localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft UA localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft UA localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft UA localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft UA localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft UA localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "ar_SA": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft AR localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft AR localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft AR localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft AR localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft AR localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft AR localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "id_ID": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft ID localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft ID localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft ID localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft ID localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft ID localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft ID localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "ko_KR": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft KO localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft KO localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft KO localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft KO localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft KO localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft KO localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "he_IL": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft HE localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft HE localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft HE localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft HE localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft HE localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft HE localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "pt_BR": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft PT localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft PT localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft PT localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft PT localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft PT localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft PT localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        },
+        "nl_NL": {
+          "title": "Resource Table Placeholder Contract",
+          "scanner": "Draft NL localization pending native pass. Exact resource yields, stack limits and rarity curves are table-owned.",
+          "field_note": "Draft NL localization pending native pass. Lore defines categories, pressure behavior and evidence meaning. Balance owns numbers.",
+          "terminal": "Draft NL localization pending native pass. TABLE CONTRACT: resource_id, category, depth_band, pressure_stage, containment_class, base_yield, rarity_weight, stack_policy and route_tag belong to DataMonolith source tables.",
+          "audio": "Draft NL localization pending native pass. Do not hide fake math inside flavor.",
+          "in_game_wiki": "Draft NL localization pending native pass. Resource table ownership prevents prose from freezing bad numeric balance.",
+          "external_site": "Draft NL localization pending native pass. Resource Table Placeholder Contract separates canon resource identity from future numeric tuning."
+        }
+      }
+    },
+    {
+      "packet_id": "P197_ESCAPE_RECIPE_BALANCE_BANDS",
+      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+      "article_id": "tuning.escape_recipe_balance_bands",
+      "title_key": "applied_lore.escape_recipe_balance_bands.title",
+      "unlock": {
+        "primary": "unlock.escape_recipe_balance_bands",
+        "poi_tags": [
+          "poi.escape_recipe_band_sheet",
+          "poi.ascent_component_card",
+          "poi.fabricator_balance_gate"
+        ],
+        "biome_tags": [
+          "biome.p63_shallows",
+          "biome.atlas_basin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "ru_RU": {
+          "title": "Диапазоны баланса рецептов побега",
+          "scanner": "Рецептам побега нужны bands до чисел: relay, seal, guidance, ascent energy, legal handshake и payload authority.",
+          "field_note": "Каждый escape recipe должен отвечать, какую physical failure он решает и какой deeper route forced.",
+          "terminal": "RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified и Atlas-authority. Каждый band позже может tune count, quality, pressure stage и certification requirement.",
+          "audio": "Рецепт - это маршрут, а не список покупок.",
+          "in_game_wiki": "Диапазоны баланса рецептов побега держат crafting привязанным к survival engineering.",
+          "external_site": "Диапазоны баланса рецептов побега задают будущую numeric tuning для extraction components."
+        },
+        "ja_JP": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft JP localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft JP localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft JP localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft JP localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft JP localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft JP localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "zh_CN": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft CN localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft CN localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft CN localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft CN localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft CN localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft CN localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "fr_FR": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft FR localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft FR localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft FR localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft FR localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft FR localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft FR localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "es_ES": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft ES localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft ES localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft ES localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft ES localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft ES localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft ES localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "de_DE": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft DE localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft DE localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft DE localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft DE localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft DE localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft DE localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "pl_PL": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft PL localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft PL localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft PL localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft PL localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft PL localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft PL localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "uk_UA": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft UA localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft UA localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft UA localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft UA localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft UA localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft UA localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "ar_SA": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft AR localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft AR localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft AR localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft AR localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft AR localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft AR localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "id_ID": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft ID localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft ID localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft ID localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft ID localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft ID localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft ID localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "ko_KR": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft KO localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft KO localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft KO localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft KO localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft KO localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft KO localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "he_IL": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft HE localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft HE localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft HE localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft HE localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft HE localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft HE localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "pt_BR": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft PT localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft PT localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft PT localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft PT localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft PT localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft PT localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        },
+        "nl_NL": {
+          "title": "Escape Recipe Balance Bands",
+          "scanner": "Draft NL localization pending native pass. Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+          "field_note": "Draft NL localization pending native pass. Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+          "terminal": "Draft NL localization pending native pass. RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority. Each band can tune count, quality, pressure stage and certification requirement later.",
+          "audio": "Draft NL localization pending native pass. A recipe is a route, not a shopping list.",
+          "in_game_wiki": "Draft NL localization pending native pass. Escape recipe balance bands keep crafting tied to survival engineering.",
+          "external_site": "Draft NL localization pending native pass. Escape Recipe Balance Bands define future numeric tuning for extraction components."
+        }
+      }
+    },
+    {
+      "packet_id": "P198_RISK_REWARD_TABLE_BANDS",
+      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+      "article_id": "tuning.risk_reward_table_bands",
+      "title_key": "applied_lore.risk_reward_table_bands.title",
+      "unlock": {
+        "primary": "unlock.risk_reward_table_bands",
+        "poi_tags": [
+          "poi.risk_reward_band_card",
+          "poi.lien_reward_curve",
+          "poi.contract_seed_math_gate"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.dossier_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Risk Reward Table Bands define future contract tuning axes."
+        },
+        "ru_RU": {
+          "title": "Диапазоны таблиц риска и награды",
+          "scanner": "Risk/reward tuning должен быть continuous contract pressure, а не binary difficulty.",
+          "field_note": "Более жесткий контракт может платить больше, требовать лучшей custody, сокращать windows или прятать evidence глубже.",
+          "terminal": "RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth и Deep Reach clause weight. Не выдавать inherited strength.",
+          "audio": "Контракт может стать злее, не меняя того, кто ты.",
+          "in_game_wiki": "Диапазоны риска и награды задают replay tuning без roguelite power inheritance.",
+          "external_site": "Диапазоны таблиц риска и награды задают future contract tuning axes."
+        },
+        "ja_JP": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft JP localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft JP localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft JP localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft JP localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft JP localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft JP localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "zh_CN": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft CN localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft CN localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft CN localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft CN localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft CN localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft CN localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "fr_FR": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft FR localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft FR localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft FR localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft FR localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft FR localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft FR localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "es_ES": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft ES localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft ES localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft ES localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft ES localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft ES localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft ES localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "de_DE": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft DE localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft DE localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft DE localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft DE localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft DE localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft DE localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "pl_PL": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft PL localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft PL localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft PL localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft PL localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft PL localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft PL localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "uk_UA": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft UA localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft UA localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft UA localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft UA localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft UA localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft UA localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "ar_SA": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft AR localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft AR localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft AR localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft AR localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft AR localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft AR localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "id_ID": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft ID localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft ID localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft ID localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft ID localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft ID localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft ID localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "ko_KR": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft KO localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft KO localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft KO localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft KO localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft KO localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft KO localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "he_IL": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft HE localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft HE localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft HE localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft HE localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft HE localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft HE localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "pt_BR": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft PT localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft PT localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft PT localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft PT localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft PT localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft PT localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        },
+        "nl_NL": {
+          "title": "Risk Reward Table Bands",
+          "scanner": "Draft NL localization pending native pass. Risk/reward tuning should be continuous contract pressure, not binary difficulty.",
+          "field_note": "Draft NL localization pending native pass. A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+          "terminal": "Draft NL localization pending native pass. RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+          "audio": "Draft NL localization pending native pass. The contract can get meaner without changing who you are.",
+          "in_game_wiki": "Draft NL localization pending native pass. Risk reward bands define replay tuning without roguelite power inheritance.",
+          "external_site": "Draft NL localization pending native pass. Risk Reward Table Bands define future contract tuning axes."
+        }
+      }
+    },
+    {
+      "packet_id": "P199_INVENTORY_STACK_TUNING_RULE",
+      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+      "article_id": "tuning.inventory_stack_tuning_rule",
+      "title_key": "applied_lore.inventory_stack_tuning_rule.title",
+      "unlock": {
+        "primary": "unlock.inventory_stack_tuning_rule",
+        "poi_tags": [
+          "poi.stack_policy_card",
+          "poi.pressure_container_label",
+          "poi.cargo_lien_meter"
+        ],
+        "biome_tags": [
+          "biome.fabricator_room",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "ru_RU": {
+          "title": "Правило настройки stack inventory",
+          "scanner": "Inventory stacks должны выражать physical containment и cargo debt, а не arbitrary UI convenience.",
+          "field_note": "Blue debt, seals, samples и payload parts должны переносить pressure и custody logic в inventory.",
+          "terminal": "STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state и sample quality. Generic loot stacks rejected для critical resources.",
+          "audio": "Если это может сломать claim, оно не должно stack как scrap.",
+          "in_game_wiki": "Настройка inventory stack сохраняет физический и читаемый вес salvage.",
+          "external_site": "Правило настройки stack inventory задает future stack-size logic для ресурсов HECTON-8."
+        },
+        "ja_JP": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft JP localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft JP localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft JP localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft JP localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft JP localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft JP localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "zh_CN": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft CN localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft CN localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft CN localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft CN localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft CN localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft CN localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "fr_FR": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft FR localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft FR localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft FR localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft FR localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft FR localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft FR localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "es_ES": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft ES localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft ES localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft ES localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft ES localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft ES localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft ES localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "de_DE": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft DE localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft DE localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft DE localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft DE localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft DE localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft DE localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "pl_PL": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft PL localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft PL localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft PL localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft PL localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft PL localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft PL localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "uk_UA": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft UA localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft UA localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft UA localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft UA localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft UA localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft UA localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "ar_SA": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft AR localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft AR localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft AR localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft AR localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft AR localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft AR localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "id_ID": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft ID localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft ID localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft ID localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft ID localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft ID localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft ID localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "ko_KR": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft KO localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft KO localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft KO localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft KO localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft KO localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft KO localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "he_IL": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft HE localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft HE localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft HE localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft HE localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft HE localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft HE localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "pt_BR": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft PT localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft PT localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft PT localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft PT localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft PT localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft PT localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        },
+        "nl_NL": {
+          "title": "Inventory Stack Tuning Rule",
+          "scanner": "Draft NL localization pending native pass. Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+          "field_note": "Draft NL localization pending native pass. Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+          "terminal": "Draft NL localization pending native pass. STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+          "audio": "Draft NL localization pending native pass. If it can break your claim, it should not stack like scrap.",
+          "in_game_wiki": "Draft NL localization pending native pass. Inventory stack tuning keeps salvage weight physical and legible.",
+          "external_site": "Draft NL localization pending native pass. Inventory Stack Tuning Rule defines future stack-size logic for HECTON-8 resources."
+        }
+      }
+    },
+    {
+      "packet_id": "P200_NATIVE_LOCALIZATION_PASS_CONTRACT",
+      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+      "article_id": "tuning.native_localization_pass_contract",
+      "title_key": "applied_lore.native_localization_pass_contract.title",
+      "unlock": {
+        "primary": "unlock.native_localization_pass_contract",
+        "poi_tags": [
+          "poi.localization_pass_contract",
+          "poi.rtl_font_swap_gate",
+          "poi.string_pool_owner_stamp"
+        ],
+        "biome_tags": [
+          "biome.dossier_archive",
+          "biome.public_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Localization is baked content, not live translation.",
+          "field_note": "Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Translate the words. Do not move the evidence.",
+          "in_game_wiki": "The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "ru_RU": {
+          "title": "Контракт native localization pass",
+          "scanner": "Локализация - baked content, не live translation.",
+          "field_note": "Draft multilingual rows могут существовать сейчас; release text требует native review, RTL/font proof и string-pool bake.",
+          "terminal": "LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows и native review before publication lock.",
+          "audio": "Переведи слова. Не двигай доказательства.",
+          "in_game_wiki": "Контракт localization pass держит worldwide text быстрым, стабильным и уважительным к именам и направлению письма.",
+          "external_site": "Контракт native localization pass определяет publication-ready localization gate для HECTON-8 AppliedLore."
+        },
+        "ja_JP": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft JP localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft JP localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft JP localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft JP localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft JP localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft JP localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "zh_CN": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft CN localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft CN localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft CN localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft CN localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft CN localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft CN localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "fr_FR": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft FR localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft FR localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft FR localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft FR localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft FR localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft FR localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "es_ES": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft ES localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft ES localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft ES localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft ES localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft ES localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft ES localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "de_DE": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft DE localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft DE localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft DE localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft DE localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft DE localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft DE localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "pl_PL": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft PL localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft PL localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft PL localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft PL localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft PL localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft PL localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "uk_UA": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft UA localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft UA localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft UA localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft UA localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft UA localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft UA localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "ar_SA": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft AR localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft AR localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft AR localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft AR localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft AR localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft AR localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "id_ID": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft ID localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft ID localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft ID localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft ID localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft ID localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft ID localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "ko_KR": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft KO localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft KO localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft KO localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft KO localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft KO localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft KO localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "he_IL": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft HE localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft HE localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft HE localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft HE localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft HE localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft HE localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "pt_BR": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft PT localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft PT localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft PT localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft PT localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft PT localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft PT localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        },
+        "nl_NL": {
+          "title": "Native Localization Pass Contract",
+          "scanner": "Draft NL localization pending native pass. Localization is baked content, not live translation.",
+          "field_note": "Draft NL localization pending native pass. Draft multilingual rows can exist now; release text needs native review, RTL/font proof and string-pool bake.",
+          "terminal": "Draft NL localization pending native pass. LOCALIZATION CONTRACT: no runtime translation, no runtime markdown/json parsing, stable packet IDs, stable personal names, RTL/font-swap proof, baked string-pool rows and native review before publication lock.",
+          "audio": "Draft NL localization pending native pass. Translate the words. Do not move the evidence.",
+          "in_game_wiki": "Draft NL localization pending native pass. The localization pass contract keeps worldwide text fast, stable and respectful of names and directionality.",
+          "external_site": "Draft NL localization pending native pass. Native Localization Pass Contract defines the publication-ready localization gate for HECTON-8 AppliedLore."
+        }
+      }
+    }
+  ]
+}

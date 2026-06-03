@@ -48,6 +48,13 @@ namespace Hecton8.Player.Movement
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.select(0.0f, lengthSq, math.isfinite(lengthSq) && lengthSq > 0.0f);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, MinVectorLengthSq));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 ClampLength(float3 value, float maxLength)
         {
             float maxSafe = math.max(0.0f, SanitizeFloat(maxLength, 0.0f));
@@ -61,10 +68,13 @@ namespace Hecton8.Player.Movement
         {
             bool finite = math.all(math.isfinite(value.value));
             float lengthSq = math.lengthsq(value.value);
-            quaternion safeFallback = math.all(math.isfinite(fallback.value)) && math.lengthsq(fallback.value) > MinVectorLengthSq
-                ? math.normalize(fallback)
+            float fallbackLengthSq = math.lengthsq(fallback.value);
+            quaternion safeFallback = math.all(math.isfinite(fallback.value)) && fallbackLengthSq > MinVectorLengthSq
+                ? new quaternion(fallback.value * math.rsqrt(math.max(fallbackLengthSq, MinVectorLengthSq)))
                 : quaternion.identity;
-            return finite && lengthSq > MinVectorLengthSq ? math.normalize(value) : safeFallback;
+            return finite && lengthSq > MinVectorLengthSq
+                ? new quaternion(value.value * math.rsqrt(math.max(lengthSq, MinVectorLengthSq)))
+                : safeFallback;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -187,13 +197,15 @@ namespace Hecton8.Player.Movement
             uint previousActionMask = state.LastActionMask & ZeroGInputActions.SimulationMask;
             uint inputActionMask = input.ActionMask & ZeroGInputActions.SimulationMask;
             uint acceptedActionMask = frameInputAllowed ? inputActionMask : previousActionMask;
-            bool thrustRequested = frameInputAllowed && (inputActionMask & ZeroGInputActions.Thruster) != 0u && math.lengthsq(localThrust) > 0.000001f;
+            float localThrustLengthSq = math.lengthsq(localThrust);
+            float localThrustMagnitude = ZeroGMathGuards.LengthFromSq(localThrustLengthSq);
+            bool thrustRequested = frameInputAllowed && (inputActionMask & ZeroGInputActions.Thruster) != 0u && localThrustLengthSq > 0.000001f;
             bool horizonRequested = frameInputAllowed && (inputActionMask & ZeroGInputActions.HorizonLock) != 0u && horizonWeight > 0.0f;
             bool brakeRequested = frameInputAllowed && (inputActionMask & ZeroGInputActions.BrakeAssist) != 0u;
             bool pushInputRequested = frameInputAllowed && (inputActionMask & ZeroGInputActions.PushAndGlide) != 0u;
             bool pushRequested = pushInputRequested && (previousActionMask & ZeroGInputActions.PushAndGlide) == 0u;
             uint substepCount = math.clamp(tuning.MaxSubsteps, 1u, 8u);
-            float subDt = frameInputAllowed ? dt / substepCount : 0.0f;
+            float subDt = frameInputAllowed ? dt * math.rcp((float)substepCount) : 0.0f;
             float collisionImpulse = 0.0f;
             float maxDepenetration = 0.0f;
             bool pushConsumed = false;
@@ -203,9 +215,8 @@ namespace Hecton8.Player.Movement
             {
                 if (thrustRequested && propellant01 > 0.0f)
                 {
-                    float thrustMagnitude = math.length(localThrust);
-                    float requestedDrain = thrustMagnitude * tuning.PropellantDrainPerSecond * subDt;
-                    float thrustScale = requestedDrain > 0.0f ? math.saturate(propellant01 / requestedDrain) : 1.0f;
+                    float requestedDrain = localThrustMagnitude * tuning.PropellantDrainPerSecond * subDt;
+                    float thrustScale = requestedDrain > 0.0f ? math.saturate(propellant01 * math.rcp(requestedDrain)) : 1.0f;
                     float3 thrustDirection = math.rotate(orientation, localThrust);
                     velocity += thrustDirection * tuning.ThrustAcceleration * subDt * thrustScale;
                     propellant01 = math.max(0.0f, propellant01 - requestedDrain * thrustScale);
@@ -227,10 +238,10 @@ namespace Hecton8.Player.Movement
                     float brakeStep = math.saturate(subDt * 0.75f);
                     float3 velocityDelta = math.lerp(velocity, float3.zero, brakeStep) - velocity;
                     float3 angularDelta = math.lerp(angularMomentum, float3.zero, brakeStep) - angularMomentum;
-                    float brakeEffort = math.length(velocityDelta) + math.length(angularDelta);
+                    float brakeEffort = ZeroGMathGuards.LengthFromSq(math.lengthsq(velocityDelta)) + ZeroGMathGuards.LengthFromSq(math.lengthsq(angularDelta));
                     float requestedDrain = brakeEffort * tuning.PropellantDrainPerSecond * 0.1f;
                     float brakeScale = requestedDrain > 0.0f
-                        ? math.select(0.0f, math.saturate(propellant01 / requestedDrain), propellant01 > 0.0f)
+                        ? math.select(0.0f, math.saturate(propellant01 * math.rcp(requestedDrain)), propellant01 > 0.0f)
                         : math.select(0.0f, 1.0f, propellant01 > 0.0f);
                     velocity += velocityDelta * brakeScale;
                     angularMomentum += angularDelta * brakeScale;
@@ -380,7 +391,7 @@ namespace Hecton8.Player.Movement
         private static quaternion IntegrateOrientation(quaternion orientation, float3 angularRadiansPerSecond, float dt)
         {
             float3 delta = angularRadiansPerSecond * dt;
-            float angle = math.length(delta);
+            float angle = ZeroGMathGuards.LengthFromSq(math.lengthsq(delta));
             if (angle <= 0.000001f || !math.isfinite(angle))
                 return ZeroGMathGuards.SanitizeQuaternion(orientation, quaternion.identity);
 
@@ -427,7 +438,7 @@ namespace Hecton8.Player.Movement
             float3 clampedPosition = math.clamp(localPosition, -inner, inner);
             float3 depenetrationVector = clampedPosition - localPosition;
             float depenetrationLengthSq = math.lengthsq(depenetrationVector);
-            float bestPenetration = math.sqrt(depenetrationLengthSq);
+            float bestPenetration = ZeroGMathGuards.LengthFromSq(depenetrationLengthSq);
             float3 bestNormal = depenetrationLengthSq > 0.00000001f
                 ? depenetrationVector * math.rsqrt(depenetrationLengthSq)
                 : float3.zero;
@@ -454,7 +465,7 @@ namespace Hecton8.Player.Movement
                     float3 pushPreviousVelocity = velocity;
                     velocity += nearestNormal * tuning.PushImpulseVelocityChange;
                     stateFlags |= ZeroGMovementStateFlags.SurfaceContact | ZeroGMovementStateFlags.PushAndGlide;
-                    hit.CollisionImpulse = math.length(velocity - pushPreviousVelocity);
+                    hit.CollisionImpulse = ZeroGMathGuards.LengthFromSq(math.lengthsq(velocity - pushPreviousVelocity));
                     hit.Flags = ZeroGSurfaceHitFlags.Valid | ZeroGSurfaceHitFlags.AnalyticOrbitWall | ZeroGSurfaceHitFlags.Pushable;
                 }
 
@@ -482,7 +493,7 @@ namespace Hecton8.Player.Movement
                 stateFlags |= ZeroGMovementStateFlags.PushAndGlide;
             }
 
-            float impulse = math.length(velocity - previousVelocity);
+            float impulse = ZeroGMathGuards.LengthFromSq(math.lengthsq(velocity - previousVelocity));
             stateFlags |= ZeroGMovementStateFlags.SurfaceContact | ZeroGMovementStateFlags.Depenetrated;
             hit.PointLocal = localPosition - bestNormal * radius;
             hit.Normal = bestNormal;
@@ -588,8 +599,8 @@ namespace Hecton8.Player.Movement
             {
                 local += velocity * dt;
                 expected += expectedVelocity * dt;
-                maxPosError = math.max(maxPosError, math.length(local - expected));
-                maxVelError = math.max(maxVelError, math.length(velocity - expectedVelocity));
+                maxPosError = math.max(maxPosError, ZeroGMathGuards.LengthFromSq(math.lengthsq(local - expected)));
+                maxVelError = math.max(maxVelError, ZeroGMathGuards.LengthFromSq(math.lengthsq(velocity - expectedVelocity)));
             }
 
             ZeroGTestResultDTO result = default;
@@ -630,7 +641,7 @@ namespace Hecton8.Player.Movement
                 axis = ZeroGMathGuards.NormalizeWithFallback(axis, new float3(0f, 1f, 0f));
                 float angle = DecodeUnsigned(state >> 3) * 0.08f;
                 rotation = ZeroGMathGuards.SanitizeQuaternion(math.mul(rotation, quaternion.AxisAngle(axis, angle)), quaternion.identity);
-                float unitError = math.abs(1.0f - math.length(rotation.value));
+                float unitError = math.abs(1.0f - ZeroGMathGuards.LengthFromSq(math.lengthsq(rotation.value)));
                 maxUnitError = math.max(maxUnitError, unitError);
                 if (!math.all(math.isfinite(rotation.value)) || unitError > 0.0001f)
                     fault |= 1u;

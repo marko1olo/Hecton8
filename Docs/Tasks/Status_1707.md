@@ -1,0 +1,223 @@
+# Agent 1707 Status
+
+Prompt: ZEIGARNIK_CASCADE_AND_LORE_SYNC_COORDINATOR
+Domain: Echelon 8 Presentation & UX / Echelon 9 Meta & Integration
+Task count: 26
+State: IMPLEMENTED / STATIC VERIFIED / BUILD BLOCKED BY HOST GATE / CONTINUED POLISH PATCHED / 2026-06-03 SCANNER READONLY VIEW PASS
+
+Polish pass 2026-06-02:
+- [x] Flattened `PDAEncyclopediaStreamer` lore writes from three simultaneous DataVault write locks into single-buffer writer scopes.
+  - DOD practice: method-signature static parser reports one `TryAcquireWriteLock`, one `ReleaseWriteLock`, and `finally=True` for each writer helper.
+  - Rejected alternative: ordered multi-lock transaction; rejected by APEX no-nested-writer-lock rule.
+  - Estimate: 4200 us source edit/static parse.
+- [x] Moved PDA bit-index reservation to snapshot planning plus single-lock writes.
+  - DOD practice: `TryEnsureBitIndex`, `IsUnlocked`, and `IsEncrypted` no longer use metadata/mask raw refs for scanner unlock reads.
+  - Rejected alternative: leaving cold helper raw-ref mutation because scanner route can reach it through metadata seeding.
+  - Estimate: 3600 us source edit/static parse.
+- [x] Added Zeigarnik haptic bridge after resolver job completion.
+  - DOD practice: haptic publish is in `CompleteScheduled` after `DispatcherJobFence.TryFinalizeCompleted`; Burst job only mutates unmanaged state.
+  - Rejected alternative: haptic publish from Burst job or new HUD class; rejected as phase violation / duplicate UI route.
+  - Estimate: 1900 us source edit/static parse.
+- [x] Re-ran systemic hygiene gates.
+  - DOD practice: touched-file `git diff --check` clean except CRLF warnings; targeted `.meta` scan over Quest/UI/CoreMemory/Editor test roots found `ORPHAN_META_COUNT=0`; brace counts balanced on edited files.
+  - Rejected alternative: full-tree cleanup of unrelated dirty files; rejected due concurrent agents.
+  - Estimate: 5200 us static verification.
+- [x] Integrated Zeigarnik cascade with the production `QuestManager` owner.
+  - DOD practice: completion transitions activate the prerequisite-safe child quest before completed events are flushed by `QuestEvents.FlushPending()` in late frame; HUD/marker listeners read already-updated state.
+  - Rejected alternative: standalone HUD overlay or coroutine; rejected as duplicate presentation topology and phase drift.
+  - Estimate: 8700 us source audit/edit/static proof.
+- [x] Corrected QuestDag snapshot lifetime ownership.
+  - DOD practice: `QuestManager` now clears only local `QuestDagBufferHandles`; it no longer calls `QuestDagVault.ReleaseBuffers` on shared QuestDag DataVault buffers.
+  - Rejected alternative: releasing shared buffers on `OnDisable`; rejected because `GlobalDataVault.EnsureGenerationHandle` does not ref-count existing buffers for snapshot publishers.
+  - Estimate: 3600 us source audit/edit.
+- [x] Re-ran APEX static gates after production integration.
+  - DOD practice: hot-window scan returned `badTokens80=0` for `LateFrameTick` and touched `Execute` methods; QuestManager writer helpers each report `acquire=1 release=1 finally=1`; targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; touched-file `git diff --check` had CRLF warnings only.
+  - Rejected alternative: launching build under host contention; CPU was 95.3 with active `dotnet` PID `3100`.
+  - Estimate: 6400 us static verification.
+- [x] Hardened `QuestManager` against null quest registries.
+  - DOD practice: `RefreshQuestPresentationCaches`, `GetQuestDataByIndex`, and `BuildLookup` now use local null-guarded quest arrays before length/index access.
+  - Rejected alternative: trusting the serialized `Array.Empty<QuestData>()` initializer; rejected because editor/import tooling can still serialize null into the backing field.
+  - Estimate: 2600 us source audit/edit.
+- [x] Repaired `MissionManager` activated-event cache bridge.
+  - DOD practice: `QuestEventType.Activated` now resolves the quest id through cached `IQuestSystem.TryGetQuestIdByHash` and materializes the existing mission facade cache.
+  - Rejected alternative: polling `GlobalRegistry` or scene components from the event handler; rejected by cold-DI doctrine.
+  - Estimate: 3400 us source audit/edit.
+- [x] Re-ran continued APEX static gates.
+  - DOD practice: brace counts balanced; hot-window forbidden-token scan returned `HOT_BAD_TOKEN_COUNT=0`; Quest/PDA writer helpers each report one acquire, one release, and `finally=1`; targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; touched-file `git diff --check` had CRLF warnings only.
+  - Rejected alternative: running build under CPU/compiler contention; latest CPU was 100 with active `dotnet` PIDs `3100` and `19708`.
+  - Estimate: 7100 us static verification.
+- [x] Fortified quest event/audit capacity after Zeigarnik integration.
+  - DOD practice: transition audit ring now uses `QuestDagRuntimeConstants.TelemetryCapacity` (300), Zeigarnik child activation records a manual activation audit, `MissionManager` prewarms to `DefaultQuestStateCapacity`, and `QuestEvents` pending queue capacity now matches the same active quest-state budget.
+  - Rejected alternative: leaving 16/32/128 legacy caps because current scenes often stay below them; rejected because Zeigarnik doubles completion event bursts and black-box policy requires 300 samples.
+  - Estimate: 4100 us source audit/edit.
+- [x] Re-ran capacity polish static gates.
+  - DOD practice: brace counts balanced; hot-window forbidden-token scan returned `HOT_BAD_TOKEN_COUNT=0`; targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; touched-file `git diff --check` had CRLF warnings only.
+  - Rejected alternative: launching build under host contention; CPU was 97 with active `dotnet` PID `3100`.
+  - Estimate: 3600 us static verification.
+
+Relevant mandates selected before coding:
+- PROG_Quest_State_Graph_Logic.txt
+- UI_Data_Streaming_ZeroGC_Optimization.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- ARCH_Signal_Lane_Segregation.txt
+- ARCH_Global_Registry_ServiceLocator_DI_Init.txt
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- DBG_Telemetry_Crash_Reporting_PostMortem.txt
+
+## Checklist
+
+- [x] Task 01 - QUEST_MANAGER_STATIC_AUDIT
+  - DOD practice: static source scan plus targeted line reads of `QuestManager.cs`, `QuestDagResolverRuntime.cs`, and `QuestStateManager.cs`.
+  - Rejected alternative: editing from prompt assumptions; source shows active resolver is `GraphResolverJob`, not a named `EvaluateQuestOverlapJob`.
+  - Estimate: 8200 us static scan/read.
+- [x] Task 02 - SCANNER_TOOL_DECONSTRUCTION
+  - DOD practice: scanned `ScannerTool.cs`, `ScannableTarget.cs`, and `ScannerDataMiningRouter.cs` for scan completion and discovery publication routes.
+  - Rejected alternative: using the stale prompt path `Tools/Scanner/ScannerToolRuntime.cs`; live runtime is root `ScannerTool.cs` plus `Gameplay/ScannerDataMiningRouter.cs`.
+  - Estimate: 6400 us static scan/read.
+- [x] Task 03 - DTO_MEMORY_ALIGNMENT_INSPECTION
+  - DOD practice: inspected explicit-layout quest DTOs and confirmed no existing `QuestStateDTO`; current native quest DTOs are `QuestNodeDTO`, `QuestNodeRuntimeDTO`, `QuestDagTelemetryEntry`, and signals.
+  - Rejected alternative: mutating non-existent DTO by name without resolving current layout.
+  - Estimate: 3100 us source layout audit.
+- [x] Task 04 - SHINOBU_226_MATHEMATICAL_MODELING
+  - DOD practice: read active SHINOBU_226 route card and current PDA binary lookup paths; verified `LoreFragmentScannedSignal` is 64-byte explicit layout and consumed from `SignalBus`.
+  - Rejected alternative: string event or legacy `ScanEvents` as first-party unlock authority.
+  - Estimate: 4700 us route/source audit.
+- [x] Task 05 - GLOBAL_REGISTRY_HOT_POLLING_DETECTION
+  - DOD practice: scanned target files for `GlobalRegistry.Get<` and direct `GlobalRegistry.*` access. No `Get<T>` hits in target path; direct reads are cold bind/register paths.
+  - Rejected alternative: adding new registry lookups for quest/PDA handoff.
+  - Estimate: 2600 us text sweep.
+- [x] Task 06 - COMPACTION_FENCE_VULNERABILITY_SCAN
+  - DOD practice: audited QuestDag job scheduling pins and PDA raw ref writes; added QuestState/DependencyLink scheduler pins and PDA write-lock transaction helpers.
+  - Rejected alternative: resolving new quest buffers as unpinned NativeArrays; rejected because compaction could invalidate job views.
+  - Estimate: 11800 us audit/edit.
+- [x] Task 07 - TELEMETRY_AND_REPORTING_ARCHITECTURE
+  - DOD practice: defined final proof path as `Docs/Reports/ZEIGARNIK_AND_LORE_PURIFICATION_1707.json` plus required append-only `Docs/AgentLogs/LOG_1707.md`.
+  - Rejected alternative: chat-only report; rejected by batch protocol and context compression risk.
+  - Estimate: 1400 us design.
+- [x] Task 08 - DTO_ALIGNMENT_AND_FIELD_INJECTION
+  - DOD practice: added explicit 16-byte `QuestStateDTO` and 16-byte `QuestDependencyLinkDTO`, layout audit constants, and editor sizeof assertions.
+  - Rejected alternative: managed quest state mirror or class wrapper; rejected for GC and cache miss cost.
+  - Estimate: 5200 us edit/static proof.
+- [x] Task 09 - BRANCHLESS_ZEIGARNIK_OVERLAP_EVALUATION
+  - DOD practice: added `EvaluateQuestOverlap` to the existing synchronous Burst `GraphResolverJob`, using `math.select` masks for progress/active/injected decisions.
+  - Rejected alternative: new managed HUD coroutine for quest overlap; rejected for nondeterministic timing and allocations.
+  - Estimate: 7400 us edit/static proof.
+- [x] Task 10 - UNMANAGED_DAG_RESOLUTION
+  - DOD practice: added cold sorted `QuestDependencyLinkDTO` generation and bounded native binary search from active quest hash to linked child hash.
+  - Rejected alternative: dictionary lookup or scene query at completion time; rejected for managed allocation risk.
+  - Estimate: 9100 us edit/static proof.
+- [x] Task 11 - SHINOBU_226_SCANNER_SIGNAL_PUBLICATION
+  - DOD practice: verified scanner completion already publishes `LoreFragmentScannedSignal` with AUP and uint hash via `SignalBus`; no string/UnityEvent completion path was found.
+  - Rejected alternative: adding a parallel scanner event; rejected as duplicate hot routing.
+  - Estimate: 3100 us source verification.
+- [x] Task 12 - BINARY_SEARCH_LORE_UNLOCK
+  - DOD practice: added PDA-side hash existence gate against DataMonolith/H8LR/Babel/mock UTF-8 sources before mutating unlock bits; invalid `0xFFFFFFFF` fails closed.
+  - Rejected alternative: reserving metadata for any scanned hash; rejected because missing hashes polluted PDA state.
+  - Estimate: 6800 us edit/static proof.
+- [x] Task 13 - ZERO_GC_STRING_FORMATTING_IMPLEMENTATION
+  - DOD practice: verified PDA output remains leased char buffers plus `TMP_Text.SetCharArray`; no `ToString`, `string.Format`, `SetText`, or `.text =` hits in modified target files.
+  - Rejected alternative: rewriting existing proven zero-GC display path; rejected as refactoring churn.
+  - Estimate: 2600 us static scan.
+- [x] Task 14 - HAPTIC_FEEDBACK_SIGNAL_INJECTION
+  - DOD practice: initialized the haptic signal lane and emits one tracked 16-byte `HapticPulseSignal` only when a lore bit flips from locked to unlocked.
+  - Rejected alternative: managed callback into input rumble; rejected for cross-domain coupling.
+  - Estimate: 2400 us edit/static proof.
+- [x] Task 15 - DATA_VAULT_TRANSACTIONAL_LOCKING
+  - DOD practice: moved PDA unlock and encrypted-dependent promotion mutations behind ordered `TryAcquireWriteLock`/`finally ReleaseWriteLock` scopes.
+  - Rejected alternative: continuing raw ref writes for unlock mask/runtime/metadata; rejected due compaction race.
+  - Estimate: 8900 us edit/static proof.
+- [x] Task 16 - HOT-SWAP_DEPENDENCY_INJECTION
+  - DOD practice: verified `PDAEncyclopediaStreamer` and `ScannerDataMiningRouter` already implement `IGlobalRegistryHotSwapListener`; direct `GlobalRegistry.*` reads remain cold bind/register paths.
+  - Rejected alternative: adding new service-locator reads in signal consumers; rejected by hot-polling doctrine.
+  - Estimate: 2500 us static scan.
+- [x] Task 17 - COMPILATION_WALL_AND_ASSEMBLY_HYGIENE
+  - DOD practice: scanned modified quest/PDA/scanner files for forbidden usings/APIs and removed dead PDA `AtomicOr` plus `System.Threading`.
+  - Rejected alternative: broad cleanup in unrelated scene/UI files; rejected due concurrent agents and dirty worktree.
+  - Estimate: 2100 us static scan/edit.
+- [x] Task 18 - DRY_RUN_VERIFICATION_EXECUTION
+  - DOD practice: mentally traced 64-state overlap: progress 0.94 produces `progressMask=0`, no injection; invalid/missing lore hash exits before metadata reservation.
+  - Rejected alternative: assuming compiler would catch route faults; rejected because build gate stayed closed.
+  - Estimate: 1800 us dry run.
+- [x] Task 19 - CONTINUOUS_QUALITY_SCALING_INTEGRATION
+  - DOD practice: verified gameplay truth is not quality-scaled; PDA presentation already records `GlobalQualityWeight` and scales decode/typewriter presentation. No assigned-file quest HUD consumer exists.
+  - Rejected alternative: adding quality to `QuestStateDTO`; rejected because it would break required 16-byte layout and scale gameplay truth.
+  - Estimate: 2700 us source verification.
+- [x] Task 20 - BURST_COMPILE_SYNCHRONOUS_INJECTION
+  - DOD practice: confirmed `EvaluateQuestOverlap` is inside existing `[BurstCompile(CompileSynchronously = true, FloatMode = Fast, FloatPrecision = Standard)]` `GraphResolverJob`.
+  - Rejected alternative: second Burst job; rejected due duplicate writer ownership.
+  - Estimate: 900 us source verification.
+- [ ] Task 21 - BATCHED_COMPILATION_AND_SYNTAX_ASSERTION [BLOCKED BY HOST BUILD GATE]
+  - DOD practice: sampled CPU and compiler processes repeatedly; did not launch build while CPU was 97-100 and active `dotnet` PIDs existed.
+  - Rejected alternative: violating build gate to force a compile; forbidden by prompt.
+  - Estimate: 1300 us gate sampling.
+- [x] Task 22 - EXPLICIT_SIZEOF_VALIDATION_GATE
+  - DOD practice: added editor assertions for `UnsafeUtility.SizeOf<QuestStateDTO>()` and `QuestDependencyLinkDTO`, including 16-byte multiple checks and field offsets.
+  - Rejected alternative: relying on comments only; rejected because layout must be executable proof.
+  - Estimate: 1800 us test edit.
+- [x] Task 23 - COMPACTION_FENCE_RACE_CONDITION_AUDIT
+  - DOD practice: documented resolver pin behavior and PDA transaction fail-closed path in rationale/report.
+  - Rejected alternative: broad locks around signal iteration; rejected because it blocks compaction longer.
+  - Estimate: 1500 us audit.
+- [x] Task 24 - ZERO_GC_ALLOCATION_PROFILER_MOCK
+  - DOD practice: static traced changed hot paths: no managed allocations in quest overlap or PDA unlock; report notes profiler was not run.
+  - Rejected alternative: claiming profiler evidence without running profiler; rejected as fake report.
+  - Estimate: 1700 us static trace.
+- [x] Task 25 - BINARY_SEARCH_LIMIT_TESTING
+  - DOD practice: invalid `0xFFFFFFFF` path rejects before Babel lookup/metadata reservation and records `FaultInvalidHash`.
+  - Rejected alternative: letting sentinel hash enter open-addressing metadata; rejected because it could persist corrupted lore state.
+  - Estimate: 1200 us dry run.
+- [x] Task 26 - AUTOMATED_METRIC_VALIDATOR_REPORT
+  - DOD practice: wrote parse-validated JSON report at `Docs/Reports/ZEIGARNIK_AND_LORE_PURIFICATION_1707.json` with DTO sizes, line evidence, lookup bounds, build-gate state, and SHA-256 file hashes.
+  - Rejected alternative: only describing the report in chat; rejected by reporting protocol.
+  - Estimate: 3600 us file generation/validation.
+
+## Checkpoint Notes
+
+- 2026-06-02 Task 1-5 compile checkpoint: build not launched. CPU sampled at 82 and active `dotnet` processes were present (`3100`, `10920`), violating the batch build gate.
+- 2026-06-02 Task 6-10 compile checkpoint: build not launched. CPU sampled at 100 and active `dotnet` processes were present (`1200`, `3100`, `10672`, `11556`, `11952`, `13464`, `13468`, `14136`), violating the batch build gate.
+- 2026-06-02 final compile checkpoint: build not launched. CPU sampled at 100 and active `dotnet` processes were present (`3100`, `15308`), violating the batch build gate.
+- 2026-06-02 production integration checkpoint: build not launched. CPU sampled at 95.3 and active `dotnet` PID `3100` existed, violating the batch build gate.
+- 2026-06-02 final host gate recheck: build not launched. CPU sampled at 99.0 and active `dotnet` PID `3100` existed, violating the batch build gate.
+- 2026-06-02 continued polish gate recheck: build not launched. CPU sampled at 100 and active `dotnet` PIDs `3100` and `12768` existed, violating the batch build gate.
+- 2026-06-02 latest final gate recheck: build not launched. CPU sampled at 100 and active `dotnet` PIDs `3100` and `19708` existed, violating the batch build gate.
+- 2026-06-02 capacity polish gate recheck: build not launched. CPU sampled at 97 and active `dotnet` PID `3100` existed, violating the batch build gate.
+- 2026-06-02 mission cache resync polish: expanded `IQuestSystem` with `CopyActiveQuestHashes`, made `QuestManager` expose its existing non-alloc copy path, and resyncs `MissionManager` active cache on cold bind/hot-swap so late registration sees already-active Zeigarnik quests.
+- 2026-06-02 mission resync gate recheck: build not launched. CPU sampled at 100 and active `dotnet` PIDs `3100` and `28724` existed, violating the batch build gate.
+- 2026-06-02 mission stale-completed polish: `MissionManager.RefreshMissionCacheFromQuestSystem` now clears completed compatibility cache with active cache before repopulating from quest authority, preventing active/completed contradiction after quest hot-swap.
+- 2026-06-02 marker interface polish: `MissionMarkerSystem` now binds `GlobalRegistry.QuestSystem` / `IQuestSystem` and listens to both QuestRuntime and QuestSystem hot-swap slots, removing its concrete `QuestManager` dependency.
+- 2026-06-02 marker cache invalidation polish: `MissionMarkerSystem.CacheQuestRuntime` now resets active quest hashes, marker cache keys, marker DTOs, and matrices when quest authority changes, preventing stale marker positions after hot-swap.
+- 2026-06-02 marker interface gate recheck: build not launched. CPU sampled at 100 and active `dotnet` PID `3100` existed, violating the batch build gate.
+- 2026-06-02 marker render allocation polish: `MissionMarkerSystem` now cold-initializes a readonly `MaterialPropertyBlock` field instead of lazy-allocating it from a render-reachable resource path.
+- 2026-06-02 marker render gate recheck: hot-window scan returned `HOT_BAD_TOKEN_COUNT=0`, brace counts balanced, targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; build not launched because CPU sampled at 100 with active `dotnet` PID `3100`.
+- 2026-06-02 narrative HUD quest-gate polish: `HectonNarrativeDirector.IsQuestActiveForHud` now uses `IQuestSystem.IsActive(uint)` directly, removing hash-to-string-to-hash routing from the HUD waypoint gate.
+- 2026-06-02 narrative gate recheck: touched-file hot-window scan returned `HOT_BAD_TOKEN_COUNT=0`, brace counts balanced, targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; build not launched because CPU sampled at 63 with active `dotnet` PID `3100`.
+- 2026-06-02 marker render lifecycle polish: `MissionMarkerSystem.RegisterRuntime` now gates `IRenderable` registration with `Application.isPlaying`, matching its tick registration and preventing editor-time global render bucket entries.
+- 2026-06-02 marker lifecycle gate recheck: touched-file hot-window scan returned `HOT_BAD_TOKEN_COUNT=0`, brace counts balanced, targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; build not launched because CPU sampled at 85 with active `dotnet` PID `3100`.
+- 2026-06-02 marker SRP batching polish: `MissionMarkerSystem` and `HectonScanMarkerSystem` no longer allocate or mutate `MaterialPropertyBlock` for instanced marker draws; shader constants now come from authored `UnityPerMaterial` material assets and draw calls pass `null` MPB.
+- 2026-06-02 scanner marker prefab repair: `Tool_Scanner_Held.prefab` now serializes `scannerMarkerMesh` and `scannerMarkerMaterial` using existing `M_ScannerMarkerQuad` / `MAT_HUD_ThreatChevronInstanced` assets instead of stale `scannerMarkerShader`.
+- 2026-06-02 scanner marker init polish: `HectonScanMarkerSystem` no longer asserts before `ScannerTool.Awake` calls `Initialize(mesh, material)` after dynamic component creation.
+- 2026-06-02 marker SRP gate recheck: marker renderer forbidden-token scan returned `MARKER_FORBIDDEN_TOKEN_COUNT=0`; marker hot-window scan returned `HOT_BAD_TOKEN_COUNT=0`; marker script brace counts balanced; build not launched because CPU sampled at 94 with active `dotnet` PIDs `3100` and `32736`.
+- 2026-06-02 scanner power-indicator polish: `ScannerTool.UpdatePowerIndicator` no longer calls `GetPropertyBlock`, reuses static emission colors, and skips `SetPropertyBlock` when the resolved emission is unchanged.
+- 2026-06-02 scanner power-indicator gate recheck: exact method scans for `ToolTick`, `LateFrameTick`, `UpdatePowerIndicator`, `ResolvePowerIndicatorEmission`, `SamePowerIndicatorEmission`, `QueuePowerIndicatorUpdate`, `InvalidatePowerIndicatorEmission`, `OnEquip`, and `OnSpawn` returned `BAD_TOKEN_COUNT=0`; prefab marker GUIDs resolve to existing mesh/material `.meta` files; build not launched because CPU sampled at 91.5 with active `VBCSCompiler` PID `31612`.
+- 2026-06-02 scanner power-indicator final gate: lexical brace scan returned zero delta for `ScannerTool`, `HectonScanMarkerSystem`, and `MissionMarkerSystem`; targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; `git diff --check` returned CRLF warnings only; build not launched because CPU sampled at 99.5 with active `VBCSCompiler` PID `31612`.
+- 2026-06-02 PDA lore-signal lookup polish: `PDAEncyclopediaStreamer.ConsumeScanSignals` now prevalidates lore payload once and calls `UnlockEntry(..., validatePayload:false, ...)`, removing duplicate DataMonolith/H8LR/Babel payload probes from the same signal.
+- 2026-06-02 PDA telemetry lock flattening: `PDAEncyclopediaStreamer.RecordTelemetry` now plans the telemetry DTO outside locks and writes telemetry row/cursor through two separate `TryAcquireWriteLock`/`finally ReleaseWriteLock` windows with no nested DataVault write locks.
+- 2026-06-02 PDA/marker final static gate: `ConsumeScanSignals` callsites explicitly pass `validatePayload: false`; `RecordTelemetry` range scan reports `GetVaultElementRef=0`, `TryAcquireWriteLock=2`, `ReleaseWriteLock=2`, `finally=2`; lexical brace scan returned zero delta for `PDAEncyclopediaStreamer`, `ScannerTool`, `HectonScanMarkerSystem`, and `MissionMarkerSystem`; targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; `git diff --check` returned CRLF warnings only; build not launched because CPU sampled at 100 with active `dotnet` PIDs `15220`, `16128`, `20360`, `21520`, `22212`, `26380`, `27296`, `30240` and `VBCSCompiler` PID `28688`.
+- 2026-06-03 PDA raw-ref lock polish: removed remaining `PDAEncyclopediaStreamer.GetVaultElementRef` usage and deleted the helper; mock UTF8/index writes and editor CSV scratch chunk writes now use single-buffer `TryAcquireWriteLock`/`finally ReleaseWriteLock` scopes.
+- 2026-06-03 scanner marker MPB regression polish: `HectonScanMarkerSystem` and `MissionMarkerSystem` scan clean for `MaterialPropertyBlock`, `SetVectorArray`, and `_InstanceData`; marker draw calls use authored material constants and `null` MPB.
+- 2026-06-03 static gate: hot method windows for PDA/Scanner/Marker returned `BAD_TOKEN_COUNT=0`; brace scan balanced; targeted `.meta` scan returned `ORPHAN_META_COUNT=0`; `git diff --check` returned CRLF warnings only; build not launched because CPU sampled at 100.
+- 2026-06-03 scanner black-box lock polish: `ScannerTool.WriteScannerBlackBox` now builds the DTO outside DataVault ownership and writes exactly one ring slot through `TryWriteScannerBlackBoxEntry`, a single `TryAcquireWriteLock`/`finally ReleaseWriteLock` scope; dump reads use `TryReadOnlyHandle`.
+- 2026-06-03 scanner router compaction polish: `ScannerDataMiningRouter` now fails closed on `IsAllocationLocked`/`IsCompactionFenceActive` before handle allocation/view resolution, retries transient init through `ColdTick`, and wraps cold bucket/mock seed writes in existing mutation guards with `try/finally`.
+- 2026-06-03 QuestDag late telemetry fence polish: direct late-frame telemetry cursor/ring read helpers now check `IsCompactionFenceActive`; direct telemetry/counter write-lock callsites also fail closed before lock acquisition.
+- 2026-06-03 scanner vault static gate: scanner black-box mutable access scan shows only `TryAcquireWriteLock(in _scannerBlackBoxHandle)` / matching release; dangerous API sweep over Scanner/PDA/Quest/Marker targets returned no hits; brace scan balanced; `git diff --check` had CRLF warnings only; build not launched because CPU sampled at 99.8.
+- 2026-06-03 final gate recheck: case-sensitive dangerous API sweep returned `DANGEROUS_HIT_COUNT=0`; marker geometry scan returned `MARKER_MPB_HIT_COUNT=0`; scanner black-box helper lines 1330-1366 show one write lock and `finally` release; brace scan balanced; targeted `.meta` scan returned `MISSING_META_COUNT=0`; build not launched because CPU sampled at 76.5, above the 50 percent throttle, with no compiler processes active.
+- 2026-06-03 pre-final build gate: build not launched because CPU sampled at 83.4 and active `dotnet` PID `32588` existed.
+- 2026-06-03 PDA readonly snapshot polish: `PDAEncyclopediaStreamer` unlock planning, encrypted promotion, metadata seed/import probes, last-discovery AUP, fault-state reads, telemetry dump reads, buffer-resolvability probes, bootstrap magic checks, and mock index lookup now use `TryReadVaultBuffer` / `TryReadOnlyHandle` snapshots. Remaining PDA mutable resolves are limited to mock UTF8 byte span and editor CSV scratch span where current unsafe span APIs require `NativeArray<byte>`.
+- 2026-06-03 readonly snapshot gate: targeted PDA remaining mutable scan reports only `ResolveVaultBuffer(in _mockUtf8Handle)` and `TryResolveVaultBuffer(in _csvScratchHandle)`; hot-window scan returned `HOT_BAD_TOKEN_COUNT=0`; non-cold dangerous-token scan returned `NON_COLD_DANGEROUS_HIT_COUNT=0`; brace scan balanced for PDA/Scanner/Quest targets; strict extension `.meta` scan returned `MISSING_META_COUNT=0`; `git diff --check` returned CRLF warnings only.
+- 2026-06-03 readonly snapshot build gate: build not launched because CPU sampled at 100.0 and active `dotnet` PID `32588` existed.
+- 2026-06-03 scanner readonly view polish: `ScannerDataMiningRouter` no longer carries `ScannerSettingsDTO` inside the mutable `ScannerVaultViews`; scanner settings are read via the existing `TryReadOnlyHandle` snapshot helper and passed to jobs as a value.
+- 2026-06-03 scanner guarded view polish: `FastTick` no longer resolves the scanner mutable view before `TryAcquireQueryMutationGuard`; the first view resolution now happens inside the guarded scheduling window.
+- 2026-06-03 scanner dump polish: anomaly telemetry dump now uses `TryReadOnlyHandle(in _telemetryHandle)` and a read-only dump overload instead of resolving the whole mutable scanner view.
+- 2026-06-03 scanner readonly view gate: hot-window scan returned `HOT_BAD_TOKEN_COUNT=0`; all non-editor `TryReadVaultViews` callsites are guarded; `OUTSIDE_TRYRESOLVEVAULTVIEWS_TRYRESOLVEHANDLE_COUNT=0`; brace scan balanced; strict extension `.meta` scan returned `STRICT_MISSING_META_COUNT=0`; `git diff --check` returned CRLF warnings only.
+- 2026-06-03 scanner readonly build gate: build not launched because CPU sampled at 73 and active `dotnet` PID `2588` plus `VBCSCompiler` PID `23852` existed.

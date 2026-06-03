@@ -1,10 +1,17 @@
 ---
 packet_id: P052_BLACK_KEEL_TARIFF_TABLE
+release_set_id: RS011_COMM_TARIFF_GRAFFITI_MASKS
 article_id: hecton8.black_keel_tariff_table
+unlock_id: unlock.first_black_keel_tariff_table
+poi_tags: poi.tariff_plate;poi.claim_terminal
+biome_tags: biome.corporate_wreck;biome.salvage_route
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Black Keel Tariff Table

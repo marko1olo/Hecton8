@@ -1,10 +1,17 @@
 ---
 packet_id: P075_LUYTEN_JUNCTION_PACKET_CUSTODY
+release_set_id: RS015_HUMAN_DOMAINS_ROUTE_ECONOMY
 article_id: human.luyten_junction_packet_custody
+unlock_id: unlock.first_luyten_junction_packet_custody
+poi_tags: poi.packet_custody_spool;poi.relay_tariff_panel
+biome_tags: biome.relay_spine;biome.drowned_comms
 locale: en_US
 surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Luyten Junction Packet Custody

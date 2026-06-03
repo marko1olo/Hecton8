@@ -11,35 +11,22 @@ Required classification for every listed line:
 - RUNTIME_VIOLATION: can execute in gameplay/player runtime and violates the bible/mandate hot-path law.
 - FALSE_POSITIVE: static pattern matched wording that is not the risky API or code path.
 
-Total runtime suspects: 281. Full raw list: `../_scans/05_physics_vehicles_water_runtime_risks.txt`.
+Raw generated runtime suspects: 280. Line-level reconciliation: 281 classified lines in `LINE_LEVEL_CLASSIFICATION.md`. Full raw list: `../_scans/05_physics_vehicles_water_runtime_risks.txt`.
 
-## Unity scene lookup (8)
+## Unity scene lookup (9)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:1395:            body.GetComponentsInChildren(false, _sleepColliderScratch);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:25:            if (cameraRig == null && Camera.main != null)
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:26:                cameraRig = Camera.main.transform;
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1012:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1199:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6834:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6851:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1215:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1413:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\WorldLODSceneBootstrap.cs:107:                root.GetComponentsInChildren(_includeInactiveLODGroups, _sceneLODGroupBuffer);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:1378:            if (_authoredOrePrefab != null && _authoredOrePrefab.GetComponent<ResourceNode>() == null)
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6880:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6897:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
 
-## Runtime mesh/material mutation (34)
+## Runtime mesh/material mutation (30)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:24:        [Tooltip("MeshCollider that receives the baked COL_ mesh only after the bake job has completed.")]
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:25:        [SerializeField] private MeshCollider targetCollider;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:33:        [Tooltip("Cooking options used by the dispatcher bake job and the target MeshCollider.")]
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:34:        [SerializeField] private MeshColliderCookingOptions cookingOptions =
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:35:            MeshColliderCookingOptions.CookForFasterSimulation |
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:36:            MeshColliderCookingOptions.EnableMeshCleaning |
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:37:            MeshColliderCookingOptions.WeldColocatedVertices;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:48:        public MeshCollider TargetCollider => targetCollider;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:57:        public MeshColliderCookingOptions CookingOptions => cookingOptions;
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:75:            MeshCollider collider,
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:78:            MeshColliderCookingOptions bakeCookingOptions)
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:103:            out MeshColliderCookingOptions bakeCookingOptions,
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:104:            out MeshCollider collider)
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:160:        public MeshColliderCookingOptions CookingOptions;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:1329:                    bodyState.MeshColliderStripActive != 0;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:1731:                bodyState.MeshColliderStripActive != 0;
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2625:            public float MeshColliderStripDistanceMeters;
@@ -50,86 +37,99 @@ Total runtime suspects: 281. Full raw list: `../_scans/05_physics_vehicles_water
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2708:                bool shouldStripMeshColliders = hasHeavyCollider &
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2720:                command |= math.select(0, (int)CullingCommandStripMeshColliders, shouldStripMeshColliders & commandExtensionsEnabled);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2751:                command |= math.select(0, (int)CullingCommandStripMeshColliders, (currentState & CullingStateMeshColliderStripped) != 0);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:23:        [Tooltip("MeshCollider that must already reference the offline COL_ mesh before play.")]
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:24:        [SerializeField] private MeshCollider targetCollider;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:33:        [SerializeField] private MeshColliderCookingOptions cookingOptions =
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:34:            MeshColliderCookingOptions.CookForFasterSimulation |
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:35:            MeshColliderCookingOptions.EnableMeshCleaning |
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:36:            MeshColliderCookingOptions.WeldColocatedVertices;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:47:        public MeshCollider TargetCollider => targetCollider;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:56:        public MeshColliderCookingOptions CookingOptions => cookingOptions;
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:74:            MeshCollider collider,
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:77:            MeshColliderCookingOptions bakeCookingOptions)
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:102:            out MeshColliderCookingOptions bakeCookingOptions,
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\RuntimePhysicsBaker1609.cs:103:            out MeshCollider collider)
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Vehicles\Automation\SubmarineAutopilotSdfNavigator.cs:538:        // A Unity physics/MeshCollider path was rejected as CPU-heavy and nondeterministic for the 100km AUP world.
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2184:            mesh.RecalculateNormals();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5646:                result = new Mesh();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5849:                result = new Mesh();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5968:                result = new Mesh();
-- Additional lines omitted here: 4. Use the raw scan file for full classification.
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5660:                result = new Mesh();
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5866:                result = new Mesh();
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5988:                result = new Mesh();
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6880:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6883:                MeshCollider meshCollider = meshColliders[i];
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6931:            Hecton8.Core.H8Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
 
-## Native allocation or persistent lifetime (129)
+## Native allocation or persistent lifetime (127)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2200:            NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Vehicles\VehicleComponentDamageRuntime.cs:946:                stagedGrid = new NativeArray<VehicleGridCellDTO>(cellCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\HarpoonTensionSolver328.cs:1409:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\HarpoonTensionSolver328.cs:1410:                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Buoyancy\AsyncReadback\AsyncBuoyancyReadbackRuntime.cs:1555:            data = new NativeArray<ReadbackRequestDTO>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Buoyancy\AsyncReadback\AsyncBuoyancyReadbackRuntime.cs:1557:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\AbyssalThermodynamicsSolver.ReactorBridge.cs:960:            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\ThermodynamicsHazardGridRuntime.cs:1322:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1789:            data = new NativeArray<float4>(
-- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1791:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1746:            scratch = new NativeArray<GasDynamicsTelemetryEntry>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\GasDynamicsSolver.cs:1748:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\StormPropagation\ShinobuStormPropagationRuntime.cs:144:                array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1789:            data = new NativeArray<float4>(
+- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs:1791:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:629:            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:631:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:828:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:94:                samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:95:                sources = new NativeArray<BiomeTransitionFogSource>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:99:                fromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:100:                toAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:101:                playerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:102:                results = new NativeArray<BiomeTransitionFogResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:796:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2304:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1519:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1947:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:629:            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:631:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:828:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonDistantLandmarkRenderer.cs:422:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:106:                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:107:                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-- Additional lines omitted here: 99. Use the raw scan file for full classification.
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonHLODRenderer.cs:288:                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:687:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:692:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:697:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:702:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:707:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:712:                Allocator.Persistent,
+- Additional lines omitted here: 97. Use the raw scan file for full classification.
 
 ## LINQ or managed collection allocation (2)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2720:                command |= math.select(0, (int)CullingCommandStripMeshColliders, shouldStripMeshColliders & commandExtensionsEnabled);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2751:                command |= math.select(0, (int)CullingCommandStripMeshColliders, (currentState & CullingStateMeshColliderStripped) != 0);
 
-## Runtime debug logging (95)
+## Runtime debug logging (99)
 
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Cavitation\AbyssalCavitationRuntime.cs:1103:                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_248] Ordnance CSV load failed.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:307:                H8Debug.LogError("[1337] Physics culling DTO layout violation.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Vehicles\VehicleComponentDamageRuntime.cs:116:                Hecton8.Core.H8Debug.LogError(layoutError, this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\TetherVerletJobs.cs:622:                UnityEngine.Debug.Log("[1303] Tether memory sovereignty validator passed.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\TetherVerletJobs.cs:624:                UnityEngine.Debug.LogError("[1303] Tether memory sovereignty validator failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Cavitation\AbyssalCavitationRuntime.cs:1103:                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_248] Ordnance CSV load failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:28:                Hecton8.Core.H8Debug.LogError("[SHINOBU_221] Base atmosphere logistics layout mismatch.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\SurfaceWeatherVfxRig.cs:215:                    Hecton8.Core.H8Debug.Log("[SurfaceWeatherVfxRig] Missing authored LineRenderer. Lightning presentation disabled until authoredBoltRenderer is assigned.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\SurfaceWeatherVfxRig.cs:252:                Hecton8.Core.H8Debug.Log("[SurfaceWeatherVfxRig] Missing lightningBoltMaterial asset. Lightning presentation disabled until material is assigned.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:28:                Hecton8.Core.H8Debug.LogError("[SHINOBU_221] Base atmosphere logistics layout mismatch.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\StormPropagation\ShinobuStormPropagationContracts.cs:722:                Hecton8.Core.H8Debug.LogError("SHINOBU_234 StormPropagationDTO layout validation failed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\BioCableIK.cs:708:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalFluidDecalManager.cs:943:                    Hecton8.Core.H8Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\BioCableIK.cs:998:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntimeBootstrap.cs:48:            Hecton8.Core.H8Debug.LogWarning(
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:45:                Hecton8.Core.H8Debug.Log(
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1058:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4231:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. Manager-created BioCableIK rigs are disabled until an authored material is assigned.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:206:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:213:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:537:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:552:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:558:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:645:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:668:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumZone.cs:454:            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1414:                Hecton8.Core.H8Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1694:                Hecton8.Core.H8Debug.LogException(exception);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:215:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:222:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:552:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:569:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:575:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:665:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:688:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1414:                Hecton8.Core.H8Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
-- Additional lines omitted here: 65. Use the raw scan file for full classification.
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSpatialHash.cs:1225:                Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
+- Additional lines omitted here: 69. Use the raw scan file for full classification.
 
 ## Hot Unity phase method (3)
 
@@ -139,9 +139,9 @@ Total runtime suspects: 281. Full raw list: `../_scans/05_physics_vehicles_water
 
 ## Uncategorized Static Risk Pattern (14)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Buoyancy\BuoyancyDisplacementRuntime.cs:2462:            label.text = new string(_simdGizmoLabelBuffer, 0, write);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Buoyancy\AnalyticalWaveTunerWindow.Editor.cs:203:                _statusLabel.text = "Analytical wave telemetry is not allocated.";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Buoyancy\AnalyticalWaveTunerWindow.Editor.cs:224:            _statusLabel.text = _builder.ToString();
+- [ ] CLASSIFY: Assets\_Project\Scripts\Physics\Buoyancy\BuoyancyDisplacementRuntime.cs:2462:            label.text = new string(_simdGizmoLabelBuffer, 0, write);
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\AbyssalHeatTunerWindow.cs:104:                _statusLabel.text = "Runtime: offline";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\AbyssalHeatTunerWindow.cs:109:            _statusLabel.text = "Runtime: online";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\AbyssalHeatTunerWindow.cs:121:                _telemetryLabel.text =
@@ -150,6 +150,7 @@ Total runtime suspects: 281. Full raw list: `../_scans/05_physics_vehicles_water
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\SubmarineThermodynamicsTunerWindow.cs:91:            _status.text = runtime.TryReadReactorTelemetry(0, out ReactorThermalTelemetryEntry entry)
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\SubmarineThermodynamicsTunerWindow.cs:107:                _status.text = "Runtime unavailable";
 - [ ] CLASSIFY: Assets\_Project\Scripts\Thermodynamics\SubmarineThermodynamicsTunerWindow.cs:116:            _status.text = runtime.TryWriteReactorTuning(tuning) ? "Applied" : "Write rejected: solver job pending";
-- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuAtmosphereWaveTunerWindow.cs:150:            _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:146:                _status.text =
 - [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsEditor.cs:156:                _status.text = "No atmosphere telemetry yet.";
+- [ ] CLASSIFY: Assets\_Project\Scripts\Atmosphere\ShinobuAtmosphereWaveTunerWindow.cs:150:            _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
+

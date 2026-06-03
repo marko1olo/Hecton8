@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS078_MAJOR_POI_EVIDENCE_KITS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P386_SHALLOW_ANNEX_P63_POI_KIT",
+    "P387_CABLE_REEF_RELAY_YARD_POI_KIT",
+    "P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT",
+    "P389_EVACUATION_QUEUE_TERMINAL_POI_KIT",
+    "P390_ATLAS_SERVICE_BASIN_POI_KIT"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS078_MAJOR_POI_EVIDENCE_KITS.packets.json"
+  ]
+}

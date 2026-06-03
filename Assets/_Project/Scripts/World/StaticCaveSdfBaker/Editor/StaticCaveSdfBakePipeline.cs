@@ -35,8 +35,16 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
         public int SdfBatchSize;
         public int CompressBatchSize;
         public uint WarningFlags;
+        public int Texture3DExportMode;
         public bool BackupCreated;
         public bool AtomicWriteCompleted;
+    }
+
+    public enum StaticCaveSdfTexture3DExportMode
+    {
+        None = 0,
+        R16SignedMeters = 1,
+        EncodedUnorm = 2
     }
 
     public static class StaticCaveSdfBakePipeline
@@ -54,12 +62,38 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             StaticCaveSdfBakeConfigDTO config,
             bool createTexture3D)
         {
+            return BakeMesh(
+                source,
+                assetName,
+                config,
+                createTexture3D ? StaticCaveSdfTexture3DExportMode.R16SignedMeters : StaticCaveSdfTexture3DExportMode.None);
+        }
+
+        public static StaticCaveSdfBakeResult BakeMesh(
+            Mesh source,
+            string assetName,
+            StaticCaveSdfBakeConfigDTO config,
+            StaticCaveSdfTexture3DExportMode texture3DExportMode)
+        {
+            return BakeMesh(source, assetName, config, texture3DExportMode, true);
+        }
+
+        public static StaticCaveSdfBakeResult BakeMesh(
+            Mesh source,
+            string assetName,
+            StaticCaveSdfBakeConfigDTO config,
+            StaticCaveSdfTexture3DExportMode texture3DExportMode,
+            bool writeDiagnostics)
+        {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
 
             Directory.CreateDirectory(OutputFolder);
-            Directory.CreateDirectory("Docs/Reports");
-            Directory.CreateDirectory("Docs/AgentLogs");
+            if (writeDiagnostics)
+            {
+                Directory.CreateDirectory("Docs/Reports");
+                Directory.CreateDirectory("Docs/AgentLogs");
+            }
 
             string layoutError;
             uint warningFlags = StaticCaveSdfLayoutValidator.ValidateTriangleLayout(out layoutError)
@@ -74,7 +108,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
                     throw new InvalidOperationException("Source mesh position/index data could not be read through MeshData.");
 
                 config.TriangleCount = triangles.Length;
-                return BakeTrianglesInternal(triangles, assetName, config, createTexture3D, warningFlags);
+                return BakeTrianglesInternal(triangles, assetName, config, texture3DExportMode, warningFlags, writeDiagnostics);
             }
             finally
             {
@@ -89,6 +123,19 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             StaticCaveSdfBakeConfigDTO config,
             int targetTriangles,
             bool createTexture3D)
+        {
+            return RunMockTorusBenchmark(
+                assetName,
+                config,
+                targetTriangles,
+                createTexture3D ? StaticCaveSdfTexture3DExportMode.R16SignedMeters : StaticCaveSdfTexture3DExportMode.None);
+        }
+
+        public static StaticCaveSdfBakeResult RunMockTorusBenchmark(
+            string assetName,
+            StaticCaveSdfBakeConfigDTO config,
+            int targetTriangles,
+            StaticCaveSdfTexture3DExportMode texture3DExportMode)
         {
             Directory.CreateDirectory(OutputFolder);
             Directory.CreateDirectory("Docs/Reports");
@@ -122,8 +169,9 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
                     triangles,
                     string.IsNullOrEmpty(assetName) ? "Mock_Twisted_Torus" : assetName,
                     config,
-                    createTexture3D,
-                    StaticCaveSdfConstants.WarningMockBenchmark);
+                    texture3DExportMode,
+                    StaticCaveSdfConstants.WarningMockBenchmark,
+                    true);
             }
             finally
             {
@@ -137,8 +185,9 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             NativeArray<TriangleDTO> triangles,
             string assetName,
             StaticCaveSdfBakeConfigDTO config,
-            bool createTexture3D,
-            uint initialWarningFlags)
+            StaticCaveSdfTexture3DExportMode texture3DExportMode,
+            uint initialWarningFlags,
+            bool writeDiagnostics)
         {
             string safeName = SanitizeFileName(assetName);
             int voxelCount = config.VoxelCount;
@@ -166,6 +215,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             NativeArray<float> distances = default;
             NativeArray<int> sdfWarningFlags = default;
             NativeArray<ushort> halfDistances = default;
+            NativeArray<byte> encodedDistances = default;
             StaticCaveSdfBakeTelemetryBuffer telemetry = default;
 
             try
@@ -218,7 +268,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
                 uint sdfWarnings = (uint)sdfWarningFlags[0];
                 warningFlags |= sdfWarnings;
                 StaticCaveSdfBlackBox.Record(ref telemetry, config.AnchorAup, voxelCount, triangles.Length, nodeCount, bvhMs, sdfMs, 0f, warningFlags, 2u);
-                if ((sdfWarnings & StaticCaveSdfConstants.WarningNonFiniteFallback) != 0u)
+                if (writeDiagnostics && (sdfWarnings & StaticCaveSdfConstants.WarningNonFiniteFallback) != 0u)
                     StaticCaveSdfBlackBox.Dump(ProjectRoot(), ref telemetry);
 
                 EditorUtility.DisplayProgressBar("Static SDF Forge", "Compressing to 16-bit half", 0.68f);
@@ -246,10 +296,23 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
                     warningFlags |= StaticCaveSdfConstants.WarningFileBudgetExceeded;
 
                 string textureAssetPath = string.Empty;
-                if (createTexture3D)
+                if (texture3DExportMode == StaticCaveSdfTexture3DExportMode.R16SignedMeters)
                 {
                     EditorUtility.DisplayProgressBar("Static SDF Forge", "Creating R16_SFloat Texture3D", 0.91f);
                     textureAssetPath = CreateTexture3DAsset(safeName, halfDistances, config.Resolution);
+                }
+                else if (texture3DExportMode == StaticCaveSdfTexture3DExportMode.EncodedUnorm)
+                {
+                    EditorUtility.DisplayProgressBar("Static SDF Forge", "Creating encoded cave-voxel Texture3D", 0.91f);
+                    encodedDistances = new NativeArray<byte>(voxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    new CompressSdfToEncodedByteJob
+                    {
+                        Distances = distances,
+                        EncodedDistances = encodedDistances,
+                        MaxSdfDistance = config.MaxSdfDistance
+                    // [EDITOR_BLOCKING_SYNC_POINT] Shader-compatible encoded Texture3D serialization consumes this payload immediately.
+                    }.Schedule(voxelCount, compressBatchSize).Complete();
+                    textureAssetPath = CreateEncodedCaveVoxelTexture3DAsset(safeName, encodedDistances, config.Resolution);
                 }
 
                 StaticCaveSdfPreviewStore.Set(binaryFullPath, in config);
@@ -259,7 +322,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
                     BinaryAssetPath = binaryAssetPath,
                     TextureAssetPath = textureAssetPath,
                     BackupAssetPath = writeResult.BackupCreated ? binaryAssetPath + ".bak" : string.Empty,
-                    ReportPath = ReportPath,
+                    ReportPath = writeDiagnostics ? ReportPath : string.Empty,
                     VoxelCount = voxelCount,
                     TriangleCount = triangles.Length,
                     BvhNodeCount = nodeCount,
@@ -272,11 +335,15 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
                     SdfBatchSize = sdfBatchSize,
                     CompressBatchSize = compressBatchSize,
                     WarningFlags = warningFlags,
+                    Texture3DExportMode = (int)texture3DExportMode,
                     BackupCreated = writeResult.BackupCreated,
                     AtomicWriteCompleted = writeResult.AtomicRenameCompleted
                 };
-                WriteReport(in result, in config, total.Elapsed.TotalMilliseconds);
-                WriteSelfAudit(in result, in config);
+                if (writeDiagnostics)
+                {
+                    WriteReport(in result, in config, total.Elapsed.TotalMilliseconds);
+                    WriteSelfAudit(in result, in config);
+                }
                 // [EDITOR_BLOCKING_SYNC_POINT] AssetDatabase save/import is a cold Forge handoff after binary/Texture3D writes.
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
@@ -284,11 +351,14 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             }
             catch
             {
-                StaticCaveSdfBlackBox.Dump(ProjectRoot(), ref telemetry);
+                if (writeDiagnostics)
+                    StaticCaveSdfBlackBox.Dump(ProjectRoot(), ref telemetry);
                 throw;
             }
             finally
             {
+                if (encodedDistances.IsCreated)
+                    encodedDistances.Dispose();
                 if (halfDistances.IsCreated)
                     halfDistances.Dispose();
                 if (distances.IsCreated)
@@ -771,6 +841,37 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             return path;
         }
 
+        private static string CreateEncodedCaveVoxelTexture3DAsset(string safeName, NativeArray<byte> encodedDistances, int3 resolution)
+        {
+            long expectedVoxelCount = (long)resolution.x * resolution.y * resolution.z;
+            if (!SystemInfo.supports3DTextures ||
+                !SystemInfo.SupportsTextureFormat(TextureFormat.R8) ||
+                !encodedDistances.IsCreated ||
+                expectedVoxelCount <= 0L ||
+                expectedVoxelCount > int.MaxValue ||
+                encodedDistances.Length != (int)expectedVoxelCount)
+            {
+                return string.Empty;
+            }
+
+            Texture3D texture = new Texture3D(
+                resolution.x,
+                resolution.y,
+                resolution.z,
+                TextureFormat.R8,
+                true);
+            texture.name = "TX_" + safeName + "_SDF_ENCODED_UNORM";
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            texture.anisoLevel = 0;
+            texture.SetPixelData(encodedDistances, 0);
+            texture.Apply(true, true);
+            string path = AssetDatabase.GenerateUniqueAssetPath(OutputFolder + "/TX_" + safeName + "_SDF_ENCODED_UNORM.asset");
+            // [EDITOR_BLOCKING_SYNC_POINT] Encoded cave-voxel texture creation is a cold compatibility handoff for existing shaders.
+            AssetDatabase.CreateAsset(texture, path);
+            return path;
+        }
+
         private static void WriteReport(in StaticCaveSdfBakeResult result, in StaticCaveSdfBakeConfigDTO config, double totalMs)
         {
             StringBuilder builder = new StringBuilder(4096);
@@ -796,12 +897,13 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             builder.Append("  \"expectedFileSizeBytes\": ").Append(result.ExpectedFileSizeBytes).Append(",\n");
             builder.Append("  \"criticalWarning\": \"").Append(result.FileSizeBytes > StaticCaveSdfConstants.CriticalBudgetBytes ? "CRITICAL_WARNING" : "NONE").Append("\",\n");
             builder.Append("  \"warningFlags\": ").Append(result.WarningFlags).Append(",\n");
+            builder.Append("  \"texture3DExportMode\": ").Append(result.Texture3DExportMode).Append(",\n");
             builder.Append("  \"nonFiniteFallbackDetected\": ").Append((result.WarningFlags & StaticCaveSdfConstants.WarningNonFiniteFallback) != 0u ? "true" : "false").Append(",\n");
             builder.Append("  \"warningReduction\": \"single-writer ValidateSdfDistanceWarningsJob after EvaluateSdfVolumeJob; no shared parallel atomic flag writes\",\n");
             builder.Append("  \"rayParitySignGuard\": { \"deterministicSubMillimeterYOffset\": true, \"sharedEdgeDoubleCountMitigation\": true },\n");
             builder.Append("  \"csvProfileIngestion\": { \"stringSplitOrLinq\": false, \"stackallocLimitBytes\": 4096, \"largerFilesUseArrayPool\": true, \"exactHeaderSchemaRequired\": true, \"rowValueValidation\": true, \"integerOverflowValidation\": true, \"profileCapacityOverflowFailsClosed\": true, \"csvFileLengthRaceFailsClosed\": true, \"malformedRowsFailClosed\": true },\n");
             builder.Append("  \"meshInputGuards\": { \"earlyOutputSliceCheckedBeforeRawReads\": true, \"splitIndexFormatJobsNoDefaultNativeArray\": true, \"jobLocalIndexBoundsChecked\": true, \"subMeshDescriptorFailClosed\": true, \"allSubmeshesCorruptTriangleDescriptorFailsClosed\": true, \"nativeSliceOutputWrites\": true, \"parallelForSafetySuppressions\": 0, \"triangleIndexBufferLengthChecked\": true, \"leafIndexRangeCheckedInEvaluator\": true, \"evaluatorMissingInputsFailClosed\": true, \"parallelExecuteOutputBoundsChecked\": true, \"compressInputLengthChecked\": true, \"resolutionLayerOverflowGuard\": true, \"traversalStackOverflowSentinel\": true, \"vertexUpperBoundChecked\": true, \"vertexByteRangeChecked\": true, \"uint32IndexOverflowRejected\": true, \"meshReadablePrecheck\": true, \"meshDataAcquireExceptionFence\": true, \"allSubmeshesPreserveBaseVertex\": true, \"triangleCountOverflowChecked\": true, \"bvhNodeCapacityOverflowChecked\": true },\n");
-            builder.Append("  \"texture3DGuards\": { \"supports3DTexturesCheck\": true, \"rHalfTextureFormatSupportedCheck\": true, \"r16SFloatSampleSupportedCheck\": true, \"unsupportedFormatSkipsOptionalAsset\": true },\n");
+            builder.Append("  \"texture3DGuards\": { \"supports3DTexturesCheck\": true, \"rHalfTextureFormatSupportedCheck\": true, \"r16SFloatSampleSupportedCheck\": true, \"r8EncodedCompatibilityMode\": true, \"unsupportedFormatSkipsOptionalAsset\": true },\n");
             builder.Append("  \"scenePreview\": { \"editorOnlyMonoBehaviour\": false, \"sceneViewOverlay\": \"StaticCaveSdfSliceSceneOverlay\", \"drawPrimitive\": \"Handles.DrawSolidDisc\", \"privatePreviewVertexArray\": false, \"previewIoRaceFailsClosed\": true, \"previewRowBoundsOverflowFailsClosed\": true, \"maxSamplesPerAxis\": 32 },\n");
             builder.Append("  \"editorSyncBarriers\": { \"ownedCompleteSitesLabeled\": true, \"completeOrSyncSiteCount\": 10, \"runtimeDispatcherRoute\": false },\n");
             builder.Append("  \"readAccessorHygiene\": { \"mutatingEditorHelpersRenamedToActionVerbs\": true, \"previewFileProbeUsesValidationVerb\": true, \"csvParserCursorConsumersUseParseVerbs\": true, \"remainingResolveOrTryGetHelpersPureLocal\": true },\n");
@@ -847,7 +949,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             builder.Append("    <TASK id=\"08\" status=\"PASS\">CompressSdfToHalfJob writes math.f32tof16 signed distances into a ushort payload.</TASK>\n");
             builder.Append("    <TASK id=\"09\" status=\"PASS\">MaxSdfDistance initializes and prunes closest traversal as a narrow band.</TASK>\n");
             builder.Append("    <TASK id=\"10\" status=\"PASS_WITH_DEVIATION\">The writer is editor-blocking and chunked because TempJob/native payload memory must not cross continuation boundaries; it still emits the required h8bin header and raw half payload.</TASK>\n");
-            builder.Append("    <TASK id=\"11\" status=\"PASS\">Optional Texture3D output uses R16_SFloat and SetPixelData.</TASK>\n");
+            builder.Append("    <TASK id=\"11\" status=\"PASS\">Optional Texture3D output uses selected R16_SFloat signed-meters or encoded UNorm cave-voxel compatibility mode and SetPixelData.</TASK>\n");
             builder.Append("    <TASK id=\"12\" status=\"PASS\">AUP anchor and local bounds min/max are embedded for runtime reconstruction.</TASK>\n");
             builder.Append("    <TASK id=\"13\" status=\"PASS\">Static h8bin payload is fenced out of rollback/Merkle state.</TASK>\n");
             builder.Append("    <TASK id=\"14\" status=\"PASS\">Large native bake buffers use UninitializedMemory and are overwritten by deterministic stages.</TASK>\n");
@@ -875,7 +977,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             builder.Append("  <NAN_VACCINATION_PROOF>Degenerate closest-point and ray-parity denominators are guarded. Ray parity applies a deterministic sub-millimeter YZ offset before traversal to avoid shared-edge double-count sign flips. BVH traversal stack overflow writes a finite out-of-band distance sentinel instead of dropping child nodes; ValidateSdfDistanceWarningsJob is the single writer for the warning lane, clamps non-finite or out-of-band values to zero, and triggers Dump_SHINOBU_244.bin from completed Stage2 telemetry.</NAN_VACCINATION_PROOF>\n");
             builder.Append("  <CSV_SCHEMA_PROOF>Required header order is name,resolution,narrow_band_meters,global_quality_weight,submesh_index. Malformed or reordered headers fail closed before row parsing. Row parsing also validates non-empty profile name, int/float field formats, int overflow, commas, row endings, and capacity overflow beyond 16 profiles; file length races or IO/permission races fail closed during cold load. Bad rows fail the import closed with row/column diagnostics instead of clamped default recipes or silently ignored designer rows. Profile byte hashing is owned by the Forge window in the Editor assembly; the runtime contract surface contains no string-hash helper.</CSV_SCHEMA_PROOF>\n");
             builder.Append("  <MESH_INPUT_GUARD_PROOF>BuildTrianglesFromMeshData rejects unreadable meshes and fences MeshData acquisition exceptions. ReadSubMeshRange rejects negative starts/counts, zero counts, descriptor overflow, out-of-capacity spans, and non-triangle-multiple index counts instead of clamp/truncate repair. All-submesh mode skips non-triangle topology but fails closed on any corrupt triangle submesh descriptor. Mesh conversion is split into BuildTrianglesFromMesh16Job and BuildTrianglesFromMesh32Job so no scheduled job carries a default index NativeArray. Both variants write through a per-submesh NativeSlice, validate the output index before raw index/position reads, validate absolute index reads against the active submesh span and container length, reject UInt32 index values above Int32.MaxValue before baseVertex adjustment, clamp baseVertex addition through 64-bit arithmetic, then validate vertex indices and byte ranges before raw strided position reads. IJobParallelFor Execute methods guard output range at the job boundary; EvaluateSdfVolumeJob fail-closes missing triangle/index/node inputs through the traversal-failure sentinel and guards resolution layer multiplication, while CompressSdfToHalfJob guards input/output length mismatch with a zero fallback. ConstructBvhJob rejects triangle-index buffers shorter than the triangle stream, and EvaluateSdfVolumeJob bounds-checks BVH leaf index ranges before reading TriangleIndices. The all-submesh path uses a 64-bit accumulator before native allocation and the BVH stage rejects triangle counts that would overflow fixed node capacity.</MESH_INPUT_GUARD_PROOF>\n");
-            builder.Append("  <TEXTURE3D_GUARD_PROOF>Optional visual-overkill Texture3D output checks SystemInfo.supports3DTextures, TextureFormat.RHalf, and GraphicsFormat.R16_SFloat sample support before creating the asset. Unsupported editor/device format support skips the optional texture asset while keeping the authoritative h8bin payload intact.</TEXTURE3D_GUARD_PROOF>\n");
+            builder.Append("  <TEXTURE3D_GUARD_PROOF>Optional visual-overkill Texture3D output checks SystemInfo.supports3DTextures, TextureFormat.RHalf, GraphicsFormat.R16_SFloat, and encoded R8 compatibility before creating the asset. Unsupported editor/device format support skips the optional texture asset while keeping the authoritative h8bin payload intact.</TEXTURE3D_GUARD_PROOF>\n");
             builder.Append("  <COLD_EDITOR_IO_HYGIENE>Binary writer and CSV parser clear rented byte buffers before returning them to ArrayPool; blackbox dump rows allocate stack row bytes from UnsafeUtility.SizeOf&lt;StaticCaveSdfTelemetryEntry&gt;() instead of a hard-coded byte count; generated XML proof text escapes generic angle brackets; scanner traversal uses an explicit directory stack, per-directory IO/permission guards, scanIncomplete, and diagnostics entries so a locked folder cannot silently abort coverage.</COLD_EDITOR_IO_HYGIENE>\n");
             builder.Append("  <STATIC_GATE_PROOF>Latest source gates check for real owned-source use of mesh.").Append("vertices");
             builder.Append(", PhysX proximity tokens, scene component preview surfaces, C# get/set DTO properties, Pack").Append("=1, ");

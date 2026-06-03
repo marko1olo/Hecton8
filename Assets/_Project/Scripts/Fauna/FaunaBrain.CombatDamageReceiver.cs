@@ -112,6 +112,7 @@ namespace Hecton8.AI
                 : safeMaxHealth;
             _currentHealth = safeHealth;
             MarkCombatDamageSyncDirty();
+            QueueCurrentFaunaPresentationShaderState();
 
             if (_currentHealth <= 0.001f)
                 Die();

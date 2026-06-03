@@ -21,10 +21,18 @@ namespace Hecton8.Audio
             EnsureProceduralAudioRenderer(playerObject);
 
             if (!playerObject.TryGetComponent(out DeepPsychosisController _))
-                playerObject.AddComponent<DeepPsychosisController>();
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[AtmosphericAudioRuntimeInstaller] Missing authored DeepPsychosisController on player. Runtime component creation is disabled.", playerObject);
+#endif
+            }
 
             if (!playerObject.TryGetComponent(out PlayerStressVFX _))
-                playerObject.AddComponent<PlayerStressVFX>();
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[AtmosphericAudioRuntimeInstaller] Missing authored PlayerStressVFX on player. Runtime component creation is disabled.", playerObject);
+#endif
+            }
 
             // Projected caustics are shader-only on MX350; no player-owned compute projector is installed.
         }
@@ -45,10 +53,19 @@ namespace Hecton8.Audio
                 return;
 
             if (!listener.TryGetComponent(out PlayerCriticalProceduralAudioRenderer renderer))
-                renderer = listener.gameObject.AddComponent<PlayerCriticalProceduralAudioRenderer>();
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[AtmosphericAudioRuntimeInstaller] Missing authored PlayerCriticalProceduralAudioRenderer on active listener. Runtime component creation is disabled.", listener);
+#endif
+                return;
+            }
 
             if (!listener.TryGetComponent(out VocalWarningSystem _))
-                listener.gameObject.AddComponent<VocalWarningSystem>();
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[AtmosphericAudioRuntimeInstaller] Missing authored VocalWarningSystem on active listener. Runtime component creation is disabled.", listener);
+#endif
+            }
 
             renderer.BindToPlayer(playerObject);
 

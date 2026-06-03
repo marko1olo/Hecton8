@@ -40,6 +40,9 @@ namespace Hecton8.Player.Movement
             GuardTelemetryCursor;
         private const ulong FrameInputGuardMask = GuardInput | GuardTuning;
         private const ulong JobGuardMask = InitializationGuardMask;
+        private static readonly double StopwatchTicksToMilliseconds = Stopwatch.Frequency > 0L
+            ? 1000.0 / Stopwatch.Frequency
+            : 0.0;
 
         [Header("Authority")]
         [SerializeField, Tooltip("Transform receiving presentation readback from the zero-G solver.")]
@@ -899,11 +902,10 @@ namespace Hecton8.Player.Movement
         private float ResolveElapsedJobMs()
         {
             long delta = Stopwatch.GetTimestamp() - _jobStartTimestamp;
-            long frequency = Stopwatch.Frequency;
-            if (delta <= 0L || frequency <= 0L)
+            if (delta <= 0L || StopwatchTicksToMilliseconds <= 0.0)
                 return 0.0f;
 
-            double elapsedMs = delta * 1000.0 / frequency;
+            double elapsedMs = delta * StopwatchTicksToMilliseconds;
             if (double.IsNaN(elapsedMs) || double.IsInfinity(elapsedMs) || elapsedMs <= 0.0)
                 return 0.0f;
             if (elapsedMs >= MaxRecordedSolverElapsedMs)

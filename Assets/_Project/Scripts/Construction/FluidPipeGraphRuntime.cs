@@ -776,6 +776,8 @@ namespace Hecton8.Construction
         private void ApplyElectrolysisInputs(float deltaTime)
         {
             ClearOxygenSourceDemandRates();
+            if (HasCriticalOxygenCutoffSignal())
+                return;
 
             int sourceCount = SubmarineElectrolysisModule.ActiveElectrolysisCount;
             if (sourceCount <= 0)
@@ -805,6 +807,25 @@ namespace Hecton8.Construction
 
                 TrySetPipeDemandRate(nodeIndex, oxygenUnits * demandScale);
             }
+        }
+
+        private static bool HasCriticalOxygenCutoffSignal()
+        {
+            ReadOnlySpan<OxygenCriticalSignal> signals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                OxygenCriticalSignal signal = signals[i];
+                if (signal.SourceId != OxygenCriticalSignal.SourceBioCablePredatorBite)
+                    continue;
+
+                float oxygen01 = math.saturate(math.select(0f, signal.Oxygen01, math.isfinite(signal.Oxygen01)));
+                bool criticalCutoff = signal.Severity >= OxygenCriticalSignal.CriticalSeverity &&
+                                      (signal.Flags & OxygenCriticalSignal.FlagLifeSupportCutoff) != 0;
+                if (criticalCutoff && oxygen01 <= 0.001f)
+                    return true;
+            }
+
+            return false;
         }
 
         private void ClearOxygenSourceDemandRates()

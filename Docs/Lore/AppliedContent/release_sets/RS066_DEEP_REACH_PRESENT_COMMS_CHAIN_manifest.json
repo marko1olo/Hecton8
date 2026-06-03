@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS066_DEEP_REACH_PRESENT_COMMS_CHAIN",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P326_SANITIZED_ACCIDENT_REPLY_WINDOW",
+    "P327_LEGAL_INSURANCE_AUTOMATED_PING",
+    "P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND",
+    "P329_DEEP_REACH_FACTION_MESSAGE_SPLIT",
+    "P330_BLACKOUT_WINDOW_SIGNAL_DECAY"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS066_DEEP_REACH_PRESENT_COMMS_CHAIN.packets.json"
+  ]
+}

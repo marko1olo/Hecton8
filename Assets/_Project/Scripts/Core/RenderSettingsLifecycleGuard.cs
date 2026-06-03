@@ -70,8 +70,6 @@ namespace Hecton8.Core
                 RenderSettings.reflectionIntensity = ReflectionIntensity;
                 RestoreSkybox(Skybox);
                 RenderSettings.sun = Sun;
-                if (!giRelayAmbientAuthority)
-                    DynamicGI.UpdateEnvironment();
             }
         }
 

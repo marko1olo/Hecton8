@@ -53,20 +53,6 @@ namespace Hecton8.World.Outposts
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
         private static readonly int OutpostAge01Id = Shader.PropertyToID("_OutpostAge01");
         private static readonly int HectonMaterialDecayRuntimeId = Shader.PropertyToID("_HectonMaterialDecayRuntime");
-        private static readonly Vector3[] FallbackCubeVertices =
-        {
-            new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
-            new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
-        }; // COLD ALLOC: Vector3[8] - immutable fallback cube vertices - owner: MARAUDER_OUTPOST_ARCHITECT
-        private static readonly int[] FallbackCubeIndices =
-        {
-            0, 2, 1, 0, 3, 2,
-            4, 5, 6, 4, 6, 7,
-            0, 1, 5, 0, 5, 4,
-            2, 3, 7, 2, 7, 6,
-            1, 2, 6, 1, 6, 5,
-            3, 0, 4, 3, 4, 7
-        }; // COLD ALLOC: int[36] - immutable fallback cube triangle indices - owner: MARAUDER_OUTPOST_ARCHITECT
 
         private enum JobPhase : byte
         {
@@ -269,8 +255,6 @@ namespace Hecton8.World.Outposts
         private GraphicsBuffer _argsBufferA;
         private GraphicsBuffer _argsBufferB;
         private GraphicsBuffer _activeArgsBuffer;
-        private Mesh _runtimeShellMesh;
-        private Material _runtimeShellMaterial;
         private MaterialPropertyBlock _renderPropertyBlock;
         private GraphicsBuffer _renderPropertyMatrixBuffer;
         private GraphicsBuffer _renderPropertyCellTypeBuffer;
@@ -319,8 +303,9 @@ namespace Hecton8.World.Outposts
         private bool _matrixUploadDirty;
         private bool _hasPendingShift;
         private bool _interactableProxyShiftDirty;
-        private bool _heightmapFallback;
+        private bool _missingHeightmap;
         private bool _renderPropertiesDirty = true;
+        private bool _authoredRenderResourceFaultLogged;
         private OutpostScratchBuffers _scratchBuffers;
 
         public bool IsGenerated => _generated;
@@ -408,18 +393,6 @@ namespace Hecton8.World.Outposts
             _shellUploadBufferIndex = 0;
             ReleaseVaultBuffers();
             _scratchBuffers.Dispose();
-
-            if (_runtimeShellMesh != null)
-            {
-                Destroy(_runtimeShellMesh);
-                _runtimeShellMesh = null;
-            }
-
-            if (_runtimeShellMaterial != null)
-            {
-                Destroy(_runtimeShellMaterial);
-                _runtimeShellMaterial = null;
-            }
 
             _generated = false;
             _matrixCount = 0;
@@ -623,7 +596,7 @@ namespace Hecton8.World.Outposts
             _interactableCount = 0;
             _solidCellCount = 0;
             _supportCount = 0;
-            _heightmapFallback = false;
+            _missingHeightmap = false;
             ReleasePublishedPowerGrid();
             _activeSectorHash = sectorHash;
             _activeWorldSeed = worldSeed;
@@ -839,8 +812,35 @@ namespace Hecton8.World.Outposts
 
         private void ScheduleMatrixExtraction()
         {
-            if (!TryReadFullWfcGrid(out NativeArray<byte>.ReadOnly wfcGrid) ||
-                !TryPrepareExtractionScratch(
+            if (!TryReadFullWfcGrid(out NativeArray<byte>.ReadOnly wfcGrid))
+            {
+                _jobHandle = default;
+                _jobPhase = JobPhase.None;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag);
+                SetState(OutpostGenerationState.Faulted);
+                return;
+            }
+
+            MapMagicBridge.QuantizedHeightmapPayload payload = ResolveHeightmapPayload();
+            bool hasHeightmapPayload = IsValidHeightmapPayload(in payload, _generationOrigin);
+            if (!hasHeightmapPayload)
+            {
+                _jobHandle = default;
+                _jobPhase = JobPhase.None;
+                _missingHeightmap = true;
+                _generated = false;
+                _matrixCount = 0;
+                _interactableCount = 0;
+                _solidCellCount = 0;
+                _supportCount = 0;
+                _matrixUploadDirty = false;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.MissingHeightmapFlag);
+                DumpBlackBox();
+                SetState(OutpostGenerationState.Faulted);
+                return;
+            }
+
+            if (!TryPrepareExtractionScratch(
                     out NativeArray<byte> mutableGrid,
                     out NativeArray<float4x4> shellMatrices,
                     out NativeArray<uint> shellCellTypes,
@@ -854,22 +854,20 @@ namespace Hecton8.World.Outposts
                 return;
             }
 
-            MapMagicBridge.QuantizedHeightmapPayload payload = ResolveHeightmapPayload();
-            bool hasHeightmapPayload = IsValidHeightmapPayload(in payload, _generationOrigin);
             MarauderOutpostMatrixExtractionJob job = new MarauderOutpostMatrixExtractionJob
             {
                 WfcGrid = wfcGrid,
                 MutableGrid = mutableGrid,
-                HeightSamples = hasHeightmapPayload ? payload.HeightSamples : default,
+                HeightSamples = payload.HeightSamples,
                 ShellMatrices = shellMatrices,
                 CellTypes = shellCellTypes,
                 InteractableSpawns = interactableSpawns,
                 Counters = counters,
                 Dimensions = ResolveActiveDimensions(),
                 OriginMeters = _generationOrigin,
-                TerrainPosition = hasHeightmapPayload ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
-                TerrainSize = hasHeightmapPayload ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
-                HeightResolution = hasHeightmapPayload ? payload.HeightmapResolution : 0,
+                TerrainPosition = ToFloat3(payload.TerrainPosition),
+                TerrainSize = ToFloat3(payload.TerrainSize),
+                HeightResolution = payload.HeightmapResolution,
                 CellSizeMeters = ResolveCellSizeMeters(),
                 FloorHeightMeters = ResolveFloorHeightMeters(),
                 StiltClearanceMeters = ResolveStiltClearanceMeters(),
@@ -907,7 +905,7 @@ namespace Hecton8.World.Outposts
             _interactableCount = counters.Length > 1 ? math.clamp(counters[1], 0, MarauderOutpostConstants.MaxInteractables) : 0;
             _solidCellCount = counters.Length > 2 ? math.max(0, counters[2]) : 0;
             _supportCount = counters.Length > 3 ? math.max(0, counters[3]) : 0;
-            _heightmapFallback = counters.Length > 4 && counters[4] != 0;
+            _missingHeightmap = counters.Length > 4 && counters[4] != 0;
             ApplyPendingShiftToExtractedData(_matrixCount, _interactableCount);
             _generated = _matrixCount > 0;
             _activeGridHash = _generated ? ComputeGridHash() : 0u;
@@ -926,7 +924,7 @@ namespace Hecton8.World.Outposts
 
             bool published = TryPublishGeneratedSignal();
             SetState(published ? OutpostGenerationState.Ready : OutpostGenerationState.Faulted);
-            WriteTelemetry((_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u) |
+            WriteTelemetry((_missingHeightmap ? MarauderOutpostConstants.MissingHeightmapFlag : 0u) |
                            (published ? 0u : MarauderOutpostConstants.FaultFlag));
         }
 
@@ -1267,26 +1265,7 @@ namespace Hecton8.World.Outposts
                 _renderPropertiesDirty = true;
             }
 
-            if (shellMesh == null && _runtimeShellMesh == null)
-                _runtimeShellMesh = CreateCubeMesh();
-
-            if (shellMaterial == null && _runtimeShellMaterial == null)
-            {
-                RuntimeShaderReferenceCatalog.TryGetMarauderOutpostIndirectShader(out Shader shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (shader == null)
-                    shader = Shader.Find("Hecton8/Environment/MarauderOutpostIndirect");
-#endif
-                if (shader != null)
-                {
-                    // COLD ALLOC: Material[1] - fallback indirect shell material when no asset is assigned - owner: MARAUDER_OUTPOST_ARCHITECT
-                    _runtimeShellMaterial = new Material(shader)
-                    {
-                        name = "MarauderOutpostRuntime",
-                        hideFlags = HideFlags.DontSave
-                    };
-                }
-            }
+            ValidateAuthoredRenderResources();
 
             if (matrixBufferCreated || cellTypeBufferCreated || argsBufferCreated)
                 _renderPropertiesDirty = true;
@@ -1539,8 +1518,6 @@ namespace Hecton8.World.Outposts
         {
             if (prefab == null || !prefab.TryGetComponent(out MeshFilter filter) || filter.sharedMesh == null)
                 return;
-
-            UnityEngine.Physics.BakeMesh(filter.sharedMesh.GetEntityId(), false);
         }
 
         private void DespawnInteractables()
@@ -1730,7 +1707,7 @@ namespace Hecton8.World.Outposts
 
         private ushort ResolveDescriptorFlags()
         {
-            return (ushort)(_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u);
+            return (ushort)(_missingHeightmap ? MarauderOutpostConstants.MissingHeightmapFlag : 0u);
         }
 
         private bool TryPublishGeneratedSignal()
@@ -2109,19 +2086,38 @@ namespace Hecton8.World.Outposts
 
         private Material ResolveRenderMaterial()
         {
-            return shellMaterial != null ? shellMaterial : _runtimeShellMaterial;
+            return shellMaterial;
         }
 
         private Mesh ResolveRenderMesh()
         {
-            return shellMesh != null ? shellMesh : _runtimeShellMesh;
+            return shellMesh;
+        }
+
+        private bool ValidateAuthoredRenderResources()
+        {
+            if (shellMesh != null && shellMaterial != null)
+            {
+                _authoredRenderResourceFaultLogged = false;
+                return true;
+            }
+
+            if (!_authoredRenderResourceFaultLogged)
+            {
+                _authoredRenderResourceFaultLogged = true;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag);
+                SetState(OutpostGenerationState.Faulted);
+                H8Debug.LogError("[MarauderOutpostGenerationService] Missing authored shell mesh/material. Authored render resources are required.", this);
+            }
+
+            return false;
         }
 
         private MaterialPropertyBlock ResolveRenderProperties(float age)
         {
             if (_renderPropertyBlock == null)
             {
-                _renderPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - late fallback indirect draw payload - owner: MARAUDER_OUTPOST_ARCHITECT
+                _renderPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - late-created indirect draw payload - owner: MARAUDER_OUTPOST_ARCHITECT
                 _renderPropertiesDirty = true;
             }
 
@@ -2168,22 +2164,6 @@ namespace Hecton8.World.Outposts
             _renderPropertyDecayRuntime = default;
             _renderPropertyAge01 = 0f;
             _renderPropertiesDirty = true;
-        }
-
-        private static Mesh CreateCubeMesh()
-        {
-            // COLD ALLOC: Mesh[1] - fallback unit cube shell mesh when no authored mesh is assigned - owner: MARAUDER_OUTPOST_ARCHITECT
-            Mesh mesh = new Mesh
-            {
-                name = "MarauderOutpostUnitCube",
-                hideFlags = HideFlags.DontSave
-            };
-
-            mesh.SetVertices(FallbackCubeVertices);
-            mesh.SetTriangles(FallbackCubeIndices, 0, false);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
         }
 
         private static float3 ToFloat3(Vector3 value)

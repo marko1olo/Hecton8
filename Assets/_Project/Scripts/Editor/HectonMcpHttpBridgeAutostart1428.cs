@@ -1,4 +1,4 @@
-#if UNITY_EDITOR && HECTON8_LEGACY_MCP_AUTOSTART_1428
+#if UNITY_EDITOR
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -10,7 +10,6 @@ namespace Hecton8.EditorTools
     [InitializeOnLoad]
     internal static class HectonMcpHttpBridgeAutostart1428
     {
-        private const string SessionStartedKey = "Hecton8.McpHttpBridgeAutostart1428.Started";
         private const string UseHttpTransportKey = "MCPForUnity.UseHttpTransport";
         private const string HttpTransportScopeKey = "MCPForUnity.HttpTransportScope";
         private const string HttpBaseUrlKey = "MCPForUnity.HttpUrl";
@@ -18,7 +17,12 @@ namespace Hecton8.EditorTools
         private const string DebugLogsKey = "MCPForUnity.DebugLogs";
         private const string LocalScope = "local";
         private const string LocalMcpUrl = "http://127.0.0.1:8088";
-        private const double StartupDelaySeconds = 1.5d;
+        private const double RetryIntervalSeconds = 5.0d;
+        private const int BridgeTimeoutMilliseconds = 3500;
+
+        private static bool _connectInFlight;
+        private static bool _loggedConnected;
+        private static double _nextAttemptTime;
 
         static HectonMcpHttpBridgeAutostart1428()
         {
@@ -26,7 +30,164 @@ namespace Hecton8.EditorTools
                 return;
 
             ConfigureMcpEditorPrefs();
-            EditorApplication.delayCall += StartWhenEditorIsIdle;
+            EditorApplication.update -= TickReconnect;
+            EditorApplication.update += TickReconnect;
+            EditorApplication.delayCall += () => _nextAttemptTime = 0d;
+        }
+
+        private static void TickReconnect()
+        {
+            if (Application.isBatchMode || EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return;
+
+            if (_connectInFlight)
+                return;
+
+            if (EditorApplication.timeSinceStartup < _nextAttemptTime)
+                return;
+
+            _connectInFlight = true;
+            _ = ConnectAsync();
+        }
+
+        private static async Task ConnectAsync()
+        {
+            try
+            {
+                ConfigureMcpEditorPrefs();
+
+                object transportManager = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "TransportManager");
+                Type transportModeType = Type.GetType("MCPForUnity.Editor.Services.Transport.TransportMode, MCPForUnity.Editor", false);
+                if (transportManager == null || transportModeType == null)
+                {
+                    ScheduleRetry();
+                    return;
+                }
+
+                object httpMode = Enum.Parse(transportModeType, "Http");
+                if (IsRunning(transportManager, transportModeType, httpMode))
+                {
+                    _loggedConnected = true;
+                    ScheduleRetry();
+                    return;
+                }
+
+                ForceStopHttp(transportManager, transportModeType, httpMode);
+                if (!EnsureLocalServerReachable())
+                {
+                    ScheduleRetry();
+                    return;
+                }
+
+                bool started = await StartTransportAsync(transportManager, transportModeType, httpMode);
+                if (!started)
+                    started = await StartBridgeFallbackAsync();
+
+                if (started)
+                {
+                    if (!_loggedConnected)
+                        Debug.Log("HECTON_MCP_1428 HTTP bridge connected to http://127.0.0.1:8088.");
+
+                    _loggedConnected = true;
+                    ScheduleRetry();
+                    return;
+                }
+
+                if (_loggedConnected)
+                    Debug.LogWarning("HECTON_MCP_1428 HTTP bridge disconnected; retrying.");
+
+                _loggedConnected = false;
+                ScheduleRetry();
+            }
+            catch (Exception ex)
+            {
+                _loggedConnected = false;
+                Debug.LogWarning($"HECTON_MCP_1428 HTTP bridge reconnect failed: {ex.Message}");
+                ScheduleRetry();
+            }
+            finally
+            {
+                _connectInFlight = false;
+            }
+        }
+
+        private static bool IsRunning(object transportManager, Type transportModeType, object httpMode)
+        {
+            MethodInfo isRunningMethod = transportManager.GetType().GetMethod(
+                "IsRunning",
+                BindingFlags.Instance | BindingFlags.Public,
+                null,
+                new[] { transportModeType },
+                null);
+
+            return isRunningMethod?.Invoke(transportManager, new[] { httpMode }) is bool isRunning && isRunning;
+        }
+
+        private static void ForceStopHttp(object transportManager, Type transportModeType, object httpMode)
+        {
+            MethodInfo forceStopMethod = transportManager.GetType().GetMethod(
+                "ForceStop",
+                BindingFlags.Instance | BindingFlags.Public,
+                null,
+                new[] { transportModeType },
+                null);
+
+            forceStopMethod?.Invoke(transportManager, new[] { httpMode });
+        }
+
+        private static async Task<bool> StartTransportAsync(object transportManager, Type transportModeType, object httpMode)
+        {
+            MethodInfo startMethod = transportManager.GetType().GetMethod(
+                "StartAsync",
+                BindingFlags.Instance | BindingFlags.Public,
+                null,
+                new[] { transportModeType },
+                null);
+
+            if (startMethod?.Invoke(transportManager, new[] { httpMode }) is not Task<bool> startTask)
+                return false;
+
+            Task completed = await Task.WhenAny(startTask, Task.Delay(BridgeTimeoutMilliseconds));
+            return ReferenceEquals(completed, startTask) && await startTask;
+        }
+
+        private static async Task<bool> StartBridgeFallbackAsync()
+        {
+            object bridge = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "Bridge");
+            MethodInfo startMethod = bridge?.GetType().GetMethod("StartAsync", BindingFlags.Instance | BindingFlags.Public);
+            if (startMethod?.Invoke(bridge, null) is not Task<bool> startTask)
+                return false;
+
+            Task completed = await Task.WhenAny(startTask, Task.Delay(BridgeTimeoutMilliseconds));
+            return ReferenceEquals(completed, startTask) && await startTask;
+        }
+
+        private static bool EnsureLocalServerReachable()
+        {
+            object server = ResolveStaticProperty("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", "Server");
+            if (server == null)
+                return false;
+
+            MethodInfo reachableMethod = server.GetType().GetMethod("IsLocalHttpServerReachable", BindingFlags.Instance | BindingFlags.Public);
+            bool reachable = reachableMethod?.Invoke(server, null) is bool isReachable && isReachable;
+            if (reachable)
+                return true;
+
+            MethodInfo startMethod = server.GetType().GetMethod(
+                "StartLocalHttpServer",
+                BindingFlags.Instance | BindingFlags.Public,
+                null,
+                new[] { typeof(bool) },
+                null);
+
+            return startMethod?.Invoke(server, new object[] { true }) is bool started && started;
+        }
+
+        private static object ResolveStaticProperty(string typeName, string propertyName)
+        {
+            Type type = Type.GetType(typeName, false);
+            PropertyInfo property = type?.GetProperty(propertyName, BindingFlags.Static | BindingFlags.Public);
+            return property?.GetValue(null);
         }
 
         private static void ConfigureMcpEditorPrefs()
@@ -39,97 +200,16 @@ namespace Hecton8.EditorTools
             RefreshMcpConfigurationCache();
         }
 
-        private static void StartWhenEditorIsIdle()
-        {
-            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
-            {
-                EditorApplication.delayCall += StartWhenEditorIsIdle;
-                return;
-            }
-
-            _ = StartBridgeAsync();
-        }
-
-        private static async Task StartBridgeAsync()
-        {
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(StartupDelaySeconds));
-                RefreshMcpConfigurationCache();
-
-                if (IsHttpTransportRunning())
-                    return;
-
-                object transportManager = ResolveTransportManager();
-                Type transportModeType = Type.GetType("MCPForUnity.Editor.Services.Transport.TransportMode, MCPForUnity.Editor", false);
-                if (transportManager != null && transportModeType != null)
-                {
-                    object httpMode = Enum.Parse(transportModeType, "Http");
-                    MethodInfo startTransportMethod = transportManager.GetType().GetMethod("StartAsync", BindingFlags.Instance | BindingFlags.Public, null, new[] { transportModeType }, null);
-                    if (startTransportMethod?.Invoke(transportManager, new[] { httpMode }) is Task<bool> httpStartTask)
-                    {
-                        bool httpStarted = await httpStartTask;
-                        if (httpStarted)
-                        {
-                            Debug.Log("HECTON_MCP_1428 HTTP bridge started on http://127.0.0.1:8088.");
-                            return;
-                        }
-                    }
-                }
-
-                object bridge = ResolveBridgeService();
-                if (bridge == null)
-                    return;
-
-                MethodInfo startMethod = bridge.GetType().GetMethod("StartAsync", BindingFlags.Instance | BindingFlags.Public);
-                if (startMethod?.Invoke(bridge, null) is not Task<bool> startTask)
-                    return;
-
-                bool started = await startTask;
-                if (started)
-                    Debug.Log("HECTON_MCP_1428 HTTP bridge started through bridge service on http://127.0.0.1:8088.");
-                else
-                    Debug.LogWarning("HECTON_MCP_1428 HTTP bridge autostart failed. Keep MCP server running on http://127.0.0.1:8088.");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"HECTON_MCP_1428 HTTP bridge autostart exception: {ex.Message}");
-            }
-        }
-
-        private static object ResolveBridgeService()
-        {
-            Type locatorType = Type.GetType("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", false);
-            PropertyInfo bridgeProperty = locatorType?.GetProperty("Bridge", BindingFlags.Static | BindingFlags.Public);
-            return bridgeProperty?.GetValue(null);
-        }
-
-        private static object ResolveTransportManager()
-        {
-            Type locatorType = Type.GetType("MCPForUnity.Editor.Services.MCPServiceLocator, MCPForUnity.Editor", false);
-            PropertyInfo transportProperty = locatorType?.GetProperty("TransportManager", BindingFlags.Static | BindingFlags.Public);
-            return transportProperty?.GetValue(null);
-        }
-
-        private static bool IsHttpTransportRunning()
-        {
-            object transportManager = ResolveTransportManager();
-            Type transportModeType = Type.GetType("MCPForUnity.Editor.Services.Transport.TransportMode, MCPForUnity.Editor", false);
-            if (transportManager == null || transportModeType == null)
-                return false;
-
-            object httpMode = Enum.Parse(transportModeType, "Http");
-            MethodInfo isRunningMethod = transportManager.GetType().GetMethod("IsRunning", BindingFlags.Instance | BindingFlags.Public, null, new[] { transportModeType }, null);
-            return isRunningMethod?.Invoke(transportManager, new[] { httpMode }) is bool isRunning && isRunning;
-        }
-
         private static void RefreshMcpConfigurationCache()
         {
-            Type cacheType = Type.GetType("MCPForUnity.Editor.Services.EditorConfigurationCache, MCPForUnity.Editor", false);
-            PropertyInfo instanceProperty = cacheType?.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public);
-            object cache = instanceProperty?.GetValue(null);
+            object cache = ResolveStaticProperty("MCPForUnity.Editor.Services.EditorConfigurationCache, MCPForUnity.Editor", "Instance");
             MethodInfo refreshMethod = cache?.GetType().GetMethod("Refresh", BindingFlags.Instance | BindingFlags.Public);
             refreshMethod?.Invoke(cache, null);
+        }
+
+        private static void ScheduleRetry()
+        {
+            _nextAttemptTime = EditorApplication.timeSinceStartup + RetryIntervalSeconds;
         }
     }
 }

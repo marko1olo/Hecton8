@@ -403,6 +403,9 @@ namespace Hecton8.Gameplay
                 return registeredInstance;
 
             EnvironmentRuntimeContextService environmentService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
+            if (environmentService == null)
+                return null;
+
             environmentService.InitializeService();
             return environmentService.HazardZones;
         }

@@ -47,7 +47,6 @@ Core:
 - `Docs/SYSTEMS_CONTRACTS.md`
 - `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
 - `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
-- `Docs/Actual Domains of Project.txt`
 - `Docs/ROOT_DOCS_REFERENCE.md`
 
 Generated/tool-entry stubs:

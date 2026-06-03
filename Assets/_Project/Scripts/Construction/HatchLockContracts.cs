@@ -12,7 +12,7 @@ namespace Hecton8.Construction
         public const int ProfileCapacity = 32;
         public const int ShaderUploadCapacity = 256;
         public const int CsvScratchBytes = 8192;
-        public const int MockFluidRowsPerHatch = 2;
+        public const int PairedFluidRowsPerHatch = 2;
         public const int MinStructuralScanRows = 32;
         public const uint SourceHash = 0x53333433u;
         public const uint DumpMagic = 0x48333433u;

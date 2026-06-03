@@ -978,9 +978,13 @@ namespace Hecton8.Gameplay
         private Rigidbody _body;
         private IPlayerKinematicsMovementRuntime _movement;
         private IPlayerKinematicsMotorSyncSink _motor;
+        private IPlayerKinematicsMotorSyncSink _localMotor;
         private HydrodynamicKccRuntime _hydrodynamicKccRuntime;
+        private HydrodynamicKccRuntime _localHydrodynamicKccRuntime;
         private PlayerInventory _inventory;
+        private PlayerInventory _localInventory;
         private HectonSurvivalSystem _survival;
+        private HectonSurvivalSystem _localSurvival;
         private IDataVault _dataVault;
         private IGasDynamicsSolver _gasDynamics;
         private IAbyssalFlowGpuReadModel _fluidGpuReadModel;
@@ -1063,14 +1067,9 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            TryGetComponent(out _body);
-            TryGetComponent<IPlayerKinematicsMovementRuntime>(out _movement);
-            TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
-            TryGetComponent(out _hydrodynamicKccRuntime);
+            CacheLocalComponentsCold();
             _sourceId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             _cadenceSalt = unchecked((int)_sourceId);
-            TryGetComponent(out _inventory);
-            TryGetComponent(out _survival);
             RebindServices(allowHierarchyLookup: true);
             RefreshHandIkFloatingOriginSnapshotCold(HectonFloatingOrigin.CurrentTotalOffsetDouble);
             AllocateNativeState();
@@ -1572,7 +1571,7 @@ namespace Hecton8.Gameplay
             {
                 _motor = currentService as IPlayerKinematicsMotorSyncSink;
                 if (_motor == null)
-                    TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
+                    _motor = _localMotor;
                 return;
             }
 
@@ -1588,7 +1587,11 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!playerRoot.TryGetComponent(out PlayerKinematicsRuntime _))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 playerRoot.AddComponent<PlayerKinematicsRuntime>(); // COLD ALLOC: PlayerKinematicsRuntime[1] - player kinematics bridge install - owner: PlayerRuntimeContextService
+#endif
+            }
         }
 
         private void AllocateNativeState()
@@ -1730,13 +1733,45 @@ namespace Hecton8.Gameplay
         {
             RebindRegistryServices();
             if (_motor == null)
-                TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
+                _motor = _localMotor;
             if (_hydrodynamicKccRuntime == null)
-                TryGetComponent(out _hydrodynamicKccRuntime);
+                _hydrodynamicKccRuntime = _localHydrodynamicKccRuntime;
             if (_inventory == null)
-                TryGetComponent(out _inventory);
+                _inventory = _localInventory;
             if (_survival == null)
-                TryGetComponent(out _survival);
+                _survival = _localSurvival;
+
+            if (!allowHierarchyLookup)
+                return;
+
+            CacheLocalComponentsCold();
+            if (_motor == null)
+                _motor = _localMotor;
+            if (_hydrodynamicKccRuntime == null)
+                _hydrodynamicKccRuntime = _localHydrodynamicKccRuntime;
+            if (_inventory == null)
+                _inventory = _localInventory;
+            if (_survival == null)
+                _survival = _localSurvival;
+        }
+
+        private void CacheLocalComponentsCold()
+        {
+            TryGetComponent(out _body);
+            TryGetComponent<IPlayerKinematicsMovementRuntime>(out _movement);
+            TryGetComponent(out _localHydrodynamicKccRuntime);
+            TryGetComponent(out _localInventory);
+            TryGetComponent(out _localSurvival);
+            TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _localMotor);
+
+            if (_motor == null)
+                _motor = _localMotor;
+            if (_hydrodynamicKccRuntime == null)
+                _hydrodynamicKccRuntime = _localHydrodynamicKccRuntime;
+            if (_inventory == null)
+                _inventory = _localInventory;
+            if (_survival == null)
+                _survival = _localSurvival;
         }
 
         private void WarmRuntimeStateOnEnable()

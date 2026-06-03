@@ -937,10 +937,29 @@ namespace Hecton8.UI
             if (source.IsEmpty)
                 return string.Empty;
 
-            if (localization != null && localization.TryExpandText(source, _promptCharBuffer, out int expandedLength))
+            bool hasInlineTokens = ContainsInlineTokenStart(source);
+            if (hasInlineTokens &&
+                localization != null &&
+                localization.TryExpandText(source, _promptCharBuffer, out int expandedLength))
+            {
                 return new string(_promptCharBuffer, 0, math.min(expandedLength, _promptCharBuffer.Length));
+            }
+
+            if (source.SequenceEqual(fallbackSpan))
+                return fallback;
 
             return source.ToString();
+        }
+
+        private static bool ContainsInlineTokenStart(ReadOnlySpan<char> text)
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '<')
+                    return true;
+            }
+
+            return false;
         }
 
         private void RegisterToTick()

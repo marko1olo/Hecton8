@@ -1,0 +1,136 @@
+{
+  "agentId": "1712",
+  "domain": "HARD_SURFACE_MODULE_AND_BEVEL_ARCHITECT",
+  "timestampLocal": "2026-06-02T19:35:00+04:00",
+  "scope": [
+    "Assets/_Project/Scripts/World/Outposts",
+    "Assets/_Project/Scripts/Construction",
+    "Assets/_Project/Editor/Generators/Structures"
+  ],
+  "rb003": {
+    "status": "removed",
+    "currentForbiddenSymbolScan": {
+      "command": "rg -n \"new Material\\(|CreateCubeMesh|FallbackCube|_runtimeShell\" assigned domains",
+      "matches": 0
+    },
+    "currentLineAnchors": [
+      {
+        "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+        "line": 2074,
+        "symbol": "ValidateAuthoredRenderResources"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+        "line": 2087,
+        "symbol": "Missing authored shell mesh/material fail-closed log"
+      }
+    ],
+    "runtimeMaterialCloneCallsEliminatedInAssignedDomain": 5,
+    "runtimeCubeMeshFallbackCallsEliminated": 1,
+    "steadyStateManagedAllocationBytes": 0,
+    "estimatedMicrosecondsSavedLowEnd": "35-120 cold-path us for missing outpost resource; 10-80 cold-path us per removed preview/proxy material clone"
+  },
+  "rb011": {
+    "status": "removed",
+    "currentForbiddenSymbolScan": {
+      "command": "rg -n \"CreateDefaultMockSdfConfig|MockSdfFallback|MockSdfDistances|GenerateMockSeafloor|UseEncodedByteSdf\" assigned domains",
+      "matches": 0
+    },
+    "currentLineAnchors": [
+      {
+        "file": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+        "line": 26,
+        "symbol": "SnapFailed_NoSubstrate"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs",
+        "line": 574,
+        "symbol": "TryResolveEncodedVoxelSdf"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorJobs.cs",
+        "line": 288,
+        "symbol": "IsRealSdfPayloadValid"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs",
+        "line": 878,
+        "symbol": "PublishNoSubstrateWarning"
+      }
+    ],
+    "truthSource": "GlobalDataVault VoxelSdfPayloadDescriptorDTO + VoxelSdfTexture3D",
+    "missingTruthBehavior": "Fail closed, clear uploaded pylon batch, publish SnapFailed_NoSubstrate, push HUD warning",
+    "estimatedMicrosecondsSavedLowEnd": "250-900 us avoided by removing mock volume fallback/generation path"
+  },
+  "moduleArchitect": {
+    "status": "added",
+    "file": "Assets/_Project/Editor/Generators/Structures/ModuleArchitect1712.cs",
+    "currentLineAnchors": [
+      {
+        "line": 40,
+        "symbol": "EditorWindow"
+      },
+      {
+        "line": 266,
+        "symbol": "AddXFaceWithOptionalCutout"
+      },
+      {
+        "line": 270,
+        "symbol": "AddZFaceWithOptionalCutout"
+      },
+      {
+        "line": 436,
+        "symbol": "COL_ primitive collider proxy generation"
+      },
+      {
+        "line": 520,
+        "symbol": "ValidateMesh"
+      },
+      {
+        "line": 583,
+        "symbol": "Burst wear/rust vertex color bake job"
+      }
+    ],
+    "generatedModuleCountPerRun": 3,
+    "meshColliderReferences": 0,
+    "materialCloneCalls": 0,
+    "triangleCountPerBaseBeveledBoxBeforeSocketCutouts": 44,
+    "qualityScaling": "Continuous GlobalQualityWeight controls offline bevel width and wear/rust mask intensity"
+  },
+  "build": {
+    "status": "blocked_by_host_load",
+    "attemptsLaunched": 0,
+    "gateSamples": [
+      {
+        "cpuLoadPercent": 100,
+        "activeCompilerProcesses": [
+          "dotnet"
+        ]
+      },
+      {
+        "cpuLoadPercent": 83,
+        "activeCompilerProcesses": [
+          "dotnet"
+        ]
+      },
+      {
+        "cpuLoadPercent": 100,
+        "activeCompilerProcesses": [
+          "dotnet"
+        ]
+      }
+    ]
+  },
+  "sha256": {
+    "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs": "9E823BEA986284B9F497809129D7E7C9A9B1DC2B234918B5704EF7EFFE86B2DB",
+    "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs": "87FE2C5031C9B0015999F6116876B497F840433F6E41A4BC8C784023AC92AE97",
+    "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs": "1D058AB7771D07EE8C37B7AC6C11FE26BB41B45AABCB055BCEC7C4281680667A",
+    "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorJobs.cs": "226B344FE4A1E3E92370EBD422714D45D052E138B13EE3A414499D20F91CCE38",
+    "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs": "8DC14458C95B09ABAD543DFC62BA6E2889ABA83CEDAA8819DFB69E2B9FF84F9B",
+    "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs": "C962F0FCE3E04D884F7D712D237EF935C7A0C6740592A657082F68EA07AA5416",
+    "Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs": "7B3BBB8948906D0BDD2A694CC6C26371901AC3B2CFCDFF4E40BAAD0BD50D7852",
+    "Assets/_Project/Editor/Generators/Structures/DeepReachStationFabricator.cs": "AE08E953023ED8C8D87CF4B32D977C72257A2A660BF0435D4E9432AFB2F145BB",
+    "Assets/_Project/Editor/Generators/Structures/ModuleArchitect1712.cs": "A2283AE1758AE140FC9B0BA5582C651183AB43D1AA64DDDB58A32491724BE61A",
+    "Assets/_Project/Tests/Editor/FoundationSnappingCalculatorEditTests.cs": "D628A03518AA32550F11EE279820AA467914C9779054374479F67963FCD01895"
+  }
+}

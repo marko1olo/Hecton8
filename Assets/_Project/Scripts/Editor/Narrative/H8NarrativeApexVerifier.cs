@@ -42,6 +42,8 @@ namespace Hecton8.Narrative.Editor
             "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
             "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
             "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+            "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+            "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
             "Assets/_Project/Scripts/Data/Monolith/H8AppliedLoreRuntime.cs",
             "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
             "Assets/_Project/Scripts/Gameplay/MessageTerminal.cs",
@@ -65,7 +67,39 @@ namespace Hecton8.Narrative.Editor
             "Assets/_Project/Scripts/UI/SettingsPanel.cs",
             "Assets/_Project/Scripts/UI/SubtitleManager.cs",
             "Assets/_Project/Scripts/UI/UIScreenShake.cs",
-            "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs"
+            "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+            "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs"
+        };
+
+        private static readonly string[] SourceMetaRequiredExtensions =
+        {
+            ".asmdef",
+            ".cs",
+            ".shader",
+            ".compute",
+            ".prefab",
+            ".asset",
+            ".mat",
+            ".unity",
+            ".anim",
+            ".controller",
+            ".overrideController",
+            ".playable",
+            ".uxml",
+            ".uss",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".tga",
+            ".psd",
+            ".fbx",
+            ".wav",
+            ".ogg",
+            ".mp3",
+            ".bytes",
+            ".csv",
+            ".json",
+            ".txt"
         };
 
         private static readonly string[] DependencyInvocationNames =
@@ -149,6 +183,9 @@ namespace Hecton8.Narrative.Editor
             ScanHectonNarrativeDirectorPoiHashCacheRoute(files, findings, ref summary);
             ScanAppliedLoreWorldImpactPhaseRoute(files, findings, ref summary);
             ScanMetaCampaignPhaseSideEffectRoute(files, findings, ref summary);
+            ScanPrologueBlackBoxDataVaultRoute(files, findings, ref summary);
+            ScanPdaTelemetryVaultRoute(files, findings, ref summary);
+            ScanTerminalOsTelemetryVaultRoute(files, findings, ref summary);
             ScanAppliedLoreTerminalPreviewRoute(files, findings, ref summary);
             ScanAccessibilityTextScaleProducerRoute(files, findings, ref summary);
             ScanAccessibilityMotionScaleRoute(files, findings, ref summary);
@@ -159,6 +196,8 @@ namespace Hecton8.Narrative.Editor
             ScanTerminalOsBlackBoxDumpRoute(files, findings, ref summary);
             ScanLockPatterns(files, findings, ref summary);
             ScanTerminalOsSceneBinding(projectRoot, findings, ref summary);
+            ScanRuntimeStructLayoutProof(files, findings, ref summary);
+            ScanProjectAssetMetaIntegrity(projectRoot, findings, ref summary);
 
             summary.FatalFindings = findings.Count;
             summary.FindingsLogged = LogFindings(findings);
@@ -476,6 +515,18 @@ namespace Hecton8.Narrative.Editor
                             summary.JobCompleteFindings++;
                         }
 
+                        continue;
+                    }
+
+                    if (node is BinaryExpressionSyntax binaryExpression &&
+                        IsHotStringConcatenation(binaryExpression))
+                    {
+                        findings.Add(new Finding(
+                            RelativePath(node),
+                            LineOf(node),
+                            "hot_string_concat",
+                            rootName + " -> " + owner + "." + method.Identifier.ValueText + " concatenates " + Trim(binaryExpression.ToString())));
+                        summary.ZeroGcFindings++;
                         continue;
                     }
 
@@ -1392,6 +1443,8 @@ namespace Hecton8.Narrative.Editor
         {
             if (!TryFindFile(files, "HectonNarrativeDirector.cs", out FileUnit directorFile) ||
                 !TryFindFile(files, "HectonNarrativeDirector_PoiTriggers.cs", out FileUnit poiTriggersFile) ||
+                !TryFindFile(files, "H8DataMonolithTypes.cs", out FileUnit dataLayoutFile) ||
+                !TryFindFile(files, "H8StaticDataArena.cs", out FileUnit staticArenaFile) ||
                 !TryFindFile(files, "H8AppliedLoreRuntime.cs", out FileUnit appliedLoreRuntimeFile))
             {
                 findings.Add(new Finding(
@@ -1428,13 +1481,42 @@ namespace Hecton8.Narrative.Editor
                 CountTextInMethod(poiTriggersFile.Root, "ClearAppliedLoreWorldImpactState", "_lastAppliedLoreImpactEntryHash = 0u") +
                 CountTextInMethod(poiTriggersFile.Root, "ClearAppliedLoreWorldImpactState", "_lastAppliedLoreImpactScanId = 0u") +
                 CountTextInMethod(poiTriggersFile.Root, "ClearAppliedLoreWorldImpactState", "_lastAppliedLoreImpactSourceId = 0u");
+            summary.AppliedLoreWorldImpactLayoutSizeConstants =
+                CountTextInFile(appliedLoreRuntimeFile, "public const int SizeBytes = 24");
+            summary.AppliedLoreWorldImpactLayoutPaddingFields =
+                CountTextInFile(appliedLoreRuntimeFile, "[FieldOffset(17)]") +
+                CountTextInFile(appliedLoreRuntimeFile, "[FieldOffset(18)]") +
+                CountTextInFile(appliedLoreRuntimeFile, "[FieldOffset(20)]");
+            summary.AppliedLoreWorldImpactLayoutSizeofProofs =
+                CountTextInFile(appliedLoreRuntimeFile, "using Unity.Collections.LowLevel.Unsafe;") +
+                CountTextInMethod(appliedLoreRuntimeFile.Root, "ValidateRuntimeLayout", "UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>()") +
+                CountTextInMethod(appliedLoreRuntimeFile.Root, "ValidateRuntimeLayout", "H8AppliedLoreWorldImpactRecord.SizeBytes") +
+                CountTextInMethod(appliedLoreRuntimeFile.Root, "ValidateRuntimeLayout", "(worldImpactBytes & 7) == 0");
+            summary.AppliedLoreWorldImpactCentralAuditProofs =
+                CountTextInMethod(dataLayoutFile.Root, "ValidateBlittableSizes", "UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>()") +
+                CountTextInMethod(dataLayoutFile.Root, "ValidateBlittableSizes", "H8AppliedLoreWorldImpactRecord.SizeBytes") +
+                CountTextInMethod(dataLayoutFile.Root, "ValidateBlittableSizes", "(UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>() & 7) == 0");
+            summary.AppliedLoreUtf8PassByRefProofs =
+                CountTextInFile(appliedLoreRuntimeFile, "H8StaticDataArena.TryGetAppliedLoreUtf8(in record, surface, out utf8Bytes)") +
+                CountTextInFile(staticArenaFile, "public static bool TryGetAppliedLoreUtf8(") +
+                CountTextInFile(staticArenaFile, "in H8AppliedLorePacketRecord record");
+            summary.AppliedLoreUtf8FacadeDuplicateSelectors =
+                CountTextInFile(appliedLoreRuntimeFile, "case H8AppliedLoreSurface.") +
+                CountTextInFile(appliedLoreRuntimeFile, "TryGetLocalizedUtf8Span(") +
+                CountTextInFile(appliedLoreRuntimeFile, "TryGetUtf8FromRecord(");
 
             if (summary.AppliedLoreWorldImpactTickDrains != 1 ||
                 summary.AppliedLoreWorldImpactLateFrameDrains != 0 ||
                 summary.AppliedLoreWorldImpactQueuedAudioTransfers < 4 ||
                 summary.AppliedLoreWorldImpactLifecycleClears < 3 ||
                 summary.AppliedLoreWorldImpactSignalPublishes < 2 ||
-                summary.AppliedLoreWorldImpactDedupGuards < 8)
+                summary.AppliedLoreWorldImpactDedupGuards < 8 ||
+                summary.AppliedLoreWorldImpactLayoutSizeConstants < 1 ||
+                summary.AppliedLoreWorldImpactLayoutPaddingFields < 3 ||
+                summary.AppliedLoreWorldImpactLayoutSizeofProofs < 4 ||
+                summary.AppliedLoreWorldImpactCentralAuditProofs < 3 ||
+                summary.AppliedLoreUtf8PassByRefProofs < 4 ||
+                summary.AppliedLoreUtf8FacadeDuplicateSelectors != 0)
             {
                 findings.Add(new Finding(
                     poiTriggersFile.RelativePath,
@@ -1451,7 +1533,19 @@ namespace Hecton8.Narrative.Editor
                     " signal_publishes=" +
                     summary.AppliedLoreWorldImpactSignalPublishes +
                     " dedup_guards=" +
-                    summary.AppliedLoreWorldImpactDedupGuards));
+                    summary.AppliedLoreWorldImpactDedupGuards +
+                    " layout_size_constants=" +
+                    summary.AppliedLoreWorldImpactLayoutSizeConstants +
+                    " layout_padding_fields=" +
+                    summary.AppliedLoreWorldImpactLayoutPaddingFields +
+                    " layout_sizeof_proofs=" +
+                    summary.AppliedLoreWorldImpactLayoutSizeofProofs +
+                    " central_audit_proofs=" +
+                    summary.AppliedLoreWorldImpactCentralAuditProofs +
+                    " utf8_pass_by_ref_proofs=" +
+                    summary.AppliedLoreUtf8PassByRefProofs +
+                    " utf8_facade_duplicate_selectors=" +
+                    summary.AppliedLoreUtf8FacadeDuplicateSelectors));
                 summary.PhaseFindings++;
             }
         }
@@ -1554,6 +1648,273 @@ namespace Hecton8.Narrative.Editor
                     " cartography_direct_publishes=" +
                     directCartographyPublishCalls));
                 summary.PhaseFindings++;
+            }
+        }
+
+        private static void ScanPrologueBlackBoxDataVaultRoute(
+            List<FileUnit> files,
+            List<Finding> findings,
+            ref ApexSummary summary)
+        {
+            if (!TryFindFile(files, "AwaitableDropSequenceDirector.cs", out FileUnit prologueFile))
+            {
+                findings.Add(new Finding(
+                    "AwaitableDropSequenceDirector",
+                    0,
+                    "prologue_blackbox_source_missing",
+                    "AwaitableDropSequenceDirector.cs is absent from Apex scope"));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            if (!TryFindMethod(prologueFile.Root, "RecordStage", out MethodDeclarationSyntax recordStage))
+            {
+                findings.Add(new Finding(
+                    prologueFile.RelativePath,
+                    0,
+                    "prologue_blackbox_record_stage_missing",
+                    "RecordStage is required for prologue black-box telemetry"));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            summary.PrologueBlackBoxWriteLocksChecked =
+                CountInvocationInMethod(prologueFile.Root, "RecordStage", "TryAcquireWriteLock");
+            summary.PrologueBlackBoxReleaseFinallyProofs =
+                CountDataVaultWriteReleaseFinallyInMethod(recordStage);
+            summary.PrologueBlackBoxHoistedTelemetryProofs =
+                CountTextInMethod(prologueFile.Root, "RecordStage", "IPrologueSequenceRuntime runtime = _runtime") +
+                CountTextInMethod(prologueFile.Root, "RecordStage", "uint telemetryFrame = runtime != null ? runtime.CurrentFrame : 0u") +
+                CountTextInMethod(prologueFile.Root, "RecordStage", "ushort telemetrySequence =") +
+                CountTextInMethod(prologueFile.Root, "RecordStage", "ResolveTelemetrySpeedMetersPerSecond()") +
+                CountTextInMethod(prologueFile.Root, "RecordStage", "int blackBoxIndex = math.clamp") +
+                CountTextInMethod(prologueFile.Root, "RecordStage", "int nextBlackBoxCursor =");
+            summary.PrologueBlackBoxHeavyInsideWriteLock =
+                CountHeavyTelemetryInsideDataVaultWriteReleaseTry(recordStage);
+
+            if (summary.PrologueBlackBoxWriteLocksChecked != 1 ||
+                summary.PrologueBlackBoxReleaseFinallyProofs != 1 ||
+                summary.PrologueBlackBoxHoistedTelemetryProofs < 6 ||
+                summary.PrologueBlackBoxHeavyInsideWriteLock != 0)
+            {
+                findings.Add(new Finding(
+                    prologueFile.RelativePath,
+                    LineOf(recordStage),
+                    "prologue_blackbox_write_lock_shape",
+                    "Prologue black-box telemetry must hoist runtime snapshots/math before DataVault write lock, locks=" +
+                    summary.PrologueBlackBoxWriteLocksChecked +
+                    " release_finally=" +
+                    summary.PrologueBlackBoxReleaseFinallyProofs +
+                    " hoisted_proofs=" +
+                    summary.PrologueBlackBoxHoistedTelemetryProofs +
+                    " heavy_inside_write_lock=" +
+                    summary.PrologueBlackBoxHeavyInsideWriteLock));
+                summary.LockFindings++;
+            }
+        }
+
+        private static void ScanPdaTelemetryVaultRoute(
+            List<FileUnit> files,
+            List<Finding> findings,
+            ref ApexSummary summary)
+        {
+            if (!TryFindFile(files, "PDAEncyclopediaStreamer.cs", out FileUnit pdaFile))
+            {
+                findings.Add(new Finding(
+                    "PDAEncyclopediaStreamer",
+                    0,
+                    "pda_telemetry_source_missing",
+                    "PDAEncyclopediaStreamer.cs is absent from Apex scope"));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            if (!TryFindMethod(pdaFile.Root, "RecordTelemetry", out MethodDeclarationSyntax recordTelemetry))
+            {
+                findings.Add(new Finding(
+                    pdaFile.RelativePath,
+                    0,
+                    "pda_telemetry_record_method_missing",
+                    "RecordTelemetry is required for PDA black-box/runtime telemetry"));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            if (!TryFindMethod(pdaFile.Root, "WriteBlackBoxDump", out MethodDeclarationSyntax writeBlackBoxDump))
+            {
+                findings.Add(new Finding(
+                    pdaFile.RelativePath,
+                    0,
+                    "pda_blackbox_dump_method_missing",
+                    "WriteBlackBoxDump is required for PDA crash telemetry"));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            summary.PdaTelemetryWriteLocksChecked =
+                CountInvocationInMethod(pdaFile.Root, "RecordTelemetry", "TryAcquireWriteLock");
+            summary.PdaTelemetryReleaseFinallyProofs =
+                CountDataVaultWriteReleaseFinallyInMethod(recordTelemetry);
+            summary.PdaTelemetryReadOnlyTelemetrySnapshots =
+                CountTextInMethod(pdaFile.Root, "RecordTelemetry", "TryReadVaultBuffer(in _telemetryHandle") +
+                CountTextInMethod(pdaFile.Root, "RecordTelemetry", "telemetrySnapshot");
+            summary.PdaTelemetryWriteLockSizeProofs =
+                CountTextInMethod(pdaFile.Root, "RecordTelemetry", "telemetry.Length < TelemetryFrameCount");
+            summary.PdaTelemetryRuntimeStateFallbackReads =
+                CountTextInMethod(pdaFile.Root, "RecordTelemetry", "TryReadVaultBuffer(in _runtimeStateHandle");
+            summary.PdaTelemetryStreamingSnapshotPasses =
+                CountTextInMethod(pdaFile.Root, "LateFrameTick", "WriteRuntimeState(quality, decodeTicks, canvasTicks, out uint unlockedCountSnapshot)") +
+                CountTextInMethod(pdaFile.Root, "LateFrameTick", "RecordTelemetry(charsRenderedThisFrame, decodeTicks, canvasTicks, unlockedCountSnapshot, hasRuntimeStateSnapshot)") +
+                CountTextInMethod(pdaFile.Root, "RecordTelemetry", "bool hasUnlockedCountSnapshot = false") +
+                CountTextInMethod(pdaFile.Root, "RecordTelemetry", "entry.UnlockedCount = unlockedCountSnapshot");
+            summary.PdaBlackBoxDumpSingleTelemetrySnapshots =
+                CountTextInMethod(pdaFile.Root, "WriteBlackBoxDump", "NativeArray<PdaEncyclopediaTelemetryEntry>.ReadOnly telemetrySnapshot") +
+                CountTextInMethod(pdaFile.Root, "WriteBlackBoxDump", "TryReadVaultBuffer(in _telemetryHandle");
+            summary.PdaBlackBoxDumpPerRowTelemetryReads =
+                CountTextInMethod(pdaFile.Root, "WriteBlackBoxDump", "TryReadTelemetryDumpEntry") +
+                CountTextInMethod(pdaFile.Root, "TryReadTelemetryDumpEntry", "TryReadVaultBuffer(in _telemetryHandle");
+            summary.PdaBlackBoxDumpTransientPayloads =
+                CountTextInMethod(pdaFile.Root, "WriteBlackBoxDump", "NativeFaultDumpWriter.CreateTransientPayload") +
+                CountTextInMethod(pdaFile.Root, "WriteBlackBoxDump", "NativeFaultDumpWriter.DisposeTransientPayload");
+            summary.PdaBlackBoxDumpRawPayloadAllocs =
+                CountTextInMethod(pdaFile.Root, "WriteBlackBoxDump", "new NativeArray<byte>");
+
+            if (summary.PdaTelemetryWriteLocksChecked != 2 ||
+                summary.PdaTelemetryReleaseFinallyProofs != 2 ||
+                summary.PdaTelemetryReadOnlyTelemetrySnapshots != 0 ||
+                summary.PdaTelemetryWriteLockSizeProofs != 1 ||
+                summary.PdaTelemetryRuntimeStateFallbackReads != 1 ||
+                summary.PdaTelemetryStreamingSnapshotPasses < 4 ||
+                summary.PdaBlackBoxDumpSingleTelemetrySnapshots != 2 ||
+                summary.PdaBlackBoxDumpPerRowTelemetryReads != 0 ||
+                summary.PdaBlackBoxDumpTransientPayloads != 2 ||
+                summary.PdaBlackBoxDumpRawPayloadAllocs != 0)
+            {
+                findings.Add(new Finding(
+                    pdaFile.RelativePath,
+                    LineOf(writeBlackBoxDump),
+                    "pda_telemetry_vault_route_shape",
+                    "PDA telemetry must avoid redundant read-only telemetry ring lookup before write-lock, write_locks=" +
+                    summary.PdaTelemetryWriteLocksChecked +
+                    " release_finally=" +
+                    summary.PdaTelemetryReleaseFinallyProofs +
+                    " redundant_readonly=" +
+                    summary.PdaTelemetryReadOnlyTelemetrySnapshots +
+                    " size_proofs=" +
+                    summary.PdaTelemetryWriteLockSizeProofs +
+                    " runtime_fallback_reads=" +
+                    summary.PdaTelemetryRuntimeStateFallbackReads +
+                    " streaming_snapshot_passes=" +
+                    summary.PdaTelemetryStreamingSnapshotPasses +
+                    " dump_single_snapshots=" +
+                    summary.PdaBlackBoxDumpSingleTelemetrySnapshots +
+                    " dump_per_row_reads=" +
+                    summary.PdaBlackBoxDumpPerRowTelemetryReads +
+                    " dump_transient_payloads=" +
+                    summary.PdaBlackBoxDumpTransientPayloads +
+                    " dump_raw_payload_allocs=" +
+                    summary.PdaBlackBoxDumpRawPayloadAllocs));
+                summary.LockFindings++;
+            }
+        }
+
+        private static void ScanTerminalOsTelemetryVaultRoute(
+            List<FileUnit> files,
+            List<Finding> findings,
+            ref ApexSummary summary)
+        {
+            bool hasTerminalFile = TryFindFile(files, "TerminalOsRuntime.cs", out FileUnit terminalFile);
+            bool hasProjectionFile = TryFindFile(files, "TerminalOsRuntime_TerminalProjection.cs", out FileUnit projectionFile);
+            if (!hasTerminalFile || !hasProjectionFile)
+            {
+                findings.Add(new Finding(
+                    "TerminalOsRuntime",
+                    0,
+                    "terminal_os_telemetry_source_missing",
+                    "TerminalOsRuntime telemetry sources are absent from Apex scope, terminal=" +
+                    hasTerminalFile +
+                    " projection=" +
+                    hasProjectionFile));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            if (!TryFindMethod(terminalFile.Root, "RecordTelemetry", out MethodDeclarationSyntax recordTelemetry) ||
+                !TryFindMethod(terminalFile.Root, "RecordDecryptionTelemetry", out MethodDeclarationSyntax recordDecryptionTelemetry) ||
+                !TryFindMethod(projectionFile.Root, "RecordTerminalInputTelemetry", out MethodDeclarationSyntax recordTerminalInputTelemetry))
+            {
+                findings.Add(new Finding(
+                    terminalFile.RelativePath,
+                    0,
+                    "terminal_os_telemetry_methods_missing",
+                    "RecordTelemetry, RecordDecryptionTelemetry and RecordTerminalInputTelemetry are required for terminal black-box telemetry"));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            string decryptionText = recordDecryptionTelemetry.ToFullString();
+            string terminalInputText = recordTerminalInputTelemetry.ToFullString();
+            int puzzleOpenIndex = decryptionText.IndexOf(
+                "TryOpenVaultBuffer(ref _decryptionPuzzlesHandle",
+                StringComparison.Ordinal);
+            int ringOpenIndex = decryptionText.IndexOf(
+                "TryOpenVaultBuffer(ref _decryptionTelemetryRingHandle",
+                StringComparison.Ordinal);
+            int inputFaultIndex = terminalInputText.IndexOf(
+                "uint projectionFaults = ownerFaultFlags;",
+                StringComparison.Ordinal);
+            int inputRingOpenIndex = terminalInputText.IndexOf(
+                "TryOpenVaultBuffer(ref _terminalInputTelemetryRingHandle",
+                StringComparison.Ordinal);
+
+            summary.TerminalOsTelemetryLayoutHashHoists =
+                CountTextInMethod(terminalFile.Root, "RecordTelemetry", "uint layoutHashSnapshot = ComputeLayoutHash();") +
+                CountTextInMethod(terminalFile.Root, "RecordTelemetry", "LayoutHash = layoutHashSnapshot");
+            summary.TerminalOsTelemetryRingOpenAfterSnapshots =
+                CountTextInMethod(terminalFile.Root, "RecordTelemetry", "TryOpenVaultBuffer(ref _telemetryRingHandle") +
+                CountTextInMethod(terminalFile.Root, "RecordTelemetry", "int telemetryIndex = math.clamp(_telemetryCursor") +
+                CountTextInMethod(terminalFile.Root, "RecordTelemetry", "_telemetryCursor = (telemetryIndex + 1) % telemetryRing.Length");
+            summary.TerminalOsTelemetryRingLengthGuards =
+                CountTextInMethod(terminalFile.Root, "RecordTelemetry", "telemetryRing.Length == 0") +
+                CountTextInMethod(terminalFile.Root, "RecordDecryptionTelemetry", "telemetryRing.Length == 0");
+            summary.TerminalOsDecryptionTelemetrySnapshotBeforeRing =
+                puzzleOpenIndex >= 0 && ringOpenIndex > puzzleOpenIndex ? 1 : 0;
+            summary.TerminalOsDecryptionTelemetryCursorClamps =
+                CountTextInMethod(terminalFile.Root, "RecordDecryptionTelemetry", "int telemetryIndex = math.clamp(_decryptionTelemetryCursor") +
+                CountTextInMethod(terminalFile.Root, "RecordDecryptionTelemetry", "_decryptionTelemetryCursor = (telemetryIndex + 1) % telemetryRing.Length");
+            summary.TerminalOsInputTelemetryFaultsBeforeRing =
+                inputFaultIndex >= 0 && inputRingOpenIndex > inputFaultIndex ? 1 : 0;
+            summary.TerminalOsInputTelemetryCursorClamps =
+                CountTextInMethod(projectionFile.Root, "RecordTerminalInputTelemetry", "int telemetryIndex = math.clamp(_terminalInputTelemetryCursor") +
+                CountTextInMethod(projectionFile.Root, "RecordTerminalInputTelemetry", "_terminalInputTelemetryCursor = (telemetryIndex + 1) % telemetryRing.Length");
+
+            if (summary.TerminalOsTelemetryLayoutHashHoists < 2 ||
+                summary.TerminalOsTelemetryRingOpenAfterSnapshots < 3 ||
+                summary.TerminalOsTelemetryRingLengthGuards < 2 ||
+                summary.TerminalOsDecryptionTelemetrySnapshotBeforeRing != 1 ||
+                summary.TerminalOsDecryptionTelemetryCursorClamps < 2 ||
+                summary.TerminalOsInputTelemetryFaultsBeforeRing != 1 ||
+                summary.TerminalOsInputTelemetryCursorClamps < 2)
+            {
+                findings.Add(new Finding(
+                    terminalFile.RelativePath,
+                    LineOf(recordTelemetry),
+                    "terminal_os_telemetry_vault_route_shape",
+                    "TerminalOS telemetry must hoist read snapshots before telemetry ring writes, layout_hoists=" +
+                    summary.TerminalOsTelemetryLayoutHashHoists +
+                    " ring_after_snapshots=" +
+                    summary.TerminalOsTelemetryRingOpenAfterSnapshots +
+                    " ring_length_guards=" +
+                    summary.TerminalOsTelemetryRingLengthGuards +
+                    " decryption_snapshot_before_ring=" +
+                    summary.TerminalOsDecryptionTelemetrySnapshotBeforeRing +
+                    " decryption_cursor_clamps=" +
+                    summary.TerminalOsDecryptionTelemetryCursorClamps +
+                    " input_faults_before_ring=" +
+                    summary.TerminalOsInputTelemetryFaultsBeforeRing +
+                    " input_cursor_clamps=" +
+                    summary.TerminalOsInputTelemetryCursorClamps));
+                summary.LockFindings++;
             }
         }
 
@@ -2574,6 +2935,97 @@ namespace Hecton8.Narrative.Editor
             }
         }
 
+        private static void ScanRuntimeStructLayoutProof(
+            List<FileUnit> files,
+            List<Finding> findings,
+            ref ApexSummary summary)
+        {
+            summary.RuntimeStructSizeofReferences = CountTextInFiles(files, "UnsafeUtility.SizeOf<");
+            for (int i = 0; i < files.Count; i++)
+            {
+                using (IEnumerator<StructDeclarationSyntax> structs =
+                    files[i].Root.DescendantNodes().OfType<StructDeclarationSyntax>().GetEnumerator())
+                {
+                    while (structs.MoveNext())
+                    {
+                        StructDeclarationSyntax declaration = structs.Current;
+                        AttributeSyntax layout = FindStructLayoutAttribute(declaration);
+                        if (layout == null)
+                            continue;
+
+                        summary.RuntimeStructLayoutsChecked++;
+                        string layoutText = layout.ToString();
+                        if (layoutText.IndexOf("Pack=1", StringComparison.Ordinal) >= 0 ||
+                            layoutText.IndexOf("Pack = 1", StringComparison.Ordinal) >= 0)
+                        {
+                            findings.Add(new Finding(
+                                RelativePath(layout),
+                                LineOf(layout),
+                                "runtime_struct_pack_one",
+                                declaration.Identifier.ValueText + " uses Pack=1 in a runtime-view struct"));
+                            summary.RuntimeStructPackOneFindings++;
+                        }
+
+                        if (!TryGetStructLayoutLiteralSize(layout, out int byteSize))
+                            continue;
+
+                        if ((byteSize & 7) == 0)
+                        {
+                            summary.RuntimeStructLiteralSizeAligned++;
+                            continue;
+                        }
+
+                        findings.Add(new Finding(
+                            RelativePath(layout),
+                            LineOf(layout),
+                            "runtime_struct_size_unaligned",
+                            declaration.Identifier.ValueText + " size " + byteSize + " is not 8-byte aligned"));
+                        summary.RuntimeStructLiteralSizeUnaligned++;
+                    }
+                }
+            }
+        }
+
+        private static void ScanProjectAssetMetaIntegrity(
+            string projectRoot,
+            List<Finding> findings,
+            ref ApexSummary summary)
+        {
+            string assetsRoot = Path.Combine(projectRoot, "Assets");
+            if (!Directory.Exists(assetsRoot))
+                return;
+
+            try
+            {
+                foreach (string metaPath in Directory.EnumerateFiles(assetsRoot, "*.meta", SearchOption.AllDirectories))
+                {
+                    summary.MetaFilesScanned++;
+                    string targetPath = metaPath.Substring(0, metaPath.Length - ".meta".Length);
+                    if (File.Exists(targetPath) || Directory.Exists(targetPath))
+                        continue;
+
+                    findings.Add(new Finding(
+                        ToProjectRelativePath(projectRoot, metaPath),
+                        0,
+                        "orphan_meta_file",
+                        "Meta file has no matching asset or directory"));
+                    summary.OrphanMetaFiles++;
+                }
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is ArgumentException ||
+                exception is NotSupportedException)
+            {
+                findings.Add(new Finding("Assets", 0, "meta_scan_failed", exception.GetType().Name));
+                summary.DependencyFindings++;
+                return;
+            }
+
+            ScanRequiredSourceMetas(projectRoot, assetsRoot, findings, ref summary);
+        }
+
         private static void CountWorldSceneOceanPrefabRefs(string sceneText, ref ApexSummary summary)
         {
             string projectRoot = ResolveProjectRoot();
@@ -2592,6 +3044,116 @@ namespace Hecton8.Narrative.Editor
 
                 summary.SceneWorldOceanPrefabRefs += CountString(sceneText, guid, StringComparison.OrdinalIgnoreCase);
             }
+        }
+
+        private static void ScanRequiredSourceMetas(
+            string projectRoot,
+            string assetsRoot,
+            List<Finding> findings,
+            ref ApexSummary summary)
+        {
+            try
+            {
+                foreach (string path in Directory.EnumerateFiles(assetsRoot, "*", SearchOption.AllDirectories))
+                {
+                    if (Path.GetExtension(path).Equals(".meta", StringComparison.OrdinalIgnoreCase) ||
+                        !RequiresUnityMeta(path))
+                    {
+                        continue;
+                    }
+
+                    summary.SourceFilesRequiringMetaScanned++;
+                    if (File.Exists(path + ".meta"))
+                        continue;
+
+                    findings.Add(new Finding(
+                        ToProjectRelativePath(projectRoot, path),
+                        0,
+                        "source_meta_missing",
+                        Path.GetExtension(path) + " file has no matching .meta"));
+                    summary.MissingSourceMetaFiles++;
+                }
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is ArgumentException ||
+                exception is NotSupportedException)
+            {
+                findings.Add(new Finding("Assets", 0, "source_meta_scan_failed", exception.GetType().Name));
+                summary.DependencyFindings++;
+                return;
+            }
+        }
+
+        private static bool RequiresUnityMeta(string path)
+        {
+            string extension = Path.GetExtension(path);
+            for (int i = 0; i < SourceMetaRequiredExtensions.Length; i++)
+            {
+                if (string.Equals(extension, SourceMetaRequiredExtensions[i], StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static AttributeSyntax FindStructLayoutAttribute(StructDeclarationSyntax declaration)
+        {
+            if (declaration == null)
+                return null;
+
+            SyntaxList<AttributeListSyntax> lists = declaration.AttributeLists;
+            for (int i = 0; i < lists.Count; i++)
+            {
+                SeparatedSyntaxList<AttributeSyntax> attributes = lists[i].Attributes;
+                for (int j = 0; j < attributes.Count; j++)
+                {
+                    AttributeSyntax attribute = attributes[j];
+                    string name = attribute.Name.ToString();
+                    if (name.EndsWith("StructLayout", StringComparison.Ordinal) ||
+                        name.EndsWith("StructLayoutAttribute", StringComparison.Ordinal))
+                    {
+                        return attribute;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TryGetStructLayoutLiteralSize(AttributeSyntax layout, out int byteSize)
+        {
+            byteSize = 0;
+            if (layout == null || layout.ArgumentList == null)
+                return false;
+
+            SeparatedSyntaxList<AttributeArgumentSyntax> arguments = layout.ArgumentList.Arguments;
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                AttributeArgumentSyntax argument = arguments[i];
+                if (argument.NameEquals == null ||
+                    !string.Equals(argument.NameEquals.Name.Identifier.ValueText, "Size", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (argument.Expression is LiteralExpressionSyntax literal &&
+                    literal.Token.Value is int value)
+                {
+                    byteSize = value;
+                    return byteSize > 0;
+                }
+
+                Match match = Regex.Match(argument.Expression.ToString(), @"^\s*(?<size>\d+)\s*$");
+                if (!match.Success)
+                    return false;
+
+                byteSize = int.Parse(match.Groups["size"].Value);
+                return byteSize > 0;
+            }
+
+            return false;
         }
 
         private static string ReadUnityMetaGuid(string metaPath)
@@ -2742,10 +3304,12 @@ namespace Hecton8.Narrative.Editor
         {
             return string.Equals(methodName, "FastTick", StringComparison.Ordinal) ||
                    string.Equals(methodName, "Tick", StringComparison.Ordinal) ||
+                   string.Equals(methodName, "Update", StringComparison.Ordinal) ||
                    string.Equals(methodName, "FixedTick", StringComparison.Ordinal) ||
                    string.Equals(methodName, "FixedUpdate", StringComparison.Ordinal) ||
                    string.Equals(methodName, "SlowTick", StringComparison.Ordinal) ||
                    string.Equals(methodName, "LateFrameTick", StringComparison.Ordinal) ||
+                   string.Equals(methodName, "LateUpdate", StringComparison.Ordinal) ||
                    string.Equals(methodName, "VisualSyncTick", StringComparison.Ordinal) ||
                    string.Equals(methodName, "OnScan", StringComparison.Ordinal) ||
                    string.Equals(methodName, "Execute", StringComparison.Ordinal);
@@ -2798,8 +3362,19 @@ namespace Hecton8.Narrative.Editor
                 string.Equals(invocationName, "Where", StringComparison.Ordinal) ||
                 string.Equals(invocationName, "Select", StringComparison.Ordinal) ||
                 string.Equals(invocationName, "Any", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "All", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "Count", StringComparison.Ordinal) ||
                 string.Equals(invocationName, "First", StringComparison.Ordinal) ||
                 string.Equals(invocationName, "FirstOrDefault", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "Last", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "LastOrDefault", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "Single", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "SingleOrDefault", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "OrderBy", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "OrderByDescending", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "ThenBy", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "ThenByDescending", StringComparison.Ordinal) ||
+                string.Equals(invocationName, "GroupBy", StringComparison.Ordinal) ||
                 string.Equals(invocationName, "ToList", StringComparison.Ordinal) ||
                 string.Equals(invocationName, "ToArray", StringComparison.Ordinal))
             {
@@ -2813,6 +3388,33 @@ namespace Hecton8.Narrative.Editor
                    invocationText.IndexOf("Array.Resize", StringComparison.Ordinal) >= 0 ||
                    invocationText.IndexOf("System.Array.Resize", StringComparison.Ordinal) >= 0 ||
                    invocationText.IndexOf("Enumerable.", StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool IsHotStringConcatenation(BinaryExpressionSyntax binaryExpression)
+        {
+            return binaryExpression != null &&
+                   binaryExpression.IsKind(SyntaxKind.AddExpression) &&
+                   (ContainsStringLiteral(binaryExpression.Left) || ContainsStringLiteral(binaryExpression.Right));
+        }
+
+        private static bool ContainsStringLiteral(ExpressionSyntax expression)
+        {
+            if (expression == null)
+                return false;
+
+            if (expression is LiteralExpressionSyntax literal &&
+                literal.IsKind(SyntaxKind.StringLiteralExpression))
+            {
+                return true;
+            }
+
+            if (expression is InterpolatedStringExpressionSyntax)
+                return true;
+
+            if (expression is BinaryExpressionSyntax binary)
+                return ContainsStringLiteral(binary.Left) || ContainsStringLiteral(binary.Right);
+
+            return false;
         }
 
         private static bool IsHotManagedAllocationSyntax(SyntaxNode node)
@@ -2848,8 +3450,10 @@ namespace Hecton8.Narrative.Editor
 
         private static bool IsDirectJobHandleComplete(string invocationName, string invocationText)
         {
-            return string.Equals(invocationName, "Complete", StringComparison.Ordinal) &&
-                   invocationText.IndexOf(".Complete(", StringComparison.Ordinal) >= 0;
+            return (string.Equals(invocationName, "Complete", StringComparison.Ordinal) &&
+                    invocationText.IndexOf(".Complete(", StringComparison.Ordinal) >= 0) ||
+                   string.Equals(invocationName, "WaitForCompletion", StringComparison.Ordinal) ||
+                   invocationText.IndexOf(".WaitForCompletion(", StringComparison.Ordinal) >= 0;
         }
 
         private static bool IsTextAssignment(AssignmentExpressionSyntax assignment)
@@ -2892,6 +3496,29 @@ namespace Hecton8.Narrative.Editor
             }
 
             file = default;
+            return false;
+        }
+
+        private static bool TryFindMethod(CompilationUnitSyntax root, string methodName, out MethodDeclarationSyntax method)
+        {
+            if (root != null && !string.IsNullOrEmpty(methodName))
+            {
+                using (IEnumerator<MethodDeclarationSyntax> methods =
+                    root.DescendantNodes().OfType<MethodDeclarationSyntax>().GetEnumerator())
+                {
+                    while (methods.MoveNext())
+                    {
+                        MethodDeclarationSyntax candidate = methods.Current;
+                        if (string.Equals(candidate.Identifier.ValueText, methodName, StringComparison.Ordinal))
+                        {
+                            method = candidate;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            method = null;
             return false;
         }
 
@@ -3004,6 +3631,65 @@ namespace Hecton8.Narrative.Editor
             }
 
             return 0;
+        }
+
+        private static int CountDataVaultWriteReleaseFinallyInMethod(MethodDeclarationSyntax method)
+        {
+            if (method == null)
+                return 0;
+
+            SyntaxNode body = (SyntaxNode)method.Body ?? method.ExpressionBody;
+            if (body == null)
+                return 0;
+
+            int count = 0;
+            using (IEnumerator<InvocationExpressionSyntax> invocations =
+                body.DescendantNodes().OfType<InvocationExpressionSyntax>().GetEnumerator())
+            {
+                while (invocations.MoveNext())
+                {
+                    InvocationExpressionSyntax invocation = invocations.Current;
+                    if (IsDataVaultWriteLock(ResolveInvocationName(invocation), invocation.ToString()) &&
+                        HasDataVaultWriteReleaseFinally(invocation))
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountHeavyTelemetryInsideDataVaultWriteReleaseTry(MethodDeclarationSyntax method)
+        {
+            if (method == null)
+                return 0;
+
+            SyntaxNode body = (SyntaxNode)method.Body ?? method.ExpressionBody;
+            if (body == null)
+                return 0;
+
+            int count = 0;
+            using (IEnumerator<TryStatementSyntax> tries =
+                body.DescendantNodes().OfType<TryStatementSyntax>().GetEnumerator())
+            {
+                while (tries.MoveNext())
+                {
+                    TryStatementSyntax tryStatement = tries.Current;
+                    if (!FinallyContainsDataVaultWriteRelease(tryStatement.Finally))
+                        continue;
+
+                    string blockText = tryStatement.Block == null ? string.Empty : tryStatement.Block.ToFullString();
+                    count += CountOccurrences(blockText, "ResolveTelemetrySpeedMetersPerSecond(");
+                    count += CountOccurrences(blockText, "CurrentFrame");
+                    count += CountOccurrences(blockText, "math.clamp");
+                    count += CountOccurrences(blockText, "math.lengthsq");
+                    count += CountOccurrences(blockText, "math.rsqrt");
+                    count += CountOccurrences(blockText, "math.sqrt");
+                }
+            }
+
+            return count;
         }
 
         private static int CountInvocationTextInMethodOutsideLock(
@@ -3612,6 +4298,12 @@ namespace Hecton8.Narrative.Editor
             builder.Append(" applied_lore_world_impact_lifecycle_clears=").Append(summary.AppliedLoreWorldImpactLifecycleClears);
             builder.Append(" applied_lore_world_impact_signal_publishes=").Append(summary.AppliedLoreWorldImpactSignalPublishes);
             builder.Append(" applied_lore_world_impact_dedup_guards=").Append(summary.AppliedLoreWorldImpactDedupGuards);
+            builder.Append(" applied_lore_world_impact_layout_size_constants=").Append(summary.AppliedLoreWorldImpactLayoutSizeConstants);
+            builder.Append(" applied_lore_world_impact_layout_padding_fields=").Append(summary.AppliedLoreWorldImpactLayoutPaddingFields);
+            builder.Append(" applied_lore_world_impact_layout_sizeof_proofs=").Append(summary.AppliedLoreWorldImpactLayoutSizeofProofs);
+            builder.Append(" applied_lore_world_impact_central_audit_proofs=").Append(summary.AppliedLoreWorldImpactCentralAuditProofs);
+            builder.Append(" applied_lore_utf8_pass_by_ref_proofs=").Append(summary.AppliedLoreUtf8PassByRefProofs);
+            builder.Append(" applied_lore_utf8_facade_duplicate_selectors=").Append(summary.AppliedLoreUtf8FacadeDuplicateSelectors);
             builder.Append(" meta_campaign_visual_queue_calls=").Append(summary.MetaCampaignVisualQueueCalls);
             builder.Append(" meta_campaign_visual_lateframe_flushes=").Append(summary.MetaCampaignVisualFlushLateFrameCalls);
             builder.Append(" meta_campaign_visual_publish_calls=").Append(summary.MetaCampaignVisualPublishCalls);
@@ -3723,11 +4415,41 @@ namespace Hecton8.Narrative.Editor
             builder.Append(" scene_world_ocean_prefab_assets=").Append(summary.SceneWorldOceanPrefabAssets);
             builder.Append(" scene_world_ocean_prefab_refs=").Append(summary.SceneWorldOceanPrefabRefs);
             builder.Append(" scene_world_dependency_warnings=").Append(summary.SceneWorldDependencyWarnings);
+            builder.Append(" runtime_struct_layouts_checked=").Append(summary.RuntimeStructLayoutsChecked);
+            builder.Append(" runtime_struct_literal_size_aligned=").Append(summary.RuntimeStructLiteralSizeAligned);
+            builder.Append(" runtime_struct_literal_size_unaligned=").Append(summary.RuntimeStructLiteralSizeUnaligned);
+            builder.Append(" runtime_struct_pack_one_findings=").Append(summary.RuntimeStructPackOneFindings);
+            builder.Append(" runtime_struct_sizeof_refs=").Append(summary.RuntimeStructSizeofReferences);
+            builder.Append(" meta_files_scanned=").Append(summary.MetaFilesScanned);
+            builder.Append(" orphan_meta_files=").Append(summary.OrphanMetaFiles);
+            builder.Append(" source_meta_files_scanned=").Append(summary.SourceFilesRequiringMetaScanned);
+            builder.Append(" missing_source_meta_files=").Append(summary.MissingSourceMetaFiles);
             builder.Append(" dependency_findings=").Append(summary.DependencyFindings);
             builder.Append(" phase_findings=").Append(summary.PhaseFindings);
             builder.Append(" zero_gc_findings=").Append(summary.ZeroGcFindings);
             builder.Append(" job_complete_findings=").Append(summary.JobCompleteFindings);
             builder.Append(" lock_findings=").Append(summary.LockFindings);
+            builder.Append(" prologue_blackbox_write_locks=").Append(summary.PrologueBlackBoxWriteLocksChecked);
+            builder.Append(" prologue_blackbox_release_finally=").Append(summary.PrologueBlackBoxReleaseFinallyProofs);
+            builder.Append(" prologue_blackbox_hoisted_telemetry=").Append(summary.PrologueBlackBoxHoistedTelemetryProofs);
+            builder.Append(" prologue_blackbox_heavy_inside_lock=").Append(summary.PrologueBlackBoxHeavyInsideWriteLock);
+            builder.Append(" pda_telemetry_write_locks=").Append(summary.PdaTelemetryWriteLocksChecked);
+            builder.Append(" pda_telemetry_release_finally=").Append(summary.PdaTelemetryReleaseFinallyProofs);
+            builder.Append(" pda_telemetry_redundant_readonly=").Append(summary.PdaTelemetryReadOnlyTelemetrySnapshots);
+            builder.Append(" pda_telemetry_write_size_proofs=").Append(summary.PdaTelemetryWriteLockSizeProofs);
+            builder.Append(" pda_telemetry_runtime_fallback_reads=").Append(summary.PdaTelemetryRuntimeStateFallbackReads);
+            builder.Append(" pda_telemetry_streaming_snapshot_passes=").Append(summary.PdaTelemetryStreamingSnapshotPasses);
+            builder.Append(" pda_blackbox_dump_single_snapshots=").Append(summary.PdaBlackBoxDumpSingleTelemetrySnapshots);
+            builder.Append(" pda_blackbox_dump_per_row_reads=").Append(summary.PdaBlackBoxDumpPerRowTelemetryReads);
+            builder.Append(" pda_blackbox_dump_transient_payloads=").Append(summary.PdaBlackBoxDumpTransientPayloads);
+            builder.Append(" pda_blackbox_dump_raw_payload_allocs=").Append(summary.PdaBlackBoxDumpRawPayloadAllocs);
+            builder.Append(" terminal_os_telemetry_layout_hoists=").Append(summary.TerminalOsTelemetryLayoutHashHoists);
+            builder.Append(" terminal_os_telemetry_ring_after_snapshots=").Append(summary.TerminalOsTelemetryRingOpenAfterSnapshots);
+            builder.Append(" terminal_os_telemetry_ring_length_guards=").Append(summary.TerminalOsTelemetryRingLengthGuards);
+            builder.Append(" terminal_os_decryption_snapshot_before_ring=").Append(summary.TerminalOsDecryptionTelemetrySnapshotBeforeRing);
+            builder.Append(" terminal_os_decryption_cursor_clamps=").Append(summary.TerminalOsDecryptionTelemetryCursorClamps);
+            builder.Append(" terminal_os_input_faults_before_ring=").Append(summary.TerminalOsInputTelemetryFaultsBeforeRing);
+            builder.Append(" terminal_os_input_cursor_clamps=").Append(summary.TerminalOsInputTelemetryCursorClamps);
             builder.Append(" data_vault_write_locks_checked=").Append(summary.DataVaultWriteLocksChecked);
             builder.Append(" data_vault_write_lock_helpers_checked=").Append(summary.DataVaultWriteLockHelpersChecked);
             builder.Append(" data_vault_write_lock_helper_callers_checked=").Append(summary.DataVaultWriteLockHelperCallersChecked);
@@ -3850,6 +4572,12 @@ namespace Hecton8.Narrative.Editor
             public int AppliedLoreWorldImpactLifecycleClears;
             public int AppliedLoreWorldImpactSignalPublishes;
             public int AppliedLoreWorldImpactDedupGuards;
+            public int AppliedLoreWorldImpactLayoutSizeConstants;
+            public int AppliedLoreWorldImpactLayoutPaddingFields;
+            public int AppliedLoreWorldImpactLayoutSizeofProofs;
+            public int AppliedLoreWorldImpactCentralAuditProofs;
+            public int AppliedLoreUtf8PassByRefProofs;
+            public int AppliedLoreUtf8FacadeDuplicateSelectors;
             public int MetaCampaignVisualQueueCalls;
             public int MetaCampaignVisualFlushLateFrameCalls;
             public int MetaCampaignVisualPublishCalls;
@@ -3961,11 +4689,41 @@ namespace Hecton8.Narrative.Editor
             public int SceneWorldOceanPrefabAssets;
             public int SceneWorldOceanPrefabRefs;
             public int SceneWorldDependencyWarnings;
+            public int RuntimeStructLayoutsChecked;
+            public int RuntimeStructLiteralSizeAligned;
+            public int RuntimeStructLiteralSizeUnaligned;
+            public int RuntimeStructPackOneFindings;
+            public int RuntimeStructSizeofReferences;
+            public int MetaFilesScanned;
+            public int OrphanMetaFiles;
+            public int SourceFilesRequiringMetaScanned;
+            public int MissingSourceMetaFiles;
             public int DependencyFindings;
             public int PhaseFindings;
             public int ZeroGcFindings;
             public int JobCompleteFindings;
             public int LockFindings;
+            public int PrologueBlackBoxWriteLocksChecked;
+            public int PrologueBlackBoxReleaseFinallyProofs;
+            public int PrologueBlackBoxHoistedTelemetryProofs;
+            public int PrologueBlackBoxHeavyInsideWriteLock;
+            public int PdaTelemetryWriteLocksChecked;
+            public int PdaTelemetryReleaseFinallyProofs;
+            public int PdaTelemetryReadOnlyTelemetrySnapshots;
+            public int PdaTelemetryWriteLockSizeProofs;
+            public int PdaTelemetryRuntimeStateFallbackReads;
+            public int PdaTelemetryStreamingSnapshotPasses;
+            public int PdaBlackBoxDumpSingleTelemetrySnapshots;
+            public int PdaBlackBoxDumpPerRowTelemetryReads;
+            public int PdaBlackBoxDumpTransientPayloads;
+            public int PdaBlackBoxDumpRawPayloadAllocs;
+            public int TerminalOsTelemetryLayoutHashHoists;
+            public int TerminalOsTelemetryRingOpenAfterSnapshots;
+            public int TerminalOsTelemetryRingLengthGuards;
+            public int TerminalOsDecryptionTelemetrySnapshotBeforeRing;
+            public int TerminalOsDecryptionTelemetryCursorClamps;
+            public int TerminalOsInputTelemetryFaultsBeforeRing;
+            public int TerminalOsInputTelemetryCursorClamps;
             public int DataVaultWriteLocksChecked;
             public int DataVaultWriteLockHelpersChecked;
             public int DataVaultWriteLockHelperCallersChecked;

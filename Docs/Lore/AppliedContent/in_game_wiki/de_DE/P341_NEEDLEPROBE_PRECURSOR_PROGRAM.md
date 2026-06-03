@@ -1,0 +1,37 @@
+---
+packet_id: P341_NEEDLEPROBE_PRECURSOR_PROGRAM
+release_set_id: RS069_SHIP_TECH_TRANSIT_ENCYCLOPEDIA
+article_id: applied_lore.needleprobe_precursor_program
+unlock_id: unlock.needleprobe_precursor_program
+poi_tags: poi.ran_probe_archive;poi.pellet_lane_log
+biome_tags: biome.orbit;biome.archive
+locale: de_DE
+surface: in_game_wiki
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
+---
+
+# Needleprobe Precursor Program
+
+Needleprobes make the setting hard-sci-fi: Aegir was not reached by FTL or heroic jumps. It entered human ledgers through slow survey payloads, delayed telemetry and risk models.
+
+## Scanner
+
+Long-baseline probe archive. Human survey reached Aegir before crewed freight did.
+
+## Terminal
+
+RAN ARCHIVE: Aegir was mapped by needleprobes, pellet-lane telemetry and delayed relay pings. Deep Reach bought confidence before any crew saw HECTON-8 with human eyes.
+
+## Audio
+
+Nobody discovered Aegir in person first. The machines got there, waited, and sold the route back to us.
+
+## Field Note
+
+Use for encyclopedia route history and public hard-sci-fi primer.
+
+<!-- In-Game Wiki; generated from P341_NEEDLEPROBE_PRECURSOR_PROGRAM/de_DE. -->

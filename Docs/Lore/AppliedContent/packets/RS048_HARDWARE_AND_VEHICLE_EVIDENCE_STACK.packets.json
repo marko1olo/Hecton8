@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS",
+      "release_set_id": "RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK",
+      "article_id": "hardware.black_keel_tender_interior_limits",
+      "title_key": "applied_lore.black_keel_tender_interior_limits.title",
+      "unlock": {
+        "primary": "unlock.black_keel_tender_interior_limits",
+        "poi_tags": [
+          "poi.black_keel_manifest_plate",
+          "poi.tender_remote_console",
+          "poi.empty_crew_bunk"
+        ],
+        "biome_tags": [
+          "biome.carrier_interface",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Tender Interior Limits",
+          "scanner": "The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "ru_RU": {
+          "title": "Ограничения интерьера тендера Black Keel",
+          "scanner": "У carrier сначала есть стойки для образцов, дронов и legal packets, а уже потом место для живого пассажира.",
+          "field_note": "Black Keel - рабочий claim tender: арендованный, арестованный долгом, автоматизированный и заточенный под salvage custody.",
+          "terminal": "TENDER LIMIT: нет deep rescue crew, нет atmospheric shuttle reserve, нет free ascent burn вне lien authority.",
+          "audio": "Корабль привез тебя как груз с руками.",
+          "in_game_wiki": "Ограничения интерьера тендера Black Keel объясняют, почему игрок зависит от поврежденного местного железа, а не от чистого орбитального спасения.",
+          "external_site": "Ограничения интерьера тендера Black Keel задают carrier игрока как hard-sci-fi salvage infrastructure. Это не героический личный корабль; это claim-pool tender, построенный вокруг sample custody, packet law и долгового давления."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft JP localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft JP localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft JP localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft JP localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft JP localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft JP localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft CN localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft CN localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft CN localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft CN localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft CN localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft CN localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft FR localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft FR localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft FR localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft FR localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft FR localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft ES localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft ES localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft ES localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft ES localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft ES localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft DE localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft DE localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft DE localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft DE localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft DE localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft PL localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft PL localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft PL localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft PL localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft PL localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft UA localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft UA localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft UA localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft UA localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft UA localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft UA localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft AR localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft AR localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft AR localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft AR localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft AR localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft ID localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft ID localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft ID localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft ID localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft ID localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft KO localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft KO localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft KO localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft KO localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft KO localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft KO localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft HE localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft HE localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft HE localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft HE localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft HE localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft PT localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft PT localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft PT localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft PT localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft PT localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft PT localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Black Keel Tender Interior Limits",
+          "scanner": "Draft NL localization pending native pass. The carrier has racks for samples, drones and legal packets before it has comfort for a human passenger.",
+          "field_note": "Draft NL localization pending native pass. Black Keel is a working claim tender: rented, impounded, automated and optimized for salvage custody.",
+          "terminal": "Draft NL localization pending native pass. TENDER LIMIT: no deep rescue crew, no atmospheric shuttle reserve, no free ascent burn outside lien authority.",
+          "audio": "Draft NL localization pending native pass. The ship brought you here as cargo with hands.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel Tender Interior Limits explain why the player depends on damaged local hardware instead of a clean orbital rescue.",
+          "external_site": "Draft NL localization pending native pass. Black Keel Tender Interior Limits define the player's carrier as hard-sci-fi salvage infrastructure. The ship is not a heroic private vessel; it is a claim-pool tender built around sample custody, packet law and debt pressure."
+        }
+      }
+    },
+    {
+      "packet_id": "P237_DROP_CAPSULE_DAMAGE_PARTS",
+      "release_set_id": "RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK",
+      "article_id": "hardware.drop_capsule_damage_parts",
+      "title_key": "applied_lore.drop_capsule_damage_parts.title",
+      "unlock": {
+        "primary": "unlock.drop_capsule_damage_parts",
+        "poi_tags": [
+          "poi.drop_capsule_ascent_sleeve",
+          "poi.guidance_gimbal_scar",
+          "poi.relay_mast_shear"
+        ],
+        "biome_tags": [
+          "biome.crash_shelf",
+          "biome.p63_shallows"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Drop Capsule Damage Parts",
+          "scanner": "Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "It landed well enough to strand you properly.",
+          "in_game_wiki": "Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "ru_RU": {
+          "title": "Поврежденные узлы посадочной капсулы",
+          "scanner": "Ascent sleeve повело, guidance gimbal исцарапан, relay mast срезан, compressor забит, heat tile треснула.",
+          "field_note": "Капсула может удержать игрока живым первый час. Улететь она не может без глубинных замен.",
+          "terminal": "DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Она села достаточно хорошо, чтобы правильно тебя запереть.",
+          "in_game_wiki": "Поврежденные узлы посадочной капсулы превращают стартовую аварию в конкретную инженерную цепочку, ведущую игрока глубже.",
+          "external_site": "Поврежденные узлы посадочной капсулы убирают удобную спасательную логику из HECTON-8. Игрок застрял, потому что отказали конкретные системы: ascent sleeve, guidance gimbal, relay mast, compressor и heat tiles. Каждый отказ связан с будущим маршрутом, материалом или уликой."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft JP localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft JP localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft JP localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft JP localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft JP localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft JP localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft CN localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft CN localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft CN localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft CN localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft CN localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft CN localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft FR localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft FR localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft FR localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft FR localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft FR localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft FR localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft ES localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft ES localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft ES localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft ES localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft ES localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft ES localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft DE localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft DE localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft DE localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft DE localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft DE localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft DE localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft PL localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft PL localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft PL localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft PL localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft PL localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft PL localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft UA localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft UA localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft UA localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft UA localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft UA localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft UA localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft AR localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft AR localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft AR localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft AR localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft AR localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft AR localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft ID localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft ID localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft ID localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft ID localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft ID localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft ID localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft KO localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft KO localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft KO localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft KO localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft KO localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft KO localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft HE localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft HE localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft HE localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft HE localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft HE localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft HE localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft PT localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft PT localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft PT localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft PT localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft PT localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft PT localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Drop Capsule Damage Parts",
+          "scanner": "Draft NL localization pending native pass. Ascent sleeve warped, guidance gimbal scarred, relay mast sheared, compressor fouled, heat tile cracked.",
+          "field_note": "Draft NL localization pending native pass. The capsule can keep the player alive for the first hour. It cannot leave without deep-rated replacement parts.",
+          "terminal": "Draft NL localization pending native pass. DROP DAMAGE: ascent sleeve FAIL, gimbal DEGRADED, relay mast SHEARED, compressor FOUL, heat tile CRACK.",
+          "audio": "Draft NL localization pending native pass. It landed well enough to strand you properly.",
+          "in_game_wiki": "Draft NL localization pending native pass. Drop Capsule Damage Parts turns the opening crash into a specific engineering chain that leads the player deeper.",
+          "external_site": "Draft NL localization pending native pass. Drop Capsule Damage Parts removes convenient rescue logic from HECTON-8. The player is trapped because named systems failed: ascent sleeve, guidance gimbal, relay mast, compressor and heat tiles. Each failure maps to a future route, material or evidence object."
+        }
+      }
+    },
+    {
+      "packet_id": "P238_P63_FABRICATOR_AUTHORITY_LIMITS",
+      "release_set_id": "RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK",
+      "article_id": "hardware.p63_fabricator_authority_limits",
+      "title_key": "applied_lore.p63_fabricator_authority_limits.title",
+      "unlock": {
+        "primary": "unlock.p63_fabricator_authority_limits",
+        "poi_tags": [
+          "poi.p63_fabricator_lockout",
+          "poi.low_grade_recipe_plate",
+          "poi.authority_stamp_reader"
+        ],
+        "biome_tags": [
+          "biome.p63_shallows",
+          "biome.industrial_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "P-63 Fabricator Authority Limits",
+          "scanner": "P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "ru_RU": {
+          "title": "Ограничения допуска фабрикатора P-63",
+          "scanner": "P-63 принимает рецепты gasket, clamp, pinger и cutter-contact, но отвергает ascent-qualified components без глубинного доказательства.",
+          "field_note": "Fabricator authority является сюжетным и инженерным gate: сначала низкосортное выживание, потом pressure-rated escape.",
+          "terminal": "P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Машина спасет тебе утро. Орбиту она тебе не простит.",
+          "in_game_wiki": "Ограничения допуска фабрикатора P-63 задают ранний крафт как survival triage, а не короткий путь к отлету.",
+          "external_site": "Ограничения допуска фабрикатора P-63 объясняют первую crafting station HECTON-8. Она быстро делает игрока компетентным, но отказывает ascent-grade parts, пока игрок не добудет pressure-rated materials, route stamps и более глубокие улики."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft JP localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft JP localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft JP localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft JP localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft JP localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft JP localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft CN localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft CN localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft CN localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft CN localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft CN localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft CN localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft FR localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft FR localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft FR localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft FR localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft FR localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft FR localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft ES localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft ES localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft ES localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft ES localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft ES localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft ES localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft DE localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft DE localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft DE localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft DE localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft DE localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft DE localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft PL localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft PL localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft PL localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft PL localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft PL localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft PL localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft UA localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft UA localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft UA localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft UA localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft UA localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft UA localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft AR localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft AR localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft AR localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft AR localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft AR localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft AR localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft ID localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft ID localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft ID localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft ID localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft ID localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft ID localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft KO localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft KO localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft KO localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft KO localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft KO localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft KO localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft HE localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft HE localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft HE localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft HE localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft HE localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft HE localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft PT localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft PT localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft PT localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft PT localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft PT localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft PT localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. P-63 Fabricator Authority Limits",
+          "scanner": "Draft NL localization pending native pass. P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.",
+          "field_note": "Draft NL localization pending native pass. Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.",
+          "terminal": "Draft NL localization pending native pass. P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.",
+          "audio": "Draft NL localization pending native pass. The machine can save your morning. It cannot forgive your orbit.",
+          "in_game_wiki": "Draft NL localization pending native pass. P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.",
+          "external_site": "Draft NL localization pending native pass. P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence."
+        }
+      }
+    },
+    {
+      "packet_id": "P239_PRESSURE_SUIT_SERVICE_GRADES",
+      "release_set_id": "RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK",
+      "article_id": "hardware.pressure_suit_service_grades",
+      "title_key": "applied_lore.pressure_suit_service_grades.title",
+      "unlock": {
+        "primary": "unlock.pressure_suit_service_grades",
+        "poi_tags": [
+          "poi.pressure_suit_grade_tag",
+          "poi.old_service_stamp",
+          "poi.depth_cert_patch"
+        ],
+        "biome_tags": [
+          "biome.p63_shallows",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Suit Service Grades",
+          "scanner": "Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "ru_RU": {
+          "title": "Сервисные классы скафандра давления",
+          "scanner": "Suit tags классифицируют глубину обслуживания, усталость seal, емкость scrubber, тепловой допуск и работу с загрязнением.",
+          "field_note": "Более глубокий suit - это бумаги, proof давления и грязное обслуживание до того, как это станет stat upgrade.",
+          "terminal": "SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Скафандр не делает тебя смелым. Он просто ломается позже.",
+          "in_game_wiki": "Сервисные классы скафандра давления приземляют прогрессию игрока в стандартах обслуживания и глубинной сертификации.",
+          "external_site": "Сервисные классы скафандра давления удерживают gear progression HECTON-8 в hard-sci-fi. Лучшие suits - это не цветные armor tiers, а service records, seal proof, scrubber capacity, thermal margins и contamination limits."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft JP localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft JP localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft JP localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft JP localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft JP localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft JP localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft CN localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft CN localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft CN localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft CN localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft CN localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft CN localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft FR localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft FR localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft FR localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft FR localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft FR localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft FR localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft ES localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft ES localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft ES localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft ES localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft ES localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft ES localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft DE localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft DE localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft DE localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft DE localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft DE localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft DE localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft PL localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft PL localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft PL localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft PL localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft PL localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft PL localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft UA localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft UA localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft UA localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft UA localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft UA localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft UA localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft AR localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft AR localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft AR localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft AR localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft AR localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft AR localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft ID localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft ID localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft ID localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft ID localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft ID localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft ID localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft KO localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft KO localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft KO localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft KO localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft KO localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft KO localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft HE localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft HE localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft HE localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft HE localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft HE localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft HE localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft PT localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft PT localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft PT localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft PT localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft PT localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft PT localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Pressure Suit Service Grades",
+          "scanner": "Draft NL localization pending native pass. Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.",
+          "field_note": "Draft NL localization pending native pass. A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.",
+          "terminal": "Draft NL localization pending native pass. SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.",
+          "audio": "Draft NL localization pending native pass. The suit does not make you brave. It only fails later.",
+          "in_game_wiki": "Draft NL localization pending native pass. Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.",
+          "external_site": "Draft NL localization pending native pass. Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits."
+        }
+      }
+    },
+    {
+      "packet_id": "P240_SONAR_PINGER_ROUTE_BEACONS",
+      "release_set_id": "RS048_HARDWARE_AND_VEHICLE_EVIDENCE_STACK",
+      "article_id": "hardware.sonar_pinger_route_beacons",
+      "title_key": "applied_lore.sonar_pinger_route_beacons.title",
+      "unlock": {
+        "primary": "unlock.sonar_pinger_route_beacons",
+        "poi_tags": [
+          "poi.sonar_pinger_float",
+          "poi.route_beacon_line",
+          "poi.acoustic_return_tag"
+        ],
+        "biome_tags": [
+          "biome.photic_shelf",
+          "biome.brine_canyon"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sonar Pinger Route Beacons",
+          "scanner": "A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "ru_RU": {
+          "title": "Маршрутные сонарные пингеры",
+          "scanner": "Pinger float отмечает геометрию возврата, вскрывает false echoes и может притянуть и помощь, и нежелательную жизнь.",
+          "field_note": "Pinger - первый честный инструмент: он говорит о дистанции, долге, потере маршрута и риске существ через звук.",
+          "terminal": "PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Один пинг - обещание. Два пинга - счет.",
+          "in_game_wiki": "Маршрутные сонарные пингеры удерживают раннее снаряжение важным для исследования, salvage, телеграфа существ и ложных выходов.",
+          "external_site": "Маршрутные сонарные пингеры являются характерным объектом HECTON-8: дешевым, физическим, акустическим и морально нагруженным. Они помогают игроку картировать, возвращаться, метить улики и договариваться о спасении, одновременно объявляя океану о присутствии."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft JP localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft JP localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft JP localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft JP localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft JP localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft JP localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft CN localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft CN localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft CN localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft CN localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft CN localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft CN localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft FR localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft FR localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft FR localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft FR localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft FR localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft ES localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft ES localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft ES localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft ES localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft ES localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft DE localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft DE localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft DE localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft DE localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft DE localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft PL localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft PL localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft PL localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft PL localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft PL localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft UA localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft UA localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft UA localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft UA localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft UA localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft UA localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft AR localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft AR localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft AR localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft AR localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft AR localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft ID localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft ID localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft ID localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft ID localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft ID localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "ko_KR": {
+          "title": "Draft KO localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft KO localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft KO localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft KO localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft KO localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft KO localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft KO localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft HE localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft HE localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft HE localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft HE localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft HE localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "pt_BR": {
+          "title": "Draft PT localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft PT localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft PT localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft PT localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft PT localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft PT localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft PT localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sonar Pinger Route Beacons",
+          "scanner": "Draft NL localization pending native pass. A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.",
+          "field_note": "Draft NL localization pending native pass. The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.",
+          "terminal": "Draft NL localization pending native pass. PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.",
+          "audio": "Draft NL localization pending native pass. One ping is a promise. Two pings are a bill.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.",
+          "external_site": "Draft NL localization pending native pass. Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean."
+        }
+      }
+    }
+  ]
+}

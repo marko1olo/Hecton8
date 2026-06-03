@@ -21,6 +21,7 @@ namespace Hecton8.AI.Ecosystem
         private const uint FlockingThreatDamageHash = 0x43444D47u; // CDMG
         private const ulong FlockingDumpMagic = 0x5348333037464C4FUL; // SH307FLO
         private const int FlockingDumpVersion = 1;
+        private const float FlockingInverseThreatRadiusReference = 0.020833333333333332f;
         private const string FlockingDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_307_Flocking.bin";
 
         private void CaptureFlockingThreatSignals(
@@ -395,7 +396,7 @@ namespace Hecton8.AI.Ecosystem
         {
             float panic = math.saturate(panicScalar);
             float qualityShape = Smooth01(globalQualityWeight);
-            float radiusScale = math.clamp(math.max(4f, evasionRadiusMeters) * (1f / 48f), 0.25f, 3f);
+            float radiusScale = math.clamp(math.max(4f, evasionRadiusMeters) * FlockingInverseThreatRadiusReference, 0.25f, 3f);
             int safeCount = math.clamp(threatCount, 0, FlockingThreatCapacity);
             for (int i = 0; i < safeCount; i++)
             {

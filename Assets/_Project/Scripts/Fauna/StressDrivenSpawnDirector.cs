@@ -322,7 +322,7 @@ namespace Hecton8.AI
         private const uint DumpReasonNanHash = 0x534E414Eu; // SNAN
         private const uint DumpReasonLootMissingHash = 0x534C4F54u; // SLOT
         private const uint SourceHash = 0x53323533u; // S253
-        private const string DumpPath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_1702.bin";
 #if UNITY_EDITOR
         private const string RulesCsvName = "director_spawn_rules.csv";
 #endif
@@ -472,12 +472,15 @@ namespace Hecton8.AI
         {
             if (!TryGetExistingInstanceVault(out StressDrivenSpawnDirector director, out IDataVault vault) ||
                 director._jobScheduled ||
+                vault.IsCompactionFenceActive ||
                 !IsOwnedVaultHandle(in director._tuningHandle, TuningBufferId, SystemID.AIEcology))
             {
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in director._tuningHandle, SystemID.AIEcology, out NativeArray<DirectorTuningDTO> tuningArray))
+            float quality = director.ResolveGlobalQualityWeight(vault);
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in director._tuningHandle, SystemID.AIEcology, out NativeArray<DirectorTuningDTO> tuningArray))
             {
                 return false;
             }
@@ -487,7 +490,6 @@ namespace Hecton8.AI
                 if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                     return false;
 
-                float quality = director.ResolveGlobalQualityWeight(vault);
                 tuningArray[0] = StressDrivenSpawnDirectorSanitizer.Sanitize(tuning, quality);
                 return true;
             }
@@ -607,6 +609,18 @@ namespace Hecton8.AI
                 return false;
             }
 
+            bool hasPlayerAup = math.all(math.isfinite(playerAup));
+            AbsoluteUniversePositionBlit128 packedPlayerAup = hasPlayerAup ? PackAbsoluteAup(playerAup) : default;
+            bool hasPlayerForward = math.all(math.isfinite(playerForward)) && math.lengthsq(playerForward) > 0.0001f;
+            float3 packedPlayerForward = hasPlayerForward ? ResolveDirection(playerForward, new float3(0f, 0f, 1f)) : default;
+            bool hasTensionIndex = math.isfinite(tensionIndex);
+            float safeTensionIndex = hasTensionIndex ? math.saturate(tensionIndex) : 0f;
+            bool hasTurbidityScalar = math.isfinite(turbidityScalar);
+            float safeTurbidityScalar = hasTurbidityScalar ? math.max(0f, turbidityScalar) : 0f;
+            bool hasWeatherSeverity = math.isfinite(weatherSeverity01);
+            float safeWeatherSeverity01 = hasWeatherSeverity ? math.saturate(weatherSeverity01) : 0f;
+            int safeBiomeTransitionTicks = math.max(0, biomeTransitionTicksRemaining);
+
             if (!vault.TryAcquireWriteLock(in director._inputHandle, SystemID.AIEcology, out NativeArray<DirectorInputDTO> inputs))
             {
                 return false;
@@ -618,14 +632,18 @@ namespace Hecton8.AI
                     return false;
 
                 DirectorInputDTO input = inputs[0];
-                if (math.all(math.isfinite(playerAup)))
-                    input.PlayerAup = PackAbsoluteAup(playerAup);
-                input.PlayerForward = ResolveDirection(playerForward, input.PlayerForward);
-                input.TensionIndex = math.saturate(math.select(input.TensionIndex, tensionIndex, math.isfinite(tensionIndex)));
-                input.TurbidityScalar = math.max(0f, math.select(input.TurbidityScalar, turbidityScalar, math.isfinite(turbidityScalar)));
-                input.WeatherSeverity01 = math.saturate(math.select(input.WeatherSeverity01, weatherSeverity01, math.isfinite(weatherSeverity01)));
+                if (hasPlayerAup)
+                    input.PlayerAup = packedPlayerAup;
+                if (hasPlayerForward)
+                    input.PlayerForward = packedPlayerForward;
+                if (hasTensionIndex)
+                    input.TensionIndex = safeTensionIndex;
+                if (hasTurbidityScalar)
+                    input.TurbidityScalar = safeTurbidityScalar;
+                if (hasWeatherSeverity)
+                    input.WeatherSeverity01 = safeWeatherSeverity01;
                 input.CurrentBiomeMask = biomeMask == 0u ? input.CurrentBiomeMask : biomeMask;
-                input.BiomeTransitionTicksRemaining = math.max(0, biomeTransitionTicksRemaining);
+                input.BiomeTransitionTicksRemaining = safeBiomeTransitionTicks;
                 input.Flags |= InputFlagExternalStress;
                 inputs[0] = input;
                 return true;
@@ -1252,41 +1270,55 @@ namespace Hecton8.AI
 
         private void RefreshColdInputs(IDataVault vault)
         {
-            if (!IsOwnedVaultHandle(in _inputHandle, InputBufferId, SystemID.AIEcology) ||
-                !vault.TryAcquireWriteLock(in _inputHandle, SystemID.AIEcology, out NativeArray<DirectorInputDTO> inputs))
+            if (vault == null || vault.IsCompactionFenceActive)
                 return;
+
+            if (!TryRead(vault, in _inputHandle, InputBufferId, SystemID.AIEcology, out NativeArray<DirectorInputDTO> snapshotInputs) ||
+                !snapshotInputs.IsCreated ||
+                snapshotInputs.Length <= 0)
+            {
+                return;
+            }
+
+            DirectorInputDTO input = snapshotInputs[0];
+            bool originValid = _floatingOriginSnapshotValid && math.all(math.isfinite(_cachedFloatingOriginOffset));
+            double3 origin = originValid ? _cachedFloatingOriginOffset : double3.zero;
+            if (!originValid)
+            {
+                input.Flags |= InputFlagOriginInvalid;
+            }
+            else
+            {
+                input.Flags &= ~InputFlagOriginInvalid;
+            }
+
+            AbsoluteUniversePositionBlit128 originAup = PackAbsoluteAup(origin);
+            if (!IsFiniteAup(in input.PlayerAup) || IsZeroAup(in input.PlayerAup))
+                input.PlayerAup = originAup;
+            input.FloatingOriginAup = originAup;
+            input.OriginShiftSequence = _cachedFloatingOriginSequence;
+            input.PlayerForward = ResolveDirection(input.PlayerForward, new float3(0f, 0f, 1f));
+            input.GlobalQualityWeight = ResolveGlobalQualityWeight(vault);
+            input.ThermalPressure01 = ResolveThermalPressure(vault);
+            input.FrameTimeMs = ResolveFrameTimeMs(input.FrameTimeMs);
+            input.SimulationTick = input.SimulationTick == uint.MaxValue ? 1u : input.SimulationTick + 1u;
+            input.Frame = ResolveFrameId(input.SimulationTick);
+            input.SectorHash = ResolveSectorHash32(input.PlayerAup);
+            input.WorldSeed = ResolveWorldSeed(input.SectorHash);
+            RefreshWeatherInputs(vault, ref input);
+            RefreshMacroEcosystemInputs(vault, ref input);
+
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in _inputHandle, SystemID.AIEcology, out NativeArray<DirectorInputDTO> inputs))
+            {
+                return;
+            }
 
             try
             {
                 if (!inputs.IsCreated || inputs.Length <= 0)
                     return;
 
-                DirectorInputDTO input = inputs[0];
-                bool originValid = _floatingOriginSnapshotValid && math.all(math.isfinite(_cachedFloatingOriginOffset));
-                double3 origin = originValid ? _cachedFloatingOriginOffset : double3.zero;
-                if (!originValid)
-                {
-                    input.Flags |= InputFlagOriginInvalid;
-                }
-                else
-                {
-                    input.Flags &= ~InputFlagOriginInvalid;
-                }
-                AbsoluteUniversePositionBlit128 originAup = PackAbsoluteAup(origin);
-                if (!IsFiniteAup(in input.PlayerAup) || IsZeroAup(in input.PlayerAup))
-                    input.PlayerAup = originAup;
-                input.FloatingOriginAup = originAup;
-                input.OriginShiftSequence = _cachedFloatingOriginSequence;
-                input.PlayerForward = ResolveDirection(input.PlayerForward, new float3(0f, 0f, 1f));
-                input.GlobalQualityWeight = ResolveGlobalQualityWeight(vault);
-                input.ThermalPressure01 = ResolveThermalPressure(vault);
-                input.FrameTimeMs = ResolveFrameTimeMs(input.FrameTimeMs);
-                input.SimulationTick = input.SimulationTick == uint.MaxValue ? 1u : input.SimulationTick + 1u;
-                input.Frame = ResolveFrameId(input.SimulationTick);
-                input.SectorHash = ResolveSectorHash32(input.PlayerAup);
-                input.WorldSeed = ResolveWorldSeed(input.SectorHash);
-                RefreshWeatherInputs(vault, ref input);
-                RefreshMacroEcosystemInputs(vault, ref input);
                 inputs[0] = input;
             }
             finally

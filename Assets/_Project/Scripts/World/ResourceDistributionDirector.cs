@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -14,7 +15,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.World
@@ -58,14 +59,16 @@ namespace Hecton8.World
         private const float DefaultMeteoriteRadiationVisorBias = 1.35f;
         private const float DefaultPressureMetamorphismDepthMeters = 3500f;
         private const float DefaultPressureMetamorphismDays = 5f;
-        private const float GhostAlpha = 0.24f;
-        private const string RuntimePrefabName = "PFB_RuntimeResourceNode_Generic";
-        private const string RuntimeMagmaVentPrefabName = "PFB_RuntimeMagmaVent_Generic";
         private const string CarbonMetamorphismStableId = "resource.node.carbon_graphite_nodule";
         private const string PressureDiamondStableId = "resource.node.pressure_diamond";
         private const string ThermalDiamondStableId = "resource.node.thermal_diamond";
         private const string VoidGlassMeteoriteStableId = "resource.node.void_glass_meteorite";
         private const string DeepMantleGeodeStableId = "resource.node.deep_mantle_geode";
+        private static readonly int CarbonMetamorphismStableHashId = LocHash.Compute(CarbonMetamorphismStableId);
+        private static readonly int PressureDiamondStableHashId = LocHash.Compute(PressureDiamondStableId);
+        private static readonly int ThermalDiamondStableHashId = LocHash.Compute(ThermalDiamondStableId);
+        private static readonly int VoidGlassMeteoriteStableHashId = LocHash.Compute(VoidGlassMeteoriteStableId);
+        private static readonly int DeepMantleGeodeStableHashId = LocHash.Compute(DeepMantleGeodeStableId);
         private const int BrinePoolSeedSalt = unchecked((int)0x4252494E);
         private const int BrinePoolHazardIdSalt = unchecked((int)0x52494E45);
         private const int MagmaVentSeedSalt = unchecked((int)0x56454E54);
@@ -224,6 +227,14 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Optional explicit diamond output template for deep-pressure metamorphism. If empty, resolves resource.node.pressure_diamond then thermal diamond.")]
         private ResourceNodeTemplate pressureDiamondTemplate;
+
+        [SerializeField, FormerlySerializedAs("authoredOrePrefab")]
+        [Tooltip("Author-authored fallback pooled ResourceNode prefab. Used when a ResourceNodeTemplate has no RuntimeNodePrefab.")]
+        private GameObject _authoredOrePrefab;
+
+        [SerializeField, FormerlySerializedAs("authoredMagmaVentPrefab")]
+        [Tooltip("Author-authored pooled temporary magma vent marker prefab. Leave empty to disable visual markers without runtime factories.")]
+        private GameObject _authoredMagmaVentPrefab;
 
         [SerializeField]
         [Tooltip("Optional explicit player transform. Runtime falls back to WorldRuntimeReferenceUtility when empty.")]
@@ -388,13 +399,9 @@ namespace Hecton8.World
         private int[] _freeSectorStateIndices;
         private int _freeSectorStateCount;
 
-        private GameObject _runtimePrefab;
-        private GameObject _magmaVentPrefab;
-        private Mesh _ghostCubeMesh;
-        private Mesh _ghostCylinderMesh;
-        private Material _ghostMaterial;
-        private Material _magmaVentMaterial;
         private bool _runtimePoolReady;
+        private bool _reportedMissingAuthoredOrePrefab;
+        private GameObject _validatedAuthoredOrePrefab;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _seismicHookRegistered;
@@ -459,6 +466,11 @@ namespace Hecton8.World
         private ITickDispatcher _dispatcher;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private bool _registeredHotSwapListener;
+        private ResourceNodeTemplate _cachedPressureCarbonTemplate;
+        private ResourceNodeTemplate _cachedPressureDiamondTemplate;
+        private ResourceNodeTemplate _cachedThermalDiamondTemplate;
+        private ResourceNodeTemplate _cachedVoidGlassMeteoriteTemplate;
+        private ResourceNodeTemplate _cachedDeepMantleGeodeTemplate;
 
         private void Awake()
         {
@@ -507,8 +519,9 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             CacheWorldgenRuntimeReferencesCold();
             CacheSpawnSdfValidationServicesCold();
+            CacheSpecialResourceTemplatesCold();
             EnsureMetamorphismCapacityCold(ResolveMetamorphismColdCapacity());
-            EnsureRuntimePrefab();
+            ValidateAuthoredRuntimePrefabsCold();
             UpdateDiagnostics(default);
         }
 
@@ -521,8 +534,9 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             CacheWorldgenRuntimeReferencesCold();
             CacheSpawnSdfValidationServicesCold();
+            CacheSpecialResourceTemplatesCold();
             EnsureMetamorphismCapacityCold(ResolveMetamorphismColdCapacity());
-            EnsureRuntimePrefab();
+            ValidateAuthoredRuntimePrefabsCold();
             EnsureRuntimePool();
             TryRegisterHotSwapListener();
             EnsureGhostProxySnapStaging();
@@ -723,6 +737,7 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;
                     _runtimePoolReady = false;
+                    ValidateAuthoredRuntimePrefabsCold();
                     EnsureRuntimePool();
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
@@ -819,12 +834,9 @@ namespace Hecton8.World
             float deltaTemperatureCelsius,
             uint sourceId)
         {
-            EnsureRuntimePool();
-
             if (!Application.isPlaying ||
                 _residentSectors == null ||
                 !_runtimePoolReady ||
-                _runtimePrefab == null ||
                 !TryResolveThermalDiamondTemplate(out ResourceNodeTemplate template))
             {
                 return false;
@@ -832,6 +844,11 @@ namespace Hecton8.World
 
             IObjectPoolService pool = _objectPool;
             if (pool == null)
+                return false;
+            GameObject prefab = ResolveAuthoredOrePrefab(template);
+            if (prefab == null)
+                return false;
+            if (!HasAuthoredPoolReserve(pool, prefab))
                 return false;
 
             float safeRadius = math.max(0.25f, crystallizationRadiusMeters);
@@ -856,26 +873,7 @@ namespace Hecton8.World
             yawSeed = Mix(yawSeed, (uint)math.asint(deltaTemperatureCelsius));
             float yawDegrees = Next01(ref yawSeed) * 360f;
             Quaternion rotation = ResolveSurfaceRotation(Vector3.up, yawDegrees);
-            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
-            if (instance == null)
-                return false;
-
-            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
-            node.RefreshRuntimeSpatialRegistration();
-            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            _debugLastAcceptedTemplateHash = template.StableHashId;
-            return true;
+            return TrySpawnAuthoredResourceNodeNow(pool, prefab, template, sectorState, spawnPosition, rotation);
         }
 
         internal bool TrySpawnDeepMantleGeodeAtAup(
@@ -883,16 +881,20 @@ namespace Hecton8.World
             float sourceRadiusMeters,
             uint sourceId)
         {
-            EnsureRuntimePool();
-
             if (!Application.isPlaying ||
                 _residentSectors == null ||
                 !_runtimePoolReady ||
-                _runtimePrefab == null ||
                 !TryResolveDeepMantleGeodeTemplate(out ResourceNodeTemplate template))
             {
                 return false;
             }
+
+            IObjectPoolService pool = _objectPool;
+            if (pool == null)
+                return false;
+            GameObject prefab = ResolveAuthoredOrePrefab(template);
+            if (!HasAuthoredPoolReserve(pool, prefab))
+                return false;
 
             Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
             Vector3 spawnPosition = ResolveThermalDiamondVoxelFacePosition(
@@ -915,33 +917,10 @@ namespace Hecton8.World
             if (!HasActiveNodeCapacity(sectorState))
                 return false;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
-                return false;
-
             uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             float yawDegrees = Next01(ref yawSeed) * 360f;
             Quaternion rotation = ResolveSurfaceRotation(Vector3.up, yawDegrees);
-            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
-            if (instance == null)
-                return false;
-
-            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
-            node.RefreshRuntimeSpatialRegistration();
-            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            _debugLastAcceptedTemplateHash = template.StableHashId;
-            return true;
+            return TrySpawnAuthoredResourceNodeNow(pool, prefab, template, sectorState, spawnPosition, rotation);
         }
 
         /// <summary>
@@ -1010,16 +989,20 @@ namespace Hecton8.World
             float sourceRadiusMeters,
             uint sourceId)
         {
-            EnsureRuntimePool();
-
             if (!Application.isPlaying ||
                 _residentSectors == null ||
                 !_runtimePoolReady ||
-                _runtimePrefab == null ||
                 !TryResolvePressureDiamondTemplate(out ResourceNodeTemplate template))
             {
                 return false;
             }
+
+            IObjectPoolService pool = _objectPool;
+            if (pool == null)
+                return false;
+            GameObject prefab = ResolveAuthoredOrePrefab(template);
+            if (!HasAuthoredPoolReserve(pool, prefab))
+                return false;
 
             Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
             Vector3 spawnPosition = ResolveThermalDiamondVoxelFacePosition(
@@ -1042,36 +1025,13 @@ namespace Hecton8.World
             if (!HasActiveNodeCapacity(sectorState))
                 return false;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
-                return false;
-
             uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             float yawDegrees = Next01(ref yawSeed) * 360f;
             Vector3 surfaceNormal = spawnPosition - runtimePosition;
             if (surfaceNormal.sqrMagnitude <= 0.000001f)
                 surfaceNormal = Vector3.up;
             Quaternion rotation = ResolveSurfaceRotation(surfaceNormal, yawDegrees);
-            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
-            if (instance == null)
-                return false;
-
-            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
-            node.RefreshRuntimeSpatialRegistration();
-            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            _debugLastAcceptedTemplateHash = template.StableHashId;
-            return true;
+            return TrySpawnAuthoredResourceNodeNow(pool, prefab, template, sectorState, spawnPosition, rotation);
         }
 
         private bool TrySpawnDeepMantleGeodeAtPillarSurfaceAup(
@@ -1080,12 +1040,9 @@ namespace Hecton8.World
             uint sourceId,
             float3 surfaceNormalAup)
         {
-            EnsureRuntimePool();
-
             if (!Application.isPlaying ||
                 _residentSectors == null ||
                 !_runtimePoolReady ||
-                _runtimePrefab == null ||
                 !TryResolveDeepMantleGeodeTemplate(out ResourceNodeTemplate template))
             {
                 return false;
@@ -1100,12 +1057,9 @@ namespace Hecton8.World
             uint sourceId,
             float3 surfaceNormalAup)
         {
-            EnsureRuntimePool();
-
             if (!Application.isPlaying ||
                 _residentSectors == null ||
                 !_runtimePoolReady ||
-                _runtimePrefab == null ||
                 !TryResolvePressureDiamondTemplate(out ResourceNodeTemplate template))
             {
                 return false;
@@ -1123,6 +1077,9 @@ namespace Hecton8.World
         {
             IObjectPoolService pool = _objectPool;
             if (pool == null || template == null)
+                return false;
+            GameObject prefab = ResolveAuthoredOrePrefab(template);
+            if (!HasAuthoredPoolReserve(pool, prefab))
                 return false;
 
             float3 safeNormal = ResolveDominantSurfaceNormal(surfaceNormalAup);
@@ -1152,26 +1109,8 @@ namespace Hecton8.World
             uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             float yawDegrees = Next01(ref yawSeed) * 360f;
             Quaternion rotation = ResolveSurfaceRotation(surfaceNormal, yawDegrees);
-            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
-            if (instance == null)
-                return false;
 
-            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
-            node.RefreshRuntimeSpatialRegistration();
-            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
-            {
-                pool.Despawn(instance);
-                return false;
-            }
-
-            _debugLastAcceptedTemplateHash = template.StableHashId;
-            return true;
+            return TrySpawnAuthoredResourceNodeNow(pool, prefab, template, sectorState, spawnPosition, rotation);
         }
 
         private Vector3 ResolveThermalDiamondVoxelFacePosition(
@@ -1196,8 +1135,7 @@ namespace Hecton8.World
             _debugMeteorImpactTimerSeconds = _meteorImpactTimerSeconds;
             if (!enableMeteorImpacts ||
                 meteorImpactChancePerWindow <= 0f ||
-                !_runtimePoolReady ||
-                _runtimePrefab == null)
+                !_runtimePoolReady)
             {
                 return;
             }
@@ -1229,6 +1167,11 @@ namespace Hecton8.World
             if (template == null || mapMagicBridge == null)
                 return false;
 
+            IObjectPoolService pool = _objectPool;
+            GameObject prefab = ResolveAuthoredOrePrefab(template);
+            if (!HasAuthoredPoolReserve(pool, prefab))
+                return false;
+
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
             float2 impactDirection = ResolveOctantDirection((int)(Next01(ref state) * 7.999f));
             float radialDistance = ResolveCinematicRadialDistance(ref state, math.max(1f, meteorImpactSearchRadiusMeters));
@@ -1239,9 +1182,6 @@ namespace Hecton8.World
                 return false;
 
             Vector3 surfaceAnchorPosition = new Vector3(runtimeProbe.x, seabedHeight, runtimeProbe.z);
-            if (!TryApplyMeteorImpactCrater(surfaceAnchorPosition, meteorImpactCraterRadiusMeters))
-                return false;
-
             float yawDegrees = Next01(ref state) * 360f;
             if (!TryResolveSurfacePlacement(surfaceAnchorPosition, template.SpawnOffsetMeters, yawDegrees, out Vector3 runtimePosition, out Quaternion rotation))
                 return false;
@@ -1258,6 +1198,8 @@ namespace Hecton8.World
             long sectorKey = ComposeSectorKey(sector);
             SectorState sectorState = EnsureRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
+                return false;
+            if (!HasActiveNodeCapacity(sectorState))
                 return false;
 
             int templateIndex = FindTemplateIndex(template);
@@ -1276,6 +1218,12 @@ namespace Hecton8.World
                 TombstoneId = tombstoneId,
                 RequiresGhostProxySnap = 0
             };
+
+            if (!HasSpawnQueueCapacity(in request) ||
+                !TryApplyMeteorImpactCrater(surfaceAnchorPosition, meteorImpactCraterRadiusMeters))
+            {
+                return false;
+            }
 
             if (!QueueSpawnRequest(in request))
                 return false;
@@ -1328,6 +1276,39 @@ namespace Hecton8.World
             return mapMagicBridge != null;
         }
 
+        private void CacheSpecialResourceTemplatesCold()
+        {
+            if (pressureCarbonTemplate != null)
+                pressureCarbonTemplate.ResolveStableHashIdCold();
+            if (pressureDiamondTemplate != null)
+                pressureDiamondTemplate.ResolveStableHashIdCold();
+            if (thermalDiamondTemplate != null)
+                thermalDiamondTemplate.ResolveStableHashIdCold();
+            if (voidGlassMeteoriteTemplate != null)
+                voidGlassMeteoriteTemplate.ResolveStableHashIdCold();
+
+            _cachedPressureCarbonTemplate = ResolveTemplateByStableHashCold(CarbonMetamorphismStableHashId);
+            _cachedPressureDiamondTemplate = ResolveTemplateByStableHashCold(PressureDiamondStableHashId);
+            _cachedThermalDiamondTemplate = ResolveTemplateByStableHashCold(ThermalDiamondStableHashId);
+            _cachedVoidGlassMeteoriteTemplate = ResolveTemplateByStableHashCold(VoidGlassMeteoriteStableHashId);
+            _cachedDeepMantleGeodeTemplate = ResolveTemplateByStableHashCold(DeepMantleGeodeStableHashId);
+        }
+
+        private ResourceNodeTemplate ResolveTemplateByStableHashCold(int stableHashId)
+        {
+            if (stableHashId == 0 || resourceTemplates == null)
+                return null;
+
+            for (int i = 0; i < resourceTemplates.Length; i++)
+            {
+                ResourceNodeTemplate candidate = resourceTemplates[i];
+                if (candidate != null && candidate.ResolveStableHashIdCold() == stableHashId)
+                    return candidate;
+            }
+
+            return null;
+        }
+
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
@@ -1350,58 +1331,85 @@ namespace Hecton8.World
             return playerAup.IsFinite();
         }
 
-        private void EnsureRuntimePrefab()
+        private void ValidateAuthoredRuntimePrefabsCold()
         {
-            if (_runtimePrefab != null)
+            _validatedAuthoredOrePrefab = HasResourceNodeComponentCold(_authoredOrePrefab) ? _authoredOrePrefab : null;
+
+            if (!HasAnyAuthoredOrePrefabCold())
+            {
+                if (!_reportedMissingAuthoredOrePrefab)
+                {
+                    _reportedMissingAuthoredOrePrefab = true;
+                    Hecton8.Core.H8Debug.LogError(
+                        "[ResourceDistributionDirector] No authored ore ResourceNode prefab assigned. Runtime ore spawning will fail closed; run HECTON-8/World/Install Resource Distribution Director or assign PFB_Ore prefabs.",
+                        this);
+                }
+
+                return;
+            }
+
+            _reportedMissingAuthoredOrePrefab = false;
+
+#if UNITY_EDITOR
+            if (_authoredOrePrefab != null && _validatedAuthoredOrePrefab == null)
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[ResourceDistributionDirector] _authoredOrePrefab has no ResourceNode component. Runtime ore spawning will fail closed.",
+                    this);
+            }
+
+            ValidateTemplateRuntimePrefabsCold();
+#endif
+        }
+
+        private bool HasAnyAuthoredOrePrefabCold()
+        {
+            if (_validatedAuthoredOrePrefab != null)
+                return true;
+
+            if (resourceTemplates == null)
+                return false;
+
+            for (int i = 0; i < resourceTemplates.Length; i++)
+            {
+                ResourceNodeTemplate template = resourceTemplates[i];
+                if (template != null && template.ValidateRuntimeNodePrefabCold())
+                    return true;
+            }
+
+            return false;
+        }
+
+#if UNITY_EDITOR
+        private void ValidateTemplateRuntimePrefabsCold()
+        {
+            if (resourceTemplates == null)
                 return;
 
-            _ghostCubeMesh = CaptureCubeMesh();
-            _ghostCylinderMesh = CaptureCylinderMesh();
-            _ghostMaterial = CreateGhostMaterial();
-            _magmaVentMaterial = CreateMagmaVentMaterial();
+            for (int i = 0; i < resourceTemplates.Length; i++)
+            {
+                ResourceNodeTemplate template = resourceTemplates[i];
+                if (template == null)
+                    continue;
 
-            // COLD ALLOC: GameObject[1] — generic pooled runtime resource-node prefab template — owner: ResourceDistributionDirector
-            _runtimePrefab = new GameObject(RuntimePrefabName);
-            _runtimePrefab.transform.SetParent(transform, false);
-            _runtimePrefab.SetActive(false);
+                if (template.HasRuntimeNodePrefabAssignment && !template.ValidateRuntimeNodePrefabCold())
+                {
+                    Hecton8.Core.H8Debug.LogWarning(
+                        "[ResourceDistributionDirector] ResourceNodeTemplate RuntimeNodePrefab has no ResourceNode component. Template will not be warmed for runtime ore spawning.",
+                        template);
+                }
+            }
+        }
+#endif
 
-            MeshFilter meshFilter = _runtimePrefab.AddComponent<MeshFilter>();
-            meshFilter.sharedMesh = _ghostCubeMesh;
-
-            MeshRenderer meshRenderer = _runtimePrefab.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterial = _ghostMaterial;
-            meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            meshRenderer.receiveShadows = false;
-
-            BoxCollider boxCollider = _runtimePrefab.AddComponent<BoxCollider>();
-            boxCollider.size = Vector3.one;
-
-            SphereCollider sphereCollider = _runtimePrefab.AddComponent<SphereCollider>();
-            sphereCollider.enabled = false;
-            sphereCollider.radius = 0.5f;
-
-            _runtimePrefab.AddComponent<ResourceNode>();
-
-            if (_ghostCylinderMesh == null || _magmaVentMaterial == null)
-                return;
-
-            // COLD ALLOC: GameObject[1] — temporary tectonic-upwelling marker prefab template — owner: ResourceDistributionDirector
-            _magmaVentPrefab = new GameObject(RuntimeMagmaVentPrefabName);
-            _magmaVentPrefab.transform.SetParent(transform, false);
-            _magmaVentPrefab.SetActive(false);
-
-            MeshFilter magmaMeshFilter = _magmaVentPrefab.AddComponent<MeshFilter>();
-            magmaMeshFilter.sharedMesh = _ghostCylinderMesh;
-
-            MeshRenderer magmaMeshRenderer = _magmaVentPrefab.AddComponent<MeshRenderer>();
-            magmaMeshRenderer.sharedMaterial = _magmaVentMaterial;
-            magmaMeshRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            magmaMeshRenderer.receiveShadows = false;
+        private static bool HasResourceNodeComponentCold(GameObject prefab)
+        {
+            return prefab != null && prefab.GetComponent<ResourceNode>() != null;
         }
 
         private void EnsureRuntimePool()
         {
-            if (_runtimePoolReady || _runtimePrefab == null)
+            if (_runtimePoolReady)
                 return;
 
             IObjectPoolService pool = _objectPool;
@@ -1410,13 +1418,39 @@ namespace Hecton8.World
 
             _computedPoolWarmupCount = ComputeRequiredPoolWarmupCount();
             int warmupCount = math.max(poolWarmupFloor, _computedPoolWarmupCount);
-            if (!pool.HasPool(_runtimePrefab))
-                pool.Warmup(_runtimePrefab, warmupCount);
+            bool hasOrePool = TryWarmAuthoredPrefab(pool, _validatedAuthoredOrePrefab, warmupCount);
 
-            if (_magmaVentPrefab != null && !pool.HasPool(_magmaVentPrefab))
-                pool.Warmup(_magmaVentPrefab, math.max(4, ((sectorRadius * 2) + 1) * ((sectorRadius * 2) + 1)));
+            if (resourceTemplates != null)
+            {
+                for (int i = 0; i < resourceTemplates.Length; i++)
+                {
+                    ResourceNodeTemplate template = resourceTemplates[i];
+                    if (template == null)
+                        continue;
 
-            _runtimePoolReady = pool.HasPool(_runtimePrefab);
+                    hasOrePool |= TryWarmAuthoredPrefab(pool, template.RuntimeNodePrefab, warmupCount);
+                }
+            }
+
+            TryWarmAuthoredPrefab(
+                pool,
+                _authoredMagmaVentPrefab,
+                math.max(4, ((sectorRadius * 2) + 1) * ((sectorRadius * 2) + 1)));
+
+            _runtimePoolReady = hasOrePool;
+        }
+
+        private static bool TryWarmAuthoredPrefab(IObjectPoolService pool, GameObject prefab, int warmupCount)
+        {
+            if (pool == null || prefab == null)
+                return false;
+
+            int requiredWarmup = math.max(1, warmupCount);
+            int availableCount = pool.HasPool(prefab) ? pool.GetAvailableCount(prefab) : 0;
+            if (availableCount < requiredWarmup)
+                pool.Warmup(prefab, requiredWarmup - availableCount);
+
+            return pool.HasPool(prefab);
         }
 
         private int ComputeRequiredPoolWarmupCount()
@@ -1443,22 +1477,26 @@ namespace Hecton8.World
         private void RefreshResidentSectors(int2 playerSector)
         {
             _sectorEvictionScratch.Clear();
-            Dictionary<long, SectorState>.Enumerator residentEnumerator = _residentSectors.GetEnumerator();
-            while (residentEnumerator.MoveNext())
+            SectorState[] sectorStates = _sectorStatePool;
+            if (sectorStates != null)
             {
-                SectorState state = residentEnumerator.Current.Value;
-                int deltaX = math.abs(state.Coordinates.x - playerSector.x);
-                int deltaY = math.abs(state.Coordinates.y - playerSector.y);
-                if (deltaX > sectorRadius || deltaY > sectorRadius)
-                    _sectorEvictionScratch.Add(residentEnumerator.Current.Key);
-                else
+                for (int i = 0; i < sectorStates.Length; i++)
                 {
-                    CompactSectorNodes(state);
-                    SyncBrineHazardRegistration(state);
+                    SectorState state = sectorStates[i];
+                    if (state == null || !state.IsLeased)
+                        continue;
+
+                    int deltaX = math.abs(state.Coordinates.x - playerSector.x);
+                    int deltaY = math.abs(state.Coordinates.y - playerSector.y);
+                    if (deltaX > sectorRadius || deltaY > sectorRadius)
+                        TryQueueSectorEvictionNoGrowth(ComposeSectorKey(state.Coordinates));
+                    else
+                    {
+                        CompactSectorNodes(state);
+                        SyncBrineHazardRegistration(state);
+                    }
                 }
             }
-
-            residentEnumerator.Dispose();
 
             for (int i = 0; i < _sectorEvictionScratch.Count; i++)
                 EvictSector(_sectorEvictionScratch[i]);
@@ -1480,7 +1518,12 @@ namespace Hecton8.World
                     if (state == null)
                         continue;
 
-                    _residentSectors.Add(sectorKey, state);
+                    if (!TryRegisterResidentSectorNoGrowth(sectorKey, state))
+                    {
+                        ReleaseSectorStateNoGrowth(state);
+                        continue;
+                    }
+
                     EnqueueSectorEnvelope(state, sectorKey);
                 }
             }
@@ -1509,10 +1552,14 @@ namespace Hecton8.World
             if (state == null || state.SpawnEnvelopeQueued)
                 return;
 
+            if (resourceTemplates == null || resourceTemplates.Length == 0)
+                return;
+
             state.BrinePool = ResolveBrinePoolState(state.Coordinates);
             SyncBrineHazardRegistration(state);
             state.SpawnEnvelopeQueued = true;
-            for (int templateIndex = 0; templateIndex < resourceTemplates.Length; templateIndex++)
+            int templateCount = resourceTemplates.Length;
+            for (int templateIndex = 0; templateIndex < templateCount; templateIndex++)
             {
                 ResourceNodeTemplate template = resourceTemplates[templateIndex];
                 if (template == null)
@@ -1522,7 +1569,7 @@ namespace Hecton8.World
                 int candidateBudget = template.CandidateBudgetPerSector;
                 for (int candidateIndex = 0; candidateIndex < candidateBudget; candidateIndex++)
                 {
-                    if (_pendingSpawns.Count >= DefaultMaxPendingSpawnRequests ||
+                    if (!HasAnySpawnQueueCapacity() ||
                         acceptedForTemplate >= template.MaxInstancesPerSector)
                     {
                         return;
@@ -1533,6 +1580,9 @@ namespace Hecton8.World
                     {
                         continue;
                     }
+
+                    if (!HasSpawnQueueCapacity(in request))
+                        continue;
 
                     if (QueueSpawnRequest(in request))
                         acceptedForTemplate++;
@@ -1629,30 +1679,52 @@ namespace Hecton8.World
 
         private bool QueueSpawnRequest(in SpawnRequest request)
         {
+            if (!HasSpawnQueueCapacity(in request))
+                return false;
+
             if (request.RequiresGhostProxySnap != 0)
             {
-                if (_pendingGhostProxySnaps.Count >= DefaultMaxPendingSpawnRequests)
-                    return false;
-
                 _pendingGhostProxySnaps.Enqueue(request);
                 return true;
             }
-
-            if (_pendingSpawns.Count >= DefaultMaxPendingSpawnRequests)
-                return false;
 
             _pendingSpawns.Enqueue(request);
             return true;
         }
 
+        private bool HasSpawnQueueCapacity(in SpawnRequest request)
+        {
+            if (request.RequiresGhostProxySnap != 0)
+            {
+                return _pendingGhostProxySnaps != null &&
+                       _pendingGhostProxySnaps.Count < DefaultMaxPendingSpawnRequests;
+            }
+
+            return _pendingSpawns != null &&
+                   _pendingSpawns.Count < DefaultMaxPendingSpawnRequests;
+        }
+
+        private bool HasAnySpawnQueueCapacity()
+        {
+            return (_pendingSpawns != null && _pendingSpawns.Count < DefaultMaxPendingSpawnRequests) ||
+                   (_pendingGhostProxySnaps != null && _pendingGhostProxySnaps.Count < DefaultMaxPendingSpawnRequests);
+        }
+
         private void ProcessGhostProxySurfaceSnaps()
         {
-            if (_pendingGhostProxySnaps == null ||
+            if (!_runtimePoolReady ||
+                _pendingGhostProxySnaps == null ||
                 _pendingGhostProxySnaps.Count == 0 ||
-                _ghostProxySnapRequests == null)
+                _ghostProxySnapRequests == null ||
+                _pendingSpawns == null ||
+                mapMagicBridge == null)
             {
                 return;
             }
+
+            IObjectPoolService pool = _objectPool;
+            if (pool == null)
+                return;
 
             int scheduledCount = math.min(_pendingGhostProxySnaps.Count, GhostProxySnapBatchCapacity);
             if (scheduledCount <= 0)
@@ -1660,11 +1732,34 @@ namespace Hecton8.World
 
             for (int i = 0; i < scheduledCount; i++)
             {
+                if (_pendingSpawns.Count >= DefaultMaxPendingSpawnRequests)
+                    break;
+
                 SpawnRequest request = _pendingGhostProxySnaps.Dequeue();
                 _ghostProxySnapRequests[i] = request;
 
-                if (TryResolveGhostProxySurfaceSnap(ref request))
-                    request.TombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(request.RuntimePosition);
+                ResourceNodeTemplate template = ResolveTemplateOrNull(request.TemplateIndex);
+                GameObject prefab = ResolveAuthoredOrePrefab(template);
+                if (prefab == null || !pool.HasPool(prefab))
+                {
+                    _ghostProxySnapRequests[i] = default;
+                    continue;
+                }
+
+                if (pool.GetAvailableCount(prefab) <= 0)
+                {
+                    DeferGhostProxySnapRequestNoGrowth(in request);
+                    _ghostProxySnapRequests[i] = default;
+                    continue;
+                }
+
+                if (!TryResolveGhostProxySurfaceSnap(ref request))
+                {
+                    _ghostProxySnapRequests[i] = default;
+                    continue;
+                }
+
+                request.TombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(request.RuntimePosition);
 
                 request.RequiresGhostProxySnap = 0;
                 PersistentWorldRegistry registry = _persistentWorldRegistry;
@@ -1674,16 +1769,15 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (_pendingSpawns.Count >= DefaultMaxPendingSpawnRequests)
-                {
-                    _pendingGhostProxySnaps.Enqueue(request);
-                    _ghostProxySnapRequests[i] = default;
-                    break;
-                }
-
                 _pendingSpawns.Enqueue(request);
                 _ghostProxySnapRequests[i] = default;
             }
+        }
+
+        private void DeferGhostProxySnapRequestNoGrowth(in SpawnRequest request)
+        {
+            if (_pendingGhostProxySnaps.Count < DefaultMaxPendingSpawnRequests)
+                _pendingGhostProxySnaps.Enqueue(request);
         }
 
         private bool TryResolveGhostProxySurfaceSnap(ref SpawnRequest request)
@@ -1717,9 +1811,21 @@ namespace Hecton8.World
                 : null;
         }
 
+        private GameObject ResolveAuthoredOrePrefab(ResourceNodeTemplate template)
+        {
+            if (template == null)
+                return null;
+
+            GameObject templatePrefab = template.RuntimeNodePrefab;
+            if (templatePrefab != null)
+                return templatePrefab;
+
+            return _validatedAuthoredOrePrefab;
+        }
+
         private void ProcessPendingSpawns()
         {
-            if (!_runtimePoolReady || _runtimePrefab == null || _pendingSpawns.Count == 0)
+            if (!_runtimePoolReady || _pendingSpawns.Count == 0)
                 return;
 
             IObjectPoolService pool = _objectPool;
@@ -1727,18 +1833,44 @@ namespace Hecton8.World
                 return;
 
             int processedCount = 0;
-            while (processedCount < maxSpawnsPerSlowTick && _pendingSpawns.Count > 0)
+            int inspectedCount = 0;
+            int maxInspectionCount = _pendingSpawns.Count;
+            while (processedCount < maxSpawnsPerSlowTick &&
+                   inspectedCount < maxInspectionCount &&
+                   _pendingSpawns.Count > 0)
             {
+                inspectedCount++;
                 SpawnRequest request = _pendingSpawns.Peek();
+                ResourceNodeTemplate template = ResolveTemplateOrNull(request.TemplateIndex);
+                if (template == null)
+                {
+                    _pendingSpawns.Dequeue();
+                    continue;
+                }
+
+                template = ResolveMetamorphosedTemplateOverride(request.TombstoneId, template);
+                GameObject prefab = ResolveAuthoredOrePrefab(template);
+                if (prefab == null)
+                {
+                    _pendingSpawns.Dequeue();
+                    continue;
+                }
+
+                if (!pool.HasPool(prefab))
+                {
+                    _pendingSpawns.Dequeue();
+                    continue;
+                }
+
                 if (!_residentSectors.TryGetValue(request.SectorKey, out SectorState sectorState))
                 {
                     _pendingSpawns.Dequeue();
                     continue;
                 }
 
-                if ((uint)request.TemplateIndex >= (uint)resourceTemplates.Length)
+                if (pool.GetAvailableCount(prefab) <= 0)
                 {
-                    _pendingSpawns.Dequeue();
+                    DeferPendingSpawnRequestNoGrowth(in request);
                     continue;
                 }
 
@@ -1754,18 +1886,12 @@ namespace Hecton8.World
                     continue;
                 }
 
-                ResourceNodeTemplate template = resourceTemplates[request.TemplateIndex];
-                if (template == null)
+                GameObject instance = pool.Spawn(prefab, request.RuntimePosition, request.Rotation, false);
+                if (instance == null)
                 {
-                    _pendingSpawns.Dequeue();
+                    DeferPendingSpawnRequestNoGrowth(in request);
                     continue;
                 }
-
-                template = ResolveMetamorphosedTemplateOverride(request.TombstoneId, template);
-
-                GameObject instance = pool.Spawn(_runtimePrefab, request.RuntimePosition, request.Rotation);
-                if (instance == null)
-                    break;
 
                 _pendingSpawns.Dequeue();
                 processedCount++;
@@ -1776,7 +1902,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
+                node.ApplyRuntimeTemplate(template, null, null);
                 TryApplyEmbeddedVein(node, template, in request);
                 node.RefreshRuntimeSpatialRegistration();
                 if (!TryAttachActiveNodeNoGrowth(sectorState, node))
@@ -1789,6 +1915,60 @@ namespace Hecton8.World
             }
         }
 
+        private void DeferPendingSpawnRequestNoGrowth(in SpawnRequest request)
+        {
+            _pendingSpawns.Dequeue();
+            if (_pendingSpawns.Count < DefaultMaxPendingSpawnRequests)
+                _pendingSpawns.Enqueue(request);
+        }
+
+        private bool TrySpawnAuthoredResourceNodeNow(
+            IObjectPoolService pool,
+            GameObject prefab,
+            ResourceNodeTemplate template,
+            SectorState sectorState,
+            Vector3 spawnPosition,
+            Quaternion rotation)
+        {
+            if (pool == null ||
+                prefab == null ||
+                template == null ||
+                sectorState == null ||
+                !HasAuthoredPoolReserve(pool, prefab))
+            {
+                return false;
+            }
+
+            GameObject instance = pool.Spawn(prefab, spawnPosition, rotation, false);
+            if (instance == null)
+                return false;
+
+            if (!TryResolvePooledResourceNode(pool, instance, out ResourceNode node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
+            node.ApplyRuntimeTemplate(template, null, null);
+            node.RefreshRuntimeSpatialRegistration();
+            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
+            _debugLastAcceptedTemplateHash = template.StableHashId;
+            return true;
+        }
+
+        private static bool HasAuthoredPoolReserve(IObjectPoolService pool, GameObject prefab)
+        {
+            return pool != null &&
+                   prefab != null &&
+                   pool.HasPool(prefab) &&
+                   pool.GetAvailableCount(prefab) > 0;
+        }
+
         private static bool TryResolvePooledResourceNode(
             IObjectPoolService pool,
             GameObject instance,
@@ -1798,6 +1978,20 @@ namespace Hecton8.World
             return pool != null &&
                    instance != null &&
                    pool.TryGetPooledComponent(instance, out node);
+        }
+
+        private static void DespawnKnownPooledResourceOrDisable(IObjectPoolService pool, GameObject target)
+        {
+            if (target == null)
+                return;
+
+            if (TryResolvePooledResourceNode(pool, target, out _))
+            {
+                pool.Despawn(target);
+                return;
+            }
+
+            target.SetActive(false);
         }
 
         private void SchedulePressureMetamorphismJob()
@@ -1847,37 +2041,40 @@ namespace Hecton8.World
         {
             workspace = default;
             _metamorphismNodeScratch.Clear();
+            SectorState[] sectorStates = _sectorStatePool;
+            if (sectorStates == null || sectorStates.Length == 0)
+                return 0;
 
             int estimatedCount = 0;
-            Dictionary<long, SectorState>.Enumerator estimateEnumerator = _residentSectors.GetEnumerator();
-            while (estimateEnumerator.MoveNext())
+            for (int sectorIndex = 0; sectorIndex < sectorStates.Length; sectorIndex++)
             {
-                SectorState state = estimateEnumerator.Current.Value;
-                if (state != null && state.ActiveNodes != null)
-                    estimatedCount += state.ActiveNodes.Count;
-            }
-            estimateEnumerator.Dispose();
+                SectorState state = sectorStates[sectorIndex];
+                if (state == null || !state.IsLeased || state.ActiveNodes == null)
+                    continue;
 
-            if (!TryAcquireMetamorphismJobBuffer(math.max(1, estimatedCount), out workspace))
+                List<ResourceNode> activeNodes = state.ActiveNodes;
+                for (int i = 0; i < activeNodes.Count; i++)
+                {
+                    if (TryResolvePressureMetamorphismCandidate(activeNodes[i], carbonTemplateHashId, out _))
+                        estimatedCount++;
+                }
+            }
+
+            if (estimatedCount <= 0 || !TryAcquireMetamorphismJobBuffer(estimatedCount, out workspace))
                 return 0;
 
             int writeIndex = 0;
             float waterSurface = mapMagicBridge.WaterSurfaceLevel;
-            Dictionary<long, SectorState>.Enumerator sectorEnumerator = _residentSectors.GetEnumerator();
-            while (sectorEnumerator.MoveNext())
+            for (int sectorIndex = 0; sectorIndex < sectorStates.Length; sectorIndex++)
             {
-                SectorState state = sectorEnumerator.Current.Value;
-                if (state == null || state.ActiveNodes == null)
+                SectorState state = sectorStates[sectorIndex];
+                if (state == null || !state.IsLeased || state.ActiveNodes == null)
                     continue;
 
                 for (int i = 0; i < state.ActiveNodes.Count && writeIndex < workspace.Length; i++)
                 {
                     ResourceNode node = state.ActiveNodes[i];
-                    if (node == null || node.IsDepleted || !node.gameObject.activeInHierarchy)
-                        continue;
-
-                    ResourceNodeTemplate template = node.ResourceTemplate;
-                    if (template == null || template.StableHashId != carbonTemplateHashId)
+                    if (!TryResolvePressureMetamorphismCandidate(node, carbonTemplateHashId, out ResourceNodeTemplate template))
                         continue;
 
                     if (!node.TryGetPersistentAup(out AbsoluteUniversePosition nodeAup))
@@ -1901,7 +2098,6 @@ namespace Hecton8.World
                     writeIndex++;
                 }
             }
-            sectorEnumerator.Dispose();
 
             if (writeIndex <= 0)
             {
@@ -1910,6 +2106,19 @@ namespace Hecton8.World
             }
 
             return writeIndex;
+        }
+
+        private static bool TryResolvePressureMetamorphismCandidate(
+            ResourceNode node,
+            int carbonTemplateHashId,
+            out ResourceNodeTemplate template)
+        {
+            template = null;
+            if (node == null || node.IsDepleted || !node.gameObject.activeInHierarchy)
+                return false;
+
+            template = node.ResourceTemplate;
+            return template != null && template.StableHashId == carbonTemplateHashId;
         }
 
         private void CompleteAndApplyMetamorphismJob()
@@ -1945,7 +2154,7 @@ namespace Hecton8.World
                     }
 
                     node.SetPressureMetamorphismProgressSeconds(0f);
-                    node.ApplyRuntimeTemplate(diamondTemplate, _ghostCubeMesh, _ghostMaterial);
+                    node.ApplyRuntimeTemplate(diamondTemplate, null, null);
                     node.RefreshRuntimeSpatialRegistration();
                     if (registry != null && node.TryGetPersistentAup(out AbsoluteUniversePosition nodeAup))
                         registry.TryRegisterResourceNodeMetamorphosis(node.PersistentTombstoneId, in nodeAup);
@@ -2064,6 +2273,34 @@ namespace Hecton8.World
                 _freeSectorStateIndices[_freeSectorStateCount++] = state.PoolIndex;
         }
 
+        private bool TryRegisterResidentSectorNoGrowth(long sectorKey, SectorState state)
+        {
+            if (_residentSectors == null || state == null)
+                return false;
+
+            if (_residentSectors.ContainsKey(sectorKey))
+                return false;
+
+            int residentCapacity = _sectorStatePool != null ? _sectorStatePool.Length : 0;
+            if (residentCapacity <= 0 || _residentSectors.Count >= residentCapacity)
+                return false;
+
+            _residentSectors.Add(sectorKey, state);
+            return true;
+        }
+
+        private bool TryQueueSectorEvictionNoGrowth(long sectorKey)
+        {
+            if (_sectorEvictionScratch == null ||
+                _sectorEvictionScratch.Count >= _sectorEvictionScratch.Capacity)
+            {
+                return false;
+            }
+
+            _sectorEvictionScratch.Add(sectorKey);
+            return true;
+        }
+
         private static bool HasActiveNodeCapacity(SectorState state)
         {
             List<ResourceNode> nodes = state != null ? state.ActiveNodes : null;
@@ -2079,6 +2316,23 @@ namespace Hecton8.World
             return true;
         }
 
+        private bool TryQueueNodeDeactivationNoGrowth(GameObject target)
+        {
+            if (target == null)
+                return true;
+
+            if (_pendingNodeDeactivations.Count < _pendingNodeDeactivations.Capacity)
+            {
+                _pendingNodeDeactivations.Add(target);
+                return true;
+            }
+
+            IObjectPoolService pool = _objectPool;
+            DespawnKnownPooledResourceOrDisable(pool, target);
+
+            return false;
+        }
+
         private void EnsureMetamorphismCapacityCold(int requiredCount)
         {
             if (!Application.isPlaying || requiredCount <= 0 || _metamorphismJobActive || _metamorphismWorkspaceInUse)
@@ -2088,11 +2342,15 @@ namespace Hecton8.World
             if (_metamorphismWorkspace.HasCapacity(nextCapacity))
             {
                 _metamorphismCapacity = _metamorphismWorkspace.Workspace.Length;
+                if (_metamorphismNodeScratch != null && _metamorphismNodeScratch.Capacity < nextCapacity)
+                    _metamorphismNodeScratch.Capacity = nextCapacity;
                 return;
             }
 
             _metamorphismWorkspace.Ensure(nextCapacity);
             _metamorphismCapacity = _metamorphismWorkspace.Workspace.IsCreated ? _metamorphismWorkspace.Workspace.Length : 0;
+            if (_metamorphismNodeScratch != null && _metamorphismNodeScratch.Capacity < nextCapacity)
+                _metamorphismNodeScratch.Capacity = nextCapacity;
         }
 
         private void DisposeMetamorphismBuffers()
@@ -2106,6 +2364,9 @@ namespace Hecton8.World
         {
             workspace = default;
             if (!EnsureMetamorphismCapacity(requiredCount) || _metamorphismWorkspaceInUse)
+                return false;
+
+            if (_metamorphismNodeScratch == null || _metamorphismNodeScratch.Capacity < requiredCount)
                 return false;
 
             workspace = _metamorphismWorkspace.Workspace;
@@ -2176,19 +2437,19 @@ namespace Hecton8.World
         private bool TryResolvePressureCarbonTemplate(out ResourceNodeTemplate template)
         {
             template = pressureCarbonTemplate;
-            if (template != null)
-                return true;
+            if (template == null)
+                template = _cachedPressureCarbonTemplate;
 
-            return TryResolveTemplateByStableId(CarbonMetamorphismStableId, out template);
+            return template != null;
         }
 
         private bool TryResolvePressureDiamondTemplate(out ResourceNodeTemplate template)
         {
             template = pressureDiamondTemplate;
-            if (template != null)
-                return true;
+            if (template == null)
+                template = _cachedPressureDiamondTemplate;
 
-            if (TryResolveTemplateByStableId(PressureDiamondStableId, out template))
+            if (template != null)
                 return true;
 
             return TryResolveThermalDiamondTemplate(out template);
@@ -2197,43 +2458,25 @@ namespace Hecton8.World
         private bool TryResolveThermalDiamondTemplate(out ResourceNodeTemplate template)
         {
             template = thermalDiamondTemplate;
-            if (template != null)
-                return true;
+            if (template == null)
+                template = _cachedThermalDiamondTemplate;
 
-            return TryResolveTemplateByStableId(ThermalDiamondStableId, out template);
+            return template != null;
         }
 
         private bool TryResolveVoidGlassMeteoriteTemplate(out ResourceNodeTemplate template)
         {
             template = voidGlassMeteoriteTemplate;
-            if (template != null)
-                return true;
+            if (template == null)
+                template = _cachedVoidGlassMeteoriteTemplate;
 
-            return TryResolveTemplateByStableId(VoidGlassMeteoriteStableId, out template);
+            return template != null;
         }
 
         private bool TryResolveDeepMantleGeodeTemplate(out ResourceNodeTemplate template)
         {
-            return TryResolveTemplateByStableId(DeepMantleGeodeStableId, out template);
-        }
-
-        private bool TryResolveTemplateByStableId(string stableId, out ResourceNodeTemplate template)
-        {
-            template = null;
-            if (resourceTemplates == null || string.IsNullOrEmpty(stableId))
-                return false;
-
-            for (int i = 0; i < resourceTemplates.Length; i++)
-            {
-                ResourceNodeTemplate candidate = resourceTemplates[i];
-                if (candidate == null || !string.Equals(candidate.StableId, stableId, System.StringComparison.Ordinal))
-                    continue;
-
-                template = candidate;
-                return true;
-            }
-
-            return false;
+            template = _cachedDeepMantleGeodeTemplate;
+            return template != null;
         }
 
         private int FindTemplateIndex(ResourceNodeTemplate template)
@@ -2271,7 +2514,14 @@ namespace Hecton8.World
                 state.BrinePool = ResolveBrinePoolState(sector);
                 SyncBrineHazardRegistration(state);
             }
-            _residentSectors.Add(sectorKey, state);
+
+            if (!TryRegisterResidentSectorNoGrowth(sectorKey, state))
+            {
+                UnregisterBrineHazard(ref state.BrinePool);
+                ReleaseSectorStateNoGrowth(state);
+                return null;
+            }
+
             return state;
         }
 
@@ -2491,20 +2741,46 @@ namespace Hecton8.World
                 return;
 
             int zoneId = ResolveBrineHazardZoneId(state.BrinePool.StableSeed);
+            bool isSameRegisteredZone =
+                state.BrinePool.HazardRegistered != 0 &&
+                state.BrinePool.HazardZoneId == zoneId;
+            bool isToxicMudCellRegistered =
+                isSameRegisteredZone &&
+                HectonBrineToxicMudGrid.IsRegisteredCell(zoneId);
+
+            if (state.BrinePool.HazardRegistered != 0 &&
+                state.BrinePool.HazardZoneId != zoneId)
+            {
+                UnregisterBrineHazard(ref state.BrinePool);
+                isToxicMudCellRegistered = false;
+            }
+
             float depthMeters = state.BrinePool.SurfaceHeight - state.BrinePool.BottomHeight;
             float radius = math.max(state.BrinePool.RadiusMeters, depthMeters * 0.75f);
-            Vector3 brineSurfaceCenter = new Vector3(
-                state.BrinePool.Center.x,
-                state.BrinePool.SurfaceHeight,
-                state.BrinePool.Center.z);
-            HectonBrineToxicMudGrid.RegisterCell(
-                zoneId,
-                brineSurfaceCenter,
-                state.BrinePool.RadiusMeters * 2f,
-                state.BrinePool.RadiusMeters * 2f,
-                depthMeters);
-            if (!HectonBrineToxicMudGrid.IsRegisteredCell(zoneId))
-                return;
+            if (!isToxicMudCellRegistered)
+            {
+                Vector3 brineSurfaceCenter = new Vector3(
+                    state.BrinePool.Center.x,
+                    state.BrinePool.SurfaceHeight,
+                    state.BrinePool.Center.z);
+                HectonBrineToxicMudGrid.RegisterCell(
+                    zoneId,
+                    brineSurfaceCenter,
+                    state.BrinePool.RadiusMeters * 2f,
+                    state.BrinePool.RadiusMeters * 2f,
+                    depthMeters);
+                if (!HectonBrineToxicMudGrid.IsRegisteredCell(zoneId))
+                {
+                    if (isSameRegisteredZone)
+                    {
+                        hazardManager.UnregisterZone(zoneId);
+                        state.BrinePool.HazardRegistered = 0;
+                        state.BrinePool.HazardZoneId = 0;
+                    }
+
+                    return;
+                }
+            }
 
             if (!hazardManager.RegisterZone(
                     zoneId,
@@ -2515,6 +2791,14 @@ namespace Hecton8.World
                     brinePoolHazardVisorBias))
             {
                 HectonBrineToxicMudGrid.UnregisterCell(zoneId);
+                if (state.BrinePool.HazardRegistered != 0 &&
+                    state.BrinePool.HazardZoneId == zoneId)
+                {
+                    hazardManager.UnregisterZone(zoneId);
+                    state.BrinePool.HazardRegistered = 0;
+                    state.BrinePool.HazardZoneId = 0;
+                }
+
                 return;
             }
 
@@ -2574,15 +2858,22 @@ namespace Hecton8.World
             if (queue == null || queue.Count == 0)
                 return false;
 
-            Queue<SpawnRequest>.Enumerator enumerator = queue.GetEnumerator();
-            while (enumerator.MoveNext())
+            int count = queue.Count;
+            bool found = false;
+            for (int i = 0; i < count; i++)
             {
-                SpawnRequest queuedRequest = enumerator.Current;
-                if (queuedRequest.SectorKey == sectorKey && queuedRequest.TombstoneId == tombstoneId)
-                    return true;
+                SpawnRequest queuedRequest = queue.Dequeue();
+                if (!found &&
+                    queuedRequest.SectorKey == sectorKey &&
+                    queuedRequest.TombstoneId == tombstoneId)
+                {
+                    found = true;
+                }
+
+                queue.Enqueue(queuedRequest);
             }
 
-            return false;
+            return found;
         }
 
         private static bool IsValidBrinePoolState(in BrinePoolState brinePool)
@@ -2704,17 +2995,19 @@ namespace Hecton8.World
 
         private void SpawnMagmaVentMarker(Vector3 runtimePosition, float impulseMagnitude, uint stableSeed)
         {
-            if (_magmaVentPrefab == null)
+            if (_authoredMagmaVentPrefab == null)
                 return;
 
             IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return;
 
-            if (!pool.HasPool(_magmaVentPrefab))
-                pool.Warmup(_magmaVentPrefab, 4);
+            if (!HasAuthoredPoolReserve(pool, _authoredMagmaVentPrefab))
+            {
+                return;
+            }
 
-            GameObject marker = pool.Spawn(_magmaVentPrefab, runtimePosition, Quaternion.identity);
+            GameObject marker = pool.Spawn(_authoredMagmaVentPrefab, runtimePosition, Quaternion.identity, false);
             if (marker == null)
                 return;
 
@@ -2775,7 +3068,7 @@ namespace Hecton8.World
                 if (node == null)
                     continue;
 
-                _pendingNodeDeactivations.Add(node.gameObject);
+                TryQueueNodeDeactivationNoGrowth(node.gameObject);
             }
 
             _residentSectors.Remove(sectorKey);
@@ -2791,10 +3084,7 @@ namespace Hecton8.World
                 if (target == null)
                     continue;
 
-                if (pool != null)
-                    pool.Despawn(target);
-                else
-                    target.SetActive(false);
+                DespawnKnownPooledResourceOrDisable(pool, target);
             }
 
             if (_pendingNodeDeactivations.Count > 0)
@@ -2803,14 +3093,19 @@ namespace Hecton8.World
 
         private void DespawnAllResidentNodes()
         {
-            if (_residentSectors == null || _residentSectors.Count == 0)
+            SectorState[] sectorStates = _sectorStatePool;
+            if (sectorStates == null || sectorStates.Length == 0)
                 return;
 
             _sectorEvictionScratch.Clear();
-            Dictionary<long, SectorState>.Enumerator enumerator = _residentSectors.GetEnumerator();
-            while (enumerator.MoveNext())
-                _sectorEvictionScratch.Add(enumerator.Current.Key);
-            enumerator.Dispose();
+            for (int i = 0; i < sectorStates.Length; i++)
+            {
+                SectorState state = sectorStates[i];
+                if (state == null || !state.IsLeased)
+                    continue;
+
+                TryQueueSectorEvictionNoGrowth(ComposeSectorKey(state.Coordinates));
+            }
 
             for (int i = 0; i < _sectorEvictionScratch.Count; i++)
                 EvictSector(_sectorEvictionScratch[i]);
@@ -3055,111 +3350,6 @@ namespace Hecton8.World
             return (state & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
-        private Mesh CaptureCubeMesh()
-        {
-            // COLD ALLOC: GameObject[1] — temporary primitive source used to capture the built-in cube mesh — owner: ResourceDistributionDirector
-            GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            temp.TryGetComponent(out MeshFilter filter);
-            Mesh mesh = filter != null ? filter.sharedMesh : null;
-            if (Application.isPlaying)
-                Destroy(temp);
-            else
-                DestroyImmediate(temp);
-
-            return mesh;
-        }
-
-        private Mesh CaptureCylinderMesh()
-        {
-            // COLD ALLOC: GameObject[1] — temporary primitive source used to capture the built-in cylinder mesh — owner: ResourceDistributionDirector
-            GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            temp.TryGetComponent(out MeshFilter filter);
-            Mesh mesh = filter != null ? filter.sharedMesh : null;
-            if (Application.isPlaying)
-                Destroy(temp);
-            else
-                DestroyImmediate(temp);
-
-            return mesh;
-        }
-
-        private Material CreateGhostMaterial()
-        {
-            Shader shader = ResolveRuntimeFlatColorShader();
-
-            if (shader == null)
-                return null;
-
-            // COLD ALLOC: Material[1] — shared ghost placeholder material for meshless resource nodes — owner: ResourceDistributionDirector
-            Material material = new Material(shader)
-            {
-                name = "MAT_Runtime_ResourceGhost"
-            };
-
-            Color ghostColor = new Color(1f, 0.15f, 0.1f, GhostAlpha);
-            if (material.HasProperty("_BaseColor"))
-                material.SetColor("_BaseColor", ghostColor);
-            else if (material.HasProperty("_Color"))
-                material.SetColor("_Color", ghostColor);
-
-            if (material.HasProperty("_Surface"))
-            {
-                material.SetFloat("_Surface", 1f);
-                material.SetFloat("_Blend", 0f);
-                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-                material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-                material.SetFloat("_ZWrite", 0f);
-                material.renderQueue = (int)RenderQueue.Transparent;
-            }
-
-            return material;
-        }
-
-        private Material CreateMagmaVentMaterial()
-        {
-            Shader shader = ResolveRuntimeFlatColorShader();
-
-            if (shader == null)
-                return null;
-
-            // COLD ALLOC: Material[1] — shared tectonic-upwelling marker material — owner: ResourceDistributionDirector
-            Material material = new Material(shader)
-            {
-                name = "MAT_Runtime_MagmaVentGhost"
-            };
-
-            Color ventColor = new Color(1f, 0.42f, 0.12f, 0.72f);
-            if (material.HasProperty("_BaseColor"))
-                material.SetColor("_BaseColor", ventColor);
-            else if (material.HasProperty("_Color"))
-                material.SetColor("_Color", ventColor);
-
-            if (material.HasProperty("_Surface"))
-            {
-                material.SetFloat("_Surface", 1f);
-                material.SetFloat("_Blend", 0f);
-                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-                material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-                material.SetFloat("_ZWrite", 0f);
-                material.renderQueue = (int)RenderQueue.Transparent;
-            }
-
-            return material;
-        }
-
-        private static Shader ResolveRuntimeFlatColorShader()
-        {
-            Shader shader = null;
-            RuntimeShaderReferenceCatalog.TryGetRuntimeFlatColorShader(out shader);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                shader = Shader.Find("Unlit/Color");
-#endif
-            return shader;
-        }
-
         private void UpdateDiagnostics(int2 playerSector)
         {
             _debugResidentSectorCount = _residentSectors != null ? _residentSectors.Count : 0;
@@ -3167,16 +3357,19 @@ namespace Hecton8.World
 
             int activeNodeCount = 0;
             int activeBrinePoolCount = 0;
-            if (_residentSectors != null)
+            SectorState[] sectorStates = _sectorStatePool;
+            if (sectorStates != null)
             {
-                Dictionary<long, SectorState>.Enumerator enumerator = _residentSectors.GetEnumerator();
-                while (enumerator.MoveNext())
+                for (int i = 0; i < sectorStates.Length; i++)
                 {
-                    activeNodeCount += enumerator.Current.Value.ActiveNodes.Count;
-                    if (enumerator.Current.Value.BrinePool.IsValid != 0)
+                    SectorState state = sectorStates[i];
+                    if (state == null || !state.IsLeased)
+                        continue;
+
+                    activeNodeCount += state.ActiveNodes.Count;
+                    if (state.BrinePool.IsValid != 0)
                         activeBrinePoolCount++;
                 }
-                enumerator.Dispose();
             }
 
             _debugActiveNodeCount = activeNodeCount;
@@ -3210,6 +3403,8 @@ namespace Hecton8.World
 
             if (voidGlassMeteoriteTemplate == null)
                 voidGlassMeteoriteTemplate = UnityEditor.AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(EditorVoidGlassMeteoriteTemplatePath);
+
+            CacheSpecialResourceTemplatesCold();
         }
 #endif
     }

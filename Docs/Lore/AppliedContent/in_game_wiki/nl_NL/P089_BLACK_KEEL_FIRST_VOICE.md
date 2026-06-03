@@ -1,30 +1,37 @@
 ---
 packet_id: P089_BLACK_KEEL_FIRST_VOICE
+release_set_id: RS018_CARRIER_DEBT_CLAIM_AUTHORITY
 article_id: carrier.black_keel_first_voice
+unlock_id: unlock.first_black_keel_first_voice
+poi_tags: poi.first_carrier_voice_cache;poi.drop_capsule_speaker
+biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: nl_NL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Black Keel First Voice
 
-Draft NL localization pending native pass. Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
+Black Keel's first voice should arrive as clipped audio plus clean terminal text. It is not a friendly companion and not a villain monologue. It is a carrier monitor: useful, dry, conditional, and terrifying because every correct sentence still has a billing class behind it.
 
 ## Scanner
 
-Draft NL localization pending native pass. Carrier voice cache. Audio clipped, text clean, sympathy absent.
+Carrier voice cache. Audio clipped, text clean, sympathy absent.
 
 ## Terminal
 
-Draft NL localization pending native pass. BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
+BLACK KEEL FAILSAFE: audio channel degraded. Text channel valid. Operator survival acknowledged. Recovery priority unresolved pending payload and quarantine state.
 
 ## Audio
 
-Draft NL localization pending native pass. Operator signal acquired. Do not confuse acknowledgement with rescue.
+Operator signal acquired. Do not confuse acknowledgement with rescue.
 
 ## Field Note
 
-Draft NL localization pending native pass. The first voice should feel useful before it feels bought.
+The first voice should feel useful before it feels bought.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/nl_NL. -->

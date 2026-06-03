@@ -1,0 +1,168 @@
+Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
+{
+    Properties
+    {
+        _MainTex ("Base Cloud Bands", 2D) = "gray" {}
+        _DetailTex ("Storm Detail", 2D) = "gray" {}
+        _StormTex ("Storm Glow", 2D) = "black" {}
+        [HDR] _DeepTint ("Deep Belt Tint", Color) = (0.16, 0.20, 0.42, 1)
+        [HDR] _HighTint ("High Cloud Tint", Color) = (0.58, 0.64, 1.05, 1)
+        [HDR] _WarmTint ("Warm Storm Tint", Color) = (0.80, 0.43, 0.24, 1)
+        [HDR] _RimTint ("Atmosphere Rim Tint", Color) = (0.48, 0.58, 1.25, 1)
+        _Exposure ("Exposure", Range(0.05, 3.0)) = 0.82
+        _DetailStrength ("Detail Strength", Range(0.0, 2.0)) = 0.72
+        _StormStrength ("Storm Strength", Range(0.0, 4.0)) = 0.42
+        _RimStrength ("Rim Strength", Range(0.0, 4.0)) = 0.72
+        _RimPower ("Rim Power", Range(0.5, 8.0)) = 2.4
+        _PhaseCenter ("Phase Center", Range(0.0, 1.0)) = 0.56
+        _PhaseSoftness ("Phase Softness", Range(0.05, 1.0)) = 0.42
+        _Rotation ("Band Rotation", Range(0.0, 1.0)) = 0.08
+        _DetailTiling ("Detail Tiling", Vector) = (2.2, 2.2, 0, 0)
+        _StormTiling ("Storm Tiling", Vector) = (1.4, 1.4, 0, 0)
+        _LightDirection ("Local Light Direction", Vector) = (-0.38, 0.28, 0.88, 0)
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            "RenderType" = "Opaque"
+            "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Geometry"
+            "UniversalMaterialType" = "Unlit"
+            "ForceNoShadowCasting" = "True"
+        }
+
+        LOD 100
+
+        Pass
+        {
+            Name "AegirImpostorForward"
+            Tags { "LightMode" = "UniversalForward" }
+
+            Cull Back
+            ZWrite On
+            ZTest LEqual
+            Blend One Zero
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #pragma target 3.5
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_MainTex);   SAMPLER(sampler_MainTex);
+            TEXTURE2D(_DetailTex); SAMPLER(sampler_DetailTex);
+            TEXTURE2D(_StormTex);  SAMPLER(sampler_StormTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float4 _DetailTex_ST;
+                float4 _StormTex_ST;
+                half4 _DeepTint;
+                half4 _HighTint;
+                half4 _WarmTint;
+                half4 _RimTint;
+                half _Exposure;
+                half _DetailStrength;
+                half _StormStrength;
+                half _RimStrength;
+                half _RimPower;
+                half _PhaseCenter;
+                half _PhaseSoftness;
+                half _Rotation;
+                float4 _DetailTiling;
+                float4 _StormTiling;
+                float4 _LightDirection;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float3 positionWS : TEXCOORD0;
+                half3 normalWS : TEXCOORD1;
+                float2 uv : TEXCOORD2;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                VertexPositionInputs pos = GetVertexPositionInputs(input.positionOS.xyz);
+                output.positionCS = pos.positionCS;
+                output.positionWS = pos.positionWS;
+                output.normalWS = (half3)TransformObjectToWorldNormal(input.normalOS);
+                output.uv = input.uv;
+                return output;
+            }
+
+            half Luma(half3 color)
+            {
+                return dot(color, half3(0.299h, 0.587h, 0.114h));
+            }
+
+            half4 Frag(Varyings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                float2 baseUv = input.uv;
+                baseUv.x = frac(baseUv.x + _Rotation);
+
+                half3 baseSample = (half3)SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, TRANSFORM_TEX(baseUv, _MainTex)).rgb;
+
+                float2 detailUv = baseUv * _DetailTiling.xy + _DetailTiling.zw;
+                half3 detailSample = (half3)SAMPLE_TEXTURE2D(_DetailTex, sampler_DetailTex, detailUv).rgb;
+
+                float2 stormUv = baseUv * _StormTiling.xy + _StormTiling.zw;
+                half stormSample = Luma((half3)SAMPLE_TEXTURE2D(_StormTex, sampler_StormTex, stormUv).rgb);
+
+                half baseLuma = Luma(baseSample);
+                half detailLuma = Luma(detailSample);
+                half cloudDeck = saturate((baseLuma - 0.10h) * 1.65h);
+                half detailDeck = saturate((detailLuma - 0.28h) * 1.35h);
+                half beltSignal = saturate(cloudDeck * 0.82h + detailDeck * _DetailStrength * 0.22h);
+
+                half3 authoredBands = baseSample * half3(0.86h, 0.96h, 1.22h);
+                half3 controlledTint = lerp(_DeepTint.rgb, _HighTint.rgb, beltSignal);
+                half3 bandColor = lerp(authoredBands, controlledTint, 0.28h);
+                bandColor += (detailSample - half3(0.50h, 0.50h, 0.50h)) * (_DetailStrength * 0.18h);
+                half stormMask = saturate((stormSample - 0.22h) * 1.55h);
+                bandColor += _WarmTint.rgb * stormMask * _StormStrength;
+
+                half3 normalWS = normalize(input.normalWS);
+                half3 viewDir = normalize((half3)(_WorldSpaceCameraPos.xyz - input.positionWS));
+                half3 lightDir = normalize((half3)_LightDirection.xyz);
+                half lit = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
+                half phase = smoothstep(_PhaseCenter - _PhaseSoftness, _PhaseCenter + _PhaseSoftness, lit);
+
+                half rim = pow(saturate(1.0h - dot(normalWS, viewDir)), _RimPower) * _RimStrength;
+                half3 color = bandColor * lerp(0.42h, 1.0h, phase);
+                color += _RimTint.rgb * rim;
+                color *= _Exposure;
+
+                return half4(max(color, half3(0.0h, 0.0h, 0.0h)), 1.0h);
+            }
+            ENDHLSL
+        }
+    }
+}

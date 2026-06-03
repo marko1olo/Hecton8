@@ -15,18 +15,17 @@ namespace Hecton8.UI
     public sealed class FontAssetRecovery : MonoBehaviour
     {
         private const string LiberationSansAssetPath = "Assets/_Project/Data/LiberationSans SDF.asset";
-        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/\u0442\u0435\u043a\u0441\u0442 SDF.asset";
-        private const string NumericTextAssetPath = "Assets/_Project/Art/Materials/Fonts/\u0446\u0438\u0444\u0440\u044b SDF.asset";
+        private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tekst_SDF.asset";
+        private const string NumericTextAssetPath = "Assets/_Project/Art/Materials/Fonts/tsifry_SDF.asset";
         private const string NotoSansRegularAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSans-Regular SDF.asset";
         private const string NotoSansArabicRegularAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Regular SDF.asset";
         private const string NotoSansCjkScAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKsc-Regular SDF.asset";
         private const string NotoSansCjkJpAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKjp-Regular SDF.asset";
         private const string NotoSansArabicPrimeAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Prime SDF.asset";
-        private const string PrimaryTextFontName = "tekst SDF";
-        private const string NumericTextFontName = "tsifry SDF";
-        private const string LiberationSansFontName = "LiberationSans SDF";
-        private const string GlyphSeed = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,:;!?+-=*/%()[]{}<>_|\\/@#$&\"'~";
-
+        private const string GeneratedLatinCyrillicAssetPath = "Assets/_Project/Art/Generated/SdfFontAtlas1729/FA_h8_babel_static_latin_cyrillic_SDF_Static.asset";
+        private const string GeneratedArabicAssetPath = "Assets/_Project/Art/Generated/SdfFontAtlas1729/FA_h8_babel_static_arabic_rtl_SDF_Static.asset";
+        private const string GeneratedCjkScAssetPath = "Assets/_Project/Art/Generated/SdfFontAtlas1729/FA_h8_babel_static_cjk_sc_SDF_Static.asset";
+        private const string GeneratedCjkJpAssetPath = "Assets/_Project/Art/Generated/SdfFontAtlas1729/FA_h8_babel_static_cjk_jp_SDF_Static.asset";
         private static readonly string[] _knownFontAssetPaths =
         {
             PrimaryTextAssetPath,
@@ -37,6 +36,10 @@ namespace Hecton8.UI
             NotoSansCjkScAssetPath,
             NotoSansCjkJpAssetPath,
             NotoSansArabicPrimeAssetPath,
+            GeneratedLatinCyrillicAssetPath,
+            GeneratedArabicAssetPath,
+            GeneratedCjkScAssetPath,
+            GeneratedCjkJpAssetPath,
         };
 
 #if UNITY_EDITOR
@@ -124,39 +127,14 @@ namespace Hecton8.UI
             if (fontAsset == null)
                 return;
 
-            fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-            fontAsset.isMultiAtlasTexturesEnabled = !IsBoundedPrimaryFont(fontAsset);
-            EnsureDynamicAtlasReady(fontAsset);
-
-            bool hasAtlasBinding = ResolveAtlasTexture(fontAsset) != null && fontAsset.material != null;
-            if (!hasAtlasBinding)
-                PrimeDynamicAtlas(fontAsset);
-
+            fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
+            fontAsset.isMultiAtlasTexturesEnabled = false;
             TryRepairAtlasBinding(fontAsset);
-        }
 
-        private static void PrimeDynamicAtlas(TMP_FontAsset fontAsset)
-        {
-            if (fontAsset == null)
-                return;
-
-            EnsureDynamicAtlasReady(fontAsset);
-            try
-            {
-                fontAsset.TryAddCharacters(GlyphSeed, out _);
-            }
-            catch (MissingReferenceException)
-            {
 #if UNITY_EDITOR
-                ResetBrokenAtlasTextureReferences(fontAsset);
+            if (ResolveAtlasTexture(fontAsset) == null || fontAsset.material == null)
+                Debug.LogError("[FontAssetRecovery] Static TMP font atlas is missing; run SdfFontAtlasBaker1729 for " + fontAsset.name, fontAsset);
 #endif
-            }
-            catch (UnassignedReferenceException)
-            {
-#if UNITY_EDITOR
-                ResetBrokenAtlasTextureReferences(fontAsset);
-#endif
-            }
         }
 
         private static bool TryRepairAtlasBinding(TMP_FontAsset fontAsset)
@@ -242,7 +220,8 @@ namespace Hecton8.UI
 
             textComponent.havePropertiesChanged = true;
             textComponent.UpdateMeshPadding();
-            textComponent.ForceMeshUpdate(true, true);
+            textComponent.SetMaterialDirty();
+            textComponent.SetVerticesDirty();
         }
 
 #if UNITY_EDITOR
@@ -302,21 +281,17 @@ namespace Hecton8.UI
             assetChanged |= EnsureEditorFontMaterial(fontAsset);
             assetChanged |= SetClearDynamicDataOnBuild(fontAsset, false);
 
-            if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic)
+            if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Static)
             {
-                fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
+                fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
                 assetChanged = true;
             }
 
-            bool allowMultiAtlas = !IsBoundedPrimaryFont(fontAsset);
-            if (fontAsset.isMultiAtlasTexturesEnabled != allowMultiAtlas)
+            if (fontAsset.isMultiAtlasTexturesEnabled)
             {
-                fontAsset.isMultiAtlasTexturesEnabled = allowMultiAtlas;
+                fontAsset.isMultiAtlasTexturesEnabled = false;
                 assetChanged = true;
             }
-
-            EnsureDynamicAtlasReady(fontAsset);
-            PrimeDynamicAtlas(fontAsset);
 
             SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
             SerializedProperty atlasTexturesProperty = serializedFontAsset.FindProperty("m_AtlasTextures");
@@ -337,7 +312,9 @@ namespace Hecton8.UI
 
             Texture atlas = ResolveAtlasTexture(fontAsset);
             if (atlas != null)
-                assetChanged |= EnsureReadableTexture(atlas);
+                assetChanged |= EnsureNonReadableTexture(atlas);
+            else
+                Debug.LogError("[FontAssetRecovery] Static TMP font atlas is missing; run SdfFontAtlasBaker1729 for " + fontAsset.name, fontAsset);
 
             assetChanged |= TryRepairAtlasBinding(fontAsset);
 
@@ -349,26 +326,6 @@ namespace Hecton8.UI
             }
 
             return assetChanged;
-        }
-
-        private static void EnsureDynamicAtlasReady(TMP_FontAsset fontAsset)
-        {
-            if (fontAsset == null || ResolveAtlasTexture(fontAsset) != null)
-                return;
-
-            ResetBrokenAtlasTextureReferences(fontAsset);
-            try
-            {
-                fontAsset.ClearFontAssetData(false);
-            }
-            catch (MissingReferenceException)
-            {
-                ResetBrokenAtlasTextureReferences(fontAsset);
-            }
-            catch (UnassignedReferenceException)
-            {
-                ResetBrokenAtlasTextureReferences(fontAsset);
-            }
         }
 
         private static bool DisableProjectDynamicClearDataOnBuild()
@@ -451,7 +408,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool EnsureReadableTexture(Texture atlasTexture)
+        private static bool EnsureNonReadableTexture(Texture atlasTexture)
         {
             if (atlasTexture == null)
                 return false;
@@ -459,9 +416,9 @@ namespace Hecton8.UI
             SerializedObject serializedTexture = new SerializedObject(atlasTexture);
             SerializedProperty readableProperty = serializedTexture.FindProperty("m_IsReadable");
             bool changed = false;
-            if (readableProperty != null && !readableProperty.boolValue)
+            if (readableProperty != null && readableProperty.boolValue)
             {
-                readableProperty.boolValue = true;
+                readableProperty.boolValue = false;
                 serializedTexture.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(atlasTexture);
                 changed = true;
@@ -475,81 +432,14 @@ namespace Hecton8.UI
                 return false;
 
             TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
-            if (importer == null || importer.isReadable)
+            if (importer == null || !importer.isReadable)
                 return false;
 
-            importer.isReadable = true;
+            importer.isReadable = false;
             importer.SaveAndReimport();
             return true;
         }
 
-        private static void ResetBrokenAtlasTextureReferences(TMP_FontAsset fontAsset)
-        {
-            if (fontAsset == null)
-                return;
-
-            Texture2D atlasTexture = FindOrCreateAtlasTextureSubAsset(fontAsset);
-            SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
-            SerializedProperty atlasTexturesProperty = serializedFontAsset.FindProperty("m_AtlasTextures");
-            if (atlasTexturesProperty != null)
-            {
-                if (atlasTexturesProperty.arraySize == 0)
-                    atlasTexturesProperty.arraySize = 1;
-
-                atlasTexturesProperty.GetArrayElementAtIndex(0).objectReferenceValue = atlasTexture;
-            }
-
-            SerializedProperty atlasTextureIndexProperty = serializedFontAsset.FindProperty("m_AtlasTextureIndex");
-            if (atlasTextureIndexProperty != null && atlasTextureIndexProperty.intValue != 0)
-                atlasTextureIndexProperty.intValue = 0;
-
-            serializedFontAsset.ApplyModifiedPropertiesWithoutUndo();
-
-            if (fontAsset.material != null &&
-                atlasTexture != null)
-            {
-                fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, atlasTexture);
-                EditorUtility.SetDirty(fontAsset.material);
-            }
-        }
-
-        private static Texture2D FindOrCreateAtlasTextureSubAsset(TMP_FontAsset fontAsset)
-        {
-            if (fontAsset == null)
-                return null;
-
-            string assetPath = AssetDatabase.GetAssetPath(fontAsset);
-            Object[] subAssets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            for (int assetIndex = 0; assetIndex < subAssets.Length; assetIndex++)
-            {
-                Texture2D texture = subAssets[assetIndex] as Texture2D;
-                if (texture != null)
-                    return texture;
-            }
-
-            int atlasWidth = Mathf.Max(1, fontAsset.atlasWidth);
-            int atlasHeight = Mathf.Max(1, fontAsset.atlasHeight);
-            var atlasTexture = new Texture2D(atlasWidth, atlasHeight, TextureFormat.Alpha8, false)
-            {
-                name = fontAsset.name.Replace(" SDF", " Atlas"),
-                hideFlags = HideFlags.HideInHierarchy
-            };
-
-            AssetDatabase.AddObjectToAsset(atlasTexture, fontAsset);
-            EditorUtility.SetDirty(atlasTexture);
-            return atlasTexture;
-        }
-
-        private static bool IsBoundedPrimaryFont(TMP_FontAsset fontAsset)
-        {
-            if (fontAsset == null)
-                return false;
-
-            string fontName = fontAsset.name;
-            return string.Equals(fontName, "\u0442\u0435\u043a\u0441\u0442 SDF", System.StringComparison.Ordinal) ||
-                   string.Equals(fontName, "\u0446\u0438\u0444\u0440\u044b SDF", System.StringComparison.Ordinal) ||
-                   string.Equals(fontName, LiberationSansFontName, System.StringComparison.Ordinal);
-        }
 #endif
     }
 }

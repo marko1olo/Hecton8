@@ -50,7 +50,7 @@ namespace Hecton8.World.Outposts
         public const uint FaultFlag = 1u << 31;
         public const uint SurvivalBandFlag = WfcOutpostGridConstants.DescriptorFlagLowTier;
         public const uint LowTierFlag = SurvivalBandFlag;
-        public const uint HeightmapFallbackFlag = WfcOutpostGridConstants.DescriptorFlagHeightmapFallback;
+        public const uint MissingHeightmapFlag = WfcOutpostGridConstants.DescriptorFlagMissingHeightmap;
         public const uint AupShiftFlag = 1u << 2;
 
         public static int Flatten(int x, int y, int z, int3 dimensions)
@@ -338,12 +338,19 @@ namespace Hecton8.World.Outposts
                                 TerrainSize.x > 0.001f &&
                                 TerrainSize.y > 0.001f &&
                                 TerrainSize.z > 0.001f;
-            float invTerrainSizeX = hasHeightmap ? math.rcp(TerrainSize.x) : 0f;
-            float invTerrainSizeZ = hasHeightmap ? math.rcp(TerrainSize.z) : 0f;
-            float heightScale = hasHeightmap ? TerrainSize.y * MarauderOutpostConstants.HeightUShortToUnit : 0f;
+            if (!hasHeightmap)
+            {
+                if (Counters.Length > 4)
+                    Counters[4] = 1;
+                return;
+            }
+
+            float invTerrainSizeX = math.rcp(TerrainSize.x);
+            float invTerrainSizeZ = math.rcp(TerrainSize.z);
+            float heightScale = TerrainSize.y * MarauderOutpostConstants.HeightUShortToUnit;
             float halfWidth = (Dimensions.x - 1) * CellSizeMeters * 0.5f;
             float halfDepth = (Dimensions.z - 1) * CellSizeMeters * 0.5f;
-            float baseTerrain = SampleHeight(OriginMeters, OriginMeters.y - StiltClearanceMeters, hasHeightmap, invTerrainSizeX, invTerrainSizeZ, heightScale);
+            float baseTerrain = SampleHeight(OriginMeters, invTerrainSizeX, invTerrainSizeZ, heightScale);
             float baseFloorY = baseTerrain + StiltClearanceMeters;
 
             for (int y = 0; y < Dimensions.y; y++)
@@ -365,7 +372,7 @@ namespace Hecton8.World.Outposts
                             baseFloorY + y * FloorHeightMeters,
                             OriginMeters.z + z * CellSizeMeters - halfDepth);
 
-                        float terrainHeight = SampleHeight(position, baseTerrain, hasHeightmap, invTerrainSizeX, invTerrainSizeZ, heightScale);
+                        float terrainHeight = SampleHeight(position, invTerrainSizeX, invTerrainSizeZ, heightScale);
                         if (y == 0)
                             AppendSupportPillars(position, terrainHeight, baseFloorY);
 
@@ -376,7 +383,7 @@ namespace Hecton8.World.Outposts
                 }
             }
 
-            Counters[4] = hasHeightmap ? 0 : 1;
+            Counters[4] = 0;
         }
 
         private void AppendShellMatrix(float3 position, int x, int z, byte kind, byte packed, byte mutable)
@@ -489,11 +496,8 @@ namespace Hecton8.World.Outposts
             return 0f;
         }
 
-        private float SampleHeight(float3 position, float fallbackHeight, bool hasHeightmap, float invTerrainSizeX, float invTerrainSizeZ, float heightScale)
+        private float SampleHeight(float3 position, float invTerrainSizeX, float invTerrainSizeZ, float heightScale)
         {
-            if (!hasHeightmap)
-                return fallbackHeight;
-
             float u = math.saturate((position.x - TerrainPosition.x) * invTerrainSizeX);
             float v = math.saturate((position.z - TerrainPosition.z) * invTerrainSizeZ);
             int maxPixel = HeightResolution - 1;

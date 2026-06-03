@@ -1,10 +1,17 @@
 ---
 packet_id: P064_REN_OKOYE_PUMP_63
+release_set_id: RS013_COLONY_ATLAS_MAINTENANCE
 article_id: hecton8.ren_okoye_pump_63
+unlock_id: unlock.first_ren_okoye_pump_63
+poi_tags: poi.pump_room_log;poi.manual_valve
+biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Ren Okoye Pump 63

@@ -519,6 +519,10 @@ namespace Hecton8.Physiology
                 metabolism.Toxicity = 0f;
                 metabolism.EntityHashID = playerHash;
                 metabolism.Flags = 0u;
+                metabolism.Fatigue01 = 0f;
+                metabolism.RealO2 = 1f;
+                metabolism.AgonyTimeRemaining = 0f;
+                metabolism.IsInHypoxia = 0;
                 *Metabolism = metabolism;
             }
 

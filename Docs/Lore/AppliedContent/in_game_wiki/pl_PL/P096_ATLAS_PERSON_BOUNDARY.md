@@ -1,30 +1,37 @@
 ---
 packet_id: P096_ATLAS_PERSON_BOUNDARY
+release_set_id: RS020_ATLAS_ENDING_AGENCY_DOSSIER
 article_id: atlas.atlas_person_boundary
+unlock_id: unlock.first_atlas_person_boundary
+poi_tags: poi.atlas_recognition_fault;poi.old_credential_echo
+biome_tags: biome.factory_temple;biome.atlas_basin
 locale: pl_PL
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_native_pass_pending
+localization_flags: 1
 ---
 
 # Atlas Person Boundary
 
-Draft PL localization pending native pass. Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
 
 ## Scanner
 
-Draft PL localization pending native pass. Recognition fault. Atlas sees your access pattern before it sees a person.
+Recognition fault. Atlas sees your access pattern before it sees a person.
 
 ## Terminal
 
-Draft PL localization pending native pass. ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
+ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.
 
 ## Audio
 
-Draft PL localization pending native pass. It knows how you work. That is not the same as knowing you.
+It knows how you work. That is not the same as knowing you.
 
 ## Field Note
 
-Draft PL localization pending native pass. Do not make Atlas human. Let it become intimate by being wrong precisely.
+Do not make Atlas human. Let it become intimate by being wrong precisely.
 
 <!-- In-Game Wiki; generated from P096_ATLAS_PERSON_BOUNDARY/pl_PL. -->

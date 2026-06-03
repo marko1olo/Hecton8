@@ -110,6 +110,9 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (_spatialHandle == 0)
                 _spatialHandle = WorldSpatialHashGrid.RegisterModule(this);
         }

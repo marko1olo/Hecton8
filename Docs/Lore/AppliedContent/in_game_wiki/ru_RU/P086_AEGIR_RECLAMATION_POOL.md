@@ -1,10 +1,17 @@
 ---
 packet_id: P086_AEGIR_RECLAMATION_POOL
+release_set_id: RS018_CARRIER_DEBT_CLAIM_AUTHORITY
 article_id: carrier.aegir_reclamation_pool
+unlock_id: unlock.first_aegir_reclamation_pool
+poi_tags: poi.claim_pool_ledger;poi.aegir_reclamation_stamp
+biome_tags: biome.arrival_shelf;biome.drowned_admin
 locale: ru_RU
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Aegir Reclamation Pool

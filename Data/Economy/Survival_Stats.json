@@ -5,8 +5,8 @@
   "oxygen": {
     "profile_id": "survival.oxygen.player_default",
     "profile_hash32": 390461632,
-    "tank_capacity_liters": 600.0,
-    "base_liters_per_second": 0.1,
+    "tank_capacity_liters": 835.44,
+    "base_liters_per_second": 0.09,
     "formula_id": "survival.formula.o2_stress_depth_activity",
     "formula_hash32": 3719980929,
     "formula": "liters_per_second=base_liters_per_second*stress_multiplier*depth_pressure_multiplier*activity_multiplier",

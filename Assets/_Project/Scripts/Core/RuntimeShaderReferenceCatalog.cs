@@ -13,6 +13,7 @@ namespace Hecton8.Core
         [SerializeField] private Shader sceneTransitionDitherShader;
         [SerializeField] private Shader groundRadarPingIndirectShader;
         [SerializeField] private Shader plasmaBeamIndirectShader;
+        [SerializeField] private Material plasmaBeamIndirectMaterial;
         [SerializeField] private Shader geologyImpostorBillboardShader;
         [SerializeField] private Shader abyssalSsdoShader;
         [SerializeField] private Shader stochasticSsrShader;
@@ -25,6 +26,7 @@ namespace Hecton8.Core
         [SerializeField] private Shader runtimeFlatColorShader;
         [SerializeField] private Shader voxelBakeGhostShader;
         [SerializeField] private Shader droneFleetProceduralShader;
+        [SerializeField] private Material droneFleetProceduralMaterial;
         [SerializeField] private Shader wreckIndirectLitShader;
         [SerializeField] private Shader marauderOutpostIndirectShader;
         [SerializeField] private Shader carveDebrisIndirectShader;
@@ -74,6 +76,13 @@ namespace Hecton8.Core
             RuntimeShaderReferenceCatalog catalog = s_cachedCatalog;
             shader = catalog != null ? catalog.plasmaBeamIndirectShader : null;
             return shader != null;
+        }
+
+        public static bool TryGetPlasmaBeamIndirectMaterial(out Material material)
+        {
+            RuntimeShaderReferenceCatalog catalog = s_cachedCatalog;
+            material = catalog != null ? catalog.plasmaBeamIndirectMaterial : null;
+            return material != null;
         }
 
         public static bool TryGetGeologyImpostorBillboardShader(out Shader shader)
@@ -158,6 +167,13 @@ namespace Hecton8.Core
             RuntimeShaderReferenceCatalog catalog = s_cachedCatalog;
             shader = catalog != null ? catalog.droneFleetProceduralShader : null;
             return shader != null;
+        }
+
+        public static bool TryGetDroneFleetProceduralMaterial(out Material material)
+        {
+            RuntimeShaderReferenceCatalog catalog = s_cachedCatalog;
+            material = catalog != null ? catalog.droneFleetProceduralMaterial : null;
+            return material != null;
         }
 
         public static bool TryGetWreckIndirectLitShader(out Shader shader)

@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2404804505541615939}
   - component: {fileID: 3826138346513150282}
+  - component: {fileID: 3547489175232271375}
   m_Layer: 0
   m_Name: GEN_family_kelp_canopy__windrow__s145-230
   m_TagString: Untagged
@@ -313,8 +314,8 @@ LODGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8675577079886614612}
   serializedVersion: 3
-  m_LocalReferencePoint: {x: 0.1652193, y: 8.800729, z: 0.1207118}
-  m_Size: 17.601458
+  m_LocalReferencePoint: {x: 0.16757631, y: 9.431607, z: 0.16408443}
+  m_Size: 18.863214
   m_FadeMode: 1
   m_AnimateCrossFading: 1
   m_LastLODIsBillboard: 0
@@ -333,3 +334,16 @@ LODGroup:
     - renderer: {fileID: 7961196459263440508}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!114 &3547489175232271375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8675577079886614612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13f42112a552354988a63573e49f5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GPUInstancer::GPUInstancer.GPUInstancerPrefab
+  prefabPrototype: {fileID: 11400000, guid: 7e6406db96e5bfb4a9b0ad70274f1ae8, type: 2}

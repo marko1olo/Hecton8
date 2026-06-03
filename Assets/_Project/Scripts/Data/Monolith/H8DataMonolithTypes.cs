@@ -818,6 +818,8 @@ namespace Hecton8.Data
                    UnsafeUtility.SizeOf<H8PhysicsConstantsRecord>() == H8DataLayoutConstants.PhysicsConstantsRecordSize &&
                    UnsafeUtility.SizeOf<H8AppliedLorePacketRecord>() == H8DataLayoutConstants.AppliedLorePacketRecordSize &&
                    UnsafeUtility.SizeOf<H8AppliedLoreRouteRecord>() == H8DataLayoutConstants.AppliedLoreRouteRecordSize &&
+                   UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>() == H8AppliedLoreWorldImpactRecord.SizeBytes &&
+                   (UnsafeUtility.SizeOf<H8AppliedLoreWorldImpactRecord>() & 7) == 0 &&
                    UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize &&
                    IsRecordAligned(UnsafeUtility.SizeOf<H8StaticLocalizationReference>()) &&
                    UnsafeUtility.SizeOf<H8StaticLocalizationCursor>() == 8;

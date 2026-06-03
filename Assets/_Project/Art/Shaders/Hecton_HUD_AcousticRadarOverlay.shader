@@ -2,10 +2,10 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
 {
     Properties
     {
-        _AcousticRadarTex ("Acoustic Radar", 2D) = "black" {}
+        [PerRendererData] _MainTex ("Acoustic Radar", 2D) = "black" {}
         _PrimaryColor ("Primary Color", Color) = (0.55, 0.9, 1.0, 1.0)
         _WarningColor ("Warning Color", Color) = (1.0, 0.28, 0.32, 1.0)
-        _OverlayOpacity ("Overlay Opacity", Range(0, 1)) = 0.18
+        _OverlayOpacity ("Overlay Opacity", Range(0, 1)) = 1
         _InnerEdge ("Inner Edge", Range(0, 1)) = 0.74
         _BandThickness ("Band Thickness", Range(0.01, 0.5)) = 0.18
         _WaveAmplitude ("Wave Amplitude", Range(0, 8)) = 2.4
@@ -61,6 +61,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float4 positionOS : POSITION;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                float4 tuning0 : TEXCOORD1;
+                float4 tuning1 : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -69,6 +71,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float4 positionCS : SV_POSITION;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                float4 tuning0 : TEXCOORD1;
+                float4 tuning1 : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -87,8 +91,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float _DitherCoverageBias;
             CBUFFER_END
 
-            TEXTURE2D(_AcousticRadarTex);
-            SAMPLER(sampler_AcousticRadarTex);
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
             float4 _HectonSonarRadarDistortion;
             float4 _HectonVrComfortSignals;
             float4 _HectonVrComfortMotion;
@@ -106,6 +110,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.color = input.color;
                 output.uv = input.uv;
+                output.tuning0 = input.tuning0;
+                output.tuning1 = input.tuning1;
                 return output;
             }
 
@@ -227,28 +233,41 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                float tuningMagnitude = dot(abs(input.tuning0), float4(1.0, 1.0, 1.0, 1.0)) +
+                                        dot(abs(input.tuning1.xy), float2(1.0, 1.0));
+                float hasVertexTuning = step(0.0001, tuningMagnitude);
+                float innerEdge = lerp(_InnerEdge, saturate(input.tuning0.x), hasVertexTuning);
+                float bandThickness = lerp(_BandThickness, clamp(input.tuning0.y, 0.01, 0.49), hasVertexTuning);
+                float waveAmplitude = lerp(_WaveAmplitude, max(0.0, input.tuning0.z), hasVertexTuning);
+                float pulseFrequency = lerp(_PulseFrequency, max(0.0, input.tuning0.w), hasVertexTuning);
+                float glitchAmount = lerp(_GlitchAmount, saturate(input.tuning1.x), hasVertexTuning);
+                float radarIntensity = lerp(_RadarIntensity, saturate(input.tuning1.y), hasVertexTuning);
+                float3 warningColor = float3(
+                    lerp(_WarningColor.r, saturate(input.tuning1.z), hasVertexTuning),
+                    lerp(_WarningColor.g, saturate(input.tuning1.w), hasVertexTuning),
+                    _WarningColor.b);
                 float2 centered = (input.uv * 2.0) - 1.0;
                 float radialSqr = dot(centered, centered);
-                float innerCullSqr = SquareSaturate(max(0.0, _InnerEdge - 0.025));
-                float outerCullSqr = SquareSaturate(min(0.999, _InnerEdge + _BandThickness + 0.32));
+                float innerCullSqr = SquareSaturate(max(0.0, innerEdge - 0.025));
+                float outerCullSqr = SquareSaturate(min(0.999, innerEdge + bandThickness + 0.32));
                 if (radialSqr < innerCullSqr || radialSqr > outerCullSqr)
                     clip(-1.0);
 
                 float angle01 = ApproximateAngle01(centered);
-                float intensity = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(angle01, 0.5)).r;
+                float intensity = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, float2(angle01, 0.5)).r;
                 intensity = saturate(intensity);
 
-                float dynamicBandThickness = _BandThickness + (intensity * 0.09) + (_RadarIntensity * 0.04);
-                float outerEdge = saturate(_InnerEdge + dynamicBandThickness);
-                float innerEdgeSqr = SquareSaturate(_InnerEdge);
+                float dynamicBandThickness = bandThickness + (intensity * 0.09) + (radarIntensity * 0.04);
+                float outerEdge = saturate(innerEdge + dynamicBandThickness);
+                float innerEdgeSqr = SquareSaturate(innerEdge);
                 float outerEdgeSqr = SquareSaturate(outerEdge);
-                float edgeMask = ResolveLinearRamp01(innerEdgeSqr, SquareSaturate(_InnerEdge + 0.04), radialSqr) *
+                float edgeMask = ResolveLinearRamp01(innerEdgeSqr, SquareSaturate(innerEdge + 0.04), radialSqr) *
                                  (1.0 - ResolveLinearRamp01(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.14 + intensity * 0.05)), radialSqr));
                 if (edgeMask <= 0.0001)
                     clip(-1.0);
 
                 float timeValue = _Time.y;
-                float wave = FastTriangleSine01((angle01 * TWO_PI * 10.0) + (timeValue * _PulseFrequency * TWO_PI));
+                float wave = FastTriangleSine01((angle01 * TWO_PI * 10.0) + (timeValue * pulseFrequency * TWO_PI));
                 float sweep = FastTriangleSine01((radialSqr * 30.0) - (timeValue * 7.5) + (angle01 * TWO_PI * 4.0));
                 float glitchSeed = Hash21(floor(input.uv * float2(160.0, 96.0)) + floor(timeValue * 12.0));
                 float sonarDistortion = saturate(_HectonSonarRadarDistortion.z);
@@ -256,15 +275,16 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float speedDistortion = saturate(_HectonSonarRadarDistortion.x);
                 float distortionSeed = Hash21(float2(floor(angle01 * 48.0), floor(radialSqr * 18.0)) + floor(timeValue * lerp(9.0, 22.0, sonarDistortion)));
                 float ghostRing = ResolveLinearRamp01(0.83, 1.0, distortionSeed) *
-                                  ResolveLinearRamp01(SquareSaturate(_InnerEdge + 0.02), outerEdgeSqr, radialSqr) *
+                                  ResolveLinearRamp01(SquareSaturate(innerEdge + 0.02), outerEdgeSqr, radialSqr) *
                                   (1.0 - ResolveLinearRamp01(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.08)), radialSqr));
                 float ghostBlip = ghostRing * sonarDistortion * (0.18 + screamDistortion * 0.46 + speedDistortion * 0.24);
                 intensity = saturate(max(intensity, ghostBlip));
-                float glitch = saturate(ResolveLinearRamp01(0.78, 1.0, glitchSeed) * _GlitchAmount + ghostRing * sonarDistortion * 0.42);
+                float glitch = saturate(ResolveLinearRamp01(0.78, 1.0, glitchSeed) * glitchAmount + ghostRing * sonarDistortion * 0.42);
                 float blipScale = 1.0 + (intensity * 1.4);
-                float blip = saturate(intensity * (0.5 + (wave * 0.8 * blipScale)) + (_RadarIntensity * 0.2 * sweep) + glitch * 0.18);
+                float waveScale = saturate(waveAmplitude * 0.33333334);
+                float blip = saturate(intensity * (0.5 + (wave * waveScale * blipScale)) + (radarIntensity * 0.2 * sweep) + glitch * 0.18);
 
-                float3 color = lerp(_PrimaryColor.rgb, _WarningColor.rgb, saturate(intensity * 1.35 + glitch * 0.4));
+                float3 color = lerp(input.color.rgb, warningColor, saturate(intensity * 1.35 + glitch * 0.4));
                 float alpha = saturate(_OverlayOpacity * edgeMask * blip * (0.82 + intensity * 0.85)) * input.color.a;
                 float glow = 0.55 + (intensity * 1.55) + (sweep * 0.18) + (glitch * 0.35);
                 clip(saturate(alpha + _DitherCoverageBias) - Bayer4x4(input.positionCS.xy));

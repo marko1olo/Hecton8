@@ -1,10 +1,17 @@
 ---
 packet_id: P078_INNER_MOON_RELAY_HAZARDS
+release_set_id: RS016_AEGIR_SYSTEM_MOON_LADDER
 article_id: aegir.inner_moon_relay_hazards
+unlock_id: unlock.first_inner_moon_relay_hazards
+poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
+biome_tags: biome.orbital_window;biome.drowned_comms
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # Inner Moon Relay Hazards

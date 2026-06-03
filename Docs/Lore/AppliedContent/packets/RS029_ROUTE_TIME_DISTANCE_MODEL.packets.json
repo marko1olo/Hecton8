@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P141_RAN_AEGIR_DISTANCE_MODEL",
+      "article_id": "route_time.ran_aegir_distance_model",
+      "title_key": "applied_lore.ran_aegir_distance_model.title",
+      "unlock": {
+        "primary": "unlock.ran_aegir_distance_model",
+        "poi_tags": [
+          "poi.ran_aegir_route_plate",
+          "poi.longrange_catalog_stamp",
+          "poi.black_keel_nav_archive"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "ru_RU": {
+          "title": "Модель дистанции Ran-Aegir",
+          "scanner": "Aegir достаточно близок, чтобы к 2190 году туда добрались, и достаточно далек, чтобы помощь стала историей.",
+          "field_note": "Числа маршрута нужны как давление на игрока, а не как декоративная звездная карта.",
+          "terminal": "ROUTE MODEL: Ran/Aegir трактуется как цель класса примерно 10.5 световых лет от Sol. В игровом тексте используется Aegir; сухие каталоги используют RAN-B:H8. Точная ephemeris остается table work.",
+          "audio": "Десять световых лет - немного для астрономии. Этого хватает, чтобы спасение стало банкротством.",
+          "in_game_wiki": "Модель маршрута держит HECTON-8 в hard sci-fi без превращения кампании в домашку по астрономии. До Aegir можно добраться инфраструктурой, но нельзя casually rescue. Игрок чувствует дистанцию через долг, задержку, custody и локальные машины.",
+          "external_site": "Модель дистанции Ran-Aegir дает сайту и wiki чистый масштаб: reachable by infrastructure, unreachable by sympathy."
+        },
+        "ja_JP": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft JP localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft JP localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft JP localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft JP localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft JP localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft JP localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "zh_CN": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft CN localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft CN localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft CN localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft CN localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft CN localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft CN localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "fr_FR": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft FR localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft FR localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft FR localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft FR localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft FR localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft FR localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "es_ES": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft ES localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft ES localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft ES localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft ES localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft ES localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft ES localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "de_DE": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft DE localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft DE localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft DE localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft DE localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft DE localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft DE localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "pl_PL": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft PL localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft PL localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft PL localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft PL localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft PL localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft PL localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "uk_UA": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft UA localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft UA localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft UA localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft UA localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft UA localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft UA localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "ar_SA": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft AR localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft AR localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft AR localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft AR localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft AR localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft AR localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "id_ID": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft ID localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft ID localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft ID localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft ID localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft ID localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft ID localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "ko_KR": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft KO localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft KO localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft KO localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft KO localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft KO localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft KO localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "he_IL": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft HE localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft HE localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft HE localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft HE localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft HE localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft HE localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "pt_BR": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft PT localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft PT localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft PT localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft PT localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft PT localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft PT localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        },
+        "nl_NL": {
+          "title": "Ran-Aegir Distance Model",
+          "scanner": "Draft NL localization pending native pass. Aegir is close enough to be reachable by 2190, far enough that help is history.",
+          "field_note": "Draft NL localization pending native pass. Use approximate route numbers as pressure, not as a decorative star chart.",
+          "terminal": "Draft NL localization pending native pass. ROUTE MODEL: Ran/Aegir is treated as a roughly 10.5 light-year class target from Sol. HECTON-8 play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains table work.",
+          "audio": "Draft NL localization pending native pass. Ten light-years is not far in astronomy. It is far enough to bankrupt a rescue.",
+          "in_game_wiki": "Draft NL localization pending native pass. The route model makes HECTON-8 hard sci-fi without turning the campaign into astronomy homework. Aegir can be reached by slow infrastructure, but not rescued casually. The player feels distance through debt, delay, custody, and local machinery.",
+          "external_site": "Draft NL localization pending native pass. Ran-Aegir Distance Model gives site/wiki text a clean scale: reachable by infrastructure, unreachable by sympathy."
+        }
+      },
+      "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL"
+    },
+    {
+      "packet_id": "P142_PROBE_PACKET_TRAVEL_TIMES",
+      "article_id": "route_time.probe_packet_travel_times",
+      "title_key": "applied_lore.probe_packet_travel_times.title",
+      "unlock": {
+        "primary": "unlock.probe_packet_travel_times",
+        "poi_tags": [
+          "poi.probe_packet_spool",
+          "poi.beam_sail_archive",
+          "poi.first_aegir_survey_marker"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "ru_RU": {
+          "title": "Время пробных пакетов",
+          "scanner": "Первыми свидетелями Aegir были пакеты, не колонисты.",
+          "field_note": "Беспилотник может потратить карьеру на маршрут до того, как человек поставит на него тело.",
+          "terminal": "SURVEY CHAIN: beam-assisted probes and packet craft cross first. Они возвращают устаревшую правду, проверяют braking math и позволяют корпорациям продавать маршрут до того, как он станет humane.",
+          "audio": "Зонд увидел океан раньше, чем там появилась первая могила.",
+          "in_game_wiki": "Время пробных пакетов объясняет, почему Deep Reach знала ценность HECTON-8 раньше, чем его безопасность. Первые записи старые, узкие и уже финансовые.",
+          "external_site": "Время пробных пакетов объясняет, как Aegir стал claim до того, как стал местом."
+        },
+        "ja_JP": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft JP localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft JP localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft JP localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft JP localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft JP localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft JP localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "zh_CN": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft CN localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft CN localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft CN localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft CN localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft CN localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft CN localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "fr_FR": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft FR localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft FR localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft FR localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft FR localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft FR localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft FR localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "es_ES": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft ES localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft ES localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft ES localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft ES localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft ES localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft ES localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "de_DE": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft DE localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft DE localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft DE localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft DE localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft DE localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft DE localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "pl_PL": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft PL localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft PL localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft PL localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft PL localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft PL localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft PL localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "uk_UA": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft UA localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft UA localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft UA localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft UA localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft UA localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft UA localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "ar_SA": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft AR localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft AR localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft AR localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft AR localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft AR localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft AR localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "id_ID": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft ID localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft ID localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft ID localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft ID localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft ID localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft ID localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "ko_KR": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft KO localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft KO localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft KO localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft KO localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft KO localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft KO localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "he_IL": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft HE localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft HE localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft HE localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft HE localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft HE localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft HE localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "pt_BR": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft PT localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft PT localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft PT localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft PT localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft PT localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft PT localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        },
+        "nl_NL": {
+          "title": "Probe Packet Travel Times",
+          "scanner": "Draft NL localization pending native pass. The first Aegir witnesses were packets, not colonists.",
+          "field_note": "Draft NL localization pending native pass. Unmanned craft can spend a career crossing a route before a person bets a body on it.",
+          "terminal": "Draft NL localization pending native pass. SURVEY CHAIN: beam-assisted probes and packet craft can cross first. They return stale truth, establish braking math, and let corporations sell a route before it is humane.",
+          "audio": "Draft NL localization pending native pass. The probe saw the ocean before anyone had a grave there.",
+          "in_game_wiki": "Draft NL localization pending native pass. Probe travel time is why Deep Reach could know HECTON-8 was valuable before it was safe. The first records are old, narrow and already financial.",
+          "external_site": "Draft NL localization pending native pass. Probe Packet Travel Times explain how Aegir became a claim before it became a place."
+        }
+      },
+      "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL"
+    },
+    {
+      "packet_id": "P143_HEAVY_FREIGHT_STAGING_TIME",
+      "article_id": "route_time.heavy_freight_staging_time",
+      "title_key": "applied_lore.heavy_freight_staging_time.title",
+      "unlock": {
+        "primary": "unlock.heavy_freight_staging_time",
+        "poi_tags": [
+          "poi.freight_stage_mass_board",
+          "poi.seed_ship_burn_schedule",
+          "poi.braking_lane_tariff"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "ru_RU": {
+          "title": "Сроки тяжелого freight staging",
+          "scanner": "Atlas-class freight не быстрый. Это предоплаченное терпение с броней.",
+          "field_note": "Тяжелый маршрут собирается из depot, beam windows, braking mass и политической наглости.",
+          "terminal": "FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Такой тяжелый корабль не летит. Он становится счетом с кильватером.",
+          "in_game_wiki": "Сроки тяжелого freight защищают timeline: Atlas мог прибыть до массового поселения, потому что Deep Reach использовала precursor work, forward staging и unmanned risk tolerance.",
+          "external_site": "Сроки тяжелого freight staging удерживают no-FTL timeline правдоподобным без удобных rescue ships."
+        },
+        "ja_JP": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft JP localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft JP localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft JP localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft JP localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft JP localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft JP localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "zh_CN": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft CN localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft CN localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft CN localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft CN localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft CN localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft CN localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "fr_FR": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft FR localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft FR localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft FR localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft FR localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft FR localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft FR localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "es_ES": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft ES localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft ES localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft ES localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft ES localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft ES localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft ES localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "de_DE": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft DE localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft DE localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft DE localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft DE localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft DE localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft DE localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "pl_PL": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft PL localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft PL localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft PL localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft PL localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft PL localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft PL localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "uk_UA": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft UA localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft UA localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft UA localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft UA localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft UA localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft UA localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "ar_SA": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft AR localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft AR localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft AR localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft AR localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft AR localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft AR localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "id_ID": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft ID localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft ID localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft ID localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft ID localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft ID localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft ID localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "ko_KR": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft KO localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft KO localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft KO localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft KO localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft KO localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft KO localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "he_IL": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft HE localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft HE localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft HE localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft HE localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft HE localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft HE localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "pt_BR": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft PT localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft PT localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft PT localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft PT localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft PT localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft PT localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        },
+        "nl_NL": {
+          "title": "Heavy Freight Staging Time",
+          "scanner": "Draft NL localization pending native pass. Atlas-class freight is not fast. It is prepaid patience with armor.",
+          "field_note": "Draft NL localization pending native pass. A heavy route is assembled from depots, beam windows, braking mass and political nerve.",
+          "terminal": "Draft NL localization pending native pass. FREIGHT NOTE: Atlas/Seed cargo uses staging, pellet/fusion assist, long coasts and braking infrastructure. Public program dates can hide classified precursor launches and forward-domain departures.",
+          "audio": "Draft NL localization pending native pass. A ship that heavy does not travel. It becomes an invoice with a wake.",
+          "in_game_wiki": "Draft NL localization pending native pass. Heavy freight timing protects the timeline: Atlas can arrive before mass settlement because Deep Reach used precursor work, forward staging and unmanned risk tolerance.",
+          "external_site": "Draft NL localization pending native pass. Heavy Freight Staging Time keeps the no-FTL timeline plausible without convenient rescue ships."
+        }
+      },
+      "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL"
+    },
+    {
+      "packet_id": "P144_HUMAN_CREW_ROTATION_TRANSIT",
+      "article_id": "route_time.human_crew_rotation_transit",
+      "title_key": "applied_lore.human_crew_rotation_transit.title",
+      "unlock": {
+        "primary": "unlock.human_crew_rotation_transit",
+        "poi_tags": [
+          "poi.crew_rotation_manifest",
+          "poi.torpor_rack_cert",
+          "poi.route_age_warning"
+        ],
+        "biome_tags": [
+          "biome.black_keel_orbit",
+          "biome.relay_archive"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "A frontier worker sells time before they sell labor.",
+          "terminal": "CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "ru_RU": {
+          "title": "Транзит смены экипажей",
+          "scanner": "Люди не коммьютят на Aegir. Они годами являются грузом с мнением.",
+          "field_note": "Фронтирный работник продает время раньше, чем труд.",
+          "terminal": "CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. Missing worker - не быстрый звонок домой, а delayed custody problem.",
+          "audio": "Пока дом спросит, где ты, помещение уже затоплено.",
+          "in_game_wiki": "Транзит экипажей объясняет, почему HECTON-8 мог быть брошен десятилетиями и все еще оставаться ценным. Человеческая цена движется медленнее claim ledger.",
+          "external_site": "Транзит смены экипажей - человеческая сторона no-FTL: труд становится route debt."
+        },
+        "ja_JP": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft JP localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft JP localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft JP localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft JP localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft JP localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft JP localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "zh_CN": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft CN localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft CN localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft CN localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft CN localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft CN localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft CN localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "fr_FR": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft FR localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft FR localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft FR localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft FR localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft FR localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft FR localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "es_ES": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft ES localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft ES localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft ES localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft ES localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft ES localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft ES localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "de_DE": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft DE localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft DE localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft DE localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft DE localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft DE localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft DE localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "pl_PL": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft PL localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft PL localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft PL localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft PL localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft PL localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft PL localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "uk_UA": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft UA localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft UA localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft UA localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft UA localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft UA localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft UA localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "ar_SA": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft AR localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft AR localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft AR localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft AR localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft AR localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft AR localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "id_ID": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft ID localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft ID localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft ID localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft ID localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft ID localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft ID localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "ko_KR": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft KO localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft KO localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft KO localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft KO localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft KO localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft KO localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "he_IL": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft HE localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft HE localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft HE localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft HE localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft HE localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft HE localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "pt_BR": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft PT localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft PT localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft PT localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft PT localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft PT localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft PT localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        },
+        "nl_NL": {
+          "title": "Human Crew Rotation Transit",
+          "scanner": "Draft NL localization pending native pass. Humans do not commute to Aegir. They spend years being cargo with opinions.",
+          "field_note": "Draft NL localization pending native pass. A frontier worker sells time before they sell labor.",
+          "terminal": "Draft NL localization pending native pass. CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles or staged rotations. A missing worker is not an immediate call home; it is a delayed custody problem.",
+          "audio": "Draft NL localization pending native pass. By the time home asks where you are, the room has already flooded.",
+          "in_game_wiki": "Draft NL localization pending native pass. Crew transit explains why HECTON-8 could be abandoned for decades and still matter. The human cost moves slower than the claim ledger.",
+          "external_site": "Draft NL localization pending native pass. Human Crew Rotation Transit is the human side of no-FTL: labor becomes route debt."
+        }
+      },
+      "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL"
+    },
+    {
+      "packet_id": "P145_RELAY_MESSAGE_LAG",
+      "article_id": "route_time.relay_message_lag",
+      "title_key": "applied_lore.relay_message_lag.title",
+      "unlock": {
+        "primary": "unlock.relay_message_lag",
+        "poi_tags": [
+          "poi.relay_packet_delay_meter",
+          "poi.legal_reply_timestamp",
+          "poi.dead_channel_notary"
+        ],
+        "biome_tags": [
+          "biome.relay_archive",
+          "biome.black_keel_orbit"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Relay Message Lag",
+          "scanner": "A message can be legally binding and still arrive too late to save air.",
+          "field_note": "No ansible means truth moves as freight.",
+          "terminal": "RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "The reply is late. The lien is current.",
+          "in_game_wiki": "Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "ru_RU": {
+          "title": "Задержка relay-сообщений",
+          "scanner": "Сообщение может быть юридически обязательным и все равно прийти слишком поздно для воздуха.",
+          "field_note": "Без ansible правда движется как freight.",
+          "terminal": "RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Ответ опоздал. Lien актуален.",
+          "in_game_wiki": "Relay lag объясняет, как Deep Reach может давить на игрока без live talk. Contract machines, notaries и carrier clauses приходят раньше сострадания.",
+          "external_site": "Задержка relay-сообщений делает связь route system, а не magic voice channel."
+        },
+        "ja_JP": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft JP localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft JP localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft JP localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft JP localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft JP localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft JP localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "zh_CN": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft CN localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft CN localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft CN localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft CN localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft CN localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft CN localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "fr_FR": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft FR localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft FR localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft FR localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft FR localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft FR localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft FR localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "es_ES": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft ES localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft ES localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft ES localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft ES localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft ES localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft ES localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "de_DE": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft DE localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft DE localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft DE localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft DE localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft DE localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft DE localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "pl_PL": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft PL localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft PL localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft PL localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft PL localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft PL localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft PL localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "uk_UA": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft UA localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft UA localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft UA localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft UA localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft UA localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft UA localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "ar_SA": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft AR localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft AR localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft AR localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft AR localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft AR localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft AR localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "id_ID": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft ID localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft ID localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft ID localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft ID localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft ID localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft ID localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "ko_KR": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft KO localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft KO localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft KO localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft KO localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft KO localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft KO localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "he_IL": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft HE localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft HE localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft HE localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft HE localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft HE localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft HE localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "pt_BR": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft PT localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft PT localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft PT localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft PT localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft PT localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft PT localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        },
+        "nl_NL": {
+          "title": "Relay Message Lag",
+          "scanner": "Draft NL localization pending native pass. A message can be legally binding and still arrive too late to save air.",
+          "field_note": "Draft NL localization pending native pass. No ansible means truth moves as freight.",
+          "terminal": "Draft NL localization pending native pass. RELAY LAG: local Aegir messages can be hours or days. Interdomain legal packets can be years. Deep Reach pressure is therefore stale, automated, contractual and still dangerous.",
+          "audio": "Draft NL localization pending native pass. The reply is late. The lien is current.",
+          "in_game_wiki": "Draft NL localization pending native pass. Relay lag explains why Deep Reach can threaten the player without talking live. Contract machines, notaries and carrier clauses arrive before compassion.",
+          "external_site": "Draft NL localization pending native pass. Relay Message Lag makes communication a route system, not a magic voice channel."
+        }
+      },
+      "release_set_id": "RS029_ROUTE_TIME_DISTANCE_MODEL"
+    }
+  ]
+}

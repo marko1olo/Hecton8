@@ -1,0 +1,658 @@
+{
+  "schema": "H8.LORE_TEXT_BOUNDS_AUDIT.V1",
+  "agent": "17-A",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_claim": "PENDING_VERIFICATION",
+  "release_set_filter": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+  "locale_count": 15,
+  "locales": [
+    "en_US",
+    "ru_RU",
+    "ja_JP",
+    "zh_CN",
+    "fr_FR",
+    "es_ES",
+    "de_DE",
+    "pl_PL",
+    "uk_UA",
+    "ar_SA",
+    "id_ID",
+    "ko_KR",
+    "he_IL",
+    "pt_BR",
+    "nl_NL"
+  ],
+  "packet_count": 5,
+  "surface_count": 525,
+  "issue_counts": {
+    "TEXT_EXPANSION_GT_1_35": 65
+  },
+  "issue_sample": [
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P406_VARNEK_MARGIN_ACCEPTANCE_MEMO_ARTIFACT",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Varnek Margin Memo",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P407_ARENDT_ATLAS_WEIGHTING_WAIVER_ARTIFACT",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Arendt Atlas Waiver",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P408_HALDANE_QUARANTINE_RELEASE_HOLD_ARTIFACT",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Haldane Quarantine Hold",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Ibarra Loss Ledger",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "ja_JP",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "JA LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "zh_CN",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ZH LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "fr_FR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "FR LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "es_ES",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ES LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "de_DE",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "DE LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "pl_PL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PL LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "uk_UA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "UK LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "ar_SA",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "AR LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "id_ID",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "ID LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "ko_KR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "KO LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "he_IL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "HE LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "pt_BR",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "PT-BR LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    },
+    {
+      "release_set_id": "RS082_DEEP_REACH_ARTIFACT_MEMO_PACK",
+      "packet_id": "P410_SATO_REN_RETURN_ACTION_PACKET_ARTIFACT",
+      "locale": "nl_NL",
+      "field": "title",
+      "code": "TEXT_EXPANSION_GT_1_35",
+      "detail": "NL LOC: Sato-Ren Return Packet",
+      "source": "C:/hades/Hecton8/Docs/Lore/AppliedContent/packets/RS082_DEEP_REACH_ARTIFACT_MEMO_PACK.packets.json"
+    }
+  ],
+  "hash_collision_count": 0,
+  "hash_collisions": [],
+  "warnings": [],
+  "rewrites": [],
+  "bounds_model": {
+    "title": {
+      "width_px": 360.0,
+      "max_lines": 1,
+      "font_px": 18.0
+    },
+    "scanner": {
+      "width_px": 460.0,
+      "max_lines": 2,
+      "font_px": 16.0
+    },
+    "terminal": {
+      "width_px": 520.0,
+      "max_lines": 2,
+      "font_px": 15.0
+    },
+    "audio": {
+      "width_px": 620.0,
+      "max_lines": 2,
+      "font_px": 18.0
+    },
+    "in_game_wiki": {
+      "width_px": 620.0,
+      "max_lines": 5,
+      "font_px": 15.0
+    },
+    "external_site": {
+      "width_px": 680.0,
+      "max_lines": 4,
+      "font_px": 16.0
+    },
+    "field_note": {
+      "width_px": 560.0,
+      "max_lines": 3,
+      "font_px": 14.0
+    }
+  }
+}

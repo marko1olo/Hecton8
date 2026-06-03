@@ -4,15 +4,76 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 from pathlib import Path
 
-from AppliedLoreImporter import TARGET_LOCALES, collect_packets
+from AppliedLoreImporter import (
+    ROW_FLAG_DRAFT_LOCALIZATION,
+    TARGET_LOCALES,
+    collect_packets,
+    localized_row_flags,
+    sanitize_localized_text,
+    write_text_if_changed,
+)
 
 
 SURFACES = (
     ("in_game_wiki", "in_game_wiki", "In-Game Wiki"),
     ("external_site", "external_site", "External Site"),
 )
+PUBLICATION_INDEX_HEADERS = (
+    "surface",
+    "locale",
+    "direction",
+    "packet_id",
+    "release_set_id",
+    "article_id",
+    "unlock_id",
+    "localization_status",
+    "localization_flags",
+    "poi_tags",
+    "biome_tags",
+    "page_path",
+    "title",
+)
+PUBLICATION_CLUSTER_INDEX_HEADERS = (
+    "surface",
+    "locale",
+    "direction",
+    "cluster_id",
+    "cluster_order",
+    "cluster_packet_id",
+    "release_set_id",
+    "article_id",
+    "unlock_id",
+    "spoiler_tier",
+    "primary_surface",
+    "prereq_packet_ids",
+    "next_cluster_packet_ids",
+    "localization_status",
+    "localization_flags",
+    "poi_tags",
+    "biome_tags",
+    "page_path",
+    "title",
+    "truth_payload",
+    "player_question",
+)
+NAVIGATION_CLUSTER_GRAPH_HEADERS = (
+    "packet_id",
+    "arc_id",
+    "depth_band",
+    "route_moment",
+    "prereq_packet_ids",
+    "next_packet_ids",
+    "evidence_type",
+    "truth_claim",
+    "player_decision",
+    "spoiler_tier",
+    "primary_surface",
+)
+NAVIGATION_CLUSTER_GRAPH_PATH = "graphs/RS084_SITE_WIKI_NAVIGATION_CLUSTERS_evidence_graph.csv"
 INDEX_TITLES = {
     "en_US": ("HECTON-8 Codex Index", "HECTON-8 Field Archive"),
     "ru_RU": ("\u0418\u043d\u0434\u0435\u043a\u0441 \u043a\u043e\u0434\u0435\u043a\u0441\u0430 HECTON-8", "\u041f\u043e\u043b\u0435\u0432\u043e\u0439 \u0430\u0440\u0445\u0438\u0432 HECTON-8"),
@@ -37,44 +98,120 @@ def safe_text(value: object) -> str:
     return value if isinstance(value, str) else ""
 
 
-def render_page(packet: dict, locale: str, surface_key: str, surface_title: str) -> str:
+def clean_text(value: object) -> str:
+    return sanitize_localized_text(value) if isinstance(value, str) else ""
+
+
+def metadata_list(value: object, limit: int = 2) -> str:
+    if not isinstance(value, list):
+        return ""
+
+    items: list[str] = []
+    for item in value:
+        text = safe_text(item)
+        if text:
+            items.append(text)
+            if len(items) >= limit:
+                break
+    return ";".join(items)
+
+
+def cluster_id_from_route_moment(route_moment: str) -> str:
+    return route_moment[6:] if route_moment.startswith("first_") else route_moment
+
+
+def localization_status_from_flags(flags: int) -> str:
+    return "draft_native_pass_pending" if (flags & ROW_FLAG_DRAFT_LOCALIZATION) != 0 else "source_ready"
+
+
+def read_article_body(base: Path, article_path: object) -> str:
+    relative_path = safe_text(article_path)
+    if not relative_path:
+        return ""
+
+    resolved_base = base.resolve()
+    resolved_path = (base / relative_path).resolve()
+    if not resolved_path.is_relative_to(resolved_base):
+        raise ValueError(f"AppliedLore article path escapes content root: {relative_path}")
+    if not resolved_path.exists():
+        raise ValueError(f"AppliedLore article path missing: {relative_path}")
+
+    return resolved_path.read_text(encoding="utf-8").strip()
+
+
+def localized_surface_body(base: Path, localized: dict, surface_key: str) -> tuple[str, bool]:
+    if surface_key == "external_site":
+        article_body = read_article_body(base, localized.get("external_site_article_path"))
+        if article_body:
+            return article_body, True
+
+        article_body = clean_text(localized.get("external_site_article"))
+        if article_body:
+            return article_body, True
+
+    return clean_text(localized.get(surface_key)), False
+
+
+def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface_title: str) -> str:
     packet_id = safe_text(packet.get("packet_id"))
+    release_set_id = safe_text(packet.get("release_set_id"))
     article_id = safe_text(packet.get("article_id"))
+    unlock = packet.get("unlock", {})
+    if not isinstance(unlock, dict):
+        unlock = {}
+
+    unlock_id = safe_text(unlock.get("primary"))
+    poi_tags = metadata_list(unlock.get("poi_tags"))
+    biome_tags = metadata_list(unlock.get("biome_tags"))
     localized = packet.get("localized", {}).get(locale, {})
-    title = safe_text(localized.get("title")) or packet_id
-    body = safe_text(localized.get(surface_key))
-    scanner = safe_text(localized.get("scanner"))
-    terminal = safe_text(localized.get("terminal"))
-    audio = safe_text(localized.get("audio"))
-    field_note = safe_text(localized.get("field_note"))
+    flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+    status = localization_status_from_flags(flags)
+    direction = "rtl" if locale in RTL_LOCALES else "ltr"
+    title = clean_text(localized.get("title")) or packet_id
+    body, has_publication_article = localized_surface_body(base, localized, surface_key)
+    scanner = clean_text(localized.get("scanner"))
+    terminal = clean_text(localized.get("terminal"))
+    audio = clean_text(localized.get("audio"))
+    field_note = clean_text(localized.get("field_note"))
 
     lines: list[str] = [
         "---",
         f"packet_id: {packet_id}",
+        f"release_set_id: {release_set_id}",
         f"article_id: {article_id}",
+        f"unlock_id: {unlock_id}",
+        f"poi_tags: {poi_tags}",
+        f"biome_tags: {biome_tags}",
         f"locale: {locale}",
         f"surface: {surface_key}",
         "source: AppliedContent packet JSON",
         "runtime_reads_markdown: false",
+        f"direction: {direction}",
+        f"localization_status: {status}",
+        f"localization_flags: {flags}",
         "---",
         "",
         f"# {title}",
         "",
         body,
-        "",
-        "## Scanner",
-        "",
-        scanner,
-        "",
-        "## Terminal",
-        "",
-        terminal,
     ]
 
-    if audio:
-        lines.extend(("", "## Audio", "", audio))
-    if field_note:
-        lines.extend(("", "## Field Note", "", field_note))
+    if not has_publication_article:
+        lines.extend((
+            "",
+            "## Scanner",
+            "",
+            scanner,
+            "",
+            "## Terminal",
+            "",
+            terminal,
+        ))
+
+        if audio:
+            lines.extend(("", "## Audio", "", audio))
+        if field_note:
+            lines.extend(("", "## Field Note", "", field_note))
 
     lines.extend(("", f"<!-- {surface_title}; generated from {packet_id}/{locale}. -->", ""))
     return "\n".join(lines)
@@ -84,6 +221,7 @@ def render_index(packets: list[dict], locale: str, folder: str, surface_key: str
     titles = INDEX_TITLES.get(locale, INDEX_TITLES["en_US"])
     title = titles[0] if folder == "in_game_wiki" else titles[1]
     direction = "rtl" if locale in RTL_LOCALES else "ltr"
+    draft_count = count_draft_rows(packets, locale)
 
     lines: list[str] = [
         "---",
@@ -92,6 +230,8 @@ def render_index(packets: list[dict], locale: str, folder: str, surface_key: str
         "source: AppliedContent packet JSON",
         "runtime_reads_markdown: false",
         f"direction: {direction}",
+        f"localized_pages: {len(packets)}",
+        f"draft_native_pass_pending_pages: {draft_count}",
         "---",
         "",
         f"# {title}",
@@ -101,11 +241,178 @@ def render_index(packets: list[dict], locale: str, folder: str, surface_key: str
     for packet in sorted(packets, key=lambda item: safe_text(item.get("packet_id"))):
         packet_id = safe_text(packet.get("packet_id"))
         localized = packet.get("localized", {}).get(locale, {})
-        title = safe_text(localized.get("title")) or packet_id
+        title = clean_text(localized.get("title")) or packet_id
         lines.append(f"- [{title}]({packet_id}.md) `{packet_id}`")
 
     lines.extend(("", f"<!-- Generated localized index for {folder}/{locale}. -->", ""))
     return "\n".join(lines)
+
+
+def count_draft_rows(packets: list[dict], locale: str) -> int:
+    count = 0
+    for packet in packets:
+        localized = packet.get("localized", {}).get(locale, {})
+        if isinstance(localized, dict) and (localized_row_flags(localized) & ROW_FLAG_DRAFT_LOCALIZATION) != 0:
+            count += 1
+    return count
+
+
+def render_localization_status_index(packets: list[dict]) -> str:
+    lines: list[str] = [
+        "# AppliedLore Localization Status",
+        "",
+        "Generated from `Docs/Lore/AppliedContent/packets/*.packets.json`.",
+        "The game reads baked CSV/blob records; markdown is publication output only.",
+        "",
+        "Status meanings:",
+        "- `source_ready`: no draft/native-review marker was present in packet text.",
+        "- `draft_native_pass_pending`: visible text was stripped of draft markers, but the locale still needs native review.",
+        "",
+        "Locale rows:",
+    ]
+
+    for locale in TARGET_LOCALES:
+        draft = count_draft_rows(packets, locale)
+        ready = len(packets) - draft
+        direction = "rtl" if locale in RTL_LOCALES else "ltr"
+        lines.append(
+            f"- `{locale}`: source_ready={ready}, draft_native_pass_pending={draft}, "
+            f"packet_rows={len(packets)}, exported_pages={len(packets) * len(SURFACES)}, direction={direction}"
+        )
+
+    lines.extend(
+        [
+            "",
+            "Operational rule: do not encode native-review state inside player-visible prose.",
+            "Use `flags`/frontmatter/status index for routing, QA and publication gates.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def write_localization_status_index(base: Path, packets: list[dict]) -> None:
+    write_text_if_changed(base / "Localization_Status_Index.md", render_localization_status_index(packets))
+
+
+def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for folder, surface_key, _surface_title in SURFACES:
+        for locale in TARGET_LOCALES:
+            direction = "rtl" if locale in RTL_LOCALES else "ltr"
+            for packet in sorted(packets, key=lambda item: safe_text(item.get("packet_id"))):
+                packet_id = safe_text(packet.get("packet_id"))
+                release_set_id = safe_text(packet.get("release_set_id"))
+                article_id = safe_text(packet.get("article_id"))
+                unlock = packet.get("unlock", {})
+                if not isinstance(unlock, dict):
+                    unlock = {}
+
+                localized = packet.get("localized", {}).get(locale, {})
+                flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+                page_path = base / folder / locale / f"{packet_id}.md"
+                rows.append(
+                    {
+                        "surface": surface_key,
+                        "locale": locale,
+                        "direction": direction,
+                        "packet_id": packet_id,
+                        "release_set_id": release_set_id,
+                        "article_id": article_id,
+                        "unlock_id": safe_text(unlock.get("primary")),
+                        "localization_status": localization_status_from_flags(flags),
+                        "localization_flags": str(flags),
+                        "poi_tags": metadata_list(unlock.get("poi_tags")),
+                        "biome_tags": metadata_list(unlock.get("biome_tags")),
+                        "page_path": page_path.relative_to(base).as_posix(),
+                        "title": clean_text(localized.get("title")) if isinstance(localized, dict) else packet_id,
+                    }
+                )
+    return rows
+
+
+def write_publication_surface_index(base: Path, packets: list[dict]) -> None:
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=PUBLICATION_INDEX_HEADERS, lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(publication_surface_rows(base, packets))
+    write_text_if_changed(base / "Publication_Surface_Index.csv", buffer.getvalue())
+
+
+def navigation_cluster_graph_rows(base: Path) -> list[dict[str, str]]:
+    path = base / NAVIGATION_CLUSTER_GRAPH_PATH
+    rows: list[dict[str, str]] = []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != NAVIGATION_CLUSTER_GRAPH_HEADERS:
+            raise ValueError(f"Navigation cluster graph header mismatch: {path}")
+
+        for row in reader:
+            rows.append({key: safe_text(row.get(key)) for key in NAVIGATION_CLUSTER_GRAPH_HEADERS})
+
+    if not rows:
+        raise ValueError(f"Navigation cluster graph is empty: {path}")
+    return rows
+
+
+def publication_cluster_rows(base: Path, packets: list[dict]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    packet_by_id = {safe_text(packet.get("packet_id")): packet for packet in packets}
+    cluster_graph = navigation_cluster_graph_rows(base)
+
+    for cluster_order, cluster in enumerate(cluster_graph):
+        packet_id = safe_text(cluster.get("packet_id"))
+        packet = packet_by_id.get(packet_id)
+        if packet is None:
+            raise ValueError(f"Navigation cluster packet missing from AppliedLore packets: {packet_id}")
+
+        release_set_id = safe_text(packet.get("release_set_id"))
+        article_id = safe_text(packet.get("article_id"))
+        unlock = packet.get("unlock", {})
+        if not isinstance(unlock, dict):
+            unlock = {}
+
+        cluster_id = cluster_id_from_route_moment(safe_text(cluster.get("route_moment")))
+        for folder, surface_key, _surface_title in SURFACES:
+            for locale in TARGET_LOCALES:
+                direction = "rtl" if locale in RTL_LOCALES else "ltr"
+                localized = packet.get("localized", {}).get(locale, {})
+                flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
+                page_path = base / folder / locale / f"{packet_id}.md"
+                rows.append(
+                    {
+                        "surface": surface_key,
+                        "locale": locale,
+                        "direction": direction,
+                        "cluster_id": cluster_id,
+                        "cluster_order": str(cluster_order),
+                        "cluster_packet_id": packet_id,
+                        "release_set_id": release_set_id,
+                        "article_id": article_id,
+                        "unlock_id": safe_text(unlock.get("primary")),
+                        "spoiler_tier": safe_text(cluster.get("spoiler_tier")),
+                        "primary_surface": safe_text(cluster.get("primary_surface")),
+                        "prereq_packet_ids": safe_text(cluster.get("prereq_packet_ids")),
+                        "next_cluster_packet_ids": safe_text(cluster.get("next_packet_ids")),
+                        "localization_status": localization_status_from_flags(flags),
+                        "localization_flags": str(flags),
+                        "poi_tags": metadata_list(unlock.get("poi_tags")),
+                        "biome_tags": metadata_list(unlock.get("biome_tags")),
+                        "page_path": page_path.relative_to(base).as_posix(),
+                        "title": clean_text(localized.get("title")) if isinstance(localized, dict) else packet_id,
+                        "truth_payload": safe_text(cluster.get("truth_claim")),
+                        "player_question": safe_text(cluster.get("player_decision")),
+                    }
+                )
+    return rows
+
+
+def write_publication_cluster_index(base: Path, packets: list[dict]) -> None:
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=PUBLICATION_CLUSTER_INDEX_HEADERS, lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(publication_cluster_rows(base, packets))
+    write_text_if_changed(base / "Publication_Cluster_Index.csv", buffer.getvalue())
 
 
 def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int]:
@@ -133,7 +440,7 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int]:
                     continue
 
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(render_page(packet, locale, surface_key, surface_title), encoding="utf-8", newline="\n")
+                path.write_text(render_page(base, packet, locale, surface_key, surface_title), encoding="utf-8", newline="\n")
                 written += 1
 
     for locale in TARGET_LOCALES:
@@ -143,6 +450,9 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int]:
             path.write_text(render_index(packets, locale, folder, surface_key), encoding="utf-8", newline="\n")
             indexes_written += 1
 
+    write_localization_status_index(base, packets)
+    write_publication_surface_index(base, packets)
+    write_publication_cluster_index(base, packets)
     return written, skipped, indexes_written
 
 

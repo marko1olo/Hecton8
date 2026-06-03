@@ -18,22 +18,22 @@ MonoBehaviour:
     primaryFamily: {fileID: 11400000, guid: 5e79adafda074c54cb5c33c114f5d3e0, type: 2}
     supportFamily: {fileID: 11400000, guid: 863a47418e48c8c4896f4a51d20831ae, type: 2}
     targetDensity: 6
-    usage: 'near: controlled stop with fabrication readability, route rest, and utility
+    usage: 'near: safe stop with fabrication readability, route rest, and utility
       silhouette.'
   midPlan:
     primaryFamily: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}
     supportFamily: {fileID: 11400000, guid: 5f51b21b64a0a1043aad5da5f411cbc8, type: 2}
     targetDensity: 4
-    usage: 'mid: controlled stop with fabrication readability, route rest, and utility
+    usage: 'mid: safe stop with fabrication readability, route rest, and utility
       silhouette.'
   farPlan:
     primaryFamily: {fileID: 11400000, guid: 1ccee84cb413895489771b8c15242297, type: 2}
     supportFamily: {fileID: 11400000, guid: 1ccee84cb413895489771b8c15242297, type: 2}
     targetDensity: 2
-    usage: 'far: controlled stop with fabrication readability, route rest, and utility
+    usage: 'far: safe stop with fabrication readability, route rest, and utility
       silhouette.'
   heroFamily: {fileID: 11400000, guid: 863a47418e48c8c4896f4a51d20831ae, type: 2}
-  gameplaySummary: Controlled logistics stop for crafting, regrouping, and optional reset
+  gameplaySummary: Safe logistics stop for crafting, regrouping, and optional reset
     before another dive.
   resourcePocketPlan:
     family: {fileID: 11400000, guid: d7ae6d816d1ebb64a91c8527ec5897be, type: 2}

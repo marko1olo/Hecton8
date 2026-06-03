@@ -11,6 +11,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Hecton8.World
 {
@@ -44,7 +45,11 @@ namespace Hecton8.World
 
         private const uint NestingHashSeed = 0x7F4A7C15u;
         private const int InitialCellCapacity = 4096;
+        private const int MinDensityTextureResolution = 64;
+        private const int MaxDensityTextureResolution = 256;
         private const int DefaultDensityTextureResolution = 128;
+        private const int MinDynamicTextureRefreshStrideFrames = 2;
+        private const int MaxDynamicTextureRefreshStrideFrames = 18;
         private const int MaxDisruptionZoneCapacity = 16;
         private const int MaxEditorValidateDepth = 2;
         private const float MinDensityThreshold = 0.025f;
@@ -62,11 +67,10 @@ namespace Hecton8.World
         private const uint MassiveDisplacementContextHash = 0x53474D53u;
         private const uint ListenerContextHash = 0x53474C53u;
         private const int DebrisPetrificationTimerCapacity = 128;
+        private const int DebrisPetrificationTimerIndexMask = DebrisPetrificationTimerCapacity - 1;
         private const int DebrisPetrificationDisableBudgetPerSlowTick = 16;
         private const SystemID VaultOwnerSystemId = SystemID.WorldSargassum;
-        private const BufferID DensityBuildSourcesBufferId = BufferID.SargassumGlobalDragDensityBuildSources;
         private const BufferID ScavengerMatricesBufferId = BufferID.SargassumGlobalDragScavengerMatrices;
-        private const BufferID ScavengerBatchMetadataBufferId = BufferID.SargassumGlobalDragBatchMetadata;
         private const float DebrisPetrificationDelaySeconds = 4f;
         private const float DebrisPetrificationSlowTickSeconds = 0.5f;
         private const int ScavengerBrgMetadataPlaceholderCount = 1;
@@ -385,13 +389,6 @@ namespace Hecton8.World
             [FieldOffset(8)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
-        private struct DensitySourceData
-        {
-            [FieldOffset(0)] public float3 OriginWS;
-            [FieldOffset(12)] public float Scale;
-        }
-
         [Serializable]
         private struct NestedAttachmentPrototype
         {
@@ -440,6 +437,8 @@ namespace Hecton8.World
         // COLD ALLOC: Rigidbody[128] - managed handles for queued debris petrification timers - owner: SargassumGlobalDragManager
         private readonly Rigidbody[] _debrisPetrificationBodies = new Rigidbody[DebrisPetrificationTimerCapacity];
         private int _debrisPetrificationTimerCount;
+        private int _debrisPetrificationTimerHead;
+        private int _debrisPetrificationTimerTail;
         private int _debrisPetrificationCursor;
 
         public static int PendingEventCount =>
@@ -559,8 +558,9 @@ namespace Hecton8.World
 
         [Header("── Nesting Attachments ──────────────────")]
         [SerializeField]
-        [Tooltip("Instanced archetypes used for rare debris or crates tangled into dense canopy walls. Future ecosystems can swap these without changing the renderer path.")]
-        private NestedAttachmentPrototype[] nestingPrototypes;
+        [FormerlySerializedAs("nestingPrototypes")]
+        [Tooltip("Authored instanced archetypes used for rare debris or crates tangled into dense canopy walls. Runtime fallback geometry is forbidden.")]
+        private NestedAttachmentPrototype[] _authoredNestingPrototypes;
 
         [SerializeField, Range(0f, 5f)]
         [Tooltip("Chance in percent for one dense canopy node to trap a debris nest during field rebuild. The authored default is 1%.")]
@@ -713,16 +713,14 @@ namespace Hecton8.World
 
         [Header("── Procedural Scavengers ──────────────────")]
         [SerializeField]
-        [Tooltip("Optional authored mesh rendered for bottom scavengers feeding on fallen collapse chunks.")]
-        private Mesh scavengerMesh;
+        [Tooltip("Authored static mesh rendered for bottom scavengers feeding on fallen collapse chunks. Must include vertex colors R sway, G bio, B AO, A wear.")]
+        [FormerlySerializedAs("scavengerMesh")]
+        private Mesh _authoredSargassumMesh;
 
         [SerializeField]
-        [Tooltip("Optional authored material used for scavenger rendering. If missing, a first-party fallback material is created from the scavenger shader.")]
-        private Material scavengerMaterial;
-
-        [SerializeField]
-        [Tooltip("First-party fallback shader used to build the hidden scavenger material when the authored material is missing.")]
-        private Shader scavengerFallbackShader;
+        [Tooltip("Shared authored material used by scavenger BRG rendering. Runtime material clones are forbidden.")]
+        [FormerlySerializedAs("scavengerMaterial")]
+        private Material _authoredSargassumMaterial;
 
         [SerializeField, Range(2, 24)]
         [Tooltip("Maximum number of settled collapse chunks tracked as active scavenger hosts.")]
@@ -862,7 +860,6 @@ namespace Hecton8.World
         private GraphicsBuffer _scavengerMatrixBufferB;
         private GraphicsBuffer _activeScavengerMatrixBuffer;
         private BatchRendererGroup _scavengerBatchRendererGroup;
-        private VaultGenerationHandle<MetadataValue> _scavengerBatchMetadataHandle;
         private GraphicsBuffer _scavengerBatchHandleBuffer;
         private BatchID _scavengerBatchId;
         private BatchMeshID _scavengerBatchMeshId;
@@ -874,7 +871,6 @@ namespace Hecton8.World
         private Material _scavengerBrgMaterialSource;
         private Material _boundScavengerMatrixMaterial;
         private GraphicsBuffer _boundScavengerMatrixBuffer;
-        private bool _ownsScavengerBrgMaterial;
         private int _nestedPrototypeCapacity;
         private int _activeNestedPrototypeCount;
         private int _activeNestedAttachmentStateCount;
@@ -884,13 +880,6 @@ namespace Hecton8.World
         private int _scavengerInstanceCapacity;
         private int _scavengerMatrixUploadIndex;
         private NestedAttachmentPrototype[] _activeNestingPrototypes;
-        private NestedAttachmentPrototype[] _fallbackNestingPrototypes;
-        private Mesh _fallbackAttachmentMesh;
-        private Material _fallbackCrateMaterial;
-        private Material _fallbackScrapMaterial;
-        private Mesh _fallbackScavengerMesh;
-        private Material _fallbackScavengerMaterial;
-        private Shader _fallbackLitShader;
         private SargassumCutManager _cutManager;
         private IObjectPoolService _objectPoolService;
         private IPhysicsService _physicsService;
@@ -913,18 +902,13 @@ namespace Hecton8.World
         private bool _hasFieldData;
         private float _inverseCellSize;
         private int _fieldRevision;
+        private int _resolvedDensityTextureResolution = DefaultDensityTextureResolution;
+        private int _nextDynamicTextureRefreshFrame;
+        private float _cachedGlobalQualityWeight01 = 1f;
         private IDataVault _dataVault;
         private HectonMapMagicVegetationBridge.FloatingLabyrinthConfig _fallbackLabyrinthConfig;
         private Vector4 _densityFieldWorldRect;
-        private VaultGenerationHandle<DensitySourceData> _densityBuildSourcesHandle;
-        private JobHandle _densityBuildHandle;
         private bool _serviceRegistered;
-        private bool _densityBuildScheduled;
-        private bool _densityBuildSourcesLocked;
-        private IDataVault _densityBuildSourcesWriteVault;
-        private int _pendingDensityTrackedInstances;
-        private Bounds _pendingDensityFieldBounds;
-        private bool _pendingDensityFieldBoundsInitialized;
         private Vector4 _publishedGlobalDriftOffset;
         private Vector4 _publishedSinkWorldRect;
         private Texture _publishedSinkTexture;
@@ -936,7 +920,10 @@ namespace Hecton8.World
         private float _pendingMaxSinkDepth;
         private float _pendingNestedRenderDeltaTime;
         private bool _shaderGlobalsDirty;
-        private bool _dynamicTexturesUploadDirty;
+        private bool _densityTextureUploadDirty;
+        private bool _sinkTextureUploadDirty;
+        private bool _densityTextureHasUploadedContent;
+        private bool _sinkTextureHasUploadedContent;
         private bool _nestedRenderRequested;
         private bool _nestedAttachmentRebuildRequested;
         private bool _visualResourceRepairRequested = true;
@@ -1598,13 +1585,12 @@ namespace Hecton8.World
             ClearDensityTexture();
             ClearSinkTexture();
             ClearScavengerHosts();
-            ReleaseDensityBuildStorage();
             ReleaseDebrisPetrificationStorage();
 
             if (!Application.isPlaying)
             {
                 ReleaseNestedAttachmentStorage();
-                ReleaseFallbackNestingResources();
+                ClearAuthoredNestingPrototypeCache();
                 ReleaseDensityTexture();
                 ReleaseSinkTexture();
                 ReleaseScavengerResources();
@@ -1619,11 +1605,10 @@ namespace Hecton8.World
             TryUnregisterService();
             TryUnregister();
             ReleaseNestedAttachmentStorage();
-            ReleaseFallbackNestingResources();
+            ClearAuthoredNestingPrototypeCache();
             ReleaseDensityTexture();
             ReleaseSinkTexture();
             ReleaseScavengerResources();
-            ReleaseDensityBuildStorage();
             ReleaseDebrisPetrificationStorage();
             PublishShaderGlobalsImmediate(Vector3.zero, Vector4.zero, Texture2D.blackTexture, 0f);
         }
@@ -1633,6 +1618,7 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            _cachedGlobalQualityWeight01 = ResolveSargassumQualityWeight01(_cachedGlobalQualityWeight01);
             RefreshRenderLayerCache();
             ResolveBridge();
             EnsureVisualResourcesForSlowTick();
@@ -1644,12 +1630,8 @@ namespace Hecton8.World
             QueueShaderGlobals();
         }
 
-        /// <summary>
-        /// Recovers completed density build jobs in the dispatcher-owned late-frame swap window.
-        /// </summary>
         public void LateFrameTick()
         {
-            CompleteDensityFieldBuildIfReady();
             if (!HasVisualResourcesReadyForLateFrame())
                 _visualResourceRepairRequested = true;
 
@@ -1667,9 +1649,13 @@ namespace Hecton8.World
             {
                 if (HasDensityTextureResourcesReady())
                 {
-                    RefreshDynamicTextures(_dynamicTextureRefreshIncrementRevision);
-                    _dynamicTextureRefreshRequested = false;
-                    _dynamicTextureRefreshIncrementRevision = false;
+                    if (CanRefreshDynamicTexturesThisFrame())
+                    {
+                        RefreshDynamicTextures(_dynamicTextureRefreshIncrementRevision);
+                        _dynamicTextureRefreshRequested = false;
+                        _dynamicTextureRefreshIncrementRevision = false;
+                        _nextDynamicTextureRefreshFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + ResolveDynamicTextureRefreshStrideFrames();
+                    }
                 }
                 else
                 {
@@ -1688,9 +1674,13 @@ namespace Hecton8.World
                 _visualResourceRepairRequested = true;
             }
 
-            if (_nestedRenderRequested && HasScavengerRenderResourcesReady())
+            if (_nestedRenderRequested && HasVisualResourcesReadyForLateFrame())
             {
-                UpdateScavengerHosts(_pendingNestedRenderDeltaTime);
+                if (HasScavengerRenderResourcesReady())
+                    UpdateScavengerHosts(_pendingNestedRenderDeltaTime);
+                else
+                    ClearScavengerPresentationState();
+
                 RenderNestedAttachmentsAndScavengers(_pendingNestedRenderDeltaTime);
                 _nestedRenderRequested = false;
             }
@@ -1715,8 +1705,7 @@ namespace Hecton8.World
         private bool HasVisualResourcesReadyForLateFrame()
         {
             return HasDensityTextureResourcesReady() &&
-                   HasNestedAttachmentStorageReady() &&
-                   HasScavengerRenderResourcesReady();
+                   HasNestedAttachmentStorageReady();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -2009,7 +1998,6 @@ namespace Hecton8.World
         {
             ShiftDensityCellsRuntimeOffset(runtimeOffset);
             ShiftBoundsCenter(ref _debugFieldBounds, runtimeOffset);
-            ShiftBoundsCenter(ref _pendingDensityFieldBounds, runtimeOffset);
             ShiftBoundsCenter(ref _debugNestedAttachmentBounds, runtimeOffset);
             ShiftBoundsCenter(ref _scavengerDrawBounds, runtimeOffset);
             ShiftBoundsCenter(ref _debugScavengerBounds, runtimeOffset);
@@ -2112,9 +2100,6 @@ namespace Hecton8.World
 
         private void RebuildDensityField()
         {
-            if (_densityBuildScheduled)
-                return;
-
             if (mapMagicVegetationBridge == null)
             {
                 ClearField();
@@ -2190,19 +2175,6 @@ namespace Hecton8.World
             _debugFieldBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
         }
 
-        private void CompleteDensityFieldBuildIfReady()
-        {
-            if (!_densityBuildScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: false))
-                return;
-
-            _densityBuildScheduled = false;
-            ReleaseDensityBuildSourceWrite();
-            ApplyDensityFieldBuildResults();
-        }
-
         private void AccumulateDensityCells(
             Vector3 origin,
             float scale,
@@ -2252,11 +2224,6 @@ namespace Hecton8.World
             }
         }
 
-        private void ApplyDensityFieldBuildResults()
-        {
-            ClearField();
-        }
-
         private void ClearField()
         {
             _densityCells.Clear();
@@ -2266,30 +2233,6 @@ namespace Hecton8.World
             _debugFieldBounds = default;
             _densityFieldWorldRect = Vector4.zero;
             _debugDensityFieldWorldRect = Vector4.zero;
-        }
-
-        private bool EnsureDensityBuildSourceCapacity(int requiredCount)
-        {
-            int safeCount = Mathf.Max(1, Mathf.NextPowerOfTwo(requiredCount));
-            return EnsureVaultBuffer(ref _densityBuildSourcesHandle, DensityBuildSourcesBufferId, safeCount, NativeArrayOptions.UninitializedMemory);
-        }
-
-        private void ReleaseDensityBuildStorage()
-        {
-            if (_densityBuildSourcesLocked)
-            {
-                if (_densityBuildScheduled)
-                    DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: true);
-
-                ReleaseDensityBuildSourceWrite();
-            }
-
-            ReleaseVaultBuffer(ref _densityBuildSourcesHandle);
-            _densityBuildHandle = default;
-            _densityBuildScheduled = false;
-            _pendingDensityTrackedInstances = 0;
-            _pendingDensityFieldBounds = default;
-            _pendingDensityFieldBoundsInitialized = false;
         }
 
         private IDataVault CacheDataVaultCold()
@@ -2311,15 +2254,6 @@ namespace Hecton8.World
                 ScavengerMatricesBufferId,
                 capacity,
                 NativeArrayOptions.UninitializedMemory);
-        }
-
-        private bool EnsureScavengerBatchMetadataCapacity()
-        {
-            return EnsureVaultBuffer(
-                ref _scavengerBatchMetadataHandle,
-                ScavengerBatchMetadataBufferId,
-                ScavengerBrgMetadataPlaceholderCount,
-                NativeArrayOptions.ClearMemory);
         }
 
         private bool EnsureVaultBuffer<T>(
@@ -2360,19 +2294,6 @@ namespace Hecton8.World
                    resolved.IsCreated &&
                    resolved.Length >= requiredLength &&
                    !vault.IsCompactionFenceActive;
-        }
-
-        private void ReleaseDensityBuildSourceWrite()
-        {
-            if (!_densityBuildSourcesLocked)
-                return;
-
-            IDataVault vault = _densityBuildSourcesWriteVault;
-            _densityBuildSourcesWriteVault = null;
-            if (vault != null && IsVaultHandleCreated(in _densityBuildSourcesHandle))
-                vault.ReleaseWriteLock(in _densityBuildSourcesHandle, VaultOwnerSystemId);
-
-            _densityBuildSourcesLocked = false;
         }
 
         private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
@@ -2868,105 +2789,14 @@ namespace Hecton8.World
 
         private void ResolveActiveNestingPrototypes()
         {
-            if (nestingPrototypes != null && nestingPrototypes.Length > 0)
-            {
-                _activeNestingPrototypes = nestingPrototypes;
-                return;
-            }
-
-            EnsureFallbackNestingResources();
-            _activeNestingPrototypes = _fallbackNestingPrototypes;
+            _activeNestingPrototypes = _authoredNestingPrototypes != null && _authoredNestingPrototypes.Length > 0
+                ? _authoredNestingPrototypes
+                : null;
         }
 
-        private void EnsureFallbackNestingResources()
-        {
-            if (_fallbackAttachmentMesh == null)
-                _fallbackAttachmentMesh = BuildFallbackAttachmentMesh();
-
-            if (_fallbackCrateMaterial == null)
-            {
-                Shader litShader = ResolveFallbackLitShader();
-                if (litShader != null)
-                {
-                    _fallbackCrateMaterial = new Material(litShader)
-                    {
-                        name = "__SargassumNestCrateFallback",
-                        hideFlags = HideFlags.HideAndDontSave
-                    }; // COLD ALLOC: Material[1] - runtime crate fallback for canopy nesting - owner: SargassumGlobalDragManager
-                    _fallbackCrateMaterial.enableInstancing = true;
-                    _fallbackCrateMaterial.SetColor("_BaseColor", new Color(0.42f, 0.29f, 0.17f, 1f));
-                    _fallbackCrateMaterial.SetColor("_Color", new Color(0.42f, 0.29f, 0.17f, 1f));
-                }
-            }
-
-            if (_fallbackScrapMaterial == null)
-            {
-                Shader litShader = ResolveFallbackLitShader();
-                if (litShader != null)
-                {
-                    _fallbackScrapMaterial = new Material(litShader)
-                    {
-                        name = "__SargassumNestScrapFallback",
-                        hideFlags = HideFlags.HideAndDontSave
-                    }; // COLD ALLOC: Material[1] - runtime scrap fallback for canopy nesting - owner: SargassumGlobalDragManager
-                    _fallbackScrapMaterial.enableInstancing = true;
-                    _fallbackScrapMaterial.SetColor("_BaseColor", new Color(0.28f, 0.34f, 0.38f, 1f));
-                    _fallbackScrapMaterial.SetColor("_Color", new Color(0.28f, 0.34f, 0.38f, 1f));
-                }
-            }
-
-            if (_fallbackNestingPrototypes != null)
-                return;
-
-            _fallbackNestingPrototypes = new[]
-            {
-                new NestedAttachmentPrototype
-                {
-                    Mesh = _fallbackAttachmentMesh,
-                    Material = _fallbackCrateMaterial,
-                    Weight = 1,
-                    UniformScaleRange = new Vector2(0.72f, 1.08f),
-                    VerticalOffsetRange = new Vector2(-0.15f, 0.25f),
-                    DensityThreshold = 0.62f,
-                    WindowThreshold = 0.18f,
-                    ShadowCastingMode = ShadowCastingMode.Off
-                },
-                new NestedAttachmentPrototype
-                {
-                    Mesh = _fallbackAttachmentMesh,
-                    Material = _fallbackScrapMaterial,
-                    Weight = 2,
-                    UniformScaleRange = new Vector2(0.54f, 0.92f),
-                    VerticalOffsetRange = new Vector2(-0.28f, 0.18f),
-                    DensityThreshold = 0.56f,
-                    WindowThreshold = 0.22f,
-                    ShadowCastingMode = ShadowCastingMode.Off
-                }
-            }; // COLD ALLOC: NestedAttachmentPrototype[2] - runtime fallback nesting archetypes - owner: SargassumGlobalDragManager
-        }
-
-        private void ReleaseFallbackNestingResources()
+        private void ClearAuthoredNestingPrototypeCache()
         {
             _activeNestingPrototypes = null;
-            _fallbackNestingPrototypes = null;
-
-            if (_fallbackCrateMaterial != null)
-            {
-                DestroyOwnedRuntimeObject(_fallbackCrateMaterial);
-                _fallbackCrateMaterial = null;
-            }
-
-            if (_fallbackScrapMaterial != null)
-            {
-                DestroyOwnedRuntimeObject(_fallbackScrapMaterial);
-                _fallbackScrapMaterial = null;
-            }
-
-            if (_fallbackAttachmentMesh != null)
-            {
-                DestroyOwnedRuntimeObject(_fallbackAttachmentMesh);
-                _fallbackAttachmentMesh = null;
-            }
         }
 
         private void RebuildNestedAttachments()
@@ -3131,6 +2961,8 @@ namespace Hecton8.World
         {
             if (chunk == null)
                 return false;
+            if (!HasAuthoredScavengerRenderAssets())
+                return false;
 
             EnsureScavengerStorage();
 
@@ -3173,6 +3005,9 @@ namespace Hecton8.World
 
         internal void RegisterExternalScavengerSite(Vector3 anchorWS, float radiusWS, float duration)
         {
+            if (!HasAuthoredScavengerRenderAssets())
+                return;
+
             EnsureScavengerStorage();
             if (_externalScavengerSites == null || _externalScavengerSites.Length == 0)
                 return;
@@ -3222,7 +3057,9 @@ namespace Hecton8.World
             if (data == null)
                 return;
 
-            if (_externalScavengerSites == null || _externalScavengerSites.Length == 0)
+            if (!HasAuthoredScavengerRenderAssets() ||
+                _externalScavengerSites == null ||
+                _externalScavengerSites.Length == 0)
             {
                 data.externalScavengerSites = null;
                 return;
@@ -3259,6 +3096,12 @@ namespace Hecton8.World
 
         public void LoadFromSaveData(SaveData data)
         {
+            if (!HasAuthoredScavengerRenderAssets())
+            {
+                ClearScavengerHosts();
+                return;
+            }
+
             EnsureScavengerStorage();
             if (_externalScavengerSites == null)
                 return;
@@ -3388,24 +3231,18 @@ namespace Hecton8.World
 
         private void EnsureScavengerRenderResources()
         {
-            EnsureScavengerStorage();
-
-            if (scavengerMesh == null && _fallbackScavengerMesh == null)
-                _fallbackScavengerMesh = BuildFallbackScavengerMesh();
-
-            if (scavengerMaterial == null && _fallbackScavengerMaterial == null)
+            if (!HasAuthoredScavengerRenderAssets())
             {
-                Shader shader = scavengerFallbackShader;
-                if (shader != null)
-                {
-                    _fallbackScavengerMaterial = new Material(shader)
-                    {
-                        name = "__CollapseScavengerIndirectFallback",
-                        hideFlags = HideFlags.HideAndDontSave,
-                        enableInstancing = true
-                    }; // COLD ALLOC: Material[1] - scavenger fallback material bound to first-party shader - owner: SargassumGlobalDragManager
-                }
+                ReleaseScavengerResources();
+                return;
             }
+
+            Mesh activeMesh = _authoredSargassumMesh;
+            Material activeMaterial = PrepareScavengerBrgMaterialCold();
+            if (activeMesh == null || activeMaterial == null)
+                return;
+
+            EnsureScavengerStorage();
 
             if (_scavengerMatrixBufferA == null || _scavengerMatrixBufferA.count < Mathf.Max(1, _scavengerInstanceCapacity) ||
                 _scavengerMatrixBufferB == null || _scavengerMatrixBufferB.count < Mathf.Max(1, _scavengerInstanceCapacity))
@@ -3429,43 +3266,49 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                IDataVault vault = _dataVault;
-                if (!EnsureScavengerBatchMetadataCapacity() ||
-                    vault == null ||
-                    vault.IsCompactionFenceActive ||
-                    !IsVaultHandleCreated(in _scavengerBatchMetadataHandle) ||
-                    !vault.TryAcquireWriteLock(in _scavengerBatchMetadataHandle, VaultOwnerSystemId, out NativeArray<MetadataValue> batchMetadata))
+                if (!TryRegisterScavengerBatchCold())
                 {
                     _scavengerBatchRendererGroup.Dispose();
                     _scavengerBatchRendererGroup = null;
                     return;
                 }
-
-                try
-                {
-                    if (!batchMetadata.IsCreated || batchMetadata.Length < ScavengerBrgMetadataPlaceholderCount)
-                    {
-                        _scavengerBatchRendererGroup.Dispose();
-                        _scavengerBatchRendererGroup = null;
-                        return;
-                    }
-
-                    _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
-                    _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(batchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _scavengerBatchMetadataHandle, VaultOwnerSystemId);
-                }
             }
 
-            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
-            Material activeMaterial = PrepareScavengerBrgMaterialCold();
             SyncScavengerBatchRegistration(activeMesh, activeMaterial);
+        }
+
+        private bool TryRegisterScavengerBatchCold()
+        {
+            if (_scavengerBatchRendererGroup == null)
+                return false;
+
+            _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
+            using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(
+                       ScavengerBrgMetadataPlaceholderCount,
+                       Allocator.Temp,
+                       NativeArrayOptions.ClearMemory))
+            {
+                if (!batchMetadata.IsCreated || batchMetadata.Length < ScavengerBrgMetadataPlaceholderCount)
+                {
+                    ReleaseScavengerBatchHandleBuffer();
+                    return false;
+                }
+
+                _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(batchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
+            }
+
+            if (!_scavengerBatchId.Equals(default))
+                return true;
+
+            ReleaseScavengerBatchHandleBuffer();
+            return false;
         }
 
         private bool HasScavengerRenderResourcesReady()
         {
+            if (!HasAuthoredScavengerRenderAssets())
+                return false;
+
             int requiredCapacity = Mathf.Max(1, _scavengerInstanceCapacity);
             if (_scavengerHosts == null ||
                 _externalScavengerSites == null ||
@@ -3479,13 +3322,19 @@ namespace Hecton8.World
                 return false;
             }
 
-            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
-            Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            Mesh activeMesh = _authoredSargassumMesh;
+            Material sourceMaterial = _authoredSargassumMaterial;
             return activeMesh != null &&
                    sourceMaterial != null &&
                    _scavengerBrgMaterial != null &&
                    _scavengerBrgMaterialSource == sourceMaterial &&
                    IsScavengerBatchRegistrationReady(activeMesh, _scavengerBrgMaterial);
+        }
+
+        private bool HasAuthoredScavengerRenderAssets()
+        {
+            return _authoredSargassumMesh != null &&
+                   _authoredSargassumMaterial != null;
         }
 
         private void ReleaseScavengerBuffers()
@@ -3503,24 +3352,13 @@ namespace Hecton8.World
 
         private void ReleaseScavengerResources()
         {
+            ClearScavengerHosts();
             ReleaseScavengerBuffers();
             _scavengerHosts = null;
             _externalScavengerSites = null;
             _scavengerInstanceCapacity = 0;
             _activeScavengerHostCount = 0;
             _activeExternalScavengerSiteCount = 0;
-
-            if (_fallbackScavengerMaterial != null)
-            {
-                DestroyOwnedRuntimeObject(_fallbackScavengerMaterial);
-                _fallbackScavengerMaterial = null;
-            }
-
-            if (_fallbackScavengerMesh != null)
-            {
-                DestroyOwnedRuntimeObject(_fallbackScavengerMesh);
-                _fallbackScavengerMesh = null;
-            }
 
             if (_scavengerBatchRendererGroup != null)
             {
@@ -3542,15 +3380,19 @@ namespace Hecton8.World
                 _scavengerDrawBoundsRegistered = false;
             }
 
-            if (_scavengerBatchHandleBuffer != null)
-            {
-                _scavengerBatchHandleBuffer.Release();
-                _scavengerBatchHandleBuffer = null;
-            }
-
-            ReleaseVaultBuffer(ref _scavengerBatchMetadataHandle);
+            ReleaseScavengerBatchHandleBuffer();
 
             ReleaseScavengerBrgMaterial();
+            ClearScavengerPresentationState();
+        }
+
+        private void ReleaseScavengerBatchHandleBuffer()
+        {
+            if (_scavengerBatchHandleBuffer == null)
+                return;
+
+            _scavengerBatchHandleBuffer.Release();
+            _scavengerBatchHandleBuffer = null;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -3581,13 +3423,17 @@ namespace Hecton8.World
 
             _activeScavengerHostCount = 0;
             _activeExternalScavengerSiteCount = 0;
+            ClearScavengerPresentationState();
+        }
+
+        private void ClearScavengerPresentationState()
+        {
             _debugScavengerHostCount = 0;
             _debugScavengerInstanceCount = 0;
             _debugScavengerBounds = default;
             _scavengerDrawBounds = default;
             _registeredScavengerDrawBounds = default;
             _scavengerDrawBoundsRegistered = false;
-
         }
 
         private void UpdateScavengerHosts(float dt)
@@ -3618,7 +3464,7 @@ namespace Hecton8.World
             float safeDeltaTime = math.max(0f, dt);
             float consumeDurationInv = 1f / math.max(0.1f, scavengerConsumeDuration);
             float externalSiteDurationInv = 1f / math.max(0.1f, externalScavengerSiteDuration);
-            int maxScavengersPerHost = math.max(1, scavengersPerHost);
+            int maxScavengersPerHost = ResolveActiveScavengersPerHost();
             Matrix4x4[] scavengerMatrixStaging = _scavengerMatrixStaging;
             if (scavengerMatrixStaging == null || scavengerMatrixStaging.Length < _scavengerInstanceCapacity)
             {
@@ -3753,6 +3599,14 @@ namespace Hecton8.World
             UploadScavengerInstances(matrixCount);
         }
 
+        private int ResolveActiveScavengersPerHost()
+        {
+            int authoredMax = math.max(1, scavengersPerHost);
+            float quality01 = Smooth01(_cachedGlobalQualityWeight01);
+            float minimum = math.max(1f, authoredMax * 0.35f);
+            return math.clamp(Mathf.RoundToInt(math.lerp(minimum, authoredMax, quality01)), 1, authoredMax);
+        }
+
         private bool TryPublishScavengerMatrices(Matrix4x4[] stagedMatrices, int matrixCount)
         {
             if (matrixCount <= 0)
@@ -3832,7 +3686,7 @@ namespace Hecton8.World
             if (_debugScavengerInstanceCount <= 0 || _activeScavengerMatrixBuffer == null || _scavengerBatchRendererGroup == null)
                 return;
 
-            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
+            Mesh activeMesh = _authoredSargassumMesh;
             Material activeMaterial = GetPreparedScavengerBrgMaterial();
             if (activeMesh == null || activeMaterial == null)
                 return;
@@ -3860,7 +3714,7 @@ namespace Hecton8.World
 
         private Material PrepareScavengerBrgMaterialCold()
         {
-            Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            Material sourceMaterial = _authoredSargassumMaterial;
             if (sourceMaterial == null)
                 return null;
 
@@ -3868,20 +3722,14 @@ namespace Hecton8.World
                 return _scavengerBrgMaterial;
 
             ReleaseScavengerBrgMaterial();
-            _scavengerBrgMaterial = new Material(sourceMaterial)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "__CollapseScavengerBrgMaterial",
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] - BRG-local scavenger material clone for per-renderer buffer binding - owner: SargassumGlobalDragManager
+            _scavengerBrgMaterial = sourceMaterial;
             _scavengerBrgMaterialSource = sourceMaterial;
-            _ownsScavengerBrgMaterial = true;
             return _scavengerBrgMaterial;
         }
 
         private Material GetPreparedScavengerBrgMaterial()
         {
-            Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            Material sourceMaterial = _authoredSargassumMaterial;
             if (sourceMaterial == null ||
                 _scavengerBrgMaterial == null ||
                 _scavengerBrgMaterialSource != sourceMaterial)
@@ -3903,18 +3751,8 @@ namespace Hecton8.World
 
         private void ReleaseScavengerBrgMaterial()
         {
-            if (!_ownsScavengerBrgMaterial || _scavengerBrgMaterial == null)
-            {
-                _scavengerBrgMaterial = null;
-                _scavengerBrgMaterialSource = null;
-                _ownsScavengerBrgMaterial = false;
-                return;
-            }
-
-            DestroyOwnedRuntimeObject(_scavengerBrgMaterial);
             _scavengerBrgMaterial = null;
             _scavengerBrgMaterialSource = null;
-            _ownsScavengerBrgMaterial = false;
         }
 
         private static void DestroyOwnedRuntimeObject(UnityEngine.Object target)
@@ -4011,43 +3849,6 @@ namespace Hecton8.World
         private void RefreshRenderLayerCache()
         {
             _cachedRenderLayer = gameObject.layer;
-        }
-
-        private Mesh BuildFallbackScavengerMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "__CollapseScavengerFallback",
-                hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Mesh[1] - first-party fallback scavenger mesh - owner: SargassumGlobalDragManager
-
-            Vector3[] vertices =
-            {
-                new Vector3(0f, 0f, 0.28f),
-                new Vector3(0f, 0f, -0.28f),
-                new Vector3(-0.16f, 0f, 0f),
-                new Vector3(0.16f, 0f, 0f),
-                new Vector3(0f, 0.08f, 0f),
-                new Vector3(0f, -0.05f, 0f)
-            }; // COLD ALLOC: Vector3[6] - fallback scavenger octahedron vertices - owner: SargassumGlobalDragManager
-
-            int[] triangles =
-            {
-                0, 4, 3,
-                0, 3, 5,
-                0, 5, 2,
-                0, 2, 4,
-                1, 3, 4,
-                1, 5, 3,
-                1, 2, 5,
-                1, 4, 2
-            }; // COLD ALLOC: int[24] - fallback scavenger octahedron triangles - owner: SargassumGlobalDragManager
-
-            mesh.SetVertices(vertices);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
         }
 
         private int ResolveNestedPrototypeIndex(SargassumFieldSample fieldSample, int sampleX, int sampleZ)
@@ -4199,14 +4000,12 @@ namespace Hecton8.World
 #if UNITY_EDITOR
                 if (collapseChunkPrefab == null)
                     collapseChunkPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab");
-                if (scavengerFallbackShader == null)
-                    scavengerFallbackShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Hecton_CollapseScavengerIndirect.shader");
 #endif
                 SanitizeSettings();
                 if (!Application.isPlaying)
                 {
-                    _activeNestingPrototypes = nestingPrototypes != null && nestingPrototypes.Length > 0
-                        ? nestingPrototypes
+                    _activeNestingPrototypes = _authoredNestingPrototypes != null && _authoredNestingPrototypes.Length > 0
+                        ? _authoredNestingPrototypes
                         : null;
                     _activeNestedPrototypeCount = 0;
                     _activeNestedAttachmentStateCount = 0;
@@ -4233,17 +4032,6 @@ namespace Hecton8.World
             {
                 _editorValidateDepth--;
             }
-        }
-
-        private Shader ResolveFallbackLitShader()
-        {
-            if (_fallbackLitShader != null)
-                return _fallbackLitShader;
-
-            RenderPipelineAsset renderPipeline = GraphicsSettings.currentRenderPipeline ?? GraphicsSettings.defaultRenderPipeline;
-            Material defaultMaterial = renderPipeline != null ? renderPipeline.defaultMaterial : null;
-            _fallbackLitShader = defaultMaterial != null ? defaultMaterial.shader : null;
-            return _fallbackLitShader;
         }
 
         private void TryRegister()
@@ -4364,19 +4152,7 @@ namespace Hecton8.World
                     _dynamicTextureRefreshIncrementRevision = true;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    if (_densityBuildSourcesLocked)
-                    {
-                        if (_densityBuildScheduled)
-                            DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: true);
-
-                        ReleaseDensityBuildSourceWrite();
-                        _densityBuildScheduled = false;
-                        _densityBuildHandle = default;
-                    }
-
-                    ReleaseVaultBuffer(ref _densityBuildSourcesHandle);
                     ReleaseVaultBuffer(ref _scavengerMatricesHandle);
-                    ReleaseVaultBuffer(ref _scavengerBatchMetadataHandle);
                     _dataVault = currentService as IDataVault;
                     break;
             }
@@ -4796,7 +4572,8 @@ namespace Hecton8.World
 
         private void CreateDensityTexture()
         {
-            int resolution = Mathf.Clamp(densityTextureResolution, 64, 256);
+            _cachedGlobalQualityWeight01 = ResolveSargassumQualityWeight01(_cachedGlobalQualityWeight01);
+            int resolution = ResolveDensityTextureResolution();
             int texelCount = resolution * resolution;
 
             if (_densityTextureRaw == null || _densityTextureRaw.Length != texelCount)
@@ -4823,6 +4600,7 @@ namespace Hecton8.World
                     filterMode = FilterMode.Bilinear,
                     hideFlags = HideFlags.HideAndDontSave
                 }; // COLD ALLOC: Texture2D[1] - baked sargassum density map - owner: SargassumGlobalDragManager
+                _densityTextureHasUploadedContent = true;
             }
 
             if (_sinkFieldTexture == null ||
@@ -4837,6 +4615,7 @@ namespace Hecton8.World
                     filterMode = FilterMode.Bilinear,
                     hideFlags = HideFlags.HideAndDontSave
                 }; // COLD ALLOC: Texture2D[1] - baked sargassum buoyancy sink map - owner: SargassumGlobalDragManager
+                _sinkTextureHasUploadedContent = true;
             }
         }
 
@@ -4847,6 +4626,8 @@ namespace Hecton8.World
 
             DestroyOwnedRuntimeObject(_densityFieldTexture);
             _densityFieldTexture = null;
+            _densityTextureUploadDirty = false;
+            _densityTextureHasUploadedContent = false;
         }
 
         private void ReleaseSinkTexture()
@@ -4856,26 +4637,34 @@ namespace Hecton8.World
 
             DestroyOwnedRuntimeObject(_sinkFieldTexture);
             _sinkFieldTexture = null;
+            _sinkTextureUploadDirty = false;
+            _sinkTextureHasUploadedContent = false;
         }
 
         private void ClearDensityTexture()
         {
             if (_densityFieldTexture == null || _densityTextureRaw == null)
                 return;
+            if (!_densityTextureHasUploadedContent)
+                return;
 
             Array.Clear(_densityTextureRaw, 0, _densityTextureRaw.Length);
             _densityFieldTexture.LoadRawTextureData(_densityTextureRaw);
-            _dynamicTexturesUploadDirty = true;
+            _densityTextureUploadDirty = true;
+            _densityTextureHasUploadedContent = false;
         }
 
         private void ClearSinkTexture()
         {
             if (_sinkFieldTexture == null || _sinkTextureRaw == null)
                 return;
+            if (!_sinkTextureHasUploadedContent)
+                return;
 
             Array.Clear(_sinkTextureRaw, 0, _sinkTextureRaw.Length);
             _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
-            _dynamicTexturesUploadDirty = true;
+            _sinkTextureUploadDirty = true;
+            _sinkTextureHasUploadedContent = false;
         }
 
         private void RefreshDynamicTextures(bool incrementRevision)
@@ -4937,13 +4726,16 @@ namespace Hecton8.World
 
             _densityFieldTexture.LoadRawTextureData(_densityTextureRaw);
             _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
-            _dynamicTexturesUploadDirty = true;
+            _densityTextureUploadDirty = true;
+            _sinkTextureUploadDirty = true;
+            _densityTextureHasUploadedContent = true;
+            _sinkTextureHasUploadedContent = true;
             _debugMaxSinkDepth = maxSinkDepthWS;
         }
 
         private bool HasDensityTextureResourcesReady()
         {
-            int resolution = Mathf.Clamp(densityTextureResolution, 64, 256);
+            int resolution = ResolveDensityTextureResolution();
             int texelCount = resolution * resolution;
             return _densityFieldTexture != null &&
                    _densityFieldTexture.width == resolution &&
@@ -4957,6 +4749,42 @@ namespace Hecton8.World
                    _sinkTextureRaw.Length == texelCount;
         }
 
+        private int ResolveDensityTextureResolution()
+        {
+            int authoredMax = Mathf.Clamp(densityTextureResolution, MinDensityTextureResolution, MaxDensityTextureResolution);
+            float quality01 = Smooth01(_cachedGlobalQualityWeight01);
+            int continuous = Mathf.RoundToInt(math.lerp(MinDensityTextureResolution, authoredMax, quality01));
+            int aligned = math.max(MinDensityTextureResolution, ((continuous + 15) / 16) * 16);
+            _resolvedDensityTextureResolution = math.min(aligned, authoredMax);
+            return _resolvedDensityTextureResolution;
+        }
+
+        private int ResolveDynamicTextureRefreshStrideFrames()
+        {
+            float quality01 = Smooth01(_cachedGlobalQualityWeight01);
+            float resolved = math.lerp(MaxDynamicTextureRefreshStrideFrames, MinDynamicTextureRefreshStrideFrames, quality01);
+            return math.max(1, Mathf.RoundToInt(resolved));
+        }
+
+        private bool CanRefreshDynamicTexturesThisFrame()
+        {
+            int frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            return frameIndex >= _nextDynamicTextureRefreshFrame;
+        }
+
+        private static float ResolveSargassumQualityWeight01(float fallback01)
+        {
+            float fallback = math.saturate(math.isfinite(fallback01) ? fallback01 : 1f);
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(fallback, quality, math.isfinite(quality)));
+        }
+
+        private static float Smooth01(float value)
+        {
+            float saturated = math.saturate(math.isfinite(value) ? value : 1f);
+            return saturated * saturated * (3f - 2f * saturated);
+        }
+
         private void QueueDynamicTextureRefresh(bool incrementRevision)
         {
             _dynamicTextureRefreshRequested = true;
@@ -4965,16 +4793,17 @@ namespace Hecton8.World
 
         private void ApplyDynamicTexturesIfDirty()
         {
-            if (!_dynamicTexturesUploadDirty)
+            if (!_densityTextureUploadDirty && !_sinkTextureUploadDirty)
                 return;
 
-            if (_densityFieldTexture != null)
+            if (_densityTextureUploadDirty && _densityFieldTexture != null)
                 _densityFieldTexture.Apply(false, false);
 
-            if (_sinkFieldTexture != null)
+            if (_sinkTextureUploadDirty && _sinkFieldTexture != null)
                 _sinkFieldTexture.Apply(false, false);
 
-            _dynamicTexturesUploadDirty = false;
+            _densityTextureUploadDirty = false;
+            _sinkTextureUploadDirty = false;
         }
 
         private float SampleDensity01NoDrift(Vector3 sampledPositionWS, float radius)
@@ -5033,61 +4862,6 @@ namespace Hecton8.World
             return maxSinkDepthWS;
         }
 
-        private static Mesh BuildFallbackAttachmentMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "__SargassumNestFallbackMesh"
-            }; // COLD ALLOC: Mesh[1] - runtime fallback instanced nesting geometry - owner: SargassumGlobalDragManager
-
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f,  0.5f), new Vector3( 0.5f, -0.5f,  0.5f), new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(-0.5f,  0.5f,  0.5f),
-                new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f,  0.5f, -0.5f), new Vector3( 0.5f,  0.5f, -0.5f),
-                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(-0.5f,  0.5f, -0.5f),
-                new Vector3( 0.5f, -0.5f,  0.5f), new Vector3( 0.5f, -0.5f, -0.5f), new Vector3( 0.5f,  0.5f, -0.5f), new Vector3( 0.5f,  0.5f,  0.5f),
-                new Vector3(-0.5f,  0.5f,  0.5f), new Vector3( 0.5f,  0.5f,  0.5f), new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(-0.5f,  0.5f, -0.5f),
-                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3( 0.5f, -0.5f, -0.5f), new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(-0.5f, -0.5f,  0.5f)
-            };
-
-            int[] triangles =
-            {
-                0, 1, 2, 0, 2, 3,
-                4, 5, 6, 4, 6, 7,
-                8, 9,10, 8,10,11,
-                12,13,14, 12,14,15,
-                16,17,18, 16,18,19,
-                20,21,22, 20,22,23
-            };
-
-            Vector3[] normals =
-            {
-                Vector3.forward, Vector3.forward, Vector3.forward, Vector3.forward,
-                Vector3.back, Vector3.back, Vector3.back, Vector3.back,
-                Vector3.left, Vector3.left, Vector3.left, Vector3.left,
-                Vector3.right, Vector3.right, Vector3.right, Vector3.right,
-                Vector3.up, Vector3.up, Vector3.up, Vector3.up,
-                Vector3.down, Vector3.down, Vector3.down, Vector3.down
-            };
-
-            Vector2[] uv =
-            {
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f)
-            };
-
-            mesh.SetVertices(vertices);
-            mesh.SetNormals(normals);
-            mesh.SetUVs(0, uv);
-            mesh.SetTriangles(triangles, 0);
-            mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
-            return mesh;
-        }
-
         private void WriteSafeVelocities(Rigidbody body, Vector3 linearVelocity, Vector3 angularVelocity)
         {
             if (body == null)
@@ -5113,6 +4887,9 @@ namespace Hecton8.World
                 return;
             }
 
+            if (IsDebrisPetrificationQueued(body))
+                return;
+
             if (_debrisPetrificationTimerCount >= DebrisPetrificationTimerCapacity)
             {
                 ApplyDebrisPetrification(body);
@@ -5127,11 +4904,10 @@ namespace Hecton8.World
             }
 
             _debrisPetrificationBodies[slot] = body;
-            if (!TryEnqueueDebrisPetrificationTimer(new DebrisTimer
-            {
-                Slot = slot,
-                RemainingSeconds = DebrisPetrificationDelaySeconds
-            }))
+            DebrisTimer timer = default;
+            timer.Slot = slot;
+            timer.RemainingSeconds = DebrisPetrificationDelaySeconds;
+            if (!TryEnqueueDebrisPetrificationTimer(in timer))
             {
                 _debrisPetrificationBodies[slot] = null;
                 ApplyDebrisPetrification(body);
@@ -5148,7 +4924,8 @@ namespace Hecton8.World
             if ((uint)_debrisPetrificationTimerCount >= (uint)_debrisPetrificationTimers.Length)
                 return false;
 
-            _debrisPetrificationTimers[_debrisPetrificationTimerCount] = timer;
+            _debrisPetrificationTimers[_debrisPetrificationTimerTail] = timer;
+            _debrisPetrificationTimerTail = (_debrisPetrificationTimerTail + 1) & DebrisPetrificationTimerIndexMask;
             _debrisPetrificationTimerCount++;
             return true;
         }
@@ -5161,24 +4938,33 @@ namespace Hecton8.World
                 return false;
             }
 
-            timer = _debrisPetrificationTimers[0];
+            timer = _debrisPetrificationTimers[_debrisPetrificationTimerHead];
+            _debrisPetrificationTimers[_debrisPetrificationTimerHead] = default;
+            _debrisPetrificationTimerHead = (_debrisPetrificationTimerHead + 1) & DebrisPetrificationTimerIndexMask;
             _debrisPetrificationTimerCount--;
-            for (int i = 0; i < _debrisPetrificationTimerCount; i++)
-                _debrisPetrificationTimers[i] = _debrisPetrificationTimers[i + 1];
-
-            _debrisPetrificationTimers[_debrisPetrificationTimerCount] = default;
             return true;
+        }
+
+        private bool IsDebrisPetrificationQueued(Rigidbody body)
+        {
+            for (int i = 0; i < _debrisPetrificationBodies.Length; i++)
+            {
+                if (_debrisPetrificationBodies[i] == body)
+                    return true;
+            }
+
+            return false;
         }
 
         private int FindDebrisPetrificationSlot()
         {
             for (int i = 0; i < DebrisPetrificationTimerCapacity; i++)
             {
-                int slot = (_debrisPetrificationCursor + i) % DebrisPetrificationTimerCapacity;
+                int slot = (_debrisPetrificationCursor + i) & DebrisPetrificationTimerIndexMask;
                 if (_debrisPetrificationBodies[slot] != null)
                     continue;
 
-                _debrisPetrificationCursor = (slot + 1) % DebrisPetrificationTimerCapacity;
+                _debrisPetrificationCursor = (slot + 1) & DebrisPetrificationTimerIndexMask;
                 return slot;
             }
 
@@ -5239,6 +5025,8 @@ namespace Hecton8.World
             Array.Clear(_debrisPetrificationTimers, 0, _debrisPetrificationTimers.Length);
             Array.Clear(_debrisPetrificationBodies, 0, _debrisPetrificationBodies.Length);
             _debrisPetrificationTimerCount = 0;
+            _debrisPetrificationTimerHead = 0;
+            _debrisPetrificationTimerTail = 0;
             _debrisPetrificationCursor = 0;
         }
 

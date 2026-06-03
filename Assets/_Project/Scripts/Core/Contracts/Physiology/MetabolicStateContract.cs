@@ -8,7 +8,8 @@ namespace Hecton8.Core.Contracts.Physiology
     public static class ShinobuMetabolismVaultContract
     {
         public const int MetabolismStatesBufferId = 70238;
-        public const int MetabolicStateSizeBytes = 32;
+        public const int MetabolicStateSizeBytes = 48;
+        public const float HypoxiaAgonyDurationSeconds = 4f;
         public const ulong MetabolismStateMutationGuardMask = 1UL << 48;
 
         public const uint FlagStarving = 1u << 0;
@@ -18,6 +19,7 @@ namespace Hecton8.Core.Contracts.Physiology
         public const uint FlagInvalidMath = 1u << 4;
         public const uint FlagMockEntity = 1u << 5;
         public const uint FlagFatigue = 1u << 9;
+        public const uint FlagHypoxia = 1u << 10;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = ShinobuMetabolismVaultContract.MetabolicStateSizeBytes)]
@@ -30,7 +32,31 @@ namespace Hecton8.Core.Contracts.Physiology
         [FieldOffset(16)] public uint EntityHashID;
         [FieldOffset(20)] public uint Flags;
         [FieldOffset(24)] public float Fatigue01;
-        [FieldOffset(24)] public uint _pad0;
-        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(28)] public float RealO2;
+        [FieldOffset(32)] public float AgonyTimeRemaining;
+        [FieldOffset(36)] public byte IsInHypoxia;
+        [FieldOffset(37)] private byte _pad0;
+        [FieldOffset(38)] private ushort _pad1;
+        [FieldOffset(40)] private uint _pad2;
+        [FieldOffset(44)] private uint _pad3;
+    }
+
+    public static class ShinobuSuitIntegrityVaultContract
+    {
+        public const int StateBufferId = 72510;
+        public const int SuitIntegrityStateSizeBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = ShinobuSuitIntegrityVaultContract.SuitIntegrityStateSizeBytes)]
+    public struct SuitIntegrityDTO
+    {
+        [FieldOffset(0)] public float CurrentIntegrity01;
+        [FieldOffset(4)] public float AppliedPressureATM;
+        [FieldOffset(8)] public float MicroFractureAccumulation;
+        [FieldOffset(12)] public uint EquippedSuitHash;
+        [FieldOffset(16)] public uint IntegrityFlags;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private uint _pad1;
+        [FieldOffset(28)] private uint _pad2;
     }
 }

@@ -260,40 +260,57 @@ namespace Hecton8.VFX
             for (int i = 0; i < capacity; i++)
                 PointLights[i] = default;
 
-            if (capacity <= 0)
-                return;
+            int activeCount = ResolveActivePointLightCount(capacity, QualityWeight);
+            for (int i = 0; i < activeCount; i++)
+                PointLights[i] = BuildPointLight(i, activeCount, CameraPositionWS, CameraForwardWS, FramePhaseSeconds, QualityWeight);
+        }
 
-            float quality = math.saturate(SanitizeFloat(QualityWeight, 0f));
-            int activeCount = math.clamp(1 + (int)math.floor(quality * (capacity - 1) + 0.0001f), 1, capacity);
-            float3 cameraPosition = SanitizeFloat3(CameraPositionWS);
-            float3 forward = SafeNormalize(SanitizeFloat3(CameraForwardWS), new float3(0f, 0f, 1f));
+        public static int ResolveActivePointLightCount(int capacity, float qualityWeight)
+        {
+            int safeCapacity = math.clamp(capacity, 0, VolumetricFogConstants.MaxPointLights);
+            if (safeCapacity <= 0)
+                return 0;
+
+            float quality = math.saturate(SanitizeFloat(qualityWeight, 0f));
+            return math.clamp(1 + (int)math.floor(quality * (safeCapacity - 1) + 0.0001f), 1, safeCapacity);
+        }
+
+        public static PointLightDTO BuildPointLight(
+            int index,
+            int activeCount,
+            float3 cameraPositionWS,
+            float3 cameraForwardWS,
+            float framePhaseSeconds,
+            float qualityWeight)
+        {
+            int safeActiveCount = math.max(1, math.min(activeCount, VolumetricFogConstants.MaxPointLights));
+            int safeIndex = math.clamp(index, 0, safeActiveCount - 1);
+            float quality = math.saturate(SanitizeFloat(qualityWeight, 0f));
+            float3 cameraPosition = SanitizeFloat3(cameraPositionWS);
+            float3 forward = SafeNormalize(SanitizeFloat3(cameraForwardWS), new float3(0f, 0f, 1f));
             float3 side = SafeNormalize(math.cross(forward, new float3(0f, 1f, 0f)), new float3(1f, 0f, 0f));
             float3 up = SafeNormalize(math.cross(side, forward), new float3(0f, 1f, 0f));
-            float phaseSeconds = SanitizeFloat(FramePhaseSeconds, 0f);
+            float phaseSeconds = SanitizeFloat(framePhaseSeconds, 0f);
+            float index01 = (safeIndex + 0.5f) / safeActiveCount;
+            float phase = phaseSeconds * (0.11f + index01 * 0.07f) + index01 * 6.2831853f;
+            float radialMeters = math.lerp(7f, 22f, index01);
+            float heightMeters = math.lerp(-2.5f, 3.5f, math.frac(index01 * 1.6180339f));
+            float3 offset = forward * (10f + radialMeters * 0.8f) +
+                            side * (Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase) * radialMeters) +
+                            up * (heightMeters + Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(phase * 0.7f) * 1.5f);
+            float pulse = 0.65f + 0.35f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase * 1.7f);
+            float radius = math.lerp(7f, 18f, quality) * (0.75f + index01 * 0.5f);
+            float intensity = math.lerp(0.15f, 1.15f, quality) * pulse;
 
-            for (int i = 0; i < activeCount; i++)
+            return new PointLightDTO
             {
-                float index01 = (i + 0.5f) / math.max(1, activeCount);
-                float phase = phaseSeconds * (0.11f + index01 * 0.07f) + index01 * 6.2831853f;
-                float radialMeters = math.lerp(7f, 22f, index01);
-                float heightMeters = math.lerp(-2.5f, 3.5f, math.frac(index01 * 1.6180339f));
-                float3 offset = forward * (10f + radialMeters * 0.8f) +
-                                side * (Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase) * radialMeters) +
-                                up * (heightMeters + Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(phase * 0.7f) * 1.5f);
-                float pulse = 0.65f + 0.35f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase * 1.7f);
-                float radius = math.lerp(7f, 18f, quality) * (0.75f + index01 * 0.5f);
-                float intensity = math.lerp(0.15f, 1.15f, quality) * pulse;
-
-                PointLights[i] = new PointLightDTO
-                {
-                    PositionRadius = new float4(cameraPosition + offset, SanitizeFloat(radius, 1f)),
-                    ColorIntensity = new float4(
-                        SanitizeFloat(0.07f + index01 * 0.05f, 0.07f),
-                        SanitizeFloat(0.18f + index01 * 0.04f, 0.18f),
-                        SanitizeFloat(0.24f + index01 * 0.08f, 0.24f),
-                        SanitizeFloat(intensity, 0f))
-                };
-            }
+                PositionRadius = new float4(cameraPosition + offset, SanitizeFloat(radius, 1f)),
+                ColorIntensity = new float4(
+                    SanitizeFloat(0.07f + index01 * 0.05f, 0.07f),
+                    SanitizeFloat(0.18f + index01 * 0.04f, 0.18f),
+                    SanitizeFloat(0.24f + index01 * 0.08f, 0.24f),
+                    SanitizeFloat(intensity, 0f))
+            };
         }
 
         private static float3 SafeNormalize(float3 value, float3 fallback)

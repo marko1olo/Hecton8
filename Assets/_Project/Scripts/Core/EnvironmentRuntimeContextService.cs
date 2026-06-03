@@ -60,8 +60,15 @@ namespace Hecton8.Core
             if (runtime != null)
                 return runtime;
 
+            if (!Application.isPlaying)
+                return null;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameObject runtimeRoot = new GameObject("[EnvironmentRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned environment runtime context root - owner: EnvironmentRuntimeContextService
             return runtimeRoot.AddComponent<EnvironmentRuntimeContextService>();
+#else
+            return null;
+#endif
         }
 
         /// <summary>
@@ -187,10 +194,13 @@ namespace Hecton8.Core
             if (_hazardZoneManager != null || !Application.isPlaying)
                 return _hazardZoneManager;
 
-            if (!TryGetComponent(out _hazardZoneManager))
+            TryGetComponent(out _hazardZoneManager);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_hazardZoneManager == null)
             {
                 _hazardZoneManager = gameObject.AddComponent<HazardZoneManager>(); // COLD ALLOC: HazardZoneManager[1] - environment-owned runtime hazard registry - owner: EnvironmentRuntimeContextService
             }
+#endif
 
             return _hazardZoneManager;
         }

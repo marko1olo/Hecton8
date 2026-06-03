@@ -220,34 +220,6 @@ namespace Hecton8.Visor
         private const uint DumpMagic = 0x56534152u; // VSAR
         private const uint DumpVersion = 1u;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorARStencil.bin";
-        private static readonly Vector3[] FallbackMaskVertices =
-        {
-            new Vector3(0f, 0f, 0f),
-            new Vector3(-1f, 0f, 0f),
-            new Vector3(-0.82f, 0.48f, 0f),
-            new Vector3(-0.28f, 0.68f, 0f),
-            new Vector3(0.28f, 0.68f, 0f),
-            new Vector3(0.82f, 0.48f, 0f),
-            new Vector3(1f, 0f, 0f),
-            new Vector3(0.82f, -0.48f, 0f),
-            new Vector3(0.28f, -0.64f, 0f),
-            new Vector3(-0.28f, -0.64f, 0f),
-            new Vector3(-0.82f, -0.48f, 0f)
-        }; // COLD ALLOC: Vector3[11] - immutable visor fallback mask vertices - owner: HectonVisorARStencilRendererFeature
-        private static readonly int[] FallbackMaskTriangles =
-        {
-            0, 1, 2,
-            0, 2, 3,
-            0, 3, 4,
-            0, 4, 5,
-            0, 5, 6,
-            0, 6, 7,
-            0, 7, 8,
-            0, 8, 9,
-            0, 9, 10,
-            0, 10, 1
-        }; // COLD ALLOC: int[30] - immutable visor fallback mask triangles - owner: HectonVisorARStencilRendererFeature
-
 #if UNITY_EDITOR
         private const string ArShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorAR.shader";
         private const string StencilShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorStencilMask.shader";
@@ -662,8 +634,6 @@ namespace Hecton8.Visor
         private ArPass _arPass;
         private Material _stencilMaterial;
         private Material _arMaterial;
-        private Mesh _fallbackMaskMesh;
-        private bool _ownsFallbackMaskMesh;
         private IPlayerRuntimeContext _playerContext;
         private IDataVault _dataVault;
         private VaultGenerationHandle<VisorHudParamsDTO> _hudParamsHandle;
@@ -706,12 +676,11 @@ namespace Hecton8.Visor
             CacheGraphicsCapabilitiesCold();
             RecreateMaterial(ref _stencilMaterial, settings != null ? settings.stencilShader : null);
             RecreateMaterial(ref _arMaterial, settings != null ? settings.arShader : null);
-            _arPass.PrewarmBuffers();
-            EnsureFallbackMaskMeshCold();
+            if (!Application.isPlaying)
+                _arPass.Dispose();
             TryRegisterHotSwapListener();
             TryRegisterRenderWatchdog();
             CacheColdServices(GlobalRegistry.Player, GlobalRegistry.DataVault);
-            TryEnsureVaultBuffers();
 #if UNITY_EDITOR
             LoadCsvProfilesCold();
 #endif
@@ -742,13 +711,13 @@ namespace Hecton8.Visor
                 return;
             }
 
-            if (!HasRequiredVaultHandles())
+            if (!HasRequiredVaultHandles() && !TryEnsureVaultBuffers())
             {
                 SetStencilPresentationActive(false);
                 return;
             }
 
-            Mesh maskMesh = settings.visorMaskMesh != null ? settings.visorMaskMesh : _fallbackMaskMesh;
+            Mesh maskMesh = settings.visorMaskMesh;
             if (maskMesh == null)
             {
                 SetStencilPresentationActive(false);
@@ -756,6 +725,12 @@ namespace Hecton8.Visor
             }
 
             Matrix4x4 maskMatrix = ResolveMaskMatrix(renderCamera, settings);
+
+            if (!_arPass.PrewarmBuffers())
+            {
+                SetStencilPresentationActive(false);
+                return;
+            }
 
             if (!BuildAndUploadFrame(renderCamera, out uint telemetryFlags))
             {
@@ -780,10 +755,6 @@ namespace Hecton8.Visor
             CoreUtils.Destroy(_arMaterial);
             _stencilMaterial = null;
             _arMaterial = null;
-            if (_ownsFallbackMaskMesh)
-                CoreUtils.Destroy(_fallbackMaskMesh);
-            _fallbackMaskMesh = null;
-            _ownsFallbackMaskMesh = false;
             ReleaseVaultHandles(_dataVault);
             _dataVault = null;
             TryUnregisterHotSwapListener();
@@ -1660,32 +1631,6 @@ namespace Hecton8.Visor
 
             float value = slot.Value;
             return math.isfinite(value) ? value : fallback;
-        }
-
-        private void EnsureFallbackMaskMeshCold()
-        {
-            if (settings != null && settings.visorMaskMesh != null)
-                return;
-
-            if (_fallbackMaskMesh != null)
-                return;
-
-            _fallbackMaskMesh = CreateFallbackMaskMesh();
-            _ownsFallbackMaskMesh = _fallbackMaskMesh != null;
-        }
-
-        private static Mesh CreateFallbackMaskMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "Hecton_VisorAR_FallbackStencilMesh"
-            };
-
-            mesh.SetVertices(FallbackMaskVertices);
-            mesh.SetTriangles(FallbackMaskTriangles, 0, false);
-            mesh.bounds = new Bounds(Vector3.zero, new Vector3(2.1f, 1.5f, 0.02f));
-            mesh.UploadMeshData(false);
-            return mesh;
         }
 
         private static Matrix4x4 ResolveMaskMatrix(Camera renderCamera, FeatureSettings featureSettings)

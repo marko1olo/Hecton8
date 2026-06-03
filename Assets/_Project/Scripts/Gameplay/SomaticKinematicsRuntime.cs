@@ -270,8 +270,18 @@ namespace Hecton8.Gameplay
         public float SampleDistance(float3 position)
         {
             float planeDistance = Plane.SampleDistance(position);
-            float caveDistance = CaveRadius - math.length(position - CaveCenter);
+            float caveDistance = CaveRadius - FastLengthFromSq(math.lengthsq(position - CaveCenter), 0f);
             return math.min(planeDistance, caveDistance);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float FastLengthFromSq(float lengthSq, float minLengthSq)
+        {
+            if (!math.isfinite(lengthSq))
+                return 0f;
+
+            float safeLengthSq = math.max(lengthSq, minLengthSq);
+            return safeLengthSq > 0f ? safeLengthSq * math.rsqrt(safeLengthSq) : 0f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -406,7 +416,7 @@ namespace Hecton8.Gameplay
             state.PlayerRadius = radius;
             state.Stamina01 = stamina01;
             state.FatigueWindow += safeExertion * (1.0f + safeAgainstCurrent01 * tuning.CurrentFatigueScale);
-            state.LastPushOutMeters = math.length(sdfPushOut);
+            state.LastPushOutMeters = MockWorldSampler.FastLengthFromSq(math.lengthsq(sdfPushOut), 0f);
             state.LastLostKineticEnergy = lostEnergy;
             state.LastAcousticMagnitude = ResolveAcousticMagnitude(local, previousLocal, velocity, tuning);
             state.LastHapticMagnitude = ResolveHapticAmplitude(state.LastPushOutMeters, lostEnergy, tuning);
@@ -472,7 +482,7 @@ namespace Hecton8.Gameplay
             {
                 float3 delta = SanitizeFinite(sample.RelativeToHead - previous.RelativeToHead, float3.zero);
                 float lengthSq = math.lengthsq(delta);
-                sample.DeltaMeters = math.isfinite(lengthSq) ? math.sqrt(math.max(0f, lengthSq)) : 0f;
+                sample.DeltaMeters = MockWorldSampler.FastLengthFromSq(lengthSq, 0f);
             }
             else
             {
@@ -518,7 +528,7 @@ namespace Hecton8.Gameplay
             float3 delta = SanitizeFinite(current.RelativeToHead - previous.RelativeToHead, float3.zero);
             float backwardMeters = math.max(0f, -math.dot(delta, headForward));
             float lengthSq = math.lengthsq(delta);
-            float deltaMeters = math.isfinite(lengthSq) ? math.sqrt(math.max(0f, lengthSq)) : 0f;
+            float deltaMeters = MockWorldSampler.FastLengthFromSq(lengthSq, 0f);
             exertion += math.min(deltaMeters, 4.0f);
             return headForward * (backwardMeters * tuning.StrokeMultiplier);
         }
@@ -566,10 +576,11 @@ namespace Hecton8.Gameplay
         private void ApplySurfaceBuoyancy(ref float3 velocity, float3 local, float dt, SomaticKinematicsTuningData tuning, ref PlayerKinematicState state)
         {
             float blendDistance = math.max(0.1f, tuning.SurfaceBlendMeters);
+            float invBlendDistance = math.rcp(blendDistance);
             float aboveSurface = local.y - tuning.SeaLevelY;
-            float breach01 = math.saturate(aboveSurface / blendDistance);
+            float breach01 = math.saturate(aboveSurface * invBlendDistance);
             float chestDepth = tuning.SeaLevelY - (local.y + tuning.ChestOffsetY);
-            float submerged01 = math.saturate(chestDepth / blendDistance);
+            float submerged01 = math.saturate(chestDepth * invBlendDistance);
             velocity.y -= tuning.Gravity * breach01 * dt;
             velocity.y += tuning.SurfaceBuoyancy * submerged01 * dt;
             state.SurfaceSubmersion01 = submerged01;
@@ -586,7 +597,7 @@ namespace Hecton8.Gameplay
             ref byte hitHand)
         {
             float speedSq = math.lengthsq(velocity);
-            float speed = math.isfinite(speedSq) ? math.sqrt(math.max(0f, speedSq)) : 0f;
+            float speed = MockWorldSampler.FastLengthFromSq(speedSq, 0f);
             int steps = math.max(1, (int)math.ceil(speed * math.rcp(math.max(0.05f, radius))));
             steps = math.min(steps, math.max(1, tuning.MaxCcdSteps));
             float quality01 = math.saturate(1f - math.saturate(Context.SystemStress01));
@@ -745,11 +756,11 @@ namespace Hecton8.Gameplay
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveAcousticMagnitude(float3 local, float3 previousLocal, float3 velocity, SomaticKinematicsTuningData tuning)
         {
-            float delta = math.length(local - previousLocal);
+            float delta = MockWorldSampler.FastLengthFromSq(math.lengthsq(local - previousLocal), 0f);
             if (delta <= tuning.StealthDeltaThreshold)
                 return 0f;
 
-            float jerkLie = math.length(velocity) * math.max(0f, delta - tuning.StealthDeltaThreshold);
+            float jerkLie = MockWorldSampler.FastLengthFromSq(math.lengthsq(velocity), 0f) * math.max(0f, delta - tuning.StealthDeltaThreshold);
             return math.saturate(jerkLie * 0.45f);
         }
 
@@ -1192,7 +1203,11 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!playerRoot.TryGetComponent(out SomaticKinematicsRuntime _))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 playerRoot.AddComponent<SomaticKinematicsRuntime>(); // COLD ALLOC: SomaticKinematicsRuntime[1] - SHINOBU math KCC bridge attached to player root - owner: SHINOBU_06
+#endif
+            }
         }
 
         private void RegisterRuntime()

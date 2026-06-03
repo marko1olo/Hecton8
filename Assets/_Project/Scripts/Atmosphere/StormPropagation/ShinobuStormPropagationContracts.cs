@@ -323,6 +323,13 @@ namespace Hecton8.Atmosphere
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastLengthFromSq(float lengthSq)
+        {
+            float sanitized = math.isfinite(lengthSq) ? math.max(0f, lengthSq) : 0f;
+            return sanitized * math.rsqrt(math.max(sanitized, 0.000001f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveNoiseOctaveCount(float globalQualityWeight)
         {
             float q = Sanitize01(globalQualityWeight);

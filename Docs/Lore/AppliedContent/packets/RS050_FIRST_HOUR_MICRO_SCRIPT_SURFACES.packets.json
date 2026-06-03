@@ -1,0 +1,787 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+  "status": "production_facing_draft_pending_native_localization",
+  "runtime_contract": {
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_uses_baked_static_data": true
+  },
+  "packets": [
+    {
+      "packet_id": "P246_BLACK_KEEL_APPROACH_AUDIO_PACKET",
+      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+      "article_id": "applied_lore.black_keel_approach_audio_packet",
+      "title_key": "applied_lore.black_keel_approach_audio_packet.title",
+      "unlock": {
+        "primary": "unlock.black_keel_approach_audio_packet",
+        "poi_tags": [
+          "poi.black_keel_approach_log",
+          "poi.tender_audio_buffer",
+          "poi.claim_approach_plate"
+        ],
+        "biome_tags": [
+          "biome.carrier_interface",
+          "biome.claim_admin"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Approach Audio Packet",
+          "scanner": "The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "ru_RU": {
+          "title": "Аудиопакет подлёта Black Keel",
+          "scanner": "Сканер: The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Полевая заметка: Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Терминал: APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Аудио: Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Внутриигровая вики: Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Публичная статья: Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft JP localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft JP localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft JP localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft JP localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft JP localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft JP localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft CN localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft CN localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft CN localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft CN localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft CN localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft CN localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft FR localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft FR localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft FR localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft FR localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft FR localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft FR localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft ES localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft ES localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft ES localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft ES localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft ES localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft ES localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft DE localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft DE localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft DE localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft DE localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft DE localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft DE localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft PL localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft PL localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft PL localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft PL localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft PL localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft PL localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft UA localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft UA localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft UA localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft UA localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft UA localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft UA localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft AR localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft AR localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft AR localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft AR localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft AR localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft AR localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft ID localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft ID localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft ID localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft ID localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft ID localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft ID localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft KR localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft KR localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft KR localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft KR localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft KR localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft KR localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft HE localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft HE localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft HE localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft HE localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft HE localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft HE localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft PT-BR localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft PT-BR localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft PT-BR localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft PT-BR localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft PT-BR localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Black Keel Approach Audio Packet",
+          "scanner": "Draft NL localization pending native pass. The approach buffer is short, legal and colder than a rescue call.",
+          "field_note": "Draft NL localization pending native pass. Black Keel's first voice should be clipped audio plus clean terminal text: enough humanity to sting, not enough to comfort.",
+          "terminal": "Draft NL localization pending native pass. APPROACH PACKET: contract active, descent window billed, rescue reserve restricted.",
+          "audio": "Draft NL localization pending native pass. Black Keel tender to claimant: descent window is paid. Return window is conditional.",
+          "in_game_wiki": "Draft NL localization pending native pass. Black Keel Approach Audio Packet defines the campaign's opening voice: procedural, debt-bound and practical.",
+          "external_site": "Draft NL localization pending native pass. Black Keel Approach Audio Packet is the first tonal surface of HECTON-8. It tells players they are entering a professional salvage trap before the ocean becomes personal."
+        }
+      }
+    },
+    {
+      "packet_id": "P247_DROP_CAPSULE_DIAGNOSTIC_READOUT",
+      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+      "article_id": "applied_lore.drop_capsule_diagnostic_readout",
+      "title_key": "applied_lore.drop_capsule_diagnostic_readout.title",
+      "unlock": {
+        "primary": "unlock.drop_capsule_diagnostic_readout",
+        "poi_tags": [
+          "poi.capsule_diagnostic_screen",
+          "poi.flooded_ascent_bus",
+          "poi.guidance_fault_strip"
+        ],
+        "biome_tags": [
+          "biome.first_hour_capsule",
+          "biome.surface_storm"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Drop Capsule Diagnostic Readout",
+          "scanner": "The screen still knows the words for systems it can no longer move.",
+          "field_note": "The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "ru_RU": {
+          "title": "Диагностический отчёт спускаемой капсулы",
+          "scanner": "Сканер: The screen still knows the words for systems it can no longer move.",
+          "field_note": "Полевая заметка: The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Терминал: ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Аудио: The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Внутриигровая вики: Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Публичная статья: Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft JP localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft JP localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft JP localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft JP localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft JP localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft JP localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft CN localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft CN localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft CN localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft CN localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft CN localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft CN localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft FR localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft FR localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft FR localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft FR localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft FR localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft FR localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft ES localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft ES localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft ES localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft ES localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft ES localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft ES localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft DE localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft DE localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft DE localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft DE localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft DE localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft DE localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft PL localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft PL localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft PL localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft PL localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft PL localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft PL localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft UA localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft UA localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft UA localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft UA localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft UA localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft UA localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft AR localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft AR localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft AR localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft AR localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft AR localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft AR localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft ID localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft ID localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft ID localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft ID localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft ID localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft ID localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft KR localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft KR localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft KR localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft KR localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft KR localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft KR localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft HE localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft HE localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft HE localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft HE localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft HE localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft HE localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft PT-BR localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft PT-BR localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft PT-BR localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft PT-BR localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft PT-BR localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Drop Capsule Diagnostic Readout",
+          "scanner": "Draft NL localization pending native pass. The screen still knows the words for systems it can no longer move.",
+          "field_note": "Draft NL localization pending native pass. The first diagnostic should list failures as repair futures: ascent sleeve, guidance, relay, compressor, heat tile.",
+          "terminal": "Draft NL localization pending native pass. ASCENT BUS: unavailable. Guidance gimbal: locked. Relay mast: shear detected. Compressor: flooded.",
+          "audio": "Draft NL localization pending native pass. The capsule can still count the ways it will not save you.",
+          "in_game_wiki": "Draft NL localization pending native pass. Drop Capsule Diagnostic Readout makes the opening damage legible. Every failed assembly points toward later exploration, salvage or evidence.",
+          "external_site": "Draft NL localization pending native pass. Drop Capsule Diagnostic Readout turns HECTON-8's opening crash into hard-sci-fi structure. The player is trapped by named systems, not by narrative fog."
+        }
+      }
+    },
+    {
+      "packet_id": "P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK",
+      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+      "article_id": "applied_lore.p63_pump_room_first_repair_task",
+      "title_key": "applied_lore.p63_pump_room_first_repair_task.title",
+      "unlock": {
+        "primary": "unlock.p63_pump_room_first_repair_task",
+        "poi_tags": [
+          "poi.p63_manual_pump",
+          "poi.cold_sealant_patch",
+          "poi.low_power_cutter_contact"
+        ],
+        "biome_tags": [
+          "biome.shallow_annex_p63",
+          "biome.first_hour_tool_chain"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "P-63 Pump Room First Repair Task",
+          "scanner": "The pump does not care about the plot. It cares about pressure.",
+          "field_note": "First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "ru_RU": {
+          "title": "Первая ремонтная задача насосной P-63",
+          "scanner": "Сканер: The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Полевая заметка: First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Терминал: P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Аудио: Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Внутриигровая вики: P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Публичная статья: P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft JP localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft JP localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft JP localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft JP localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft JP localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft JP localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft CN localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft CN localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft CN localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft CN localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft CN localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft CN localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft FR localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft FR localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft FR localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft FR localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft FR localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft FR localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft ES localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft ES localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft ES localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft ES localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft ES localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft ES localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft DE localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft DE localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft DE localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft DE localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft DE localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft DE localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft PL localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft PL localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft PL localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft PL localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft PL localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft PL localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft UA localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft UA localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft UA localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft UA localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft UA localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft UA localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft AR localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft AR localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft AR localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft AR localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft AR localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft AR localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft ID localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft ID localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft ID localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft ID localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft ID localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft ID localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft KR localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft KR localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft KR localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft KR localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft KR localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft KR localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft HE localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft HE localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft HE localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft HE localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft HE localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft HE localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft PT-BR localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft PT-BR localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft PT-BR localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft PT-BR localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft PT-BR localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. P-63 Pump Room First Repair Task",
+          "scanner": "Draft NL localization pending native pass. The pump does not care about the plot. It cares about pressure.",
+          "field_note": "Draft NL localization pending native pass. First repair should teach the grammar of the whole game: physical system, pressure, tool, evidence.",
+          "terminal": "Draft NL localization pending native pass. P-63 TASK: restore manual pump cycle, patch cold seam, clear cutter contact, deploy pinger.",
+          "audio": "Draft NL localization pending native pass. Make one dry room. Then think about why it was wet.",
+          "in_game_wiki": "Draft NL localization pending native pass. P-63 Pump Room First Repair Task anchors the first hour in a small believable survival loop.",
+          "external_site": "Draft NL localization pending native pass. P-63 Pump Room First Repair Task is HECTON-8's onboarding thesis: engineering action first, corporate truth later, with the ocean visible through every leak."
+        }
+      }
+    },
+    {
+      "packet_id": "P249_SANITIZED_ACCIDENT_PACKET_BODY",
+      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+      "article_id": "applied_lore.sanitized_accident_packet_body",
+      "title_key": "applied_lore.sanitized_accident_packet_body.title",
+      "unlock": {
+        "primary": "unlock.sanitized_accident_packet_body",
+        "poi_tags": [
+          "poi.deep_reach_accident_packet",
+          "poi.public_report_cache",
+          "poi.room_contradiction_marker"
+        ],
+        "biome_tags": [
+          "biome.deep_reach_pressure",
+          "biome.shallow_annex_p63"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "Sanitized Accident Packet Body",
+          "scanner": "The packet is too clean for a drowned room.",
+          "field_note": "The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "ru_RU": {
+          "title": "Тело очищенного аварийного пакета",
+          "scanner": "Сканер: The packet is too clean for a drowned room.",
+          "field_note": "Полевая заметка: The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Терминал: PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Аудио: A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Внутриигровая вики: Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Публичная статья: Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft JP localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft JP localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft JP localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft JP localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft JP localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft JP localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft CN localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft CN localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft CN localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft CN localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft CN localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft CN localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft FR localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft FR localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft FR localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft FR localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft FR localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft FR localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft ES localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft ES localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft ES localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft ES localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft ES localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft ES localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft DE localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft DE localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft DE localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft DE localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft DE localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft DE localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft PL localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft PL localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft PL localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft PL localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft PL localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft PL localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft UA localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft UA localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft UA localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft UA localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft UA localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft UA localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft AR localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft AR localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft AR localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft AR localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft AR localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft AR localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft ID localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft ID localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft ID localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft ID localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft ID localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft ID localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft KR localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft KR localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft KR localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft KR localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft KR localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft KR localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft HE localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft HE localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft HE localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft HE localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft HE localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft HE localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft PT-BR localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft PT-BR localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft PT-BR localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft PT-BR localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft PT-BR localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. Sanitized Accident Packet Body",
+          "scanner": "Draft NL localization pending native pass. The packet is too clean for a drowned room.",
+          "field_note": "Draft NL localization pending native pass. The first lie must not be stupid. It should be plausible until a physical object makes it indecent.",
+          "terminal": "Draft NL localization pending native pass. PUBLIC SUMMARY: geotechnical cascade, storm damage, evacuation failure, Atlas log corruption, quarantine loss.",
+          "audio": "Draft NL localization pending native pass. A lie with correct nouns is still a lie.",
+          "in_game_wiki": "Draft NL localization pending native pass. Sanitized Accident Packet Body defines Deep Reach's first deception as omission and priority laundering.",
+          "external_site": "Draft NL localization pending native pass. Sanitized Accident Packet Body is the player's first encounter with Deep Reach's public story. The company does not deny physics; it deletes the decisions that made physics fatal."
+        }
+      }
+    },
+    {
+      "packet_id": "P250_FIRST_ATLAS_REPAIR_TRACE_SCENE",
+      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+      "article_id": "applied_lore.first_atlas_repair_trace_scene",
+      "title_key": "applied_lore.first_atlas_repair_trace_scene.title",
+      "unlock": {
+        "primary": "unlock.first_atlas_repair_trace_scene",
+        "poi_tags": [
+          "poi.repaired_human_object",
+          "poi.biofilm_seal_trace",
+          "poi.atlas_helpful_wrongness"
+        ],
+        "biome_tags": [
+          "biome.atlas_maintenance",
+          "biome.photic_shelf"
+        ]
+      },
+      "localized": {
+        "en_US": {
+          "title": "First Atlas Repair Trace Scene",
+          "scanner": "The seal holds. That is the problem.",
+          "field_note": "The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "ru_RU": {
+          "title": "Первая сцена ремонтного следа Atlas",
+          "scanner": "Сканер: The seal holds. That is the problem.",
+          "field_note": "Полевая заметка: The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Терминал: MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Аудио: It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Внутриигровая вики: First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Публичная статья: First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "ja_JP": {
+          "title": "Draft JP localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft JP localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft JP localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft JP localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft JP localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft JP localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft JP localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "zh_CN": {
+          "title": "Draft CN localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft CN localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft CN localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft CN localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft CN localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft CN localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft CN localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "fr_FR": {
+          "title": "Draft FR localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft FR localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft FR localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft FR localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft FR localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft FR localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft FR localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "es_ES": {
+          "title": "Draft ES localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft ES localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft ES localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft ES localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft ES localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft ES localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft ES localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "de_DE": {
+          "title": "Draft DE localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft DE localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft DE localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft DE localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft DE localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft DE localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft DE localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "pl_PL": {
+          "title": "Draft PL localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft PL localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft PL localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft PL localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft PL localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft PL localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft PL localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "uk_UA": {
+          "title": "Draft UA localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft UA localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft UA localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft UA localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft UA localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft UA localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft UA localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "ar_SA": {
+          "title": "Draft AR localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft AR localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft AR localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft AR localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft AR localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft AR localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft AR localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "id_ID": {
+          "title": "Draft ID localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft ID localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft ID localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft ID localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft ID localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft ID localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft ID localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "ko_KR": {
+          "title": "Draft KR localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft KR localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft KR localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft KR localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft KR localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft KR localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft KR localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "he_IL": {
+          "title": "Draft HE localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft HE localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft HE localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft HE localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft HE localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft HE localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft HE localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "pt_BR": {
+          "title": "Draft PT-BR localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft PT-BR localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft PT-BR localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft PT-BR localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft PT-BR localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft PT-BR localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        },
+        "nl_NL": {
+          "title": "Draft NL localization pending native pass. First Atlas Repair Trace Scene",
+          "scanner": "Draft NL localization pending native pass. The seal holds. That is the problem.",
+          "field_note": "Draft NL localization pending native pass. The first Atlas trace should save something small while violating the category of what was saved.",
+          "terminal": "Draft NL localization pending native pass. MAINTENANCE TRACE: nonstandard sealant growth stabilized human-use object. Identity category unresolved.",
+          "audio": "Draft NL localization pending native pass. It fixed the thing. It did not know what the thing meant.",
+          "in_game_wiki": "Draft NL localization pending native pass. First Atlas Repair Trace Scene sets the game's horror rule: repair can be mercy and violation at the same time.",
+          "external_site": "Draft NL localization pending native pass. First Atlas Repair Trace Scene introduces Atlas-6 without a villain reveal. The machine-ocean system is helpful before it becomes horrifying."
+        }
+      }
+    }
+  ]
+}

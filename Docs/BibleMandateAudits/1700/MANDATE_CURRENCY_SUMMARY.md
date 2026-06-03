@@ -24,3 +24,4 @@ Total mandates scanned: 80
 
 - Yellow mandates are not automatically wrong. They mean the root bible route exists, but the source mandate needs review for missing explicit quality/proof wording or legacy terms.
 - Red mandates mean route/group coverage is structurally missing and must be fixed before using that mandate as current authority.
+- `MANDATE_ACTUALITY_INDEX.md` and per-system `MANDATE_ACTUALITY.md` files now define the current interpretation to use until yellow mandate source files are refreshed.

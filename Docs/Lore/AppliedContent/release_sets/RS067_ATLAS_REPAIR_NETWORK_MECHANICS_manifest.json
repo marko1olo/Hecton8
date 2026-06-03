@@ -1,0 +1,15 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+  "status": "production_facing_draft_pending_native_localization",
+  "packets": [
+    "P331_CONDUCTIVE_BIOFILM_REPAIR_BUS",
+    "P332_ACOUSTIC_FILTER_ORGAN_RELAY",
+    "P333_SHELL_SEALANT_PRESSURE_GROWTH",
+    "P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP",
+    "P335_VENT_MICRONODE_POWER_NEST"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS067_ATLAS_REPAIR_NETWORK_MECHANICS.packets.json"
+  ]
+}

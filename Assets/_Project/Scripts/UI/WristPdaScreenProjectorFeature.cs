@@ -4,23 +4,17 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine.Serialization;
 
 namespace Hecton8.UI.Rendering
 {
     public sealed class WristPdaScreenProjectorFeature : ScriptableRendererFeature
     {
-#if UNITY_EDITOR
-        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader";
-#endif
-
         [System.Serializable]
         private sealed class FeatureSettings
         {
-            public Shader shader;
+            [FormerlySerializedAs("shader")]
+            public Material material;
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
         }
 
@@ -163,25 +157,8 @@ namespace Hecton8.UI.Rendering
 
         public override void Create()
         {
-#if UNITY_EDITOR
-            if (settings != null && settings.shader == null)
-                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
             _pass ??= new PdaProjectorPass();
-            Shader shader = settings != null ? settings.shader : null;
-            if (shader == null)
-            {
-                CoreUtils.Destroy(_material);
-                _material = null;
-                return;
-            }
-
-            if (_material == null || _material.shader != shader)
-            {
-                CoreUtils.Destroy(_material);
-                _material = CoreUtils.CreateEngineMaterial(shader);
-                _material.hideFlags = HideFlags.DontSave;
-            }
+            _material = settings != null ? settings.material : null;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -202,7 +179,6 @@ namespace Hecton8.UI.Rendering
 
         protected override void Dispose(bool disposing)
         {
-            CoreUtils.Destroy(_material);
             _material = null;
         }
     }

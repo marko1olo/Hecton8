@@ -2472,16 +2472,17 @@ MonoBehaviour:
   quickbarSize: {x: 244, y: 64}
   quickbarSlotSize: 44
   quickbarSlotGap: 8
-  acousticRadarShader: {fileID: 0}
+  acousticRadarMaterial: {fileID: 2100000, guid: 619be8bda07c4b2d9bb4f4915f78c8c2, type: 2}
   acousticRadarOpacity: 0.18
   acousticRadarInnerEdge: 0.74
   acousticRadarBandThickness: 0.18
   acousticRadarWaveAmplitude: 2.4
   acousticRadarPulseFrequency: 3.2
   acousticRadarGlitchStrength: 0.2
-  ditheredUiBackgroundShader: {fileID: 4800000, guid: 021ae9f459be4094b8800c25a19d5d9e, type: 3}
-  dataRecPulseShader: {fileID: 4800000, guid: 129f45d4c7583aa40a6e7c83c60d446a, type: 3}
-  threatChevronShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
+  ditheredUiBackgroundMaterial: {fileID: 2100000, guid: d2b9af2c785f4d1e885b6bf643bdba02, type: 2}
+  dataRecPulseMaterial: {fileID: 2100000, guid: e3f43a96c73d44ac99c32d94c8cfec38, type: 2}
+  threatChevronMaterial: {fileID: 2100000, guid: a8512bd7412f4b46903d53022b9a0c1e, type: 2}
+  _threatChevronStaticMesh: {fileID: 4300000, guid: f842ecd7ee1f487fa7e631164e81fbea, type: 2}
   threatChevronColor: {r: 1, g: 0.18, b: 0.2, a: 0.88}
   threatChevronThreshold: 0.62
   threatChevronRadiusMeters: 50

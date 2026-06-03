@@ -1,10 +1,17 @@
 ---
 packet_id: P060_FIRST_HOUR_SPINE
+release_set_id: RS012_PLAYER_LIABILITY_ESCAPE
 article_id: hecton8.first_hour_spine
+unlock_id: unlock.first_first_hour_spine
+poi_tags: poi.shallow_pump_annex;poi.first_safe_module
+biome_tags: biome.photic_shelf;biome.crash_shelf
 locale: en_US
 surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
+direction: ltr
+localization_status: source_ready
+localization_flags: 0
 ---
 
 # First Hour Spine

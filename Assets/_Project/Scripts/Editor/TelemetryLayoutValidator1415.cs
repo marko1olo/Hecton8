@@ -126,7 +126,7 @@ BiolumPulseTelemetryEntry|Frame:0,ActiveGlowingInstances:4,OscillatorComputeTime
         private static Type ResolveType(string typeName, string fields, out string failureDetail)
         {
             failureDetail = string.Empty;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            global::System.Reflection.Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int a = 0; a < assemblies.Length; a++)
             {
                 Type[] types;

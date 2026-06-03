@@ -11,36 +11,35 @@ Required classification for every listed line:
 - RUNTIME_VIOLATION: can execute in gameplay/player runtime and violates the bible/mandate hot-path law.
 - FALSE_POSITIVE: static pattern matched wording that is not the risky API or code path.
 
-Total runtime suspects: 249. Full raw list: `../_scans/01_generated_assets_runtime_risks.txt`.
+Raw generated runtime suspects: 250. Line-level reconciliation: 249 classified lines in `LINE_LEVEL_CLASSIFICATION.md`. Full raw list: `../_scans/01_generated_assets_runtime_risks.txt`.
 
-## Unity scene lookup (10)
+## Unity scene lookup (11)
 
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1012:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1199:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:25:            if (cameraRig == null && Camera.main != null)
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:26:                cameraRig = Camera.main.transform;
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6834:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6851:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1215:            obj.transform.GetComponentsInChildren(true, _rendererScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1413:                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\WorldLODSceneBootstrap.cs:107:                root.GetComponentsInChildren(_includeInactiveLODGroups, _sceneLODGroupBuffer);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6880:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6897:            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ResourceDistributionDirector.cs:1378:            if (_authoredOrePrefab != null && _authoredOrePrefab.GetComponent<ResourceNode>() == null)
 - [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\CreatureDamageManager.cs:229:            GetComponentsInChildren(true, _rendererScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4425:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7434:            GetComponentsInChildren(true, _logicalLodColliderScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:4438:            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7382:            GetComponentsInChildren(true, _logicalLodColliderScratch);
 
-## Runtime mesh/material mutation (11)
+## Runtime mesh/material mutation (9)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\FloraDataTemplate.cs:186:        [Tooltip("Local-space bounds size used by proxy generation and primitive collider fitting. MeshColliders remain forbidden.")]
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Outposts\MarauderOutpostGenerationService.cs:2184:            mesh.RecalculateNormals();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5646:                result = new Mesh();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5849:                result = new Mesh();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5968:                result = new Mesh();
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6834:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6837:                MeshCollider meshCollider = meshColliders[i];
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6885:            Hecton8.Core.H8Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\SargassumGlobalDragManager.cs:4048:            mesh.RecalculateNormals();
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7756:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
-- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7760:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5660:                result = new Mesh();
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5866:                result = new Mesh();
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:5988:                result = new Mesh();
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6880:            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6883:                MeshCollider meshCollider = meshColliders[i];
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs:6931:            Hecton8.Core.H8Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7704:            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
+- [ ] CLASSIFY: Assets\_Project\Scripts\Fauna\FaunaBrain.cs:7708:                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
 
-## Native allocation or persistent lifetime (125)
+## Native allocation or persistent lifetime (123)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:94:                samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:95:                sources = new NativeArray<BiomeTransitionFogSource>(
@@ -48,67 +47,68 @@ Total runtime suspects: 249. Full raw list: `../_scans/01_generated_assets_runti
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:100:                toAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:101:                playerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:102:                results = new NativeArray<BiomeTransitionFogResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:806:                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:2316:                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1519:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1947:                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:1472:                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:629:            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:631:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs:828:                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:690:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:695:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:700:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:705:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:710:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:715:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:720:                Allocator.Persistent,
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1162:                    Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2132:                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:687:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:692:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:697:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:702:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:707:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:712:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:717:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1178:                    Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\GPUScatterDirector.cs:2257:            _visibleCountReadback.Data = new NativeArray<uint>(
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\GPUScatterDirector.cs:2259:                Allocator.Persistent,
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:106:                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:107:                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:108:                reductions = new NativeArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSandboxAbyssalShelfSmokeTester.cs:109:                summary = new NativeArray<HectonSandboxAbyssalShelfSmokeSummary>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2661:        private const Allocator DataVaultExemptPersistentRecordAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2662:        private const Allocator DataVaultExemptPersistentDeltaAllocator = Allocator.Persistent;
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\PersistentWorldRegistry.cs:2663:        private const Allocator DataVaultExemptPersistentTombstoneAllocator = Allocator.Persistent;
-- Additional lines omitted here: 95. Use the raw scan file for full classification.
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:4816:                Allocator.Persistent,
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5598:                Allocator.Persistent,
+- Additional lines omitted here: 93. Use the raw scan file for full classification.
 
-## Runtime debug logging (104)
+## Runtime debug logging (108)
 
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalFluidDecalManager.cs:943:                    Hecton8.Core.H8Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\BioCableIK.cs:998:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:45:                Hecton8.Core.H8Debug.Log(
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\BioCableIK.cs:708:                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BoidStructValidator.cs:58:                Hecton8.Core.H8Debug.LogError(failureMessage);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\BoidStructValidator.cs:67:                Hecton8.Core.H8Debug.Log(
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumZone.cs:454:            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1414:                Hecton8.Core.H8Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:412:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:428:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumManager.cs:656:            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntimeBootstrap.cs:48:            Hecton8.Core.H8Debug.LogWarning(
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:1068:                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\AbyssalThermalManager.cs:4345:                H8Debug.LogError("[AbyssalThermalManager] Missing bioCableMaterial asset. BioCableIK rigs are disabled until an authored material is assigned.", this);
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:249:                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:262:                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\DynamicResolutionScaler.cs:291:            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1667:                Hecton8.Core.H8Debug.LogException(exception);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biolum\HectonBiolumZone.cs:454:            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1414:                Hecton8.Core.H8Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1969:                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntimeBootstrap.cs:48:            Hecton8.Core.H8Debug.LogWarning(
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\DepthZoneDirector.cs:691:            H8Debug.Log("[DepthZone] Entered.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:206:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:213:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:537:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:552:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:558:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:645:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:668:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:213:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1179:                Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1181:                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1187:            Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor bake preset creation is unavailable because the Amplify package is not installed.");
-- [ ] CLASSIFY: Assets\_Project\Scripts\World\ImpostorSystem.cs:1208:            Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Batch bake scan complete. Candidates={bakedCount}");
-- Additional lines omitted here: 74. Use the raw scan file for full classification.
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\FaunaSpatialHashRegistry.cs:670:                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs:2899:                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:215:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:222:            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:552:                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:569:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:575:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:665:                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\CullingManager.cs:688:            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\GroundPenetratingRadarRuntime.cs:1694:                Hecton8.Core.H8Debug.LogException(exception);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonSpatialHash.cs:1225:                Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5392:            Hecton8.Core.H8Debug.Log(
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:5402:            Hecton8.Core.H8Debug.LogError("[HectonMapMagicVegetationBridge] Loop guard hit.");
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\FloraInteractionManager.cs:8127:                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
+- [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonIndirectVegetationRenderer.cs:1688:                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
+- Additional lines omitted here: 78. Use the raw scan file for full classification.
 
 ## Hot Unity phase method (2)
 
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonWorldShellVisualDriver1428.cs:28:        private void LateUpdate()
 - [ ] CLASSIFY: Assets\_Project\Scripts\World\HectonWorldShellController1428.cs:33:        private void Update()
+
