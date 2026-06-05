@@ -433,7 +433,9 @@
       <select id="localeSelect" aria-label="Locale"></select>
       <select id="releaseSetSelect" aria-label="Release set"></select>
       <select id="statusSelect" aria-label="Localization status"></select>
+      <select id="statusBucketSelect" aria-label="Status bucket"></select>
       <select id="spoilerSelect" aria-label="Spoiler state"></select>
+      <select id="sourceVoiceSelect" aria-label="Source voice"></select>
     </div>
   </header>
 
@@ -526,8 +528,9 @@
       surface: "",
       locale: preferredLocale,
       releaseSet: "",
-      status: "",
+      statusBucket: "",
       spoiler: "",
+      sourceVoice: "",
       packetSurface: "",
       query: "",
       parseWarnings: [],
@@ -550,7 +553,9 @@
       localeSelect: document.getElementById("localeSelect"),
       releaseSetSelect: document.getElementById("releaseSetSelect"),
       statusSelect: document.getElementById("statusSelect"),
+      statusBucketSelect: document.getElementById("statusBucketSelect"),
       spoilerSelect: document.getElementById("spoilerSelect"),
+      sourceVoiceSelect: document.getElementById("sourceVoiceSelect"),
       packetSurfaceSelect: document.getElementById("packetSurfaceSelect"),
       searchInput: document.getElementById("searchInput"),
       clearClusterButton: document.getElementById("clearClusterButton"),
@@ -700,8 +705,15 @@
       return "other";
     }
 
-    function getStatusClassName(status) {
-      const bucket = getStatusBucket(status);
+    function getRowStatusBucket(row) {
+      if (row.status_bucket) {
+        return row.status_bucket;
+      }
+      return getStatusBucket(row.localization_status);
+    }
+
+    function getStatusClassName(status, bucketOpt) {
+      const bucket = bucketOpt || getStatusBucket(status);
       if (bucket === "ready") {
         return "status-ready";
       }
@@ -714,8 +726,8 @@
       return "status-not_indexed";
     }
 
-    function getStatusDisplay(status) {
-      return (status || "missing") + " / " + getStatusBucket(status);
+    function getStatusDisplay(status, bucketOpt) {
+      return (status || "missing") + " / " + (bucketOpt || getStatusBucket(status));
     }
 
     function getLocaleInfo(locale) {
@@ -784,6 +796,9 @@
     }
 
     function getRowSpoilerState(row) {
+      if (row.spoiler_tier) {
+        return row.spoiler_tier;
+      }
       const clusters = getRowClusters(row);
       if (clusters.length === 0) {
         return "not_indexed";
@@ -965,6 +980,12 @@
           continue;
         }
         if (state.status && row.localization_status !== state.status) {
+          continue;
+        }
+        if (state.statusBucket && getRowStatusBucket(row) !== state.statusBucket) {
+          continue;
+        }
+        if (state.sourceVoice && row.source_voice !== state.sourceVoice) {
           continue;
         }
         if (state.spoiler && getRowSpoilerState(row) !== state.spoiler) {
@@ -1205,6 +1226,18 @@
         return state.packetCache.get(row.packet_id);
       }
 
+      if (row.packet_json_path) {
+        try {
+          const json = await loadPacketFile(row.packet_json_path);
+          if (Array.isArray(json.packets)) {
+            return state.packetCache.get(row.packet_id) || null;
+          }
+          return json;
+        } catch (pathError) {
+          state.packetLoadErrors.push(row.packet_id + " (path): " + pathError.message);
+        }
+      }
+
       const directPath = "packets/" + row.packet_id + ".json";
       try {
         await loadPacketFile(directPath);
@@ -1226,16 +1259,45 @@
       state.packetBundleFallbackCount = 0;
       state.packetDirectFallbackCount = 0;
       updateGlobalStatus();
+      
+      const jsonPathMap = new Map();
       const releasePacketMap = new Map();
 
       for (let i = 0; i < state.surfaceRows.length; i += 1) {
         const row = state.surfaceRows[i];
-        let packetSet = releasePacketMap.get(row.release_set_id);
-        if (!packetSet) {
-          packetSet = new Set();
-          releasePacketMap.set(row.release_set_id, packetSet);
+        if (row.packet_json_path) {
+          let packetSet = jsonPathMap.get(row.packet_json_path);
+          if (!packetSet) {
+            packetSet = new Set();
+            jsonPathMap.set(row.packet_json_path, packetSet);
+          }
+          packetSet.add(row.packet_id);
+        } else {
+          let packetSet = releasePacketMap.get(row.release_set_id);
+          if (!packetSet) {
+            packetSet = new Set();
+            releasePacketMap.set(row.release_set_id, packetSet);
+          }
+          packetSet.add(row.packet_id);
         }
-        packetSet.add(row.packet_id);
+      }
+
+      const jsonPaths = Array.from(jsonPathMap.keys()).sort();
+      for (let i = 0; i < jsonPaths.length; i += 1) {
+        const path = jsonPaths[i];
+        try {
+          await loadPacketFile(path);
+          state.packetBundleLoadedCount += 1;
+        } catch (error) {
+          state.packetBundleFallbackCount += 1;
+          const packetIds = Array.from(jsonPathMap.get(path)).sort();
+          for (let p = 0; p < packetIds.length; p += 1) {
+            const pid = packetIds[p];
+            if (!state.packetCache.has(pid)) {
+              state.packetLoadErrors.push(pid + " path error: " + error.message);
+            }
+          }
+        }
       }
 
       const releaseSets = Array.from(releasePacketMap.keys()).sort();
@@ -1484,11 +1546,23 @@
       setSelectOptions(nodes.statusSelect, statuses, state.status);
       state.status = nodes.statusSelect.value;
 
-      const spoilerValues = Array.from(new Set(state.clusterRows.map((row) => row.spoiler_tier).filter(Boolean))).sort();
+      const statusBuckets = [{ value: "", label: "All status buckets" }].concat(
+        uniqueSorted(state.surfaceRows.map(r => ({status_bucket: getRowStatusBucket(r)})), "status_bucket").map((value) => ({ value, label: value }))
+      );
+      setSelectOptions(nodes.statusBucketSelect, statusBuckets, state.statusBucket);
+      state.statusBucket = nodes.statusBucketSelect.value;
+
+      const spoilerValues = Array.from(new Set(state.surfaceRows.concat(state.clusterRows).map((row) => row.spoiler_tier).filter(Boolean))).sort();
       const spoilers = [{ value: "", label: "All spoiler states" }, { value: "not_indexed", label: "spoiler not indexed" }]
         .concat(spoilerValues.map((value) => ({ value, label: "spoiler " + value })));
       setSelectOptions(nodes.spoilerSelect, spoilers, state.spoiler);
       state.spoiler = nodes.spoilerSelect.value;
+      
+      const sourceVoices = [{ value: "", label: "All source voices" }].concat(
+        uniqueSorted(state.surfaceRows.filter(r => r.source_voice), "source_voice").map((value) => ({ value, label: value }))
+      );
+      setSelectOptions(nodes.sourceVoiceSelect, sourceVoices, state.sourceVoice);
+      state.sourceVoice = nodes.sourceVoiceSelect.value;
 
       setSelectOptions(nodes.packetSurfaceSelect, packetSurfaceOptions, state.packetSurface);
       state.packetSurface = nodes.packetSurfaceSelect.value;
@@ -1624,8 +1698,18 @@
       refreshAfterControlChange();
     });
 
+    nodes.statusBucketSelect.addEventListener("change", () => {
+      state.statusBucket = nodes.statusBucketSelect.value;
+      refreshAfterControlChange();
+    });
+
     nodes.spoilerSelect.addEventListener("change", () => {
       state.spoiler = nodes.spoilerSelect.value;
+      refreshAfterControlChange();
+    });
+    
+    nodes.sourceVoiceSelect.addEventListener("change", () => {
+      state.sourceVoice = nodes.sourceVoiceSelect.value;
       refreshAfterControlChange();
     });
 

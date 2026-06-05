@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Deep Reach Liability Chain
 
-Deep Reach guilt is strongest where clean reports meet broken hardware. The flood was real; the avoidable part is recorded in margins, clocks, doors and custody labels.
+While the Great Tide was a natural, verifiable phenomenon, the extent of Deep Reach's culpability lies in the delta between their official incident reports and the physical state of the compromised hardware. The catastrophic flooding of HECTON-8 was unavoidable, but the ensuing loss of life was profoundly exacerbated by corporate policy. Discrepancies are permanently recorded in altered safety margins, frozen time-stamps on quarantine doors, and delayed authorization logs for primary evacuation routes.
 
 ## Scanner
 

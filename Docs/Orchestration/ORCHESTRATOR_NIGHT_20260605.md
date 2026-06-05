@@ -6651,7 +6651,7 @@ Current state:
 - Flora/geology/coral placement remains blocked from scene production until surface and player proof gates pass.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 Static Rule And Lane Contract Audit Cursor 94
+## 2026-06-06 Static Rule And Lane Contract Audit Cursor 89
 
 Current front:
 
@@ -6992,7 +6992,7 @@ Current state:
 - VSPQ, mesh-prefab queue, foam-contact queue, visual proof capture guardrails, ProofGate, and audio route/mix/cue matrices now have static validators or route gates.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 H8_1475 ProofGate Contract Extraction Cursor 93
+## 2026-06-06 H8_1475 ProofGate Contract Extraction Cursor 94
 
 Current front:
 
@@ -7021,7 +7021,7 @@ Current state:
 - No canonical h8_1475 packet exists from this static work.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 Asset Summary Count Revalidation Cursor 94
+## 2026-06-06 Asset Summary Count Revalidation Cursor 95
 
 Current front:
 
@@ -7039,7 +7039,7 @@ Current state:
 - Asset queue routing is static-consistent at `62` curated CSV files and `14650` rows.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 Night Controller Lane Contract Validation Cursor 95
+## 2026-06-06 Night Controller Lane Contract Validation Cursor 96
 
 Current front:
 
@@ -7058,7 +7058,7 @@ Current state:
 - Night controller owner files now have explicit `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET` contracts.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 Controller Refresh After Compaction Cursor 96
+## 2026-06-06 Controller Refresh After Compaction Cursor 97
 
 Current front:
 
@@ -7091,7 +7091,7 @@ Next action:
 - Integrate MapMagic erosion/job safety audit when Mill returns.
 - Do not place flora/geology/coral into production route until base water/shore/terrain/sky and player/HUD/tool proof cease being rejected.
 
-## 2026-06-06 MapMagic Erosion Job Blocker Integration Cursor 97
+## 2026-06-06 MapMagic Erosion Job Blocker Integration Cursor 98
 
 Current front:
 
@@ -7113,7 +7113,7 @@ Current verdict:
 - `ErosionTestHarness` still uses `ScheduleFourPhaseSlicedWithDeltaApply` and pointer-based cleanup, so the risky path remains in the codebase.
 - No code patch was applied because Unity/import/compiler/dotnet gate was red.
 
-## 2026-06-06 Active h8_1914 Repeat Steer Cursor 98
+## 2026-06-06 Active h8_1914 Repeat Steer Cursor 99
 
 Current front:
 
@@ -7131,7 +7131,7 @@ Current state:
 - Any output from this active batch must be treated as diagnostic rejection-only.
 - No further Unity process should be started while the gate is red.
 
-## 2026-06-06 MapMagic Hydraulic Erosion Job Safety Cursor 98
+## 2026-06-06 MapMagic Hydraulic Erosion Job Safety Cursor 100
 
 Current front:
 
@@ -7163,7 +7163,7 @@ Current state:
 - The ProbeF log remains a blocker until current Unity import/re-run proves the source bypass is active and no `HydraulicErosionDeltaApplyJob` or TempJob leak remains.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
-## 2026-06-06 Rule Routing Shim Repair Cursor 99
+## 2026-06-06 Rule Routing Shim Repair Cursor 101
 
 Current front:
 
@@ -7181,8 +7181,12 @@ Controller actions:
 Validation:
 
 - `python -B Tools/Docs/TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS`, `mandates=80`.
+- `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check` returned exit `0` after regenerating `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` from live root sources.
+- `python Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS` for `9` task files.
 - Scoped replacement-character and question-run scans over the active shim files and routing test returned `0`.
 - Old shim archive files exist: `vscode_AGENTS.md` `33701` bytes, `cursor_rules_AGENTS.md` `33701` bytes, `github_unity-anime-dev.agent.md` `2316` bytes.
+- Recent orchestration cursor scan returned unique sequence `90-101`.
+- Scoped `git diff --check` over the changed rule-routing files returned CRLF normalization warnings only.
 
 Current state:
 

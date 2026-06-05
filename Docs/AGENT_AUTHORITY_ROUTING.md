@@ -52,6 +52,8 @@ Read `HECTON8_ORCHESTRATOR.md` only when the agent is actually creating/judging 
 | Orchestrator/controller work | `HECTON8_ORCHESTRATOR.md` including `AGENT LANE CONTRACTS`; use `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` and GUI/process tools only when controlling external IDE/browser/GUI sessions or local external-agent processes; then task-relevant bibles/mandates |
 | Documentation/rule routing work | `AGENTS.md`, this file, `PROJECT_BIBLES.md`, `.agents-skills/README.md`, `quality.md` for acceptance/proof language, `Docs/QUALITY_GATES.md` when executable gates or proof labels change, `Docs/DOC_GOVERNANCE.md`, `Docs/README.md`, live rule sources and generators. Use exactly `2-8` mandates only for technical policy/report work, not typo-only edits |
 
+Reference image folder before design/implementation/review/proof means the mandatory player-visible reference folder listed in the player-visible task row above must be read before judging or changing water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome work.
+
 ## Authority Receipt
 
 For non-trivial tasks, final chat or explicit batch log must include a concise authority receipt:
