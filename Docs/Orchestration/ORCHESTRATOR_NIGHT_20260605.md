@@ -3522,7 +3522,7 @@ Validation:
 Boundary at the time of this pass, superseded by Continuation 52:
 
 - P515-P517 are accepted STATIC_DOC packets only.
-- No RS105 release set, manifest, packet bundle, source CSV row, route card, generated page, h8bin/DataMonolith bake, Unity placement, runtime string-pool extraction, native localization review, public website/wiki publication, or player-build proof exists for P515-P517.
+- Superseded by Continuation 52: RS105 now exists as static-source candidate evidence only. This pass remains packet-shape evidence, not source CSV, route-card, generated-page, h8bin/DataMonolith, Unity, runtime, native localization, public website/wiki, or player-build proof.
 
 ## 2026-06-05 Documentation Completeness Continuation 52
 
