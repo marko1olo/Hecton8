@@ -56,6 +56,7 @@ This directory is the current asset-front control surface. It is not Unity accep
 37. `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
 38. `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md`
 39. `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md`
+40. `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md`
 
 ## Current P0 Blockers
 
@@ -88,6 +89,7 @@ Use these files before assigning or doing asset work:
 - No-mutation Unity readback field manifest: `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` and `.csv`.
 - Visual reference capture gap table: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md` and `.csv`.
 - Visual reference critique checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md` and `.csv`.
+- Visual reference path continuity: `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md` and `.csv`.
 - H8 proof dependency graph: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md` and `.csv`.
 - P0 target-table routing synthesis: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md` and `.csv`.
 - Asset owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.md` and `.csv`.
@@ -166,6 +168,7 @@ If the gate is red, continue static/source documentation only.
 - Unity readback field owner: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` before `ASSET_OWNER_26` no-mutation readback execution.
 - Visual capture gap owner: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` before any product-face screenshot acceptance attempt.
 - Visual critique owner: `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` before any h8_1475 screenshot pass/fail category review.
+- Visual reference path owner: `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` before future reviewers cite mandatory reference images.
 - H8 proof dependency owner: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` before executing or triaging the canonical h8_1475 packet.
 - P0 target routing synthesis owner: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` before choosing between material, prefab, audio, h8_1475, or visual-gap owner routes.
 - Owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.csv` before recreating, redistributing, or assuming missing asset owner packet IDs.

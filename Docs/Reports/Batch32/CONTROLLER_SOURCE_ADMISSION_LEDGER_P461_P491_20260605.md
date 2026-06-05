@@ -1,4 +1,4 @@
-# Controller Source Admission Ledger P461-P523
+# Controller Source Admission Ledger P461-P526
 
 Evidence class: STATIC_CONTROLLER_SYNTHESIS.
 Runtime proof: absent.
@@ -38,11 +38,12 @@ This ledger separates authoring packets, source candidates, and source-admitted 
 | P515-P517 | STATIC_SOURCE_CANDIDATE | RS105 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
 | P518-P520 | STATIC_SOURCE_CANDIDATE | RS106 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
 | P521-P523 | STATIC_SOURCE_CANDIDATE | RS107 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
+| P524-P526 | STATIC_SOURCE_CANDIDATE | RS108 candidate bundle exists; JSON parses; 3 packets; 15 locales per packet; required surface keys present; runtime/import/native/binary/page/publication readiness false. |
 
 ## Admission Rules
 
-- Do not add P465-P523 to source CSV, route cards, generated pages, h8bin, or Unity binding from this ledger.
-- Do not treat RS094, RS095, RS096, RS097, RS098, RS099, RS100, RS101, RS102, RS103, RS104, RS105, RS106, or RS107 as importer-ready. They are source-candidate artifacts only.
+- Do not add P465-P526 to source CSV, route cards, generated pages, h8bin, or Unity binding from this ledger.
+- Do not treat RS094, RS095, RS096, RS097, RS098, RS099, RS100, RS101, RS102, RS103, RS104, RS105, RS106, RS107, or RS108 as importer-ready. They are source-candidate artifacts only.
 - Do not treat non-English packet rows as native-reviewed. All non-English packet rows remain draft_machine_or_llm until native, RTL/CJK/font/layout, source extraction, and runtime proof exist.
 - Runtime must consume baked tables/string pools only after the approved authoring bridge. Runtime must not parse Markdown or these JSON candidate files.
 

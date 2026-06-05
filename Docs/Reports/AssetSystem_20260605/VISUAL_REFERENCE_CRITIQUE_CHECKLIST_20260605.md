@@ -31,7 +31,10 @@ Relevant authority reads: `AGENTS.md`, `TASTE.md`, `VISION_LOCKS.md`, `water.md`
 
 ## Mandatory Reference Inventory
 
-Reference folder: `Docs/OBYAZATELNYE PRIMERY PO KARTINKAM` (actual folder uses Cyrillic basename).
+Current reference folder: `Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/`.
+Path continuity ledger: `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`.
+
+Older reports may reference `Docs/OBYAZATELNYE PRIMERY PO KARTINKAM` or the Cyrillic basename. Those paths are stale in the current worktree. Use the continuity ledger before review.
 
 | Reference | Dimensions | Review signal |
 |---|---:|---|

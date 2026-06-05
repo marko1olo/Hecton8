@@ -110,6 +110,9 @@ Created and accepted as static authoring packets only:
 - P521 Public/Wiki Spoiler-Safe Crosslink Label
 - P522 PDA Related Article Unlock Hint
 - P523 Scanner Relation Edge Suppression Reason
+- P524 Public Archive Review Queue Stamp
+- P525 Wiki Page Template Hold Notice
+- P526 PDA Evidence Link Audit Trail
 - P513 Archive Resolution Hold Prompt
 - P514 PDA Next Proof Checklist
 
@@ -124,6 +127,8 @@ Latest packet output:
 - Controller-local: completed RS106 source-candidate bundle for P518-P520 only; validation PASS.
 - Controller-validated: integrated `P521_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE.production.md`, `P522_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE.production.md`, and `P523_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE.production.md`; byte/codepoint validation PASS.
 - Controller-validated: completed RS107 source-candidate bundle for P521-P523 only; validation PASS.
+- Controller-local: completed `P524_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE.production.md`, `P525_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE.production.md`, and `P526_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE.production.md`; validation PASS with ASCII-safe draft locale rows.
+- Controller-local: completed RS108 source-candidate bundle for P524-P526 only; validation PASS.
 - Worker/controller integrated: completed `P509_PUBLIC_ARCHIVE_CUSTODY_DIVERGENCE_BRIDGE.production.md`, `P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE.production.md`, and `P511_PDA_EVIDENCE_FAMILY_REVIEW_PROMPT_BRIDGE.production.md`; controller validation PASS.
 - Controller-local: completed `P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE.production.md`; validation PASS; not included in RS103.
 - Controller-local: completed `P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.production.md`, `P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.production.md`, and `P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.production.md`; controller byte/codepoint validation PASS. Console rendering can display RTL/CJK text incorrectly and is not file evidence.
@@ -175,8 +180,18 @@ Latest controller plan:
 - Boundary: RS094-RS096 source-candidate JSON-shape audit only; no source CSV/runtime/page/native/h8bin readiness.
 - `Docs/Reports/Batch32/CONTROLLER_NATIVE_LOCALIZATION_BACKLOG_P480_P491_20260605.md`
 - Boundary: P480-P491 locale rows are present and correctly marked draft, but no native/font/layout/runtime/publication proof exists.
+- `Docs/Reports/Batch32/CONTROLLER_NATIVE_LOCALIZATION_BACKLOG_P509_P523_20260605.md`
+- Boundary: P509-P523 locale rows are present and correctly marked draft; P521-P523 rows are ASCII-safe machine drafts; no native/font/layout/runtime/publication proof exists.
+- `Docs/Reports/Batch32/CONTROLLER_NATIVE_LOCALIZATION_BACKLOG_P509_P526_20260605.md`
+- Boundary: P509-P526 locale rows are present and correctly marked draft; P521-P526 rows are ASCII-safe machine drafts; no native/font/layout/runtime/publication proof exists.
 - `Docs/Reports/Batch32/CONTROLLER_SOURCE_BAKE_GATE_PLAN_P461_P491_20260605.md`
 - Boundary: future source/bake/runtime proof order only; no source admission or runtime readiness.
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_BLOCKER_MAP_RS099_RS107_20260605.md`
+- Boundary: RS099-RS107 blocker map only; no source admission/runtime/page/native/h8bin/publication readiness.
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_BLOCKER_MAP_RS099_RS108_20260605.md`
+- Boundary: RS099-RS108 blocker map only; no source admission/runtime/page/native/h8bin/publication readiness.
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_EXECUTION_PLAN_RS099_RS107_20260605.md`
+- Boundary: RS099-RS107 source-admission execution plan only; no source CSV/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PUBLIC_ARCHIVE_INDEX_SURFACE_MAP_P492_P495_20260605.md`
 - Boundary: P492-P495 archive/index/string-pool surface roles only; no source/runtime/page/native/h8bin readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`
@@ -187,6 +202,8 @@ Latest controller plan:
 - Boundary: P500-P520 public/wiki/PDA/scanner/terminal surface roles only; no source/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PUBLIC_WIKI_SURFACE_MAP_P500_P523_20260605.md`
 - Boundary: P500-P523 public/wiki/PDA/scanner/terminal surface roles only; no source/runtime/page/native/h8bin/publication readiness.
+- `Docs/Reports/Batch32/CONTROLLER_PUBLIC_WIKI_SURFACE_MAP_P500_P526_20260605.md`
+- Boundary: P500-P526 public/wiki/PDA/scanner/terminal surface roles only; no source/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PUBLIC_EVIDENCE_GOVERNANCE_EXTENSION_P500_P502_RS099_20260605.md`
 - Boundary: P500-P502 static packet output plus RS099 source-candidate output only; no source CSV/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_RS100_PUBLIC_EVIDENCE_CLEANUP_CONFLICT_20260605.md`
@@ -207,6 +224,8 @@ Latest controller plan:
 - Boundary: P518-P520 static packets plus RS106 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_RS107_NAVIGATION_LINK_SUPPRESSION_20260605.md`
 - Boundary: P521-P523 static packets plus RS107 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
+- `Docs/Reports/Batch32/CONTROLLER_RS108_REVIEW_TEMPLATE_LINK_AUDIT_20260605.md`
+- Boundary: P524-P526 static packets plus RS108 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
 
 Active source-prep owners:
 - none
@@ -239,6 +258,9 @@ Latest source-prep output:
 - Controller-validated: completed RS107 canonical packet JSON candidate for P521-P523 only.
 - Evidence: strict JSON parses, packet count 3, locale count 15 per packet, required localized surface keys present, UTF-8 BOM absent, U+FFFD=0, C1 control-code hits=0, four-question-mark placeholder hits=0, readiness flags false.
 - Boundary: no importer, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
+- Controller-local: completed RS108 canonical packet JSON candidate for P524-P526 only.
+- Evidence: strict JSON parses, packet count 3, locale count 15 per packet, required localized surface keys present, UTF-8 BOM absent, U+FFFD=0, explicit mojibake marker/codepoint hits=0, readiness flags false, forbidden manifest keys absent.
+- Boundary: no importer, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
 - 3248 Bernoulli `019e957a-b3c2-7b11-a814-942ec16a43da`: completed RS098 canonical packet JSON candidate for P492-P495 only; controller removed UTF-8 BOM and regenerated bundle after mojibake marker failure.
 - Evidence: strict JSON parses, packet count 4, locale count 15 per packet, required localized surface keys present, U+FFFD=0, explicit mojibake marker/codepoint hits=0, P496-P499 absent, readiness flags false, forbidden manifest keys absent.
 - Boundary: no importer, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
@@ -257,4 +279,4 @@ Latest source-prep output:
 
 ## Current Rule
 
-Do not admit P465-P523 into source CSV, route cards, generated pages, or h8bin until a separate source/bake owner is assigned and the process gate is clean. P496-P499 are covered by RS099 as STATIC_SOURCE candidate only. P500-P502 are covered by RS100 as STATIC_SOURCE candidate only. P503-P505 are covered by RS101 as STATIC_SOURCE candidate only. P506-P508 are covered by RS102 as STATIC_SOURCE candidate only. P509-P511 are covered by RS103 as STATIC_SOURCE candidate only. P512-P514 are covered by RS104 as STATIC_SOURCE candidate only. P515-P517 are covered by RS105 as STATIC_SOURCE candidate only. P518-P520 are covered by RS106 as STATIC_SOURCE candidate only. P521-P523 are covered by RS107 as STATIC_SOURCE candidate only.
+Do not admit P465-P526 into source CSV, route cards, generated pages, or h8bin until a separate source/bake owner is assigned and the process gate is clean. P496-P499 are covered by RS099 as STATIC_SOURCE candidate only. P500-P502 are covered by RS100 as STATIC_SOURCE candidate only. P503-P505 are covered by RS101 as STATIC_SOURCE candidate only. P506-P508 are covered by RS102 as STATIC_SOURCE candidate only. P509-P511 are covered by RS103 as STATIC_SOURCE candidate only. P512-P514 are covered by RS104 as STATIC_SOURCE candidate only. P515-P517 are covered by RS105 as STATIC_SOURCE candidate only. P518-P520 are covered by RS106 as STATIC_SOURCE candidate only. P521-P523 are covered by RS107 as STATIC_SOURCE candidate only. P524-P526 are covered by RS108 as STATIC_SOURCE candidate only.

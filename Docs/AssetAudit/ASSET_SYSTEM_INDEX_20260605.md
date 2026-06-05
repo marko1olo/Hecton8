@@ -130,6 +130,7 @@ Generated ledgers:
 - `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 6-row static execution refinement for the six audio P0 blockers; not runtime mix or listening proof.
 - `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv`: 5-bucket large texture/audio source owner review; not deletion/import/residency proof.
 - `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 14-row product-face material/prefab execution refinement; not Unity readback, prefab mutation approval, or visual acceptance.
+- `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`: 15-row current mandatory visual reference path inventory; not visual acceptance.
 - `Docs/AssetAudit/AudioVisual/audio_preview_waveform_stats_20260605.csv`: 11-row waveform preview stats; proof-adjacent only, not runtime mix/listening acceptance.
 - `Docs/Audio/audio_asset_ledger.csv`: 138-row production-facing static audio ledger; not runtime/import/Addressables acceptance.
 - `Docs/Audio/audio_remediation_matrix_20260605.csv`: 58-row audio remediation matrix; not runtime/import/Addressables acceptance.
@@ -424,7 +425,7 @@ Use `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for visual target o
 
 Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 
-- Current asset CSV set: 47 files, 14432 data rows, zero empty cells.
+- Current asset CSV set: 48 files, 14454 data rows, zero empty cells.
 - `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`: 26 rows, 13 columns, zero empty cells.
 - `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and 28 direct prefab refs by folder.
 - `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 56 folders, 20 columns, zero empty cells; covers 190 texture ledger rows, 50 generated/source-only rows, 54 active-build-scene usage rows, 70 visible-route user rows, and 43 proxy/placeholder usage rows.
@@ -454,8 +455,9 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv`: 7 rows, 7 columns, zero empty cells; critique checklist maps mandatory references to h8_1475 reject gates, not visual acceptance.
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv`: 14 rows, 10 columns, zero empty cells; dependency graph orders future h8_1475 proof execution and triage, not acceptance.
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.csv`: 5 rows, 10 columns, zero empty cells; large texture/audio source owner buckets only, not delete/import/residency acceptance.
+- `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv`: 15 rows, 7 columns, zero empty cells; current mandatory visual reference paths only, not visual acceptance.
 - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows, 9 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 92 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 99 rows, 7 columns, zero empty cells.
 - Current touched asset docs reported zero replacement characters.
 - Scoped asset-front `git diff --check` reported no whitespace errors.
 - Latest process gate sample remained blocked by CPU and active Unity/dotnet/import/compiler processes.

@@ -26,6 +26,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv` | Dependency order for future no-mutation h8_1475 proof execution and triage. |
 | `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv` | Large texture/audio source owner-review buckets before cleanup, import, or retention decisions. |
 | `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` | Product-face material/prefab P0 execution refinement before repair owners mutate anything. |
+| `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv` | Current mandatory visual reference path inventory for h8_1475 critique. |
 | `taskslocal/asset_system_20260605/README.md` | Local task packet index and owner dispatch order. |
 
 ## Detail Files By Domain
@@ -40,10 +41,12 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | proof artifacts | `ASSET_PROOF_ARTIFACT_INDEX_20260605.*`, `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.*`, contact sheets, waveform sheets, generated source manifests |
 | large source review | `LARGE_SOURCE_OWNER_REVIEW_20260605.*` |
 | visual reference critique | `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.*` |
+| visual reference path continuity | `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.*` |
 | h8_1475 proof dependency graph | `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.*` |
 | product-face execution refinement | `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.*` |
 | target tables | `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.*`, `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.*`, `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.*`, `H8_1475_READBACK_FIELD_MANIFEST_20260605.*`, `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.*`, `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.*` |
 | owner packet index | `ASSET_OWNER_PACKET_INDEX_20260605.*` |
+| early owner packets | `ASSET_OWNER_01_UNITY_MATERIAL_READBACK.md`, `ASSET_OWNER_02_TEXTURE_AUTHORING.md`, `ASSET_OWNER_03_AUDIO_LEDGER_LISTENING.md`, `ASSET_OWNER_04_MESH_PREFAB_PROMOTION.md`, `ASSET_OWNER_05_UI_SPRITE_ROUTE.md` |
 | tools/execution | `ASSET_AUTHORING_TOOL_INVENTORY_20260605.*`, `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`, `ASSET_OWNER_07_TOOL_AND_ROUTE_EXECUTION_PACKET.md` |
 | audio owner packets | `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`, `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md` |
 | texture/material owner packets | `ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`, `ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md`, `ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md` |

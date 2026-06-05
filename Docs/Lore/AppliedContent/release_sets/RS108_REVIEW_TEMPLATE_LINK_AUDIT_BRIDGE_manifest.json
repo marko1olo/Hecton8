@@ -1,0 +1,24 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
+  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+  "evidence_class": "STATIC_SOURCE",
+  "packets": [
+    "P524_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+    "P525_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+    "P526_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE"
+  ],
+  "authoring_packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P524_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P525_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P526_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}
