@@ -40,7 +40,7 @@ Every audited packet has:
 | RS103 Custody Downgrade Review Bridge | 3 | 3 | P509-P511 |
 | RS104 Dispute Hold Checklist Bridge | 3 | 3 | P512-P514 |
 | RS105 Contradiction Redaction Alias Bridge | 3 | 3 | P515-P517 |
-| RS106 Source Confidence Escalation Bridge | 3 | 3 | P518-P520 |
+| RS106 Source Voice Confidence Escalation Bridge | 3 | 3 | P518-P520 |
 
 ## Current Admission State
 

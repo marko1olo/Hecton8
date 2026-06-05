@@ -3292,9 +3292,10 @@ Evidence refresh after context compression:
 
 - Current front restored from user instruction and asset reports: textures, music/audio, meshes, prefabs, materials, visual-reference proof routing.
 - Stale lore continuation above is not the current user front. It remains historical orchestration text only.
-- Current static asset validation summary: 40 curated CSV files, 14171 data rows, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 77 rows.
+- Current static asset validation summary: 41 curated CSV files, 14187 data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 79 rows.
 - New integrated checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`, 7 rows, mandatory-reference h8_1475 screenshot critique gates only.
+- New integrated graph: `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`, 14 rows, no-mutation h8_1475 proof dependency order only.
 
 Process gate:
 
@@ -3304,7 +3305,7 @@ Process gate:
 
 Controller action:
 
-- Synchronized asset handoff docs so future asset owners read 40/14171 and the visual-reference critique checklist instead of the obsolete previous count set.
+- Synchronized asset handoff docs so future asset owners read 41/14187, the visual-reference critique checklist, and the h8_1475 proof dependency graph instead of the obsolete previous count set.
 - Updated worker board, asset start-here README, taskslocal asset README, next-action board, and historical asset count lines in this orchestrator memory.
 
 Next valid asset move:
@@ -3418,8 +3419,8 @@ New/updated asset routing:
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is present.
   - CSV parses as 5 rows, 14 columns, 0 empty cells.
   - Dispatch crosswalk only; no Unity/runtime/visual/audio acceptance.
-- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 77 rows after visual-reference critique integration.
-- Curated asset CSV parse set now states 40 files, 14171 data rows, 0 empty cells after visual-reference critique integration.
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 79 rows after visual-reference critique and h8 proof dependency graph integration.
+- Curated asset CSV parse set now states 41 files, 14187 data rows, 0 empty cells after visual-reference critique and h8 proof dependency graph integration.
 - Whole `Docs/AssetAudit/*.csv` folder currently has 42 CSV files, 14783 rows, and 1185 empty cells because older/sidecar sparse texture ledgers remain outside the curated zero-empty set.
 
 Updated navigation:
@@ -3527,8 +3528,8 @@ Integrated:
 
 Updated counts:
 
-- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 77 rows.
-- Curated static parse set now states 40 files, 14171 data rows, zero empty cells.
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 79 rows.
+- Curated static parse set now states 41 files, 14187 data rows, zero empty cells.
 - Whole `Docs/AssetAudit/*.csv` folder currently has 43 CSV files, 14823 rows, and 1185 empty cells; older/sidecar sparse CSVs remain outside the curated zero-empty set.
 
 Boundary:
@@ -3680,8 +3681,8 @@ Current front:
 
 Last accepted evidence:
 
-- Static asset CSV parse hygiene only: 40 files, 14171 data rows, zero empty cells after visual-reference critique integration.
-- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 77 rows.
+- Static asset CSV parse hygiene only: 41 files, 14187 data rows, zero empty cells after visual-reference critique and h8 proof dependency graph integration.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 79 rows.
 - Integrated target-table wave:
   - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows.
   - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows.
@@ -3744,8 +3745,8 @@ Updated:
 
 Static validation target:
 
-- Curated asset CSV parse set: 40 files, 14171 rows, zero empty cells after visual-reference critique integration.
-- File-map CSV: 77 rows.
+- Curated asset CSV parse set: 41 files, 14187 rows, zero empty cells after visual-reference critique and h8 proof dependency graph integration.
+- File-map CSV: 79 rows.
 - Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed because older/sidecar sparse CSVs exist.
 
 Latest process gate:
@@ -3984,7 +3985,7 @@ Local controller output:
 Controller updates:
 
 - Updated `Docs/AssetAudit/README.md`, `taskslocal/asset_system_20260605/README.md`, `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, and `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`.
-- Current static CSV parse after integration, later P0 target-table wave, routing synthesis, owner packet index, and visual-reference critique checklist: 40 files, 14171 data rows, zero empty cells.
+- Current static CSV parse after integration, later P0 target-table wave, routing synthesis, owner packet index, visual-reference critique checklist, and h8 proof dependency graph: 41 files, 14187 data rows, zero empty cells.
 
 Boundary:
 
@@ -4267,7 +4268,7 @@ Static validation:
   - audio P0: 6 rows, 9 columns, 0 empty cells.
   - h8_1475 field manifest: 120 rows, 7 columns, 0 empty cells.
   - visual gap: 7 rows, 8 columns, 0 empty cells.
-- Asset static validation summary now states 40 curated CSV files, 14171 rows, 0 empty cells.
+- Asset static validation summary now states 41 curated CSV files, 14187 rows, 0 empty cells.
 
 Current process gate:
 

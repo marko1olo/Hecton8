@@ -117,7 +117,7 @@ Latest packet output:
 - Controller-local: completed `P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE.production.md` and `P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.production.md`; validation PASS.
 - Controller-local: completed RS104 source-candidate bundle for P512-P514 only; validation PASS.
 - Controller-local: completed RS105 source-candidate bundle for P515-P517 only; validation PASS.
-- Controller-local: completed `P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE.production.md`, `P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE.production.md`, and `P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE.production.md`; validation PASS after Unicode repair of replacement-question draft rows.
+- Controller-local: integrated `P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE.production.md`, `P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE.production.md`, and `P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE.production.md`; byte/codepoint validation PASS. Console rendering can display RTL/CJK text incorrectly and is not file evidence.
 - Controller-local: completed RS106 source-candidate bundle for P518-P520 only; validation PASS.
 - Worker/controller integrated: completed `P509_PUBLIC_ARCHIVE_CUSTODY_DIVERGENCE_BRIDGE.production.md`, `P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE.production.md`, and `P511_PDA_EVIDENCE_FAMILY_REVIEW_PROMPT_BRIDGE.production.md`; controller validation PASS.
 - Controller-local: completed `P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE.production.md`; validation PASS; not included in RS103.
@@ -194,7 +194,7 @@ Latest controller plan:
 - Boundary: P515-P517 static packets only; no source CSV/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_RS105_CONTRADICTION_REDACTION_ALIAS_20260605.md`
 - Boundary: P515-P517 static packets plus RS105 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
-- `Docs/Reports/Batch32/CONTROLLER_RS106_SOURCE_CONFIDENCE_ESCALATION_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_20260605.md`
 - Boundary: P518-P520 static packets plus RS106 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
 
 Active source-prep owners:

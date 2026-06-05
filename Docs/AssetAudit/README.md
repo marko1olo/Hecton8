@@ -52,6 +52,7 @@ This directory is the current asset-front control surface. It is not Unity accep
 33. `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
 34. `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
 35. `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
+36. `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
 
 ## Current P0 Blockers
 
@@ -81,6 +82,7 @@ Use these files before assigning or doing asset work:
 - No-mutation Unity readback field manifest: `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` and `.csv`.
 - Visual reference capture gap table: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md` and `.csv`.
 - Visual reference critique checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md` and `.csv`.
+- H8 proof dependency graph: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md` and `.csv`.
 - P0 target-table routing synthesis: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md` and `.csv`.
 - Asset owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.md` and `.csv`.
 - Consolidated next-action board: `ASSET_NEXT_ACTION_BOARD_20260605.md` and `.csv`.
@@ -155,6 +157,7 @@ If the gate is red, continue static/source documentation only.
 - Unity readback field owner: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` before `ASSET_OWNER_26` no-mutation readback execution.
 - Visual capture gap owner: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` before any product-face screenshot acceptance attempt.
 - Visual critique owner: `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` before any h8_1475 screenshot pass/fail category review.
+- H8 proof dependency owner: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` before executing or triaging the canonical h8_1475 packet.
 - P0 target routing synthesis owner: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` before choosing between material, prefab, audio, h8_1475, or visual-gap owner routes.
 - Owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.csv` before recreating, redistributing, or assuming missing asset owner packet IDs.
 - Audio owner: `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`, `AUDIO_ROUTING_REMEDIATION_SPEC_20260605.md`, `AUDIO_IMPORT_POLICY_EXCEPTION_TABLE_20260605.csv`, `AUDIO_LISTENING_PASS_QUEUE_20260605.csv`, and `audio_remediation_matrix_20260605.csv`.

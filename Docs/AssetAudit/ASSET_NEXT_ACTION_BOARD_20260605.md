@@ -52,6 +52,7 @@ New target tables:
 - `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 120 readback/proof rows.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 gap rows; `Docs/Screenshots/HectonProofPackets/` absent.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`: 7 mandatory-reference critique rows for future h8_1475 screenshot rejection/pass review; not visual acceptance.
+- `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv`: 14 dependency rows ordering future no-mutation h8_1475 proof execution; not Unity proof.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`: 5-row routing crosswalk across material, prefab, audio, h8_1475 readback, and visual capture-gap target tables.
 - `ASSET_OWNER_PACKET_INDEX_20260605.md/.csv`: 36 owner-id rows; 31 present packet files, 5 output-only IDs for target-table workers 29-33.
 
