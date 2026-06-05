@@ -20,7 +20,7 @@ Ordinary runtime owners must not read `HECTON8_ORCHESTRATOR.md` unless explicitl
 - `RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md` - next future Unity owner packet for no-mutation active player/HUD readback followed by owner-correct repair and full movement/UI/input/camera/save proof.
 - `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md` - current next preflight packet for process-gated MCP health, no-mutation Unity editor readiness, active player/HUD/input readback, and packet 04 handoff control.
 - `RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md` - future graphics scalability repair packet for removing the runtime coroutine dispatcher-repair path in `ThermalDynamicResolutionAdapter`; source still requires repair plus compile, Unity Console, Play Mode, GC, and profiler proof.
-- `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md` - future graphics scalability telemetry repair packet for replacing stale `Dump_13KRA.bin` and the current no-file-write black-box path with a deterministic owner/system binary dump route; source still requires repair plus binary artifact, GC, and profiler proof.
+- `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md` - source-patched graphics scalability telemetry repair packet for replacing stale `Dump_13KRA.bin` and the no-file-write black-box path with a deterministic owner/system binary dump route; still pending binary artifact, GC, and profiler proof.
 - `RUNTIME_OWNER_08_VFX_DATAVAULT_SOVEREIGNTY_REPAIR_PACKET.md` - future VFX memory-sovereignty repair packet for Biolum, MarineSnow, and PlasmaBeam runtime/editor NativeArray debt split; still pending source repair, compile, Play Mode, GC, profiler, and black-box dump proof.
 
 ## Current Reports

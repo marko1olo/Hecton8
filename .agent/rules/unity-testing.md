@@ -1,7 +1,13 @@
 ---
-description: "Unity Test Framework (Production Standards)"
+description: "HISTORICAL REFERENCE ONLY - testing generic notes superseded by HECTON-8 AGENTS.md"
 alwaysApply: false
 ---
+
+# HECTON-8 Authority Override
+
+This file is historical/generic Unity guidance. It is not active HECTON-8 law unless root `C:\hades\Hecton8\AGENTS.md`, `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md`, or a current route bible explicitly imports a rule from it.
+
+If this file conflicts with `testing.md`, `quality.md`, release proof, Unity evidence, or no-false-verification rules, use HECTON-8 authority.
 
 # Unity Test Framework Guidelines
 

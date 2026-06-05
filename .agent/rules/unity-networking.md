@@ -1,7 +1,13 @@
 ---
-description: "Netcode for GameObjects"
+description: "HISTORICAL REFERENCE ONLY - Netcode generic notes superseded by HECTON-8 AGENTS.md"
 alwaysApply: false
 ---
+
+# HECTON-8 Authority Override
+
+This file is historical/generic Unity guidance. It is not active HECTON-8 law unless root `C:\hades\Hecton8\AGENTS.md`, `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md`, or a current route bible explicitly imports a rule from it.
+
+If this file conflicts with `networking.md`, deterministic state, SignalBus, DataVault, or rollback/co-op readiness rules, use HECTON-8 authority.
 
 # Netcode for GameObjects
 
