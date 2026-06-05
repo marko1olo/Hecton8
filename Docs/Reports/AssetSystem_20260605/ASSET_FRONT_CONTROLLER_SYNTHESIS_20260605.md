@@ -152,7 +152,7 @@ Static only:
   - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows.
   - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows.
   - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows.
-  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 75 rows.
+  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 77 rows.
 - `Docs/AssetAudit/README.md` now centralizes the asset-front evidence boundary, P0 blockers, hard rejections, process gate, owner map, and Low/Middle/High/Ultra consequences.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.md` maps contact sheets, waveform sheets, generated source packs, and taxonomy artifacts as proof-adjacent static material only.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 26 rows.
@@ -165,7 +165,7 @@ Static only:
 - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` parses as 7420 rows, 21 columns, zero empty cells; static counts: 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
 - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` parses as 800 rows, 15 columns, zero empty cells; static counts: 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
 - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` parses as 3488 rows, 15 columns, zero empty cells; static counts: 9 cleanup-review action buckets and 31 source rows >= 8 MB. It is not deletion authorization.
-- Current curated asset CSV set parses as 39 files, 14162 data rows, zero empty cells after generated source inventory, packets 21/22/23, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, and owner packet index. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers remain sparse.
+- Current curated asset CSV set parses as 40 files, 14171 data rows, zero empty cells after generated source inventory, packets 21/22/23, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, and visual reference critique checklist. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers remain sparse.
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` parses as 124 rows; target table only, no material acceptance.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` parses as 39 rows; target table only, no prefab acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` parses as 6 rows; target table only, no runtime mix acceptance.
@@ -173,6 +173,7 @@ Static only:
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` parses as 7 rows; gap/rejection table only, no visual acceptance.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` parses as 5 rows; dispatch crosswalk only, no Unity or runtime acceptance.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv` parses as 36 rows; owner packet lookup only, no execution completion.
+- `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` parses as 7 rows; visual rejection checklist only, no visual acceptance.
 - Follow-up owner packets added and subagents closed:
   - `taskslocal/asset_system_20260605/ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`
   - `taskslocal/asset_system_20260605/ASSET_OWNER_09_TEXTURE_MATERIAL_IMPORT_BLOCKERS_PACKET.md`
