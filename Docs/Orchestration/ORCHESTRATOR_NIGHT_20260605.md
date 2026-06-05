@@ -4860,3 +4860,33 @@ Next valid controller action:
 - Continue static/controller fronts that do not mutate `Assets`.
 - Valid next static fronts: active player scene conflict map, product-face screenshot shotlist refinement, or source-candidate lore/static routing.
 - Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
+
+## 2026-06-05 Runtime Static Conflict Cursor 58
+
+Current front:
+
+- Runtime/player/HUD static blocker map was consolidated without Unity, import, build, Play Mode, prefab edit, scene edit, source edit, or YAML mutation.
+- Process gate remains red for Unity proof because CPU and Unity/import/compiler/shader/package processes are active.
+
+Latest integrated artifact:
+
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.csv`
+- `taskslocal/runtime_system_20260605/README.md` references the new map.
+
+Latest validation:
+
+- Static conflict map records six rows: active scene shell player, shell input/movement authority, production player prefab GUID absence in `02_HECTON_WORLD`, suit HUD GUID absence, latent `HUD_Internal` overlay flag, and conditional compositor overlay path.
+- Static evidence: scene-local active tagged `Player` with enabled `HectonWorldShellController1428`; production `Player.prefab` and `Suit_HUD_Canvas.prefab` candidates are not serialized into `02_HECTON_WORLD` by GUID search.
+- `HUD_Internal.prefab` compositor is disabled but keeps `forceScreenSpaceOverlay: 1`, so it remains a latent HUD blocker if enabled/cloned as gameplay HUD.
+- Report/index scans: zero replacement characters, zero `????` placeholder hits, and scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Movement, swimming, UI, input, camera, HUD, PDA, pause, save/load, and first-20 route readiness remain `PENDING VERIFICATION`.
+- Runtime owner must start with no-mutation Unity readback of active player route, dispatcher registrations, HUD instantiation/render modes, and shell-vs-production ownership before any repair or acceptance claim.
+
+Next valid controller action:
+
+- Continue static/controller fronts that do not mutate `Assets`, especially product-face screenshot shotlist refinement or source-candidate lore routing.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
