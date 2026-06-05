@@ -12,13 +12,13 @@ Packet scope:
 
 ## Purpose
 
-RS105 groups the next public-evidence bridge around unresolved contradiction, protected omission, and route-alias state:
+RS105 groups the next evidence-governance bridge around contradictions that must stay visible without becoming verdicts:
 
-- contradiction cards that keep two evidence facts visible without resolving final truth;
-- claimant-safe redaction audits that test paperwork without exposing the protected name;
-- route-alias conflict hints that compare old route marks, public labels, terminal paths, scanner confidence, and custody route before final-route text is unlocked.
+- contradiction cards that preserve two conflicting evidence facts;
+- claimant-safe redaction audit prompts that protect identity while checking route effects;
+- route-alias conflict hints that compare old marks, public labels, terminal paths, scanner confidence, and custody routes.
 
-The set is built for future public/wiki/PDA/scanner/terminal/caption/spoiler/string-pool extraction. It prevents public-safe archive language from becoming verdict text while still giving the player concrete next proof targets.
+The set is built for future public/wiki/PDA/scanner/terminal/caption/spoiler/string-pool extraction. It prevents the archive from flattening disputed evidence into a clean public sentence before proof order resolves the next test.
 
 ## Source Boundary
 
@@ -45,26 +45,26 @@ Draft rows are authoring coverage only. They are not native-reviewed strings. RT
 
 ## First-20 Boundary
 
-The first-20 route may show contradiction cards, claimant-safe redaction audit prompts, and route-alias conflict hints. It must not reveal final receiver outcomes, final legal results, exact protected claimant, Atlas-basin consequences, ending branches, final route branch, or rescue conclusions.
+The first-20 route may show contradiction cards, claimant-safe redaction audit prompts, and route-alias conflict hints. It must not reveal final receiver outcomes, final legal results, exact protected claimant, Atlas-basin consequences, ending branches, or rescue conclusions.
 
 ## Low / Middle / High / Ultra Consequences
 
-Low/Compact: show one conflict label and one next-proof target.
+Low/Compact: show one contradiction or redaction reason with a single next-proof prompt.
 
-Middle: show affected field, reason class, and compact PDA/scanner prompt.
+Middle: show affected field, reason code, and next-proof target across archive and PDA surfaces.
 
-High: add unresolved-family grouping, route/custody comparison, redaction-audit crosslink, and contradiction-card history.
+High: add custody-route crosslinks, witness-hash state, scanner confidence, and terminal receipt comparison.
 
-Ultra: add dense archive comparison, alias-family browsing, proof-target filters, claimant-safe audit state, and family review history. Ultra changes presentation density only; it does not change canon truth, Article IDs, LocIDs, source status, native-review status, runtime readiness, or publication state.
+Ultra: add dense contradiction-family browsing, route-alias filters, claimant-safe audit history, and proof-order comparison panes. Ultra changes presentation density only; it does not change canon truth, Article IDs, LocIDs, source status, native-review status, runtime readiness, or publication state.
 
 ## Validation Targets
 
 - JSON parse for manifest and packet bundle.
 - Exactly 3 packets.
 - Exactly 15 locales per packet.
-- Required localized surface keys: website_article, wiki_article, pda_codex, scanner_entry, terminal_note, evidence_caption, spoiler_policy, title, locale_status, string_pool_key.
+- Required localized surface keys: website_article, wiki_article, pda_codex, scanner_entry, terminal_note, evidence_caption, spoiler_policy, string_pool_key.
 - UTF-8 without BOM.
 - No U+FFFD.
-- No C1 mojibake codepoint hits.
+- No mojibake marker/codepoint hits.
 - No beyond-scope packet content.
 - No positive readiness claims for runtime, native localization, DataMonolith, h8bin, Unity placement, generated pages, public website, or wiki publication.

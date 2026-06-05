@@ -3271,8 +3271,8 @@ New/updated asset routing:
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is present.
   - CSV parses as 5 rows, 14 columns, 0 empty cells.
   - Dispatch crosswalk only; no Unity/runtime/visual/audio acceptance.
-- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 73 rows.
-- Curated asset CSV parse set now states 38 files, 14124 data rows, 0 empty cells.
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 75 rows.
+- Curated asset CSV parse set now states 39 files, 14162 data rows, 0 empty cells.
 - Whole `Docs/AssetAudit/*.csv` folder currently has 42 CSV files, 14783 rows, and 1185 empty cells because older/sidecar sparse texture ledgers remain outside the curated zero-empty set.
 
 Updated navigation:
@@ -3477,8 +3477,8 @@ Current front:
 
 Last accepted evidence:
 
-- Static asset CSV parse hygiene only: 38 files, 14124 data rows, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 73 rows.
+- Static asset CSV parse hygiene only: 39 files, 14162 data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` now parses as 75 rows.
 - Integrated target-table wave:
   - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows.
   - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows.
@@ -3781,7 +3781,7 @@ Local controller output:
 Controller updates:
 
 - Updated `Docs/AssetAudit/README.md`, `taskslocal/asset_system_20260605/README.md`, `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.md/.csv`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, and `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`.
-- Current static CSV parse after integration, later P0 target-table wave, and routing synthesis: 38 files, 14124 data rows, zero empty cells.
+- Current static CSV parse after integration, later P0 target-table wave, routing synthesis, and owner packet index: 39 files, 14162 data rows, zero empty cells.
 
 Boundary:
 
@@ -4064,7 +4064,7 @@ Static validation:
   - audio P0: 6 rows, 9 columns, 0 empty cells.
   - h8_1475 field manifest: 120 rows, 7 columns, 0 empty cells.
   - visual gap: 7 rows, 8 columns, 0 empty cells.
-- Asset static validation summary now states 38 CSV files, 14124 rows, 0 empty cells.
+- Asset static validation summary now states 39 CSV files, 14162 rows, 0 empty cells.
 
 Current process gate:
 
