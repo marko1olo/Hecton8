@@ -128,7 +128,6 @@ Shader "HECTON/World/H8_SurfaceWaterReadability_1428"
                 half depth = saturate(input.uv.y);
                 half edgeX = min((half)input.uv.x, (half)(1.0 - input.uv.x));
                 half edge = smoothstep(0.0h, max(_EdgeFade, 0.001h), edgeX);
-                half nearFade = smoothstep(0.0h, 0.045h, depth);
                 half horizon = 1.0h - smoothstep(saturate(1.0h - _HorizonFade), 1.0h, depth);
 
                 half rippleScale = max(_RippleScale, 0.001h);
@@ -147,7 +146,7 @@ Shader "HECTON/World/H8_SurfaceWaterReadability_1428"
                 water += _SpecularTint.rgb * caustic * _SpecularTint.a * lerp(0.32h, 0.92h, q);
 
                 half alpha = _Opacity * lerp(_ShallowColor.a, _DeepColor.a, depth);
-                alpha *= edge * nearFade * horizon * input.color.a;
+                alpha *= edge * horizon * input.color.a;
                 alpha = saturate(alpha + foam * _FoamColor.a * 0.18h);
                 return half4(water, alpha);
             }
