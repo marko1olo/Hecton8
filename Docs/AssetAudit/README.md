@@ -91,6 +91,8 @@ Use these files before assigning or doing asset work:
 - Visual reference critique checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md` and `.csv`.
 - Visual reference path continuity: `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md` and `.csv`.
 - Current mandatory visual-reference contact sheet: `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
+- VREF-to-owner visual requirement matrix: `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md` and `.csv`.
+- Visual reference current rejection matrix: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.md` and `.csv`.
 - H8 proof dependency graph: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md` and `.csv`.
 - P0 target-table routing synthesis: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md` and `.csv`.
 - Asset owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.md` and `.csv`.
@@ -109,6 +111,8 @@ Use these files before assigning or doing asset work:
 - Texture source technical probe matrix: `TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Texture duplicate/hash matrix: `TEXTURE_DUPLICATE_HASH_MATRIX_20260605.md` and `.csv`.
 - Texture active-route blocker detail: `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md` and `.csv`.
+- Batch31 local PBR import intent: `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md`, `.csv`, and `.json` (`STATIC_SOURCE`; packed-mask rows are `BLOCKED_CHANNEL_SEMANTICS`).
+- Batch31 local PBR promotion prep: `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` (`STATIC_IMAGE_PREP_ONLY`; preview/source artifacts only).
 - Material serialized risk matrix: `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio direct-ref detail: `AUDIO_DIRECT_REF_DETAIL_20260605.md` and `.csv`.
 - Texture import/meta planning: `TEXTURE_IMPORT_ROLE_MATRIX_20260605.md` and `.csv`.

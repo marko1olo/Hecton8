@@ -49,6 +49,13 @@ Compared current diagnostic screenshots:
 - `Docs/Screenshots/MCP/h8_1473_mainrt_underwater_0_5m.png`
 - `Docs/Screenshots/MCP/h8_1473_mainrt_crest_foam_shoreline.png`
 
+Latest diagnostic screenshots inspected after the surface/sky repair attempts:
+
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_haze_ab1.png`
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_mat_ocean_ab.png`
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_crest_off_after_skyfix_ab.png`
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_skybox_nadir_floor_surface_restored_ab.png`
+
 These MCP screenshots are diagnostic only. They are not accepted proof because there is no valid `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` manifest/checksum/log packet.
 
 ## Reference Floor
@@ -75,6 +82,8 @@ The current screenshots fail the reference floor in multiple independent ways:
 - Shoreline close evidence lacks believable foam/wet-rock contact. It is water adjacent to dark terrain, not a designed waterline.
 - Underwater evidence is catastrophic against the reference: `h8_1473_mainrt_underwater_0_5m.png` is basically green/yellow slab water with almost no route composition, no seabed detail, no coral/flora density, no fauna evidence, and no usable depth cue.
 - `h8_1474_underwater_20_50m_route.png` was already rejected in prior Batch31 analysis as mislabeled/invalid for true underwater route proof.
+- Latest `Docs/Reports/McpScreenshots` surface frames still fail after the sky/surface repair attempts: the horizon has a flat dark rectangular band, the Crest-off capture exposes a rectangular sea/ground plane, water reads as oversaturated turquoise/green slab instead of believable ocean volume, terrain reads as low-detail noisy black/acid moss, and foreground silhouettes read as primitive blocks rather than authored shoreline geology.
+- Aegir is more readable than the terrain/water stack, but still depends on smeared bands and weak integration. A large sphere is not enough for hero-grade sky proof.
 - Current visual state cannot carry first-20 player trust. It looks like diagnostic terrain/water experiments, not a commercial underwater survival route.
 
 ## Product-Face Source Gates

@@ -4876,7 +4876,7 @@ Last accepted evidence:
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` now routes review signals through `VREF-01` through `VREF-15`.
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` was rewritten to remove stale mojibake/Cyrillic paths and keep the current evidence boundary.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md` now names the current folder, continuity ledger, contact sheet, and all 15 VREF references.
-- Current static parse anchor from `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`: 49 curated CSV files, 14470 data rows, zero empty cells; `ASSET_FRONT_FILE_MAP_20260605.csv` parses as 101 rows.
+- Current static parse anchor from `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`: 51 curated CSV files, 14497 data rows, zero empty cells; `ASSET_FRONT_FILE_MAP_20260605.csv` parses as 105 rows.
 
 Last rejected evidence:
 
@@ -4919,7 +4919,7 @@ Latest validation:
 - Static conflict map records six rows: active scene shell player, shell input/movement authority, production player prefab GUID absence in `02_HECTON_WORLD`, suit HUD GUID absence, latent `HUD_Internal` overlay flag, and conditional compositor overlay path.
 - Static evidence: scene-local active tagged `Player` with enabled `HectonWorldShellController1428`; production `Player.prefab` and `Suit_HUD_Canvas.prefab` candidates are not serialized into `02_HECTON_WORLD` by GUID search.
 - `HUD_Internal.prefab` compositor is disabled but keeps `forceScreenSpaceOverlay: 1`, so it remains a latent HUD blocker if enabled/cloned as gameplay HUD.
-- Report/index scans: zero replacement characters, zero `????` placeholder hits, and scoped `git diff --check` passed with line-ending warnings only.
+- Report/index scans: zero replacement characters, zero four-question-mark placeholder hits, and scoped `git diff --check` passed with line-ending warnings only.
 
 Current state:
 
@@ -5044,7 +5044,7 @@ Validation:
 - CSV parse passed: canonical shotlist 11 rows, dependency graph 14 rows, readback field manifest 123 rows.
 - `H8_1475_SHOT_06` CSV now rejects active shell authority and unresolved `HUD_Internal.forceScreenSpaceOverlay` gameplay route.
 - Scoped `git diff --check` passed with line-ending warnings only.
-- Touched h8_1475/readback files have zero replacement characters and zero `????` placeholder hits.
+- Touched h8_1475/readback files have zero replacement characters and zero four-question-mark placeholder hits.
 
 Current state:
 
@@ -5222,7 +5222,7 @@ Latest validation:
 - Read-only manifest/bundle scan: RS099-RS108 have `packet_sources=0`, `canonical_importer_sources=0`, `canonical_importer_ready=false`, and `runtime_ready=false`.
 - Read-only importer collection proof: `collected_packets=464`, `scoped_P496_P526=0`.
 - Missing importer localized fields: RS099 has 360; RS100-RS108 have 270 each.
-- New plan and live-board link have zero replacement characters, zero `????` placeholder hits, and zero positive readiness-true token hits.
+- New plan and live-board link have zero replacement characters, zero four-question-mark placeholder hits, and zero positive readiness-true token hits.
 - Scoped `git diff --check` passed with line-ending warnings only.
 
 Current state:
