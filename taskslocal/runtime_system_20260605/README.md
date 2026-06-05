@@ -15,6 +15,7 @@ This folder does not prove runtime behavior, Play Mode, player build, profiler, 
 
 - `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_MOVEMENT_STATIC_ANCHOR_AUDIT_20260605.md/.csv` - static anchor audit for 28 player/UI/movement candidates. All rows are `PENDING VERIFICATION`. Hard blockers: `HectonWorldShellController1428` direct input/transform shell risk and `HUD_Internal.prefab` `forceScreenSpaceOverlay: 1`.
 - `Docs/Reports/RuntimeSystem_20260605/SHELL_HUD_SCENE_BINDING_ESCALATION_20260605.md/.csv` - static escalation: `02_HECTON_WORLD.unity` contains active `Player` with enabled scene-local `HectonWorldShellController1428`; `HUD_Internal` compositor is disabled but keeps latent `forceScreenSpaceOverlay: 1`.
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md/.csv` - consolidated static conflict map for active scene shell, production player prefab GUID absence in `02_HECTON_WORLD`, HUD prefab GUID absence, and compositor overlay risk.
 
 ## Hard Boundaries
 

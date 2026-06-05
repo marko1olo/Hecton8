@@ -1059,6 +1059,27 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     skyColor,
                     surfaceSkyFloor * surfaceReadability * 0.24h);
 
+                // Surface skybox fallback: the camera clear path can expose the nadir
+                // below the authored sky meshes. Keep that lower hemisphere as bright
+                // horizon air, not black faux water. Zero extra samples; continuous
+                // day/eclipse weighting preserves the same path on Low/Mid/High/Ultra.
+                half surfaceNadirReadability = saturate(
+                    (1.0h - nightFactor)
+                    * (1.0h - (half)_EclipseOcclusion)
+                    * smoothstep(0.02h, 0.56h, nadirMask));
+                half3 surfaceNadirFloor = lerp(
+                    _SkyColorHorizon.rgb,
+                    max(_SkyColorNadir.rgb, _SkyColorHorizon.rgb * 0.62h),
+                    saturate(nadirMask * 0.82h));
+                surfaceNadirFloor *= max(_SkyLuminanceMultiplier, 0.78h);
+                skyColor = max(
+                    skyColor,
+                    surfaceNadirFloor * surfaceNadirReadability * 0.78h);
+                skyColor = lerp(
+                    skyColor,
+                    max(skyColor, surfaceNadirFloor),
+                    surfaceNadirReadability * 0.34h);
+
                 float2 authoredCloudReadUV;
                 authoredCloudReadUV.x = HectonFastLongitude01(sampledVf.z, sampledVf.x)
                                       * max(_CloudTiling.x, 0.001)
