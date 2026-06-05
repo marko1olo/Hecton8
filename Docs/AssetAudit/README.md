@@ -130,6 +130,7 @@ Use these files before assigning or doing asset work:
 - h8_1475 proof-tool risk review: `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` (`STATIC_SOURCE_REVIEW`; rejects editor-mutated diagnostic capture paths as canonical proof).
 - Visual proof capture guardrail validator: `Tools/ValidateVisualProofCaptureGuardrails.py` and `Tools/test_validate_visual_proof_capture_guardrails.py` (`STATIC_SOURCE_TOOL`; validates risk-routing and capture-tool asset-path existence only, not no-mutation Unity proof).
 - Asset static summary validator: `Tools/ValidateAssetStaticSummary.py` and `Tools/test_validate_asset_static_summary.py` (`STATIC_SOURCE_TOOL`; validates curated CSV row/count hygiene only, not whole-folder or Unity proof).
+- Foam contact decision queue validator: `Tools/ValidateFoamContactDecisionQueue.py` and `Tools/test_validate_foam_contact_decision_queue.py` (`STATIC_SOURCE_TOOL`; validates source-role paths and rejection/proof gates only, not Unity material proof).
 - Batch31 local PBR promotion prep: `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` (`STATIC_IMAGE_PREP_ONLY`; preview/source artifacts only).
 - Material serialized risk matrix: `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio direct-ref detail: `AUDIO_DIRECT_REF_DETAIL_20260605.md` and `.csv`.

@@ -31,7 +31,6 @@ Purpose: keep active docs small, source-backed, and free of work-log noise.
 Root may contain these active text anchors and standing route bibles:
 
 - `AGENTS.md`
-- `GEMINI.md` as Gemini/Antigravity shim only
 - `PROJECT_BIBLES.md`
 - `VISION_LOCKS.md`
 - `TASTE.md`
@@ -55,8 +54,6 @@ Stable distilled facts belong in `Docs/PROJECT_BASELINE.md` or `Docs/ARCHITECTUR
 - Do not use dated reports as active contracts unless a current stable doc imports the fact.
 - Do not hand-edit generated snapshots such as `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`; update the live source file and rerun the generator.
 - Keep `C:\Users\danat\.codex\AGENTS.md` as a global router, not a duplicate HECTON-8 law copy.
-- Keep `C:\Users\danat\.gemini\GEMINI.md` as a global Gemini/Antigravity router, not a duplicate HECTON-8 law copy.
-- Keep project `GEMINI.md` as a tool shim that routes to root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md`.
 - Keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as no-loss detail/provenance, not as an always-on substitute for `PROJECT_BIBLES.md`, root route bibles, or `.agents-skills` mandates.
 - Keep `.agent/rules/*.md` as historical/reference guidance with a strong HECTON-8 override header; they are not independent authority.
 - Keep local AGENTS derivatives delegated to or synchronized with root `AGENTS.md`; they are not independent law sources.

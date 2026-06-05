@@ -51,5 +51,6 @@ Execution order:
 - Owner 08 static synthesis now exists at `Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`; it is a candidate/rejection map only, not scene placement approval.
 - Owner 04 static proof-tool synthesis now exists at `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`; `H8VisualProofCapture1912` is diagnostic rejection-only, not canonical h8_1475 acceptance tooling.
 - Owner 06 static reaudit is integrated into `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`; audio/Addressables remain P0 blocked by empty Addressables settings, null mixer refs, direct Player AudioClip refs, and serialized AudioClip fields bypassing the current `AudioSource.clip` residency scan.
+- Owner 03 static reaudit is integrated into `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`; `02_HECTON_WORLD` statically lacks production `Player.prefab`, HUD prefabs, `HectonPlayerMovement`, and `PlayerInteraction` references. Full walking/swimming/UI route remains P0 blocked until Unity readback/runtime proof.
 
 Final controller status: PENDING VERIFICATION.

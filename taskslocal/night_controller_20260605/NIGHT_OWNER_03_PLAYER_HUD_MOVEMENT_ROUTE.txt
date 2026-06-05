@@ -33,20 +33,22 @@ Owned scope:
 Tasks:
 1. Read owner 01 readback output if available. If absent, do static blocker map only.
 2. Verify active player source: scene shell, production prefab instance, bootstrap-spawned prefab, duplicate, null, or unknown.
-3. Static scan HectonWorldShellController1428 direct input and transform writes.
+3. Treat current HectonWorldShellController1428 as a legacy scene marker: it has no current source input/camera/movement authority, so it is not a production movement route.
 4. Static inspect Player.prefab production components and missing scene relation.
-5. Static inspect InputDispatcher and PlayerInputState as intended input owner.
-6. Static inspect HUD_Internal, Suit_HUD_Canvas, SuitHUDScreenCompositor, SuitHUDV4CanvasOverlay, VisorHUDController, InteractionUI.
-7. If readback proves shell active, design repair through bootstrap/spawner/scene binding. No raw YAML.
-8. If readback proves HUD overlay active for gameplay, design diegetic/world-space/visor repair.
-9. Prove dry walk, surface swim, underwater swim, ascend/descend, camera, interaction prompt, PDA/pause, save/load if Unity gate and runtime proof are safe.
-10. Add or verify 300-frame telemetry/black-box route for player/input/HUD only if owner-correct.
+5. Static inspect InputDispatcher, PlayerInputState, and HectonPlayerInputHandler as intended input owner.
+6. Static inspect HUD_Internal, Suit_HUD_Canvas, SuitHUDScreenCompositor, SuitHUDV4CanvasOverlay, VisorHUDController, InteractionUI, PlayerPDA, PauseMenuController, and save/load UI.
+7. If readback proves only the scene-local shell active, design repair through bootstrap/spawner/scene binding. No raw YAML.
+8. If readback proves HUD overlay active for gameplay, design diegetic/world-space/visor repair or document an approved noninteractive bridge.
+9. Fix/route generic prompt fallback if `OPEN HATCH` can leak to non-hatch interactables.
+10. Prove dry walk, surface swim, underwater swim, ascend/descend, camera, interaction prompt, PDA/pause, save/load if Unity gate and runtime proof are safe.
+11. Add or verify 300-frame telemetry/black-box route for player/input/HUD only if owner-correct.
 
 Acceptance:
 - Active production player route known and production-bound.
-- No active direct legacy input polling in gameplay player route.
+- No active scene-local shell route is accepted as movement/input/camera authority.
 - Walking/swimming/ascend/descend and camera are Play Mode/player-capture verified.
 - Interactive HUD is not generic ScreenSpaceOverlay unless an approved bridge exists.
+- PDA, pause, save/load, and prompt routes are visually and functionally proven.
 - HUD hot text and input route have 0 B/frame proof.
 
 Low/Middle/High/Ultra:

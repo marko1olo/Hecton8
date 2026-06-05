@@ -6734,10 +6734,46 @@ Current Owner06 facts:
 - Current audio residency gate scans `AudioSource.clip` only; serialized `AudioClip` fields can bypass it.
 - `DynamicMusicGranularSynthesizer.OnAudioFilterRead` is statically transfer-only, but release still needs DSP profiler, underrun, no-blocking, no-GC, and listening proof.
 
+Validation:
+
+- Corrected Python replacement-character scan over `AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`, `NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt`, and `BATCH_INDEX.txt` returned `0`.
+- Corrected Python question-run scan over the same scope returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warning only.
+- Readiness-language scan found only negative/boundary phrasing: `not production-ready` and `accepted only after ... proof`.
+
 Current state:
 
 - Owner06 remains `P0 BLOCKED / STATIC ONLY`.
 - Next Unity-safe action remains no-mutation readback after process gate is green.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Player/HUD/Movement Static Reaudit Cursor 89
+
+Current front:
+
+- Integrated Chandrasekhar static Player/HUD/movement audit and local source/YAML recheck.
+- No Unity, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source, or raw YAML mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`
+- `taskslocal/night_controller_20260605/NIGHT_OWNER_03_PLAYER_HUD_MOVEMENT_ROUTE.txt`
+- `taskslocal/night_controller_20260605/BATCH_INDEX.txt`
+
+Current Owner03 facts:
+
+- `02_HECTON_WORLD.unity` has an active scene-local `Player` at lines `70213-70345`.
+- The active scene-local player has `HectonWorldShellController1428`, `PlayerStressVFX`, `DeepPsychosisController`, and `FakeRadarBlipController`; it does not statically show production movement/input/camera/HUD/interaction authority.
+- Current `HectonWorldShellController1428.cs` is only a legacy scene marker. It has no source `Update`, dispatcher tick, input read, transform write, or camera write. Earlier direct-input shell claims are stale.
+- Production `Player.prefab` exists and contains `PlayerInteraction`, `HectonPlayerMovement`, `Rigidbody`, swim presentation/blockout, visor, HUD camera, PDA, and HUD presentation scripts, but it is not referenced by the scene static search.
+- Scene static search does not find production `Player.prefab`, `HUD_Internal`, `Suit_HUD_Canvas`, `HectonPlayerMovement`, or `PlayerInteraction` GUIDs.
+- `Player.prefab`, `HUD_Internal`, and `Suit_HUD_Canvas` still expose HUD/PDA/projection nulls and ScreenSpaceOverlay bridge risk. Runtime may repair them, but static proof does not.
+- Full walking, surface swim, underwater swim, ascend/descend, camera, interaction prompt, PDA, pause, save/load, HUD/visor, and 0 B/frame input/HUD proof remain absent.
+
+Current state:
+
+- Owner03 remains `P0 BLOCKED / STATIC ONLY`.
+- Any h8_1475 scenic capture without active production player/HUD/tool route proof remains false proof.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
 ## 2026-06-06 MarineSnow DataVault Source Reconciliation Cursor 89

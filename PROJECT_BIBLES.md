@@ -51,8 +51,6 @@ Rule and bible updates must:
 - keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
 - keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
-- keep `C:\Users\danat\.gemini\GEMINI.md` as a thin Gemini/Antigravity router that sends HECTON-8 work to project `GEMINI.md`, root `AGENTS.md`, and `Docs/AGENT_AUTHORITY_ROUTING.md`;
-- keep project `GEMINI.md` as a tool shim, not a divergent HECTON-8 law copy;
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
 - keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit multi-agent, batch, controller, and task-file work;
 - keep subagent rules available in root `AGENTS.md` and `HECTON8_ORCHESTRATOR.md` so delegation improves evidence quality without weakening primary responsibility;
