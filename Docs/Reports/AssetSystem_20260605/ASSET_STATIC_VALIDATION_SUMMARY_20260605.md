@@ -41,7 +41,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 115 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 117 | 7 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
@@ -64,12 +64,13 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv` | 9 | 8 | 0 |
 | `Docs/Reports/AssetSystem_20260605/PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.csv` | 15 | 7 | 0 |
 | `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv` | 7 | 13 | 0 |
+| `Docs/AssetAudit/FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv` | 8 | 13 | 0 |
 
-Total current rows: `14543`.
+Total current rows: `14553`.
 
 ## Excluded Older/Sidecar CSV Boundary
 
-The direct `Docs/AssetAudit` root currently contains `50` CSV files; `45` direct-root CSVs plus one `Docs/AssetAudit/AudioVisual` CSV are in this curated zero-empty set. The visual critique checklist, visual-reference current rejection matrix, h8_1475 canonical shotlist, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit` are also included above. The following older/sidecar CSVs are outside the curated zero-empty set and must not be treated as covered by the result above:
+The direct `Docs/AssetAudit` root currently contains `51` CSV files; `46` direct-root CSVs plus one `Docs/AssetAudit/AudioVisual` CSV are in this curated zero-empty set. The visual critique checklist, visual-reference current rejection matrix, h8_1475 canonical shotlist, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit` are also included above. The following older/sidecar CSVs are outside the curated zero-empty set and must not be treated as covered by the result above:
 
 | File | Rows | Empty cells | Boundary |
 |---|---:|---:|---|
@@ -82,7 +83,7 @@ The direct `Docs/AssetAudit` root currently contains `50` CSV files; `45` direct
 
 ## Static Hygiene Result
 
-- CSV parse hygiene: 54 files parse with zero empty cells.
+- CSV parse hygiene: 55 files parse with zero empty cells.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.
@@ -106,6 +107,6 @@ Unity readback, import, Addressables build, Play Mode, project-setting work, sce
 - GC: no runtime code changed; no GC claim.
 - Memory/VRAM: no residency proof; current data only improves owner routing.
 - Cadence: no runtime cadence changed.
-- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, unreferenced cleanup-review triage, compact P0 target-table routing synthesis, asset owner packet index, current VREF-to-owner requirement matrix, visual-reference current rejection matrix, h8_1475 proof dependency graph, row-level audio P0 execution refinement, audio route owner matrix, and Batch31 channel-semantics decision queue; product acceptance remains blocked by Unity/runtime proof. Batch31 import intent remains sidecar/sparse until channel semantics and Unity import proof exist.
+- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, unreferenced cleanup-review triage, compact P0 target-table routing synthesis, asset owner packet index, current VREF-to-owner requirement matrix, visual-reference current rejection matrix, h8_1475 proof dependency graph, row-level audio P0 execution refinement, audio route owner matrix, Batch31 channel-semantics decision queue, and foam-contact source role decision queue; product acceptance remains blocked by Unity/runtime proof. Batch31 import intent remains sidecar/sparse until channel semantics and Unity import proof exist.
 
 Final status: `PENDING VERIFICATION`.

@@ -31,7 +31,7 @@ The grep scan was useful but too broad. Source context separates hard route bloc
 - `HectonWorldShellController1428.cs` remains a P0 static route blocker. It reads `Keyboard.current`, `Mouse.current`, and legacy `Input.*` inside movement/look input methods. Static scene evidence already places the enabled shell on the active scene-local `Player`.
 - `SuitHUDScreenCompositor.cs` remains a P0 Editor Play Mode proof blocker. `forceScreenSpaceOverlay` can force `RenderMode.ScreenSpaceOverlay` under `UNITY_EDITOR` without `Application.isPlaying` gating.
 - `SuitHUDV4CanvasOverlay.cs` is more constrained than the raw grep implies. Its overlay branch is editor-only and redirects to projection while playing. It still requires Unity readback because proof can only pass if the active canvas is `WorldSpace` with the projection route during Play Mode.
-- `ThermalDynamicResolutionAdapter.cs` is a P1 runtime repair defect. The coroutine is not a route owner, but it is still a runtime manager coroutine path.
+- `ThermalDynamicResolutionAdapter.cs` is a P1 runtime repair defect. The coroutine is not a route owner, but it is still a runtime manager coroutine path. Its detailed source anchors and paired black-box dump route defect are tracked in `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.md/.csv`.
 - `ScavengingLootOracle.cs` scene search and `DcsAscentProfileOverlay.cs` `OnGUI` are static false positives for player runtime. Both are editor-only by source context.
 
 ## Required Next Runtime Owner Actions
@@ -40,7 +40,7 @@ The grep scan was useful but too broad. Source context separates hard route bloc
 2. Record the active scene player object path, source prefab/scene-local state, enabled movement scripts, input owner, camera owner, interaction owner, and dispatcher registration.
 3. Record `HUD_Internal`, compositor active/enabled status, `forceScreenSpaceOverlay`, `SuitHUDV4CanvasOverlay.renderPath`, all gameplay HUD canvas render modes, world camera binding, and `GraphicRaycaster` state.
 4. Reject any first-20 movement/HUD proof if the scene-local shell wins input/movement/camera authority or if interactive gameplay HUD is proven through `ScreenSpaceOverlay`.
-5. Convert `ThermalDynamicResolutionAdapter` dispatcher repair coroutine to a state-machine retry path only after the active process gate allows code edits and compile verification.
+5. Convert `ThermalDynamicResolutionAdapter` dispatcher repair coroutine through `RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md` only after the active process gate allows code edits and compile verification. Coordinate with `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md` in the same source/compile/profiler pass.
 
 ## Low / Middle / High / Ultra Consequences
 

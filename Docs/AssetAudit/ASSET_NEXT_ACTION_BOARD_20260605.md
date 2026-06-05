@@ -41,11 +41,12 @@ The current reference set has 15 images. Future visual review must cite `VREF-01
 Current static parse anchor:
 
 - `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
-- 54 curated CSV files.
-- 14543 data rows.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 115 rows.
+- 55 curated CSV files.
+- 14553 data rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 117 rows.
 - `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 13 rows.
 - `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows.
+- `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv`: 8 rows.
 - `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`: sparse sidecar, not in the zero-empty curated set.
 
 Unity gate remains blocked while `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, and `mcp-for-unity` are active.

@@ -114,6 +114,8 @@ This synthesis is not Unity acceptance. No import, scene save, prefab mutation, 
   - `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md/.csv/.json`
   - `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md`
   - `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md/.csv`
+- Added foam/contact source role decision queue:
+  - `Docs/AssetAudit/FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.md/.csv`
 - Integrated mandatory visual-reference image-read digest and h8_1475 alignment:
   - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
   - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md/.csv`
@@ -180,7 +182,7 @@ Static only:
   - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows.
   - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows.
   - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows.
-  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 115 rows.
+  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 117 rows.
 - `Docs/AssetAudit/README.md` now centralizes the asset-front evidence boundary, P0 blockers, hard rejections, process gate, owner map, and Low/Middle/High/Ultra consequences.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.md` maps contact sheets, waveform sheets, generated source packs, and taxonomy artifacts as proof-adjacent static material only.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 26 rows.
@@ -193,7 +195,7 @@ Static only:
 - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` parses as 7420 rows, 21 columns, zero empty cells; static counts: 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
 - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` parses as 800 rows, 15 columns, zero empty cells; static counts: 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
 - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` parses as 3488 rows, 15 columns, zero empty cells; static counts: 9 cleanup-review action buckets and 31 source rows >= 8 MB. It is not deletion authorization.
-- Current curated asset CSV set parses as 54 files, 14543 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-37 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, visual reference critique checklist, current visual-reference path continuity, VREF-to-owner requirement matrix, h8_1475 shotlist/proof dependency graph, visual reference-vs-current rejection matrix, premium approximation rename triage, audio P0 execution refinement, audio route owner matrix, Batch31 channel-semantics decision queue, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers and the sparse Batch31 import-intent CSV remain outside the zero-empty set.
+- Current curated asset CSV set parses as 55 files, 14553 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-37 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, visual reference critique checklist, current visual-reference path continuity, VREF-to-owner requirement matrix, h8_1475 shotlist/proof dependency graph, visual reference-vs-current rejection matrix, premium approximation rename triage, audio P0 execution refinement, audio route owner matrix, Batch31 channel-semantics decision queue, foam-contact source role decision queue, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers and the sparse Batch31 import-intent CSV remain outside the zero-empty set.
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` parses as 124 rows; target table only, no material acceptance.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` parses as 39 rows; target table only, no prefab acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` parses as 6 rows; target table only, no runtime mix acceptance.
@@ -220,6 +222,7 @@ Static only:
 - `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv` parses as 13 rows; route owner matrix only, no runtime mix, listening, import, or Addressables acceptance.
 - `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv` parses as 21 rows with 36 intentional sparse cells; it is sidecar import-intent evidence only, and packed-mask rows remain blocked by MRAO/ARM channel semantics.
 - `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv` parses as 7 rows; owner decision queue only, no Unity import, material binding, residency, or visual acceptance.
+- `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv` parses as 8 rows; foam/contact source role queue only, no Unity import, material binding, residency, or visual acceptance.
 - `audio_preview_waveform_stats_20260605.csv` parses as 11 rows; waveform proof-adjacent stats only, no listening proof.
 - `audio_asset_ledger.csv` parses as 138 rows; static audio ledger only, no import/runtime/Addressables proof.
 - `audio_remediation_matrix_20260605.csv` parses as 58 rows; remediation queue only, no runtime mix proof.

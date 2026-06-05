@@ -31,6 +31,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md/.csv/.json` | Sparse static import intent for Batch31 local PBR sources; packed masks remain blocked by channel semantics. |
 | `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md` | Static validation and unit-test result for Batch31 import intent. |
 | `Docs/AssetAudit/BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.md/.csv` | Owner decision queue separating Batch31 usable albedo/normal candidates from blocked packed masks. |
+| `Docs/AssetAudit/FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.md/.csv` | Owner decision queue for rejected foam source, cleanup maps, and water-contact source roles. |
 | `Docs/AssetAudit/SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` | Static rejection review for the untracked horizon haze proof attempt. |
 | `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` | Product-face material/prefab P0 execution refinement before repair owners mutate anything. |
 | `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv` | Current mandatory visual reference path inventory for h8_1475 critique. |
@@ -50,6 +51,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | proof artifacts | `ASSET_PROOF_ARTIFACT_INDEX_20260605.*`, `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.*`, contact sheets, waveform sheets, generated source manifests |
 | large source review | `LARGE_SOURCE_OWNER_REVIEW_20260605.*` |
 | Batch31 local PBR import intent | `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md`, `.csv`, `.json`, `BATCH31_LOCAL_PBR_IMPORT_INTENT_STATIC_VALIDATION_20260605.md`, `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.*` |
+| foam/contact source role queue | `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.*` |
 | surface horizon haze static rejection | `SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` |
 | visual reference critique | `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.*` |
 | h8_1475 canonical shotlist | `H8_1475_CANONICAL_SHOTLIST_20260605.*` |
