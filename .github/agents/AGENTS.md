@@ -290,6 +290,8 @@ Examples:
 
 [REQ] Public API changes require dependency list and explicit approval unless preserving legacy wrappers and compile proof.
 
+[REQ] External patches, user-supplied diffs, exact instruction lists, and explicit acceptance bullets must be verified and implemented literally. If a point cannot be implemented exactly, state the deviation and reason. Do not claim "meaning already covered" when the requested literal change, check, or artifact is absent.
+
 [REQ] Before non-trivial runtime code, architecture changes, hot-path edits, serialization changes, prefab/scene mutation, or cross-domain work, output/record an analysis block in the working response or artifact: target, affected systems, zero-GC route, state lifecycle, rule/mandate source, failure modes.
 
 Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not need ritual analysis.
