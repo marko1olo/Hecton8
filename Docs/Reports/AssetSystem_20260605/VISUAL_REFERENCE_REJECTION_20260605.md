@@ -157,6 +157,25 @@ Verdict: rejected.
 - The visible first-person tool/foreground in `surface_haze_ab1` reads as a transparent blockout/product-face failure, not a production instrument.
 - These screenshots cannot support first-20-minutes trust, h8_1475 acceptance, surface route acceptance, or product-face promotion.
 
+## Surface Clean AB6 Direct Image Review
+
+Directly inspected after the latest surface-water capture attempt:
+
+- `Docs/Reports/McpScreenshots/UnityMcp_MainCamera_20260605_surface_clean_ab6.png`
+- `Docs/Reports/UnityCaptureSurfaceWaterProbe_20260605_224437.log`
+
+Verdict: rejected.
+
+- The Unity log reports Tundra build success and shader import for `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader`, but compile/import success is not visual acceptance.
+- The frame still shows a rectangular foreground water/sea plane with hard geometric edges. This is a slab, not an ocean surface.
+- A green horizontal haze band cuts through the coastline and hides the seam. This is camouflage, not premium water/shoreline contact.
+- The underside of the island/shore remains a black detached gap. There is no wet-rock, foam, refraction, surf, tide, or believable terrain-water integration.
+- Terrain is still acid-yellow/black noisy material on smooth blockout silhouettes. It does not read as authored geology.
+- Aegir is larger and readable, but the material reads as a smeared transparent sphere with weak limb/cloud integration. It is not hero sky proof.
+- The screenshot lacks first-person HUD/tool/product-face proof and lacks a valid h8_1475 proof packet manifest.
+
+Conclusion: `surface_clean_ab6` is a marginal diagnostic iteration only. It fails `VREF-03`, `VREF-04`, `VREF-10`, and `VREF-11` on water volume, shoreline contact, terrain material truth, and sky integration.
+
 ## Low / Middle / High / Ultra Consequences
 
 - Low/Compact: must still show readable water, sky, terrain silhouette, route cue, and material identity. Current green sheet/dark terrain state fails.
