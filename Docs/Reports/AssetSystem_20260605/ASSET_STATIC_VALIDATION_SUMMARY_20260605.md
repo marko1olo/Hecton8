@@ -41,7 +41,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 77 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 79 | 7 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
@@ -50,12 +50,13 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` | 5 | 14 | 0 |
 | `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv` | 36 | 13 | 0 |
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` | 7 | 7 | 0 |
+| `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` | 14 | 10 | 0 |
 
-Total current rows: `14171`.
+Total current rows: `14187`.
 
 ## Excluded Older/Sidecar CSV Boundary
 
-The whole `Docs/AssetAudit/*.csv` folder currently contains `43` CSV files; `39` of those are in this curated zero-empty set. The visual critique checklist CSV lives under `Docs/Reports/AssetSystem_20260605/` and is also included above. The following older/sidecar CSVs are outside the curated zero-empty set and must not be treated as covered by the result above:
+The whole `Docs/AssetAudit/*.csv` folder currently contains `44` CSV files; `40` of those are in this curated zero-empty set. The visual critique checklist CSV lives under `Docs/Reports/AssetSystem_20260605/` and is also included above. The following older/sidecar CSVs are outside the curated zero-empty set and must not be treated as covered by the result above:
 
 | File | Rows | Empty cells | Boundary |
 |---|---:|---:|---|
@@ -66,7 +67,7 @@ The whole `Docs/AssetAudit/*.csv` folder currently contains `43` CSV files; `39`
 
 ## Static Hygiene Result
 
-- CSV parse hygiene: 40 files parse with zero empty cells.
+- CSV parse hygiene: 41 files parse with zero empty cells.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.

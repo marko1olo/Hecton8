@@ -1,4 +1,4 @@
-# Controller Packet and Source-State Audit P461-P517
+# Controller Packet and Source-State Audit P461-P520
 
 Evidence class: STATIC_CONTROLLER_AUDIT.
 Runtime proof: absent.
@@ -8,8 +8,8 @@ Publication proof: absent.
 
 ## Packet Corpus Result
 
-- Production packet files audited: 57.
-- Range: P461-P517.
+- Production packet files audited: 60.
+- Range: P461-P520.
 - Bad packet count: 0.
 
 Every audited packet has:
@@ -40,15 +40,16 @@ Every audited packet has:
 | RS103 Custody Downgrade Review Bridge | 3 | 3 | P509-P511 |
 | RS104 Dispute Hold Checklist Bridge | 3 | 3 | P512-P514 |
 | RS105 Contradiction Redaction Alias Bridge | 3 | 3 | P515-P517 |
+| RS106 Source Confidence Escalation Bridge | 3 | 3 | P518-P520 |
 
 ## Current Admission State
 
 - P461-P464: source-admitted static-audited rows.
-- P465-P517: covered by STATIC_SOURCE candidates RS094-RS105.
+- P465-P520: covered by STATIC_SOURCE candidates RS094-RS106.
 
 ## Boundary
 
-This audit proves only static Markdown packet shape and source-candidate bundle counts. It does not prove source CSV admission for P465-P517, route-card wiring, generated pages, native review, runtime binding, Unity placement, DataMonolith payload, h8bin bake, frame time, GC, or publication.
+This audit proves only static Markdown packet shape and source-candidate bundle counts. It does not prove source CSV admission for P465-P520, route-card wiring, generated pages, native review, runtime binding, Unity placement, DataMonolith payload, h8bin bake, frame time, GC, or publication.
 
 ## Next Valid Move
 

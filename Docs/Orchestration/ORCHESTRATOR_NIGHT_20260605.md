@@ -3225,6 +3225,67 @@ Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
 
+## 2026-06-05 Lore System Continuation 51
+
+Current front:
+
+- Active scope remains lore-system AppliedContent and future website/wiki/PDA/scanner/terminal/caption/string-pool integration metadata.
+- Active owner: controller-local.
+- Unity/build/source-bake/runtime work remains out of scope for this continuation.
+
+Integrated:
+
+- Controller-local STATIC_DOC wave completed P518-P520:
+  - `P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE.production.md`
+  - `P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE.production.md`
+  - `P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE.production.md`
+- Controller-local source prep completed RS106 `RS106_SOURCE_CONFIDENCE_ESCALATION_BRIDGE` for P518-P520 only.
+- Output:
+  - `Docs/Lore/AppliedContent/release_sets/RS106_SOURCE_CONFIDENCE_ESCALATION_BRIDGE.md`
+  - `Docs/Lore/AppliedContent/release_sets/RS106_SOURCE_CONFIDENCE_ESCALATION_BRIDGE_manifest.json`
+  - `Docs/Lore/AppliedContent/packets/RS106_SOURCE_CONFIDENCE_ESCALATION_BRIDGE.packets.json`
+  - `Docs/Reports/Batch32/CONTROLLER_RS106_SOURCE_CONFIDENCE_ESCALATION_20260605.md`
+
+Validation:
+
+- P518-P520: 15 exact locale headings each; 1 source_authority row each; 14 draft_machine_or_llm rows each.
+- Initial P518-P520 generation had replacement-question damage in some Unicode draft rows from PowerShell command emission.
+- Damage repaired through a temporary UTF-8 repair script under `Docs/Reports/Batch32`; script was deleted after execution.
+- P518-P520 recheck PASS: UTF-8 BOM absent, U+FFFD=0, explicit mojibake marker/codepoint hits=0, literal `?` replacement rows absent in RTL/CJK/Cyrillic draft rows.
+- RS106 strict JSON parse PASS.
+- Manifest packet count 3.
+- Bundle packet count 3.
+- 15 locales per packet.
+- Required localized surface keys present.
+- Readiness flags false.
+
+Updated:
+
+- `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_LEDGER_P461_P491_20260605.md`
+- `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`
+
+Current state:
+
+- P461-P464 are source-admitted static-audited rows.
+- RS094 covers P467-P474 as STATIC_SOURCE candidate.
+- RS095 covers P465, P466, P475-P479 as STATIC_SOURCE candidate.
+- RS096 covers P480-P487 as STATIC_SOURCE candidate.
+- RS097 covers P488-P491 as STATIC_SOURCE candidate.
+- RS098 covers P492-P495 as STATIC_SOURCE candidate.
+- RS099 covers P496-P499 as STATIC_SOURCE candidate.
+- RS100 covers P500-P502 as STATIC_SOURCE candidate.
+- RS101 covers P503-P505 as STATIC_SOURCE candidate.
+- RS102 covers P506-P508 as STATIC_SOURCE candidate.
+- RS103 covers P509-P511 as STATIC_SOURCE candidate.
+- RS104 covers P512-P514 as STATIC_SOURCE candidate.
+- RS105 covers P515-P517 as STATIC_SOURCE candidate.
+- RS106 covers P518-P520 as STATIC_SOURCE candidate.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
+
 ## 2026-06-05 Asset System Continuation 51
 
 Evidence refresh after context compression:
