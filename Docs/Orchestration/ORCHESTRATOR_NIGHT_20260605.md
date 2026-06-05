@@ -5932,6 +5932,7 @@ Latest changes:
 - Added DRS static defect anchor report/CSV with seven source rows covering coroutine start, `IEnumerator`, `yield return`, `StopAllCoroutines`, stale dump const, null dump path, and missing file-write route.
 - Runtime index now states packet 07 must replace both stale filename and no-file-write black-box behavior with a deterministic owner/system binary dump route.
 - Runtime owner packet numbering corrected: MCP gate remains owner 05, DRS coroutine repair is owner 06, and DRS black-box dump route is owner 07. Duplicate owner 05 was removed from runtime packet routing.
+- Forbidden runtime API route triage now links `ThermalDynamicResolutionAdapter` repair to DRS packets 06 and 07 plus the static defect anchor report.
 
 Validation:
 
@@ -5949,6 +5950,43 @@ Current state:
 - Static source/report hygiene only.
 - DRS runtime defects remain present in source until a clean process gate permits code edit plus compile/profiler proof.
 - Unity readback/import/build/Play Mode remains blocked by the last recorded process gate.
+
+## 2026-06-05 Thermal DRS Source Patch Cursor 76
+
+Current front:
+
+- Thermal DRS coroutine contamination and black-box dump route defects were source-patched in `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs`.
+- Patch was started under a clean process gate sample: CPU `23.3`, no Unity/import/compiler/dotnet/csc blockers, only `mcp-for-unity`.
+- Unity later started its own import/compile activity; no manual Unity tool, Play Mode, player build, profiler, scene, prefab, material, Addressables, or project-setting mutation was performed.
+
+Source changes:
+
+- Removed `StopAllCoroutines()` from `OnDisable()`.
+- Removed coroutine repair route: no `StartCoroutine`, no `IEnumerator`, no `yield`.
+- Added bounded dispatcher repair state: `_dispatcherRegistrationRepairFramesRemaining` and `AdvanceDispatcherRegistrationRepair()`.
+- `LateFrameTick()` and `SlowTick()` pump one bounded repair pass when repair is active.
+- Replaced stale `Dump_13KRA.bin` route with cold owner/system route prefix `Dump_THERMAL_DRS_` under `Docs/AgentLogs`.
+- `DumpBlackBoxOnceLocked(...)` now writes a bounded native payload through `NativeFaultDumpWriter.TryWriteAll(...)`.
+- `_blackBoxDumped` is set only after the binary write succeeds.
+
+Updated artifacts:
+
+- `taskslocal/runtime_system_20260605/README.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md`
+
+Validation:
+
+- Static scan on `ThermalDynamicResolutionAdapter.cs`: `StartCoroutine=0`, `StopAllCoroutines=0`, `IEnumerator=0`, `Dump_13KRA=0`.
+- Static scan on touched runtime packet docs: replacement chars `0`, `????` runs `0`.
+- Scoped `git diff --check` returned only CRLF normalization warnings.
+- Editor.log tail scan after Unity import showed no `error CS`, no `Compilation failed`, and no `ThermalDynamicResolutionAdapter` compile error.
+
+Current blockers:
+
+- No full compile proof: Unity Roslyn `VBCSCompiler.dll` was active after import, so no separate `dotnet build` was launched.
+- No Unity Console, Play Mode, forced invalid DRS trigger, binary dump artifact, GCMonitor, or profiler proof yet.
+- Status remains `SOURCE PATCHED / PENDING FULL COMPILE AND UNITY PROOF`.
 
 Process recheck:
 

@@ -21,6 +21,7 @@ Ordinary runtime owners must not read `HECTON8_ORCHESTRATOR.md` unless explicitl
 - `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md` - current next preflight packet for process-gated MCP health, no-mutation Unity editor readiness, active player/HUD/input readback, and packet 04 handoff control.
 - `RUNTIME_OWNER_06_THERMAL_DRS_COROUTINE_REPAIR_PACKET.md` - source-patched graphics scalability repair packet for removing the runtime coroutine dispatcher-repair path in `ThermalDynamicResolutionAdapter`; still pending compile, Unity Console, Play Mode, GC, and profiler proof.
 - `RUNTIME_OWNER_07_THERMAL_DRS_BLACKBOX_DUMP_ROUTE_PACKET.md` - source-patched graphics scalability telemetry repair packet for replacing stale `Dump_13KRA.bin` and the current no-file-write black-box path with a deterministic owner/system binary dump route; still pending binary artifact, GC, and profiler proof.
+- `RUNTIME_OWNER_08_VFX_DATAVAULT_SOVEREIGNTY_REPAIR_PACKET.md` - future VFX memory-sovereignty repair packet for Biolum, MarineSnow, and PlasmaBeam runtime/editor NativeArray debt split; still pending source repair, compile, Play Mode, GC, profiler, and black-box dump proof.
 
 ## Current Reports
 
@@ -30,6 +31,7 @@ Ordinary runtime owners must not read `HECTON8_ORCHESTRATOR.md` unless explicitl
 - `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_STATIC_SCAN_20260605.md/.csv` - scoped static grep triage for direct input, `ScreenSpaceOverlay`, UI string mutation, `SetActive`, material access, and other forbidden/suspicious API patterns. P0 rows remain shell direct input and gameplay HUD overlay route. No runtime/profiler proof.
 - `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.md/.csv` - source-context triage for the grep hits. Confirms shell direct input and editor Play Mode overlay proof as blockers, classifies `ThermalDynamicResolutionAdapter` coroutine repair as P1, and excludes editor-only `OnGUI`/scavenging cleanup hits from player-runtime blockers.
 - `Docs/Reports/RuntimeSystem_20260605/THERMAL_DRS_STATIC_DEFECT_ANCHORS_20260605.md/.csv` - static source anchors for `ThermalDynamicResolutionAdapter` coroutine repair contamination, stale `Dump_13KRA.bin`, null dump path, and missing binary file write route.
+- `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md` and `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json` - scoped VFX DataVault sovereignty audit. Current static split: 18 direct constructors, 12 editor-only transient constructors, 4 runtime-forbidden constructors, 2 editor/offline persistent constructors, and 6 forbidden declarations.
 
 ## Hard Boundaries
 
