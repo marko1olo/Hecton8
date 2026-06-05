@@ -28,6 +28,25 @@ CSV companion: `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`.
 
 If the process/tooling gate is red or Unity/MCP is unavailable, do not run Unity, importers, editor-mutating tools, or builds. Continue static/source-side documentation only.
 
+## Controller Continuation 46
+
+Current mandatory visual reference source:
+
+- `Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/`
+- `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`
+- `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`
+
+The current reference set has 15 images. Future visual review must cite `VREF-01` through `VREF-15`, not stale transliterated, Cyrillic, or mojibake folder paths.
+
+Current static parse anchor:
+
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+- 49 curated CSV files.
+- 14470 data rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 101 rows.
+
+Unity gate remains blocked while `Unity.ILPP.Runner`, `UnityPackageManager`, `UnityShaderCompiler`, and `mcp-for-unity` are active.
+
 ## Controller Continuation 45
 
 New rejection evidence:

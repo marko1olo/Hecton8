@@ -1,0 +1,63 @@
+{
+  "evidence_class": "STATIC_IMAGE_PREP_ONLY",
+  "not_unity_imported": true,
+  "not_visual_acceptance": true,
+  "validation_timestamp": "2026-06-05T21:00:57+04:00",
+  "packages_validated": [
+    "TX_B31_WetBasaltShoreline_1429",
+    "TX_B31_PhoticSeabedSubstrate_2102",
+    "TX_B31_PhoticShellSandSubstrate_2102"
+  ],
+  "checks": {
+    "dimensions_match_1024x1024": true,
+    "no_nan_values": true,
+    "canonical_mrao_layout_valid": false,
+    "channels_extracted_correctly": true,
+    "all_files_exist_on_disk": true,
+    "canonical_mrao_candidate_file_present": true,
+    "channel_semantics_blocked": true,
+    "unity_import_safe_to_claim": false
+  },
+  "file_list": [
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.json",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Albedo.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Normal.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_MRAO_Candidate.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_ChannelDebug.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Albedo_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Normal_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_MRAO_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMOTION_MANIFEST.json",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMOTION_MANIFEST.md",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_Albedo.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_Normal.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_MRAO_Candidate.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_ChannelDebug.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_Albedo_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_Normal_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMO_MRAO_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMOTION_MANIFEST.json",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticSeabedSubstrate_2102/TX_B31_PhoticSeabedSubstrate_2102_PROMOTION_MANIFEST.md",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_Albedo.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_Normal.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_MRAO_Candidate.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_ChannelDebug.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_Albedo_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_Normal_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMO_MRAO_2x2.png",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMOTION_MANIFEST.json",
+    "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_PhoticShellSandSubstrate_2102/TX_B31_PhoticShellSandSubstrate_2102_PROMOTION_MANIFEST.md"
+  ],
+  "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
+  "promotion_ready": false,
+  "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+  "summary": {
+    "files_present": true,
+    "dimensions_match_1024x1024": true,
+    "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
+    "promotion_ready": false,
+    "runtime_or_visual_proof": false
+  }
+}

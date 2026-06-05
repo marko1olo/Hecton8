@@ -185,14 +185,11 @@ Required artifacts:
 - Frame Debugger/Stats report for visible product-face route draws.
 - Profiler/GC/memory report if runtime placement, scripts, Addressables, renderer count, collider count, or scene state changed.
 
-Valid proof labels:
+Valid proof states:
 
-- `STATIC VERIFIED`
-- `EDITOR VERIFIED`
-- `PLAYMODE VERIFIED`
-- `PROFILER VERIFIED`
-- `PLAYER-CAPTURE VERIFIED`
-- `PENDING VERIFICATION`
+- `STATIC_STRUCTURE_REVIEWED` for static task structure only.
+- `PENDING VERIFICATION` when any editor, runtime, visual, profiler, memory, or player-capture artifact is absent.
+- Editor, Play Mode, profiler, and player-capture proof states only when the matching artifacts exist.
 
 Static YAML rows and validator logs can justify the task. They cannot accept the result.
 

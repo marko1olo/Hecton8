@@ -192,6 +192,8 @@ Latest controller plan:
 - Boundary: RS099-RS108 blocker map only; no source admission/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_EXECUTION_PLAN_RS099_RS107_20260605.md`
 - Boundary: RS099-RS107 source-admission execution plan only; no source CSV/runtime/page/native/h8bin/publication readiness.
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_EXECUTION_PLAN_RS099_RS108_20260605.md`
+- Boundary: current RS099-RS108 source-admission execution plan only; no source CSV/runtime/page/native/h8bin/publication readiness. Read-only importer collection proof remains `collected_packets=464`, `scoped_P496_P526=0`.
 - `Docs/Reports/Batch32/CONTROLLER_PUBLIC_ARCHIVE_INDEX_SURFACE_MAP_P492_P495_20260605.md`
 - Boundary: P492-P495 archive/index/string-pool surface roles only; no source/runtime/page/native/h8bin readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PACKET_AND_SOURCE_STATE_AUDIT_P461_P495_20260605.md`

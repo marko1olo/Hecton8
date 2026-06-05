@@ -13,12 +13,19 @@ First-20 route moment: bright surface exit, ocean contact, shoreline/waterline r
 - `rendering.md`
 - `3DMODEL_TEXTURES_MATERIALS.md`
 - `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Exact Blocker
 
 `foam.png` is rejected but active-route reachable. Static image QA says it reads as a flat tiled turquoise pattern. Static route docs mark it reachable through active world/ocean users. That makes current reachable foam/contact art a P0 visual blocker.
 
 Flat/tiled foam contact is unacceptable for HECTON-8 surface, shoreline, and waterline presentation. Surface and photic-shallow water must stay bright, readable, premium, and at least Subnautica-level. Darkness, fog, bloom, or post grading cannot hide weak foam/contact art.
+
+Mandatory reference alignment:
+
+- Surface target: `BEST ILLUST` requires bright coastline/island composition, readable ocean/whitewater, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, and layered clouds.
+- Shoreline target: previous-development cliff/water references require believable waterline contact, wet rock response, transparent shallows, and geometry-scale foam breakup.
+- Shallow target: `beauty`, `shallows`, `shallowwater`, and `ubnautic` require cyan readable water, caustic impression, sand/rock shelves, arches, flora/coral scale, and no empty plane concealed by foam.
 
 ## Authoring Target
 
@@ -35,6 +42,7 @@ Visual requirements:
 
 - 2x2 and 4x4 tile checks must show no hard seam, repeated macro ring, checkerboard foam, or obvious source crop.
 - Contact breakup must work at shoreline, hull/waterline, rock edge, and shallow terrain contact scales.
+- Contact breakup must preserve whitewater/wet-edge scale in bright surface views and cannot collapse into decorative decals detached from geometry.
 - Foam must read in bright surface lighting and not depend on abyssal darkness.
 - Shallow water must keep terrain readability through contact edges.
 - Ocean surface must retain clean color, specular read, refraction readability, and believable wet edge response.
@@ -55,6 +63,7 @@ Do not raw-patch `.mat`, `.prefab`, `.unity`, `.asset`, or `.meta` files. Do not
 5. After Unity gate clears, perform importer readback for sRGB, normal type, linear masks, compression, mips, streaming mips, max size, and platform overrides.
 6. After material gate clears, assign/read back approved Crest/ocean material slots without wrapper or clone.
 7. Only then request bright surface, shoreline, waterline, and photic-shallow screenshots plus Stats, Frame Debugger, and memory proof.
+8. Compare the future screenshots against `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` before any visual promotion. Missing `BEST ILLUST`-level surface/shoreline signal stays rejected.
 
 ## Acceptance Gates
 
@@ -89,6 +98,7 @@ Do not raw-patch `.mat`, `.prefab`, `.unity`, `.asset`, or `.meta` files. Do not
 - `foam.png` remains visible as final reachable waterline/contact art.
 - Candidate reads as tiled turquoise pool foam, flat noise, blurry mud, or false-color mask art.
 - Contact sheet hides seams by cropping, darkness, bloom, or fog.
+- Future screenshot lacks the mandatory bright coastline/ocean/whitewater or transparent shallow-water contact signal.
 - Runtime texture generation, runtime compression, runtime Crest material clone, or wrapper path is introduced.
 - Imported maps have undocumented channel roles, wrong color space, missing mips for world use, wrong normal import, or unproven compression.
 - Compact lane becomes ugly mode instead of a lower-density version of premium surface/waterline art.

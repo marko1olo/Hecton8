@@ -9,6 +9,7 @@ This folder does not prove Unity placement, scene state, visual quality, profile
 ## Current Packets
 
 - `WORLD_OWNER_01_ROCK_FLORA_CORAL_PLACEMENT_STAGING_PACKET.md` - future placement staging packet for rocks, flora, coral, and debris after base proof passes for water, sky/Aegir/moons, terrain, player/HUD, lighting, route materials, and h8_1475 screenshots.
+- `WORLD_OWNER_01_FIRST20_ROUTE_PLACEMENT_STAGING_PACKET.md` - stricter supplement/crosswalk for first-20 route placement sequencing: base route, active Player/HUD, h8_1475 shotlist, product-face readback, density/LOD/streaming/collision proof, and placement-after screenshots before any final route dressing.
 
 ## Hard Boundaries
 

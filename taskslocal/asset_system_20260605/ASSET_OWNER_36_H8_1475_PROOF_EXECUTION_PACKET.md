@@ -25,8 +25,12 @@ Read before execution:
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.csv`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_18_PRODUCT_FACE_VALIDATOR_SYNTHESIS_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
 
 Existing source-gate state:
 
@@ -39,6 +43,8 @@ Existing source-gate state:
 
 Known blockers to verify through Unity readback, not mutate:
 
+- `02_HECTON_WORLD.unity` static scene YAML contains an active tagged `Player` with enabled scene-local `HectonWorldShellController1428`; production `Player.prefab` GUID was not found in the scene by static search.
+- `Suit_HUD_Canvas.prefab` and `HUD_Internal.prefab` GUIDs were not found in `02_HECTON_WORLD.unity` by static search; `HUD_Internal.prefab` keeps `forceScreenSpaceOverlay: 1` on a disabled compositor and is a latent gameplay HUD blocker if enabled or cloned.
 - `Assets/_Project/Prefabs/Player.prefab` has blockout and package-default material routes.
 - `Assets/_Project/Prefabs/Tools/Held/*` and `Assets/_Project/Prefabs/Items/Tools/*` have placeholder materials and/or built-in primitive mesh IDs.
 - `Assets/_Project/Prefabs/Resources/Pickups/*` and `Assets/_Project/Prefabs/Transport/*` have Unity built-in primitive mesh IDs.
@@ -51,7 +57,6 @@ Known blockers to verify through Unity readback, not mutate:
 Future Unity owner must obey:
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md`
 - `PROJECT_BIBLES.md`
 - `TASTE.md`
 - `VISION_LOCKS.md`
@@ -63,6 +68,8 @@ Future Unity owner must obey:
 - `ui.md`
 - `player.md`
 - `presentation.md`
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary Unity proof owner must not read it.
 
 Do not bulk-read unrelated archives or stale logs. Read only the named evidence files and route bibles needed for the proof pass.
 
@@ -188,9 +195,9 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
 
 6. Checkpoint 1 - write `process_gate.md` and draft `manifest.json` with tasks 1-5 status. Acceptance proof: `manifest.json` still says `PENDING_VERIFICATION`. Fallback: if any prerequisite failed, stop here and write `ASSET_OWNER_36_H8_1475_ABORT_<timestamp>.md`.
 
-7. Read active player and HUD binding. Capture `BootstrapState.CurrentPlayerObject` name, scene, tag, active state, prefab/source classification, and whether it is an instance of `Assets/_Project/Prefabs/Player.prefab`. Acceptance proof: rows in `no_mutation_readback_report.md`. Fallback: if the production binding cannot be read without mutation, record `BLOCKED_READBACK`.
+7. Read active player and HUD binding. Capture `BootstrapState.CurrentPlayerObject` name, scene, tag, active state, prefab/source classification, and whether it is an instance of `Assets/_Project/Prefabs/Player.prefab`. Reconcile this against `ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`: active scene object path, prefab source/GUID, scene-local shell status, production prefab status, and whether `Player.prefab` is instantiated, cloned, or absent. Acceptance proof: rows in `no_mutation_readback_report.md`. Fallback: if the production binding cannot be read without mutation, record `BLOCKED_READBACK`.
 
-8. Read scene-authored player shell state and `HectonWorldShellController1428.enabled`. Acceptance proof: classify active movement owner. Reject if the scene shell owns active player movement without accepted owner route.
+8. Read scene-authored player shell state and `HectonWorldShellController1428.enabled`. Acceptance proof: classify active movement, input, and camera owner. Reject if the scene shell owns active player movement/input/camera without accepted owner route. Do not patch input inside `HectonWorldShellController1428`; this packet is proof only.
 
 9. Read production player component stack without adding or fixing anything:
    - `Hecton8.Gameplay.HectonPlayerMovement`
@@ -204,7 +211,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
    - `ToolLoadoutProvisioner`
    Acceptance proof: component presence/enabled rows. Fallback: missing owner remains blocker.
 
-10. Read active HUD, visor, PDA, interaction, quickbar, notification, oxygen/pressure canvases, render modes, world-space projection state, `GraphicRaycaster` enabled count, and interaction UI namespace state. Acceptance proof: `h8_1475_player_hud_binding_scene_selected.png` and rows in report. Reject interactive gameplay HUD as `ScreenSpaceOverlay` unless explicit projection proof exists.
+10. Read active HUD, visor, PDA, interaction, quickbar, notification, oxygen/pressure canvases, render modes, world-space projection state, `HUD_Internal` instantiation/enabled state, `SuitHUDScreenCompositor.forceScreenSpaceOverlay`, `GraphicRaycaster` enabled count, and interaction UI namespace state. Acceptance proof: `h8_1475_player_hud_binding_scene_selected.png` and rows in report. Reject interactive gameplay HUD as `ScreenSpaceOverlay` unless explicit projection proof exists. A disabled prefab flag is not runtime proof; classify it as latent until Unity readback proves absence or noninteractive/debug-only use.
 
 11. Capture Game View surface/HUD proof: `h8_1475_surface_sky_aegir_ocean_hud_game.png`. Acceptance proof: first-person world view with HUD visible and readable. Reject flat overlay posing as cockpit/diegetic proof.
 
@@ -224,7 +231,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
    - moon albedo/normal/mask slots
    Acceptance proof: `h8_1475_sky_aegir_slots_inspector.png`. Fallback: missing effective slot remains blocker; do not assign candidate textures.
 
-15. Capture bright surface sky/Aegir/ocean route and compare against mandatory references. Acceptance proof: visual comparison section in `visual_reference_comparison.md` with reference requirements: premium Aegir limb/cloud detail, readable surface, no muddy sphere, no darkness/fog cover. Reject smeared, toy-like, muddy, or pasted Aegir.
+15. Capture bright surface sky/Aegir/ocean route and compare against mandatory references. Acceptance proof: visual comparison section in `visual_reference_comparison.md` with reference requirements from `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`: `BEST ILLUST`-level bright coastline/island composition, readable whitewater/ocean surface, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, layered clouds, premium Aegir limb/cloud detail, readable surface, no muddy sphere, no darkness/fog cover. Reject smeared, toy-like, muddy, pasted, empty, or surface-darkened results.
 
 16. Read Crest/ocean route:
    - active `OceanRenderer`;
@@ -277,7 +284,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
 
 26. Collect GCMonitor/profiler boundaries only if already available without mutation or process contention. Acceptance proof: report whether GC/frame-time/memory proof is `ABSENT`, `GCMonitor_CAPTURED`, `PROFILER_CAPTURED`, or `MEMORY_CAPTURED`. Screenshots and Frame Debugger do not prove `0 B/frame`, frame time, memory residency, save/load, or platform readiness. Fallback: mark runtime performance `PENDING_VERIFICATION`.
 
-27. Perform visual-reference comparison against the mandatory reference set recorded in `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605`. Acceptance proof: `visual_reference_comparison.md` maps screenshots to water volume, shoreline contact, terrain material truth, Aegir/sky hero quality, underwater route density, HUD/cockpit integration, and proof packet validity. Reject any claim supported only by raw MCP PNGs, stale screenshots, static reports, or controller prose.
+27. Perform visual-reference comparison against the mandatory reference set recorded in `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605` and the image-read digest `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. Acceptance proof: `visual_reference_comparison.md` maps screenshots to water volume, shoreline contact, terrain material truth, Aegir/sky hero quality, underwater route density, HUD/cockpit integration, and proof packet validity. It must explicitly state which mandatory image signals each shot satisfies or fails. Reject any claim supported only by raw MCP PNGs, stale screenshots, static reports, or controller prose.
 
 28. Finalize dirty-state audit. Acceptance proof: `dirty_state_audit.md` states no scene, prefab, material, importer, Addressables, package, or project settings dirty state after readback, or `ABORTED_BEFORE_MUTATION` with exact dirty object path. Fallback: if Unity is dirty, do not save; abort.
 

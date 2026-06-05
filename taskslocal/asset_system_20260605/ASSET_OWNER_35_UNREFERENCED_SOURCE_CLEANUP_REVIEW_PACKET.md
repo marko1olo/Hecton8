@@ -43,7 +43,6 @@ Evidence boundary:
 Follow:
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md` task packet rules
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
 - `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `.agents-skills/STRM_Async_Asset_Upload_Texture_Settings.txt`
@@ -56,6 +55,8 @@ Route bibles for future mutation owners only:
 - Audio owners: `audio.md`, `streaming.md`, `performance.md`
 - Mesh/prefab owners: `3dmodel.md`, matching generated asset bible, `rendering.md`, `performance.md`
 - Visual product-face owners: `TASTE.md`, `VISION_LOCKS.md`, matching domain bible
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary cleanup-review owner must not read it.
 
 ## Owned Scope For This Future Owner
 

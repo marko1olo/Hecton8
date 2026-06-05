@@ -35,7 +35,6 @@ Route blocker removed: none yet. This packet defines the required no-mutation pr
 Required authority/report reads used for this packet:
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md`
 - `PROJECT_BIBLES.md`
 - `TASTE.md`
 - `VISION_LOCKS.md`
@@ -51,6 +50,8 @@ Required authority/report reads used for this packet:
 - `Docs/Reports/Batch31/PLAYER_HUD_BOOTSTRAP_BINDING_BLOCKER_20260605.md`
 - `Docs/Reports/Batch31/CREST_TERRAIN_GUID_RESOLUTION_20260605.md`
 - `Docs/Reports/Batch31/SKY_TEXTURE_SLOT_RESOLUTION_20260605.md`
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary Unity readback owner must not read it.
 
 Mandates loaded:
 

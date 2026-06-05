@@ -92,6 +92,16 @@ This synthesis is not Unity acceptance. No import, scene save, prefab mutation, 
   - `taskslocal/asset_system_20260605/ASSET_OWNER_07_TOOL_AND_ROUTE_EXECUTION_PACKET.md`
 - Added proof-adjacent artifact index:
   - `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.md/.csv`
+- Added current mandatory visual-reference path continuity and contact sheet:
+  - `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`
+  - `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`
+- Added visual reference-vs-current rejection matrix:
+  - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.md/.csv`
+- Integrated mandatory visual-reference image-read digest and h8_1475 alignment:
+  - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+  - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md/.csv`
+  - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
+  - `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
 - Updated `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md` with the integrated findings.
 - Updated owner packets under `taskslocal/asset_system_20260605/` to reference the current reports.
 - Integrated product-face and sky/celestial follow-up packets:
@@ -152,7 +162,7 @@ Static only:
   - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows.
   - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows.
   - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows.
-  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 97 rows.
+  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 101 rows.
 - `Docs/AssetAudit/README.md` now centralizes the asset-front evidence boundary, P0 blockers, hard rejections, process gate, owner map, and Low/Middle/High/Ultra consequences.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.md` maps contact sheets, waveform sheets, generated source packs, and taxonomy artifacts as proof-adjacent static material only.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 26 rows.
@@ -165,12 +175,12 @@ Static only:
 - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` parses as 7420 rows, 21 columns, zero empty cells; static counts: 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
 - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` parses as 800 rows, 15 columns, zero empty cells; static counts: 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
 - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` parses as 3488 rows, 15 columns, zero empty cells; static counts: 9 cleanup-review action buckets and 31 source rows >= 8 MB. It is not deletion authorization.
-- Current curated asset CSV set parses as 47 files, 14437 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-36 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, visual reference critique checklist, h8_1475 proof dependency graph, audio P0 execution refinement, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers remain sparse.
+- Current curated asset CSV set parses as 49 files, 14470 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-36 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index, visual reference critique checklist, current visual-reference path continuity, h8_1475 shotlist/proof dependency graph, audio P0 execution refinement, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers remain sparse.
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` parses as 124 rows; target table only, no material acceptance.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` parses as 39 rows; target table only, no prefab acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` parses as 6 rows; target table only, no runtime mix acceptance.
 - `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv` parses as 6 rows, 8 columns, zero empty cells; execution refinement only, no runtime mix or listening acceptance.
-- `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` parses as 120 rows; field manifest only, no readback proof by itself.
+- `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` parses as 123 rows; field manifest only, no readback proof by itself.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` parses as 7 rows; gap/rejection table only, no visual acceptance.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` parses as 5 rows; dispatch crosswalk only, no Unity or runtime acceptance.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv` parses as 36 rows; owner packet lookup only, no execution completion.
@@ -178,7 +188,11 @@ Static only:
 - `H8_1475_CANONICAL_SHOTLIST_20260605.csv` parses as 11 rows; canonical shotlist and rejection rubric only, no screenshot existence or visual acceptance.
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` parses as 14 rows; dependency order only, no Unity proof or visual acceptance.
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.csv` parses as 5 rows; large texture/audio source owner buckets only, no deletion, import, or residency proof.
+- `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` parses as 15 rows; current mandatory visual-reference inventory only, no visual acceptance.
+- Mandatory visual-reference image-read digest is present at `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`; it is static image-review evidence only, no Unity or screenshot acceptance.
+- h8_1475 canonical shotlist markdown/CSV and future proof execution packet now point at the image-read digest and reject surface-darkened, empty, muddy, toy-like, or stale-reference proof.
 - `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv` parses as 14 rows; product-face material/prefab execution refinement only, no Unity proof or visual acceptance.
+- `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.csv` parses as 8 rows; rejection matrix only, no current screenshot pass/fail or runtime acceptance.
 - `audio_preview_waveform_stats_20260605.csv` parses as 11 rows; waveform proof-adjacent stats only, no listening proof.
 - `audio_asset_ledger.csv` parses as 138 rows; static audio ledger only, no import/runtime/Addressables proof.
 - `audio_remediation_matrix_20260605.csv` parses as 58 rows; remediation queue only, no runtime mix proof.

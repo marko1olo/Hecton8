@@ -29,7 +29,6 @@ Route blocker removed: current product-face source gates failed and current visu
 Read before execution:
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md`
 - `PROJECT_BIBLES.md`
 - `VISION_LOCKS.md`
 - `TASTE.md`
@@ -52,6 +51,8 @@ Read before execution:
 - `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md`
 - `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md`
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary material/texture execution owner must not read it.
 
 ## Owned Scope
 
@@ -150,9 +151,9 @@ Required acceptance proof:
 - `h8_1475` proof packet: `manifest.json`, `manifest.sha256`, copied Unity log, canonical screenshots, and evidence list.
 - Frame Debugger or RenderGraph/Stats evidence for material assets, shader names, keywords, SetPass, batches, material instance count, and Crest visible slot use.
 - Memory/VRAM proof for texture residency and compact texture budget risk.
-- Explicit proof label from `quality.md`: `STATIC VERIFIED`, `EDITOR VERIFIED`, `PLAYMODE VERIFIED`, `PROFILER VERIFIED`, `PLAYER-CAPTURE VERIFIED`, or `PENDING VERIFICATION`.
+- Explicit proof label from `quality.md`, with static text-only work limited to `STATIC_STRUCTURE_REVIEWED` or `PENDING VERIFICATION`; runtime/editor/player/profiler labels require matching artifacts.
 
-Static docs may only support `STATIC VERIFIED`. Product-face visual acceptance requires `PLAYER-CAPTURE VERIFIED` plus matching readback/render/memory evidence.
+Static docs may only support structure review. Product-face visual acceptance requires player-capture proof plus matching readback/render/memory evidence.
 
 ## Abort Conditions
 

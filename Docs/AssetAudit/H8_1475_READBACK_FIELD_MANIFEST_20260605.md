@@ -14,6 +14,8 @@ This file extracts the `h8_1475` no-mutation Unity readback packet into a machin
 Future Unity owner must capture readback fields for:
 
 - player/HUD production binding;
+- active scene player conflict reconciliation against `ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605`;
+- `HUD_Internal`/`SuitHUDScreenCompositor.forceScreenSpaceOverlay` latent overlay classification;
 - sky, Aegir, clouds, and moons;
 - Crest/ocean, foam/contact route, and micro-fauna primitive risk;
 - terrain/material active route;
@@ -109,6 +111,7 @@ The CSV includes rows for required process gates, no-mutation guards, object/mat
 
 - `AGENTS.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
 - `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
 - `Docs/QUALITY_GATES.md`
 - `quality.md`

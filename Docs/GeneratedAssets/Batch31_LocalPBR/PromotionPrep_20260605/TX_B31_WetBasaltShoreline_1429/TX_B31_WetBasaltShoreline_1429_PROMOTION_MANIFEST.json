@@ -1,0 +1,91 @@
+{
+  "id": "TX_B31_WetBasaltShoreline_1429",
+  "evidence_class": "STATIC_IMAGE_PREP_ONLY",
+  "not_unity_imported": true,
+  "not_visual_acceptance": true,
+  "source_files": {
+    "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_AlbedoSource.png",
+    "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_NormalSource.png",
+    "mrao": "Docs/GeneratedAssets/Batch31_LocalPBR/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_MRAOSource.png"
+  },
+  "generated_files": {
+    "albedo": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Albedo.png",
+    "normal": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Normal.png",
+    "mrao_candidate": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_MRAO_Candidate.png",
+    "channel_debug": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_ChannelDebug.png",
+    "albedo_2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Albedo_2x2.png",
+    "normal_2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_Normal_2x2.png",
+    "mrao_2x2": "Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/TX_B31_WetBasaltShoreline_1429/TX_B31_WetBasaltShoreline_1429_PROMO_MRAO_2x2.png"
+  },
+  "sha256": {
+    "albedo": "b7b25ec2925bd5804c309f95e85aeda3900d5d18553b2b33caf4af38c931b58d",
+    "normal": "7d1e06c266ddb42ed9e8284388d983b2350d37ee9c47e9d999aa486009d5e96f",
+    "mrao_candidate": "372f539ad87dc89e9b39fb7a3853c88c32c00e1b12efc4b2330d71119f4ee8f9",
+    "channel_debug": "630032f6c6694ee2d2e42208c2cc1beedf5836a4ac6cfa2594b85f7e6bb00599",
+    "albedo_2x2": "0e216af5d60240a83fa1a85e56de8803e6359bd9258ef57c6bc855725ceff03a",
+    "normal_2x2": "bc401653383c2fbb356207f04a6da15327dd08f366ba7563c34bbc3ef4773c06",
+    "mrao_2x2": "532447a020758ea4fc4b37ff1abca3a04189c47a17b1efc497756a777d6a7721"
+  },
+  "channel_stats": {
+    "metallic": {
+      "min": 0,
+      "max": 0,
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "ao": {
+      "min": 114,
+      "max": 169,
+      "mean": 151.01650047302246,
+      "std": 8.916501994881292
+    },
+    "smoothness": {
+      "min": 147,
+      "max": 255,
+      "mean": 188.5955410003662,
+      "std": 23.689960935911866
+    },
+    "emission": {
+      "min": 0,
+      "max": 0,
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "_interpretation": "Stats are calculated from the candidate image after an unverified source-channel mapping; labels remain blocked."
+  },
+  "import_metadata": {
+    "albedo": {
+      "sRGB": true,
+      "texture_type": "Default",
+      "compression": "BC7",
+      "mipmaps": true
+    },
+    "normal": {
+      "sRGB": false,
+      "texture_type": "Normal map",
+      "compression": "BC5",
+      "mipmaps": true
+    },
+    "mrao_candidate": {
+      "sRGB": false,
+      "texture_type": "Default",
+      "compression": "BC7",
+      "mipmaps": true,
+      "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
+      "promotion_ready": false,
+      "do_not_import_until_owner_decision": true,
+      "channel_contract": "Candidate only: R=Metallic(0), G=CandidateAO, B=CandidateSmoothness, A=Emission(0). Source G/B labels are unverified."
+    }
+  },
+  "consequences": {
+    "low": "Uses low-res (512px) texture mips, basic ambient occlusion, and disabled specular details to protect memory. The visual quality is kept at the absolute minimum acceptable standard.",
+    "middle": "Uses standard resolution (1024px) texture mips with full AO and smoothness channel rendering. Normal maps provide standard depth breakup.",
+    "high": "Uses full resolution (2048px/1024px depending on asset category) with enhanced normal map detail and full specular breakup, increasing terrain realism.",
+    "ultra": "Sensory overkill. Uses maximum texture mip levels, advanced micro-variation shaders, and extra near-field normal/specular detail mapping without changing authority routes."
+  },
+  "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
+  "promotion_ready": false,
+  "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+  "source_channel_contract_risk": "Batch31 source names map MRAO, while project docs disagree: playbook MRAO R=Metallic/G=Roughness-or-Smoothness/B=AO; ARM pipeline _MaskMap R=AO/G=Roughness/B=Metallic/A=Emission.",
+  "required_owner_decision": "Resolve shader/material mask contract and repack or relabel channels before Unity import."
+}

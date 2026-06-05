@@ -19,6 +19,7 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 - `world.md`
 - `performance.md`
 - `Docs/AssetAudit/README.md`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Static Blockers
 
@@ -26,6 +27,7 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 - Cleanup/source-only foam direction is reference material only. It needs route-owned maps, channel roles, importer readback, Crest/ocean slot proof, screenshots, Stats, Frame Debugger, and memory proof before visible use.
 - Static material paths do not prove active renderer use, shader response, Crest binding, texture residency, frame time, or in-game water quality.
 - Surface, ocean skin, shoreline, sky, Aegir, clouds, moons, and photic shallows are bright-route content. Darkness, fog, bloom, vignette, storm grade, or exposure crush cannot be used to conceal weak water, foam, terrain, or celestial art.
+- Mandatory visual reference digest sets `BEST ILLUST` as the primary surface target: bright coastline/island, readable ocean/whitewater, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, layered clouds, and no surface-dark concealment.
 
 ## Crest Boundary
 
@@ -47,6 +49,7 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 8. Capture Frame Debugger and Stats for ocean, foam/contact, transparent draw pressure, SetPass, batches, shader keywords, and material instance count.
 9. Capture texture memory, total reserved memory, VRAM pressure state, streaming mip behavior, and async upload spikes after any later import/material work.
 10. If the result exposes rejected foam, flat contact art, dark surface concealment, or Crest material cloning, stop and route back to authoring/material ownership.
+11. Compare captures against `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. The comparison must name the exact image signals passed or failed for surface, shoreline, photic shallows, and sky/ocean context.
 
 ## Foam / Contact Authoring Gates
 
@@ -55,11 +58,13 @@ Route blocker mapped: future ocean owners get a narrow proof route instead of pr
 - Tile checks must cover 2x2 and 4x4 views. Hard seams, repeated macro rings, turquoise pool-foam color, false-color mask noise, blurry mud, and flat procedural noise are rejection triggers.
 - Contact art must work at shoreline, hull/waterline, rock edge, shallow terrain contact, and moving ocean skin scales.
 - Foam/contact must read in bright surface lighting and cannot depend on abyssal darkness, storm grade, bloom, or fog.
+- Contact art must preserve visible whitewater/wet-edge scale and not become a detached decorative mask.
 
 ## Screenshot Gates
 
 - Required after readback: bright surface Game View, bright surface Scene View, shoreline/waterline contact, photic-shallow route, and sky/ocean reflection context.
 - Captures must show surface water color, wave normal read, specular response, foam/contact breakup, shallow terrain readability, coastline or route cue, and celestial/cloud contribution where visible.
+- Captures must include an explicit `BEST ILLUST` comparison line for surface composition and explicit shoreline/shallow-water comparison lines for waterline contact and transparent photic readability.
 - Compact and high-quality captures are both required for future visual judgment. Static docs do not establish the result.
 - Rejected capture conditions: dark-only route, storm-only route, cropped contact region, post-processing concealment, or camera angle that hides contact failure.
 
@@ -87,6 +92,7 @@ Reject the future route if:
 - Any `.mat`, `.prefab`, `.unity`, `.asset`, or `.meta` file is raw-patched.
 - A scene is saved during readback without an explicit authorized edit task.
 - Surface/ocean proof relies on darkness, fog, bloom, vignette, exposure crush, storm grade, or cropped framing.
+- Surface/ocean proof lacks readable whitewater/contact breakup, transparent shallows, coastline/route scale, or sky/Aegir context required by the mandatory image digest.
 - Contact maps have unknown channel roles, wrong color space, missing mips for world use, wrong normal import, or unproven compression.
 - Stats or Frame Debugger evidence shows uncontrolled SetPass/batch growth, material instances, hidden draw stages, or shader variant risk.
 - Memory evidence shows unresolved VRAM pressure, streaming spikes, or texture residency overflow after import/material work.

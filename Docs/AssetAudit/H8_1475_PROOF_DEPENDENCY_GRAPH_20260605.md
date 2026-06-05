@@ -16,6 +16,7 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv`
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md/.csv`
 
 ## Dependency Order
 
@@ -25,7 +26,7 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 | 02 | static_input_pack | `ASSET_OWNER_36` | `manifest.json` static input list | Missing named input without `MISSING_STATIC_INPUT` note. |
 | 03 | proof_root_and_manifest | `ASSET_OWNER_36` | `h8_1475_<session>/manifest.json` | Missing proof root, fake hash, or orphan artifact list. |
 | 04 | no_mutation_guard | `ASSET_OWNER_26` | `dirty_state_audit.md` | Any dirty scene, prefab, material, importer, package, or project state. |
-| 05 | player_hud_binding_readback | `ASSET_OWNER_36` | player/HUD screenshot and readback rows | Missing production player binding or flat nondecision HUD. |
+| 05 | player_hud_binding_readback | `ASSET_OWNER_36` | player/HUD screenshot, active scene conflict reconciliation, and readback rows | Missing production player binding, unresolved active shell authority, active interactive `ScreenSpaceOverlay` HUD route, or flat nondecision HUD. |
 | 06 | sky_aegir_cloud_slot_readback | `ASSET_OWNER_14` | sky/Aegir slot inspector screenshot | Stale/null/ignored slots, orbit-only proof, muddy or smeared Aegir. |
 | 07 | crest_ocean_waterline_readback | `ASSET_OWNER_20` | Crest/ocean slot inspector screenshot | Crest clone/wrapper, flat water, repeated foam, or missing active OceanRenderer. |
 | 08 | terrain_material_route_readback | `ASSET_OWNER_16` | terrain material slot inspector screenshot | Stale terrain material, crushed/noisy/flat terrain, or fog cover. |

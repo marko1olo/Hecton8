@@ -16,6 +16,7 @@ First-20 route moment: bright first surface exit with readable sky, Aegir, moons
 - `REND_Shader_Noir_Aesthetics_Dithering_Fog`
 - `REND_URP_Graphics_HotPath_Optimization_HLOD`
 - `STRM_Async_Asset_Upload_Texture_Settings`
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 
 ## Boundary
 
@@ -45,6 +46,8 @@ Rejected evidence inflation:
 
 - Surface first viewport must be bright, legible, beautiful, and route-readable.
 - Aegir, moons, clouds, and sky must read premium: texture detail, cloud bands, atmosphere softness, scale, and material response.
+- `BEST ILLUST` is the primary surface target for this packet: huge readable Aegir/gas-giant body, layered high clouds, bright coastline/island context, ocean/whitewater read, vegetation/route scale, and no surface-dark concealment.
+- Previous-development sky/cliff/gas-giant references prove the direction is valid only if the active route keeps bright surface legibility, cloud-band texture quality, limb softness, and ocean/shoreline context.
 - Ocean surface, shoreline, and photic shallows must meet or exceed the Subnautica-level floor on every hardware lane.
 - Darkness, fog, bloom, exposure crush, vignette, storm grade, or noir post must not hide weak sky/celestial/water art.
 - Storms and eclipse may be temporary route states. They do not define default surface presentation.
@@ -61,6 +64,7 @@ Rejected evidence inflation:
 8. Capture Frame Debugger/Stats for skybox, Aegir/cloud/moon renderers, SetPass, batches, shader keywords/variants where visible.
 9. Record Texture Memory, Total Reserved Memory, VRAM pressure state, and async upload budget if runtime/import proof is later authorized.
 10. If replacement is needed, author/import through route-owned material families and import-role rows first. No raw YAML, no scene save, no material clone, no runtime wrapper.
+11. Compare future surface captures against `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`. The comparison must state whether `BEST ILLUST` surface composition, Aegir/gas-giant scale, cloud layering, ocean/whitewater read, and route scale signals pass or fail.
 
 ## Required Readback Targets
 
@@ -86,6 +90,7 @@ All gates are required for route acceptance:
 - Skybox/material slot readback: active world skybox, sky renderer, Aegir/cloud/moon renderer materials, shaders, slots, nulls, and active state.
 - Importer readback: role-correct color space, type, compression, mips, streaming mips, platform max size, alpha/channel semantics.
 - Bright surface screenshots: Game View and Scene View proving sky/Aegir/moons/clouds/ocean surface without darkness/post concealment.
+- Mandatory reference comparison: explicit pass/fail rows for `BEST ILLUST`, previous-development cliff/sky/gas-giant reference, and sky/ocean/shoreline context.
 - Frame Debugger/Stats: visible skybox/Aegir/cloud/moon passes, SetPass/batch notes, shader/variant risk notes.
 - Memory/VRAM: texture memory, total reserved memory, VRAM pressure and mip downgrade risk. No residency claim from source size alone.
 - Route scene evidence: `02_HECTON_WORLD` proof only. Orbit/prologue evidence remains candidate/source context.
@@ -99,6 +104,7 @@ Reject if:
 - Active sky/cloud slots are null, missing, stale, or only proven by orbit/prologue context.
 - Moons visibly reuse generic rock/basalt/terrain textures as hero celestial art.
 - Screenshots rely on darkness, fog, bloom, exposure crush, storm grade, or vignette to conceal weak art.
+- Future captures lack the mandatory huge Aegir/gas-giant read, layered clouds, bright coastline/ocean context, or route scale required by the image-read digest.
 - Import roles are missing or channel semantics are unknown.
 - Texture memory/VRAM proof is absent after route-visible import or material change.
 - Raw YAML edits, scene saves, material clones, or runtime wrappers are proposed.

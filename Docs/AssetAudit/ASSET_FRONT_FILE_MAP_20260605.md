@@ -28,6 +28,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv` | Large texture/audio source owner-review buckets before cleanup, import, or retention decisions. |
 | `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` | Product-face material/prefab P0 execution refinement before repair owners mutate anything. |
 | `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv` | Current mandatory visual reference path inventory for h8_1475 critique. |
+| `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md/.csv` | VREF-to-owner visual requirement matrix for water, terrain, sky, flora, UI, cockpit, and h8_1475 proof owners. |
 | `taskslocal/asset_system_20260605/README.md` | Local task packet index and owner dispatch order. |
 
 ## Detail Files By Domain
@@ -44,6 +45,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | visual reference critique | `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.*` |
 | h8_1475 canonical shotlist | `H8_1475_CANONICAL_SHOTLIST_20260605.*` |
 | visual reference path continuity | `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.*` |
+| visual reference owner matrix | `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.*` |
 | h8_1475 proof dependency graph | `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.*` |
 | product-face execution refinement | `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.*` |
 | target tables | `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.*`, `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.*`, `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.*`, `H8_1475_READBACK_FIELD_MANIFEST_20260605.*`, `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.*`, `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.*` |

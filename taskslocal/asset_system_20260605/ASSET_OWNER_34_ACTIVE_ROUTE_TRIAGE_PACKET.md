@@ -43,7 +43,6 @@ Route blocker removed by this packet: owner ambiguity. Runtime readiness remains
 Future owner must obey:
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md` only for task-packet/reporting shape; it is not a runtime bible.
 - `PROJECT_BIBLES.md`
 - `TASTE.md`
 - `VISION_LOCKS.md`
@@ -54,6 +53,8 @@ Future owner must obey:
 - `streaming.md`
 - `3dmodel.md`
 - `3DMODEL_TEXTURES_MATERIALS.md`
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary active-route triage owner must not read it.
 
 Mandates followed by this packet:
 

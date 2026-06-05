@@ -90,6 +90,7 @@ Use these files before assigning or doing asset work:
 - Visual reference capture gap table: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md` and `.csv`.
 - Visual reference critique checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md` and `.csv`.
 - Visual reference path continuity: `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md` and `.csv`.
+- Current mandatory visual-reference contact sheet: `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
 - H8 proof dependency graph: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md` and `.csv`.
 - P0 target-table routing synthesis: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md` and `.csv`.
 - Asset owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.md` and `.csv`.

@@ -4861,6 +4861,46 @@ Next valid controller action:
 - Valid next static fronts: active player scene conflict map, product-face screenshot shotlist refinement, or source-candidate lore/static routing.
 - Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
 
+## 2026-06-05 Latest Controller Cursor 58
+
+Current front:
+
+- Asset-only visual-reference continuity and static proof routing.
+- User-supplied mandatory reference folder is now the active source: `Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/`.
+- Current reference inventory: `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv`.
+- Current contact sheet: `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
+
+Last accepted evidence:
+
+- 15 current reference images inspected through contact sheet; key surface/Aegir, previous underwater, generated medium-deep, and prior sky/Aegir images inspected individually.
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` now routes review signals through `VREF-01` through `VREF-15`.
+- `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` was rewritten to remove stale mojibake/Cyrillic paths and keep the current evidence boundary.
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md` now names the current folder, continuity ledger, contact sheet, and all 15 VREF references.
+- Current static parse anchor from `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`: 49 curated CSV files, 14470 data rows, zero empty cells; `ASSET_FRONT_FILE_MAP_20260605.csv` parses as 101 rows.
+
+Last rejected evidence:
+
+- Current MCP screenshots remain diagnostic only.
+- `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` is still absent.
+- No Unity visual acceptance, runtime proof, import proof, Frame Debugger proof, GC proof, or memory proof exists for the visual reference floor.
+
+Active owner:
+
+- No active subagent remains open from the latest asset-reference wave.
+- Unity readback/proof owner is blocked by process/tooling gate.
+
+Process/tooling gate:
+
+- CPU sample: 45.
+- Active blockers: `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, multiple `UnityShaderCompiler`, `mcp-for-unity`.
+- Unity readback/import/build/Play Mode remains blocked despite CPU under 50 because ILPP/package/shader/MCP processes are active.
+
+Next valid controller action:
+
+- Continue static asset/source fronts only.
+- Valid next static fronts: validate the 49-file curated CSV set after reference-path edits, update stale handoff references if validation stays clean, and refine owner queues for water/sky/terrain/flora/UI against the current `VREF-01` through `VREF-15` floor.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
+
 ## 2026-06-05 Runtime Static Conflict Cursor 58
 
 Current front:
@@ -4890,3 +4930,306 @@ Next valid controller action:
 
 - Continue static/controller fronts that do not mutate `Assets`, especially product-face screenshot shotlist refinement or source-candidate lore routing.
 - Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, or h8_1475 capture until process gate and MCP/tooling state are clean.
+
+## 2026-06-05 Mandatory Visual Reference Cursor 59
+
+Current front:
+
+- User supplied mandatory visual-reference folder for user-seen systems: water, terrain, sky, flora, and UI.
+- All image files in the folder were inspected locally; the instruction filename is zero bytes and contains no image payload.
+- No `Assets` mutation, Unity import, scene edit, prefab edit, Play Mode, build, or runtime readiness claim was made.
+
+Integrated artifact:
+
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
+
+Latest accepted static visual facts:
+
+- Surface target is the `BEST ILLUST` image: bright coastline/island, readable whitewater, cliffs, dense alien vegetation, huge gas giant, layered clouds, and base/vehicle scale cues.
+- Surface, sky, gas giant, coastline, ocean surface, and shallows are not noir hiding zones.
+- Shallows/middle water require cyan readable water, caustics, terrain arches/shelves, flora/coral density, fauna/vehicle/base scale, and foreground/background separation.
+- Depth can be dark only with readable silhouettes, bioluminescent anchors, foreground dressing, particles, and route clarity.
+- UI/cockpit references support diegetic physical instrumentation, not flat screen-space overlay gameplay UI.
+
+Current state:
+
+- Visual reference ingestion is complete.
+- Unity screenshot comparison, material proof, shader proof, frame-debugger proof, runtime performance, and scene implementation remain `PENDING VERIFICATION`.
+
+Next valid controller action:
+
+- Use this visual-reference artifact before any water, terrain, sky, flora, or UI work.
+- Continue static/controller fronts that do not mutate `Assets` while Unity/tooling gates remain red.
+
+## 2026-06-05 H8_1475 Shotlist Reference Alignment Cursor 60
+
+Current front:
+
+- Mandatory visual-reference read was propagated into the canonical `h8_1475` shotlist without Unity, import, scene, prefab, material, shader, or `Assets` mutation.
+
+Integrated artifacts:
+
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.csv`
+
+Latest changes:
+
+- Replaced stale folder-listing-only language with a link to `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`.
+- Tightened `H8_1475_SHOT_01` through `H8_1475_SHOT_05` against the actual image-read surface, shoreline, shallow, and middle/deep reference signals.
+- Removed banned static-proof wording from the touched shotlist markdown and replaced it with `STATIC_STRUCTURE_REVIEWED`.
+- CSV companion still parses as 11 rows.
+
+Validation:
+
+- Touched-file scan found zero banned static-proof wording, zero replacement characters, and zero mojibake markers.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- `h8_1475` screenshot implementation and Unity visual proof remain `PENDING_VERIFICATION`.
+- This is a shotlist/rubric correction only.
+
+## 2026-06-05 H8_1475 Execution Packet Alignment Cursor 61
+
+Current front:
+
+- Future `h8_1475` Unity proof handoff was aligned with the mandatory visual-reference read and root anti-orchestration boundary.
+
+Integrated artifact:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+
+Latest changes:
+
+- Added `CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` and the canonical shotlist markdown/CSV to the packet evidence basis.
+- Clarified that `HECTON8_ORCHESTRATOR.md` is read only if the future owner is explicitly assigned controller/orchestration work; ordinary Unity proof owners must not read it.
+- Tightened task 15 against the actual `BEST ILLUST` surface target and task 27 against the image-read digest.
+
+Validation:
+
+- Touched-file scan found zero banned static-proof wording, zero replacement characters, and zero mojibake markers.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Future proof execution is still no-mutation and `PENDING_VERIFICATION`.
+- No Unity, import, build, scene, prefab, material, shader, Addressables, or `Assets` mutation has been performed.
+
+## 2026-06-05 H8_1475 Runtime Blocker Alignment Cursor 62
+
+Current front:
+
+- `h8_1475` screenshot/readback contract was aligned with the runtime active player/HUD conflict map.
+- No Unity, import, build, scene, prefab, material, shader, Addressables, code, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.csv`
+- `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
+- `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv`
+- `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md`
+- `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+
+Latest changes:
+
+- `H8_1475_SHOT_06` now requires reconciliation against `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`.
+- Future Unity owner must classify active scene player object path/source, production `Player.prefab` instantiated/cloned/absent state, `HectonWorldShellController1428.enabled`, and winning movement/input/camera owner before player/HUD proof can pass.
+- Future Unity owner must classify `HUD_Internal` instantiation/enabled state, `SuitHUDScreenCompositor.forceScreenSpaceOverlay`, and active HUD canvas render modes. Interactive `ScreenSpaceOverlay` gameplay HUD remains rejected unless proved as an explicit noninteractive/debug bridge.
+- Dependency graph row 05 and the readback field manifest now carry the same blocker, so the markdown and machine-readable CSV contracts match.
+
+Validation:
+
+- CSV parse passed: canonical shotlist 11 rows, dependency graph 14 rows, readback field manifest 123 rows.
+- `H8_1475_SHOT_06` CSV now rejects active shell authority and unresolved `HUD_Internal.forceScreenSpaceOverlay` gameplay route.
+- Scoped `git diff --check` passed with line-ending warnings only.
+- Touched h8_1475/readback files have zero replacement characters and zero `????` placeholder hits.
+
+Current state:
+
+- `h8_1475` remains `PENDING_VERIFICATION`.
+- Runtime player/HUD acceptance remains blocked until clean process gate plus no-mutation Unity readback closes or confirms the active shell/HUD overlay blockers.
+
+## 2026-06-05 Visual Critique Checklist Digest Link Cursor 62
+
+Current front:
+
+- Visual critique checklist was linked to the mandatory visual-reference image-read digest.
+
+Integrated artifact:
+
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
+
+Latest changes:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` as the image-read digest.
+- Named `VREF-03 BEST ILLUST` as the primary surface target for bright coastline/island, whitewater/ocean readability, dense alien vegetation, huge Aegir/gas-giant read, layered clouds, and scale cues.
+
+Current state:
+
+- Checklist remains a review instrument only.
+- Unity visual proof remains `PENDING_VERIFICATION`.
+
+## 2026-06-05 Process Gate Cursor 63
+
+Current process/tooling gate:
+
+- CPU sample: `100.0 percent`.
+- Active processes: `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`.
+
+Decision:
+
+- Unity proof, build, import mutation, prefab/material save, Addressables changes, and `h8_1475` capture remain blocked.
+- Continue only static/controller work that does not mutate `Assets`.
+
+## 2026-06-05 Asset Packet Proof-Language Hygiene Cursor 64
+
+Current front:
+
+- Asset-system future-owner packets were cleaned for proof-language and controller-doc boundary drift.
+
+Integrated artifacts:
+
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_HYGIENE_SWEEP_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_24_PRODUCT_FACE_MATERIAL_REPAIR_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_25_PREFAB_PRIMITIVE_MESH_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_26_UNITY_READBACK_NO_MUTATION_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_34_ACTIVE_ROUTE_TRIAGE_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_35_UNREFERENCED_SOURCE_CLEANUP_REVIEW_PACKET.md`
+
+Latest changes:
+
+- Removed exact stale static-proof labels from the asset-system report/task-packet scope.
+- Converted static text-only wording to `STATIC_STRUCTURE_REVIEWED` or `PENDING_VERIFICATION` style boundaries.
+- Qualified `HECTON8_ORCHESTRATOR.md` as controller/orchestration-only for future owners.
+
+Validation:
+
+- Asset-system scoped scan found zero exact stale static-proof labels.
+- Touched-file mojibake/replacement scan found zero hits.
+- Scoped CSV parse still passes for `h8_1475` shotlist, visual critique checklist, and product-face execution refinement.
+
+Current state:
+
+- No Unity, import, build, scene, prefab, material, shader, Addressables, or `Assets` mutation was performed.
+
+## 2026-06-05 Asset Front Digest Linkage Cursor 65
+
+Current front:
+
+- Asset-front start-here and synthesis files were linked to the mandatory visual-reference image-read digest.
+
+Integrated artifacts:
+
+- `taskslocal/asset_system_20260605/README.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
+
+Latest changes:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` to the local asset-system start-here path.
+- Linked the digest from the front synthesis and visual rejection report.
+- Recorded that h8_1475 shotlist, critique checklist, future proof execution packet, and README now point at the digest.
+- Recorded latest process gate as blocked: CPU `100.0 percent`, active `Unity`, `Unity.ILPP.Runner`, and `UnityPackageManager`.
+
+Validation:
+
+- Asset-system scoped scan found zero exact stale static-proof labels.
+- Newly linked front-file mojibake/replacement scan found zero hits.
+- Scoped CSV parse still passes for h8_1475 shotlist, visual critique checklist, and product-face execution refinement.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static/controller pass only.
+- Unity visual proof remains blocked and `PENDING_VERIFICATION`.
+
+## 2026-06-05 Water Contact Packet Reference Alignment Cursor 66
+
+Current front:
+
+- P0 water foam/contact and Ocean/Crest proof packets were aligned with the mandatory visual-reference image-read digest.
+
+Integrated artifacts:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_11_WATER_FOAM_CONTACT_AUTHORING_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_20_OCEAN_CREST_CONTACT_PROOF_PACKET.md`
+
+Latest changes:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` to both packets.
+- Required explicit comparison against `BEST ILLUST` surface signal: bright coastline/island, readable ocean/whitewater, dense alien vegetation or route scale cue, huge Aegir/gas-giant read, layered clouds.
+- Required shoreline/shallow checks for waterline contact, wet rock response, transparent shallows, and geometry-scale foam breakup.
+- Added rejection for detached decorative masks and screenshots lacking mandatory bright coastline/ocean/whitewater or transparent shallow-water contact signals.
+
+Validation:
+
+- Asset-system scoped scan found zero exact stale static-proof labels.
+- Touched water-packet mojibake/replacement scan found zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static packet alignment only.
+- No Crest, material, import, scene, shader, screenshot, or runtime proof exists.
+
+## 2026-06-05 Sky Aegir Packet Reference Alignment Cursor 67
+
+Current front:
+
+- Sky/Aegir/cloud proof packet was aligned with the mandatory visual-reference image-read digest.
+
+Integrated artifact:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_14_SKY_AEGIR_CLOUD_SLOT_PROOF_PACKET.md`
+
+Latest changes:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`.
+- Required `BEST ILLUST` comparison for huge Aegir/gas-giant read, layered high clouds, bright coastline/island context, ocean/whitewater read, vegetation/route scale, and no surface-dark concealment.
+- Required previous-development cliff/sky/gas-giant comparison only as direction evidence, not acceptance.
+- Added rejection for captures missing huge Aegir/gas-giant read, layered clouds, bright coastline/ocean context, or route scale.
+
+Validation:
+
+- Asset-system scoped scan found zero exact stale static-proof labels.
+- Touched sky-packet mojibake/replacement scan found zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static packet alignment only.
+- Sky/Aegir/Cloud route remains `PENDING_VERIFICATION` until Unity readback, screenshots, Frame Debugger/Stats, memory/VRAM, and visual comparison exist.
+
+## 2026-06-05 Lore Source Admission Cursor 64
+
+Current front:
+
+- Source-admission execution planning was extended from RS099-RS107 to RS099-RS108 after RS108/P524-P526 appeared as a static source-candidate bundle.
+- No importer write, source CSV edit, page export, route-card export, h8bin/DataMonolith bake, Unity proof, runtime proof, native localization review, or publication work was launched.
+
+Integrated artifacts:
+
+- `Docs/Reports/Batch32/CONTROLLER_SOURCE_ADMISSION_EXECUTION_PLAN_RS099_RS108_20260605.md`
+- `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`
+
+Latest validation:
+
+- Read-only manifest/bundle scan: RS099-RS108 have `packet_sources=0`, `canonical_importer_sources=0`, `canonical_importer_ready=false`, and `runtime_ready=false`.
+- Read-only importer collection proof: `collected_packets=464`, `scoped_P496_P526=0`.
+- Missing importer localized fields: RS099 has 360; RS100-RS108 have 270 each.
+- New plan and live-board link have zero replacement characters, zero `????` placeholder hits, and zero positive readiness-true token hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- P496-P526 remain static source-candidate coverage only.
+- Future source admission requires explicit source/bake owner, importer-schema conversion, manifest `packet_sources`, importer proof, page export proof, route-card proof if route cards are added, source-only audit, h8bin proof, and Unity/runtime proof in that order.
+
+Next valid controller action:
+
+- Continue static/controller work only while process gate remains red.

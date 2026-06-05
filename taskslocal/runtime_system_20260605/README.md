@@ -10,12 +10,15 @@ This folder does not prove runtime behavior, Play Mode, player build, profiler, 
 
 - `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md` - future implementation packet for walking/interior or shoreline movement, swimming, ascend/descend, camera feel, interaction affordance, HUD/visor essentials, PDA/pause/rebinding, zero-GC HUD updates, black-box telemetry, save/load proof, and first-20 route acceptance.
 - `RUNTIME_OWNER_02_SHELL_HUD_BLOCKER_REPAIR_PACKET.md` - future repair/proof packet for shell movement/input authority and HUD overlay blocker isolation.
+- `RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md` - next future Unity owner packet for no-mutation active player/HUD readback followed by owner-correct repair and full movement/UI/input/camera/save proof.
 
 ## Current Reports
 
 - `Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_MOVEMENT_STATIC_ANCHOR_AUDIT_20260605.md/.csv` - static anchor audit for 28 player/UI/movement candidates. All rows are `PENDING VERIFICATION`. Hard blockers: `HectonWorldShellController1428` direct input/transform shell risk and `HUD_Internal.prefab` `forceScreenSpaceOverlay: 1`.
 - `Docs/Reports/RuntimeSystem_20260605/SHELL_HUD_SCENE_BINDING_ESCALATION_20260605.md/.csv` - static escalation: `02_HECTON_WORLD.unity` contains active `Player` with enabled scene-local `HectonWorldShellController1428`; `HUD_Internal` compositor is disabled but keeps latent `forceScreenSpaceOverlay: 1`.
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md/.csv` - consolidated static conflict map for active scene shell, production player prefab GUID absence in `02_HECTON_WORLD`, HUD prefab GUID absence, and compositor overlay risk.
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_STATIC_SCAN_20260605.md/.csv` - scoped static grep triage for direct input, `ScreenSpaceOverlay`, UI string mutation, `SetActive`, material access, and other forbidden/suspicious API patterns. P0 rows remain shell direct input and gameplay HUD overlay route. No runtime/profiler proof.
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.md/.csv` - source-context triage for the grep hits. Confirms shell direct input and editor Play Mode overlay proof as blockers, classifies `ThermalDynamicResolutionAdapter` coroutine repair as P1, and excludes editor-only `OnGUI`/scavenging cleanup hits from player-runtime blockers.
 
 ## Hard Boundaries
 
@@ -27,7 +30,7 @@ This folder does not prove runtime behavior, Play Mode, player build, profiler, 
 
 ## Next Runtime Owner
 
-Start with `RUNTIME_OWNER_01_PLAYER_UI_MOVEMENT_VERTICAL_SLICE_PACKET.md`.
+Start with `RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md`.
 
 First required proof is no-mutation Unity readback of active player, movement owner, HUD owner, input owner, interaction prompt, camera graph, `HUD_Internal` production status, and whether the enabled scene-local `HectonWorldShellController1428` on `02_HECTON_WORLD` `Player` is still winning over production `Player.prefab`.
 

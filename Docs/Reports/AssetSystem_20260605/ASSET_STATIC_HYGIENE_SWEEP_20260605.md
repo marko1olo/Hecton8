@@ -9,7 +9,7 @@ This sweep checks claim hygiene and queue coherence only. It does not prove Unit
 ## Commands
 
 - `rg -n --glob '*.md' --glob '*.csv' "\b(VERIFIED|Verified|verified|READY|Ready|ready|COMPLETE|Complete|complete|accepted|acceptance|0 GC|0 B/frame|runtime-ready|runtime ready|visual acceptance|Unity acceptance|Addressables readiness|PENDING VERIFICATION)\b" Docs/AssetAudit Docs/Audio Docs/Reports/AssetSystem_20260605 taskslocal/asset_system_20260605`
-- `rg -n --glob '*.md' --glob '*.csv' "STATIC VERIFIED|runtime-ready|runtime ready|VISUAL PASS|READY_FOR|READY|VERIFIED|COMPLETE|DONE|0 B/frame|Addressables-ready|Unity-verified|Unity verified|final acceptance" Docs/AssetAudit Docs/Audio Docs/Reports/AssetSystem_20260605 taskslocal/asset_system_20260605`
+- `rg -n --glob '*.md' --glob '*.csv' "<banned static-proof wording>|runtime-ready|runtime ready|VISUAL PASS|READY_FOR|READY|VERIFIED|COMPLETE|DONE|0 B/frame|Addressables-ready|Unity-verified|Unity verified|final acceptance" Docs/AssetAudit Docs/Audio Docs/Reports/AssetSystem_20260605 taskslocal/asset_system_20260605`
 - `Import-Csv Docs/Audio/audio_asset_ledger.csv | Group-Object class`
 - `Import-Csv Docs/Audio/audio_asset_ledger.csv | Group-Object owner`
 - `Import-Csv Docs/Audio/audio_asset_ledger.csv | Group-Object addressable_group`
@@ -22,7 +22,7 @@ This sweep checks claim hygiene and queue coherence only. It does not prove Unit
 - No asset-front doc in this scope claimed Unity/runtime/material/visual readiness from static scans.
 - `PENDING VERIFICATION` is consistently present on asset-front review docs.
 - Hits for `VERIFIED`, `READY`, `COMPLETE`, `0 B/frame`, `acceptance`, and `Addressables readiness` were negative rules, future proof requirements, cue filenames, or blockers.
-- No `STATIC VERIFIED`, `VISUAL PASS`, `Unity verified`, `runtime-ready`, or `final acceptance` claim was found in the scanned scope.
+- No banned static-proof wording, `VISUAL PASS`, `Unity verified`, `runtime-ready`, or `final acceptance` claim was found in the scanned scope.
 
 Residual risk: `rg` is text evidence only. Concurrent workers can add new files after this sweep.
 

@@ -17,7 +17,6 @@ Hard boundary for this packet: no Unity run, no import edit, no prefab edit, no 
 ## Required Authority And Evidence Reads For Future Owner
 
 - `AGENTS.md`
-- `HECTON8_ORCHESTRATOR.md` only because this is a task packet / local orchestration handoff.
 - `audio.md`
 - `performance.md`
 - `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`
@@ -26,6 +25,8 @@ Hard boundary for this packet: no Unity run, no import edit, no prefab edit, no 
 - `Docs/AssetAudit/AUDIO_LOUDNESS_TECHNICAL_PROPERTIES_20260605.md`
 - `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.md`
 - Use existing packets `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md`, `ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md`, and `ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md` as prior static handoffs, not acceptance proof.
+
+Read `HECTON8_ORCHESTRATOR.md` only if the future owner is explicitly assigned controller/orchestration work. An ordinary audio remediation owner must not read it.
 
 ## First-20 Route Hook
 
@@ -160,14 +161,14 @@ Compact lane must prioritize breath, warnings, sonar/threat, UI/instrument feedb
 
 ## Runtime, Profiler, And GC Proof Boundaries
 
-Accepted proof classes:
+Accepted proof states:
 
-- `STATIC_VERIFIED`: path/config/source facts only.
-- `EDITOR_VERIFIED`: Unity import/config/prefab readback with Console state.
-- `PLAYMODE_VERIFIED`: route playback and cue priority observed in scene.
-- `PROFILER_VERIFIED`: runtime Profiler/GCMonitor/audio/DSP evidence.
-- `MEMORY_VERIFIED`: Memory Profiler or equivalent resident/committed audio memory evidence.
-- `PLAYER_CAPTURE_VERIFIED`: player capture demonstrating mix readability.
+- `STATIC_STRUCTURE_REVIEWED`: path/config/source facts only; no runtime or mix acceptance.
+- `EDITOR_READBACK_VERIFIED`: Unity import/config/prefab readback with Console state.
+- `PLAYMODE_ROUTE_VERIFIED`: route playback and cue priority observed in scene.
+- `PROFILER_AUDIO_VERIFIED`: runtime Profiler/GCMonitor/audio/DSP evidence.
+- `MEMORY_AUDIO_VERIFIED`: Memory Profiler or equivalent resident/committed audio memory evidence.
+- `PLAYER_CAPTURE_AUDIO_VERIFIED`: player capture demonstrating mix readability.
 
 Forbidden proof claims:
 

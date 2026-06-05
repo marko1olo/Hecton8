@@ -122,11 +122,15 @@ Current start-here navigator:
 - `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` is the row-level execution refinement for the six audio P0 blockers; it is not runtime mix or listening proof.
 - `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv` is the no-mutation Unity readback field manifest for the next clean process gate.
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv` is the rejected/missing visual proof capture gap table.
+- `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.md/.csv` is the current mandatory visual-reference folder inventory. Use it before citing any reference image path.
+- `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png` is the contact sheet for the current 15-reference set.
+- `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` is the current image-read digest for the mandatory visual references. Use it before water, terrain, sky, flora, UI, cockpit, shoreline, or h8_1475 visual proof work.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` is the mandatory-reference critique checklist for future h8_1475 screenshot pass/fail review; it is not visual acceptance.
+- `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md/.csv` is the canonical h8_1475 shotlist aligned to the image-read digest; it is not screenshot proof.
 - `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv` orders the future no-mutation h8_1475 proof packet dependencies; it is not execution proof.
 - `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md/.csv` is the compact crosswalk for assigning owners 24-36 from the P0 target/readback/capture tables.
 - `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.md/.csv` maps asset owner IDs 01-36 and marks 29-33 as output-only target-table worker IDs.
-- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 47 curated CSV files, including visual-reference critique, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit`.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records current static parse hygiene for 49 curated CSV files, including visual-reference critique, current visual-reference path continuity, h8_1475 canonical shotlist, audio P0 execution refinement, product-face execution refinement, and clean scoped audio CSVs outside `Docs/AssetAudit`.
 - `Docs/AssetAudit/ASSET_AUTHORING_TOOL_INVENTORY_20260605.md/.csv` maps existing local offline/editor tools so future owners reuse known generators/scanners instead of inventing new ones.
 - `Docs/AssetAudit/AUDIO_PROFILE_ROUTE_MATRIX_20260605.md/.csv` maps MusicDirector/profile/cue-family blockers before audio owners touch route data.
 - `Docs/AssetAudit/AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.md/.csv` maps audio source folders to long-bed, low-Q, direct-ref, placeholder, owner, and Addressables risks.
