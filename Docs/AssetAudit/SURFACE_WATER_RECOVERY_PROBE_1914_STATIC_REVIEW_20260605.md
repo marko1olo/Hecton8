@@ -16,7 +16,7 @@ No Unity action, Play Mode, scene save, prefab save, material save, import, prof
 
 - `H8_WORLD_CREST_OCEAN_RUNTIME_1428` is active on layer `Water`.
 - `H8_TEMP_SurfaceWaterReadabilityProbe_1428` is `MISSING`.
-- `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader` and `.meta` are deleted in the current worktree while `H8VisualProofCapture1912.cs` still references that shader path.
+- Current `H8VisualProofCapture1912.cs` no longer references the old `H8_SurfaceWaterReadability_1428.shader` path; this review preserves the old 1914 text-capture fact, not a current source-reference claim.
 - `SURFACE_HORIZON_SALT_HAZE_1428` is active with material `H8_TEMP_SurfaceHorizonHazeProbe_1428`.
 - `H8_FloorCausticSoft_1443` renderer is disabled.
 - `H8_UnderwaterSurfaceSheet_1455` and `H8_UnderwaterHazeCurtain_1454` are inactive.

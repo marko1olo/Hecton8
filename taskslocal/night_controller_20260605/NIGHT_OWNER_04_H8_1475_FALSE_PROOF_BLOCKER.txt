@@ -24,6 +24,7 @@ Evidence basis:
 - Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
 - Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
 - Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
+- Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md
 
 Tasks:
 1. Read owner 01 and owner 03 outputs. If active player/HUD/tool route is unknown, stop with BLOCKED_BY_RUNTIME_AUTHORITY.
@@ -36,6 +37,9 @@ Tasks:
 8. Copy Unity log and console export.
 9. Add dirty-state audit before/after.
 10. Final label is REJECTED, INCOMPLETE_PROOF_PACKET, BLOCKED_BY_RUNTIME_AUTHORITY, BLOCKED_BY_VISUAL_FLOOR, or PENDING_HUMAN_REVIEW. Do not write ACCEPTED without all proof and user approval.
+
+Hard blocker:
+- Do not use `H8VisualProofCapture1912` as canonical h8_1475 acceptance tooling. Current source emits h8_1912/h8_1913/h8_1914 raw MCP diagnostics, not h8_1475 proof packets, and its crest/terrain/haze/quarantine paths mutate editor scene or render state.
 
 Acceptance:
 - Complete manifest/checksum/log/console/dirty/readback/screenshots/comparison packet.

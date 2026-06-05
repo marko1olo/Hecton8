@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_resource_longform;poi.resource_custody_article
 biome_tags: biome.publication;biome.resources_ecology
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 1
+title: "Blue Debt Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

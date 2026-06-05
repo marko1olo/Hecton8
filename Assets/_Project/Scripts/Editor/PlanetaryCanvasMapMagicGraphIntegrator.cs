@@ -186,6 +186,9 @@ namespace Hecton8.Editor
                 return false;
 
             Generator generator = outlet.Gen;
+            if (generator is Placeholders.GenericPlaceholder)
+                return false;
+
             return generator != tectonicNode &&
                    generator != erosionNode &&
                    generator != splatNode;

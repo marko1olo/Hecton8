@@ -25,17 +25,17 @@ Process gate at review time: CPU reported `100`; no Unity/build/profiler/source 
 
 ## Source Context Corrections
 
-### MarineSnow Runtime Scratch
+### MarineSnow DataVault Rewrite
 
-`HectonMarineSnowRenderer.cs:1347` is runtime-reachable, not editor/offline-only:
+Current `HectonMarineSnowRenderer.cs` disk state supersedes the older audit-anchor wording:
 
-- `_mockWakeScratch` and `_propwashEventScratch` are declared at lines `673-674`.
-- `EnsureOwnedNativeState()` calls `EnsureRuntimeScratchBuffers()` at line `1320`.
-- `EnsureRuntimeScratchBuffers()` calls `EnsureNativeArrayScratch(...)` at lines `1323-1332`.
-- `EnsureNativeArrayScratch(...)` allocates `Allocator.Persistent` at line `1347`.
-- Runtime paths write and copy these scratch buffers at lines `2590-2688`, then use them for vault and GPU upload paths around `2978-2982`.
+- Runtime scratch fields `_mockWakeScratch` and `_propwashEventScratch` are not present.
+- Runtime DataVault handles are `_dynamicWakeDtoHandle` at line `429`, `_propwashEventHandle` at line `432`, and `_propwashWakeProfileHandle` at line `436`.
+- Mock wake writes through `TryWriteMockWakeVaultAndGpu(...)` at line `2560` and acquires `BufferID.MarineSnowDynamicWakes` at lines `2564-2568`.
+- Mock propwash writes through `TryBuildAndPublishMockPropwashEvents(...)` at line `2763` and acquires `BufferID.PropwashGpuEventRing` at lines `2775-2779`.
+- Procedural wake-source bridge reads `WakeSource` and appends propwash at lines `2984`, `3007-3011`, and `3021`.
 
-Owner 08 should treat this as runtime persistent scratch debt. `HectonMarineSnowRenderer.cs:2005` is the editor wake-profile parse scratch inside `#if UNITY_EDITOR` and must not be used as the runtime constructor anchor.
+Owner 08 should preserve this DataVault rewrite and prove it with scanner re-run, compile, Unity, GC/profiler, and runtime dump artifacts. The older audit JSON still records historical `1347`/`2005` anchors; current disk source no longer has runtime scratch at `1347`, and editor wake-profile parse scratch is currently allocated at line `1948`.
 
 ### Biolum Black-Box Mirrors
 
@@ -55,7 +55,7 @@ These are runtime diagnostic mirrors, not gameplay authority. The source decisio
 The following are editor/offline scratch and should not be migrated as runtime gameplay state:
 
 - `BiolumPulseSyncRuntime.cs:3018` `_csvOverrideReadBytes` under `#if UNITY_EDITOR`.
-- `HectonMarineSnowRenderer.cs:2005` `_wakeProfileParseScratch` under `#if UNITY_EDITOR` between lines `1952` and `2243`.
+- `HectonMarineSnowRenderer.cs:1948` `_wakeProfileParseScratch` under `#if UNITY_EDITOR`.
 
 They still need an editor/offline owner route or relocation under an editor-only surface if scanner noise keeps polluting runtime reports.
 
@@ -77,8 +77,8 @@ Fixed system dump names are deterministic but risk overwrite and legacy owner am
 
 ## Required Next Owner Actions
 
-- Correct Owner 08 and any human summary that labels `HectonMarineSnowRenderer.cs:2005` as the runtime constructor anchor. The audit JSON already separates `1347` as Runtime and `2005` as Editor.
-- Treat MarineSnow line `1347` plus declarations `673-674` as runtime persistent scratch debt.
+- Correct Owner 08 and any human summary that treats old MarineSnow audit anchors `1347`/`2005` as current disk source anchors.
+- Preserve the current MarineSnow DataVault rewrite for dynamic wakes and propwash; do not reintroduce runtime scratch fields.
 - Treat Biolum black-box snapshot/write arrays as owner-local diagnostic mirrors with source decision fields present; remaining blockers are compile, Unity, GC/profiler, scanner recheck, and dump artifact proof.
 - Keep editor/offline scratch separate from runtime debt.
 - Re-run `Tools/DataVaultSovereigntyAudit.py` only when process load is acceptable; current CPU gate was red.

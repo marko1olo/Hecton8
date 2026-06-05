@@ -7,6 +7,9 @@ poi_tags: poi.atlas_spoiler_longform;poi.factory_temple_article_spine
 biome_tags: biome.publication;biome.spoiler_gate
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 3
+title: "Atlas Repair Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

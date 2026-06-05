@@ -1984,6 +1984,8 @@ Rule and bible updates must:
 - keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
 - keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
+- keep `C:\Users\danat\.gemini\GEMINI.md` as a thin Gemini/Antigravity router that sends HECTON-8 work to project `GEMINI.md`, root `AGENTS.md`, and `Docs/AGENT_AUTHORITY_ROUTING.md`;
+- keep project `GEMINI.md` as a tool shim, not a divergent HECTON-8 law copy;
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
 - keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit multi-agent, batch, controller, and task-file work;
 - keep subagent rules available in root `AGENTS.md` and `HECTON8_ORCHESTRATOR.md` so delegation improves evidence quality without weakening primary responsibility;
@@ -5730,6 +5732,8 @@ For non-trivial HECTON-8 work:
 
 Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine.
 
+Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
+
 [REQ] Authority files, route bibles, mandate files, and important task documents must be read as complete documents before you evaluate their meaning. Text search is allowed for navigation, locating symbols, and audit checks, but not as a substitute for reading the document and reasoning about the whole rule set.
 
 [REQ] Final chat or explicit batch log for non-trivial tasks must include a concise authority receipt:
@@ -5759,8 +5763,9 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip fu
 
 [REQ] Darkness/noir belongs to depth, caves, interiors, storms, pressure events, and temporary eclipse windows. Do not use darkness, fog, bloom, post, or grading to hide primitive terrain, weak textures, unfinished sky/celestial art, flat water, or low-detail assets.
 
-[REQ] Player-visible water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome work must inspect the reference image folder:
+[REQ] Before player-visible visual creation, edit, review, implementation, or proof work for water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome, inspect the reference image folder:
 `Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)`.
+If the folder or needed image proof is unavailable, report visual status as `PENDING VERIFICATION` and do not claim visual direction or quality.
 
 [REQ] Use existing quality assets before rewriting. Assets that are blurry, primitive, badly imported, stale demo content, or below `TASTE.md` must be fixed, regenerated offline, replaced, or explicitly reported.
 
@@ -5828,6 +5833,8 @@ Save/persistence is source-owned by `SaveManager.cs`, `SaveEvents.cs`, `persiste
 Event/signal contracts are not string-RPC contracts. Current first-party hot broadcasts use typed unmanaged `SignalBus<T>` lanes. Legacy static event lanes such as `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `ScanEvents`, `ModuleStatusEvents`, `FlashlightEvents`, and `PDAEvents` are fixed-capacity/NativeQueue-style bridge lanes only where current source proves them. `HectonEventBus` is for mod/API/cold managed isolation. Do not create string event names or single-use EventIDs.
 
 Spatial audio is source-owned by `SpatialAudioManager.cs` and `audio.md`. Current source uses authored/fixed AudioSource pools plus native/acoustic DSP data paths and black-box telemetry. Do not use `AudioSource.PlayOneShot` in hot paths, do not invent MasterAudio event strings, and do not runtime-add audio pool components unless the audio route bible and source owner explicitly allow it.
+
+Audio import defaults: ambient/music use Vorbis around Q70 and Compressed In Memory unless the audio bible proves a better lane; short SFX under 2s use ADPCM, sub-0.5s SFX may Decompress On Load, 3D SFX default Force To Mono, music targets 44100 Hz, SFX targets 22050 Hz, and streaming is for music/long ambience only, not latency-critical SFX.
 
 Third-party boundaries: MapMagic is terrain-only through the approved bridge owner; Crest ocean uses assigned asset materials, not runtime material clones; Odin remains editor-only. Do not introduce or extend A* Pathfinding, DOTween, Easy Save 3, Master Audio, or vendor scripting defines as first-party runtime dependencies without an explicit cleanup/integration task and source-backed approval.
 
@@ -5903,6 +5910,10 @@ Streaming/import defaults: heavy terrain, ocean, caves, generated asset families
 
 [REQ] Native containers need explicit owner, fixed capacity, lifecycle, and deferred disposal. Domain runtime native ownership belongs in `GlobalDataVault` unless a mandate/route card grants a scoped owner exception.
 
+[REQ] Cold allocations need explicit capacity and owner. Use canonical comments for non-obvious cold allocations: `// COLD ALLOC: Type[capacity] - reason - owner: ClassName`. Cold allocations above 1 MB require exact size and justification for why they are not lazy/streamed.
+
+[REQ] Collection reservation/query helpers must fail safe. Empty or unavailable backing collections return false from `TryReserve`/`TryGet`-style APIs; callers must verify data at the usage point and not assume population.
+
 [FORBID] `JobHandle.Complete()` in mid-frame hot paths. Complete only in named dispatcher-owned completion windows or cold init with explicit justification.
 
 [REQ] Runtime DTOs, SignalBus payloads, telemetry entries, save staging records, and GPU upload records must be ARM64-safe: unmanaged fields, no runtime `bool`, no managed references, explicit padding when needed, and size/alignment proof when crossing native/Burst/persistence/GPU boundaries.
@@ -5936,7 +5947,11 @@ Use these defaults unless a current route bible, mandate, or live source owner p
 
 [REQ] If code breaks compile, do not stop at the first error. Read compiler errors and fix manually. If the same external dependency wall blocks three consecutive attempts, revert your broken chunk, mark explicit batch task blocked only when batch logging exists, and report the dependency.
 
+[RULE] Revert over hack for proven regressions. If a route that was previously working breaks because of your current changes, revert your broken chunk and find the exact broken reference before writing fix-forward glue. If the suspected regression is in other-agent/user work, do not revert it; isolate evidence and report the owner route.
+
 [FORBID] Raw prefab/scene/asset YAML edits unless mathematically certain of FileID/GUID/property alignment. Prefer Unity API/editor tooling when a scene/prefab mutation is required.
+
+[RULE] Prefab/scene consistency guard: reusable gameplay objects use prefab as source of truth; scene-only objects use scene instance as source of truth. Do not blanket Apply All/Revert All on player, HUD/visor cameras, RT-driving cameras, or pooling/streaming/world-runtime prefabs. After prefab changes, verify both prefab asset and scene instance values, or report `PENDING VERIFICATION`.
 
 [FORBID] Change project settings, Quality, URP assets, Physics, Tags/Layers, packages, public APIs, or broad architecture without explicit instruction or narrow route proof.
 
@@ -6001,15 +6016,23 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [FORBID] Claiming platform readiness from `link.xml`, static source, docs, or local build text alone.
 
+[REQ] When MCP/Unity proof is required and process gates allow it, run the relevant scene/tool path, wait for settled telemetry, read Console/GCMonitor/profiler/capture artifacts, then decide. If MCP is unavailable, use the nearest valid Unity/profiler/capture proof route and keep status `PENDING VERIFICATION` until numbers or artifacts exist.
+
+## Delegation And Subagents
+
+[REQ] Any HECTON-8 agent may spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis.
+
+[REQ] Give each subagent the maximum relevant authority context, exact task scope, expected output, and evidence requirements. The subagent inherits HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation.
+
+[REQ] The primary agent remains responsible for reading the controlling docs, integrating results, resolving conflicts, verifying final claims, and reporting only evidence-backed conclusions.
+
+[FORBID] Do not use subagents to avoid reading required authority files, launder guesses, fabricate proof, create hidden dependencies, overwrite unrelated work, or spray broad unrelated audits. Subagent output is evidence input, not authority.
+
 ## Orchestration
 
 [REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager, read `HECTON8_ORCHESTRATOR.md`.
 
 [REQ] Explicit multi-agent, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging agents.
-
-[REQ] Use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, or report synthesis. Give each subagent the maximum relevant authority context, exact task scope, expected output, and evidence requirements. The primary agent remains responsible for reading the controlling docs, integrating results, resolving conflicts, and verifying final claims.
-
-[FORBID] Do not use subagents to avoid reading the required authority files, to launder guesses, to fabricate proof, to create hidden dependencies, or to spray broad unrelated audits. Subagent output is evidence input, not authority.
 
 [REQ] For local controller/orchestrator work, use and maintain `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`. Prefer `C:\hades\.codex_ops\AgentGuiOps.ps1` and `C:\hades\.codex_ops\ProbeAgents.ps1` before slow manual clicking.
 

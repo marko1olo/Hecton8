@@ -22,16 +22,16 @@ Evidence class: STATIC_ONLY. No Unity compile, Play Mode, profiler, GCMonitor, o
 - Unit tests: 18 tests, OK.
 - JSON artifact: `Docs/AssetAudit/VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json`.
 
-The audit exit status is not an acceptance signal because `--fail-on-any` was not used. The counts are the evidence. Source-context follow-up corrected the human summary for MarineSnow; the JSON already marks `1347` as Runtime and `2005` as Editor.
+The audit exit status is not an acceptance signal because `--fail-on-any` was not used. The counts are the evidence. That JSON snapshot already marked old MarineSnow anchors `1347` as Runtime and `2005` as Editor. Later current-disk source readback supersedes those anchors for the live repair route: MarineSnow wake/propwash runtime paths are now DataVault-rewritten.
 
 ## Findings
 
 ### Runtime Debt
 
 1. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs`
-   - Direct constructors: source-context follow-up corrects the runtime anchor to `1347`; `2005` is editor-only wake-profile CSV parse scratch inside `#if UNITY_EDITOR`.
-   - Forbidden persistent declarations: runtime `673`, `674`; editor/offline `712`.
-   - Verdict: runtime blocker remains at `1347` for `_mockWakeScratch` and `_propwashEventScratch`; editor/offline scratch at `2005` still needs an approved editor/offline owner route or relocation under an Editor-only surface.
+   - Historical audit constructors/declarations: old JSON/source rows recorded `1347` as runtime, `2005` as editor, and declaration anchors `673`, `674`, `712`.
+   - Current disk readback: `_mockWakeScratch`, `_propwashEventScratch`, and `EnsureRuntimeScratchBuffers()` are absent. DataVault handles/write paths are present at `429`, `432`, `436`, `2560`, `2763`, and `2984-3021`.
+   - Verdict: preserve and prove the current DataVault rewrite. The remaining MarineSnow source debt in this review is proof debt: scanner re-run, compile, Unity, GC/profiler, and VFX route exercise. Editor/offline wake-profile scratch is current line `1948` and still needs an approved editor/offline owner route or relocation under an Editor-only surface.
 
 2. `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs`
    - Source decision comment: `311-315` (`SOURCE DECISION BIOLUM_BLACKBOX_OWNER_LOCAL_20260605`).
@@ -53,7 +53,7 @@ The audit exit status is not an acceptance signal because `--fail-on-any` was no
 - Static context: file begins with `#if UNITY_EDITOR` at line `1` and ends with `#endif` at line `722`.
 - Verdict after tool fix: editor-only transient scratch, not runtime debt. `DataVaultSovereigntyAudit.py` now classifies file-scoped `#if UNITY_EDITOR` sources as `Editor` for direct-constructor findings.
 
-Mixed runtime/editor files are now classified per constructor line, not by file path alone. Source-context follow-up keeps `BiolumPulseSyncRuntime.cs:3018` as editor/offline debt, records Biolum source decision fields at lines `311-315`, corrects `HectonMarineSnowRenderer.cs:1347` back to runtime scratch debt, and moves the editor/offline MarineSnow anchor to `2005`.
+Mixed runtime/editor files are now classified per constructor line, not by file path alone. Source-context follow-up keeps `BiolumPulseSyncRuntime.cs:3018` as editor/offline debt, records Biolum source decision fields at lines `311-315`, and records current MarineSnow disk source as DataVault-rewritten for wake/propwash runtime paths with editor/offline wake-profile scratch at `1948`.
 
 ## Repair Rules For Future Owner
 
@@ -67,4 +67,4 @@ Mixed runtime/editor files are now classified per constructor line, not by file 
 
 Runtime VFX DataVault sovereignty: PENDING VERIFICATION.
 
-Static evidence exists. Biolum source decision fields are present by source readback only. MarineSnow and PlasmaBeam still need repair or route review. No compile, Unity, profiler, GC, scanner re-run, or runtime dump proof was performed.
+Static evidence exists. Biolum source decision fields are present by source readback only. MarineSnow current source appears repaired through DataVault but still needs scanner, compile, Unity, profiler, GC, and route proof. PlasmaBeam still needs fault-route review. No compile, Unity, profiler, GC, scanner re-run, or runtime dump proof was performed.

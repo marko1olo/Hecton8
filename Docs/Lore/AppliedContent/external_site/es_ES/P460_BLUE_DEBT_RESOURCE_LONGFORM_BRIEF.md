@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_resource_longform;poi.resource_custody_article
 biome_tags: biome.publication;biome.resources_ecology
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "Blue Debt Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

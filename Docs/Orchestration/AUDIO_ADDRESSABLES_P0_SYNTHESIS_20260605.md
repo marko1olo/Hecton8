@@ -11,38 +11,43 @@ Audio and Addressables are not production-ready. Current tables prove blocker ma
 
 ## P0 Blockers
 
-1. `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset` has null mixer refs:
+1. Addressables route is absent. `Packages/manifest.json` declares `com.unity.addressables` `2.9.1`, but `Assets/AddressableAssetsData` contains no settings, groups, profiles, schemas, labels, entries, catalog, or release ledger. Static validator code expects settings/groups at `Assets/_Project/Scripts/Core/Content/Editor/ContentAuthorityBuildValidators.cs` around lines 378, 435, and 442.
+2. `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset` has null mixer refs:
    - `_musicMixerGroup: {fileID: 0}`
    - `_stingerMixerGroup: {fileID: 0}`
-2. `Assets/_Project/Prefabs/Audio/PFB_HectonMusicDirectorRoot.prefab` has null `OutputAudioMixerGroup` on:
+3. `Assets/_Project/Prefabs/Audio/PFB_HectonMusicDirectorRoot.prefab` has null `OutputAudioMixerGroup` on:
    - `MusicVoice_0`
    - `MusicVoice_1`
    - `MusicStinger`
-3. `Assets/_Project/Prefabs/Player.prefab` has P0 direct refs to `Underwater Ambient.wav`:
+4. `Assets/_Project/Prefabs/Audio/PFB_SpatialAudioManagerRoot.prefab` has null SFX/interface/ambient/threat/bed/routing mixer refs around lines 553-558. `Assets/_Project/MasterMixer.mixer` exists with Music/SFX/Ambient groups, but static YAML shows the groups are not wired.
+5. `Assets/_Project/Prefabs/Player.prefab` has P0 direct refs to `Underwater Ambient.wav`:
    - AudioSource `m_Resource` around line 137
    - `_driverClip` around line 239
-4. `_driverClip` belongs to `DynamicMusicGranularSynthesizer`, and `Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs` uses managed `OnAudioFilterRead(float[] data, int channels)` around line 775. Release acceptance requires an explicit exclusion, waiver, DSP/native bridge proof, no-GC proof, and underrun proof.
-5. `Assets/_Project/Prefabs/Player.prefab` has P0 direct refs to `dive_splash.wav` around lines 1066-1067. Source queues them through fixed presentation audio events in `Assets/_Project/Scripts/HectonPlayerMovement.cs` around line 11069, but there is no Addressables/load/release proof.
-6. `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv` reports 28 direct `Player.prefab` clip refs: 4 P0 plus 24 P1 footstep/UI refs.
-7. Addressables package exists (`com.unity.addressables` `2.9.1`), but `Assets/AddressableAssetsData` has `RecursiveItemCount=0` and `NonMetaFileCount=0`. There are no settings, groups, profiles, schemas, labels, entries, catalog, or release ledger.
-8. `Assets/_Project/Audio/Underwater Ambient.wav.meta` conflicts with audit docs. Live meta serializes `loadType: 1`, `compressionFormat: 1`, `quality: 0.7`, `sampleRateOverride: 22050`; docs describe Streaming/Vorbis/Q0.45/193s. Unity import readback is mandatory before policy decisions.
+6. `_driverClip` belongs to `DynamicMusicGranularSynthesizer`, and `Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs` uses managed `OnAudioFilterRead(float[] data, int channels)` around lines 775-823. Static source indicates transfer-only copying from a prepublished native buffer, but release acceptance still requires DSP profiler, underrun, no-blocking, and no-GC proof.
+7. `Assets/_Project/Prefabs/Player.prefab` has P0 direct refs to `dive_splash.wav` around lines 1066-1067. Source queues them through fixed presentation audio events in `Assets/_Project/Scripts/HectonPlayerMovement.cs` around line 11069, but there is no Addressables/load/release proof.
+8. The current prefab residency gate scans `AudioSource.clip` only in `Assets/_Project/Scripts/Audio/Editor/AudioImportDictator.cs` around lines 764-774. Serialized `AudioClip` fields bypass that gate, so `_driverClip` and direct movement splash fields can survive static residency checks.
+9. `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv` reports 28 direct `Player.prefab` clip refs: 4 P0 plus 24 P1 footstep/UI refs.
+10. `Assets/_Project/Audio/Underwater Ambient.wav.meta` conflicts with audit docs. Live meta serializes `loadType: 1`, `compressionFormat: 1`, `quality: 0.7`, `sampleRateOverride: 22050`; docs describe Streaming/Vorbis/Q0.45/193s. Unity import readback is mandatory before policy decisions.
 
 ## Required Future Readback
 
 Through Unity only:
 
-- mixer groups;
+- `AddressableAssetSettingsDefaultObject.Settings`, required groups `Core`, `High_Res`, `Overkill`, and schemas using `RequestedAssetAndDependencies`;
+- mixer groups for `MusicDirectorConfig_Global`, `PFB_HectonMusicDirectorRoot`, and `PFB_SpatialAudioManagerRoot`;
 - runtime director prefab;
 - MusicVoicePool sources;
 - all `AudioSource.outputAudioMixerGroup`;
-- Player prefab direct refs and owning component names;
+- Player prefab direct refs and owning component names, including serialized `AudioClip` fields that are not `AudioSource.clip`;
 - clip import `loadType`, compression, quality, sample rate, force mono, preload, background load, platform overrides, duration/channels/imported size;
 - Addressables settings, groups, schemas, labels, entries, load mode, owner key, ref count, release ledger, and active handle counts.
 
 ## Acceptance
 
 - MusicDirector routes are non-null or explicitly bypassed by an owner-approved native/DSP route with runtime proof.
+- SpatialAudioManager routing groups are non-null or explicitly bypassed by an owner-approved native/DSP route with runtime proof.
 - Player direct refs each have owner, cue id/hash, Addressables key/group or fixed-lifetime exception, load phase, release/shutdown phase, playback route, fallback, mix priority, and `0 B/frame` proof.
+- Audio prefab validators scan serialized `AudioClip` fields or a separate approved residency validator covers them.
 - Addressables are accepted only after settings/groups/entries exist on disk and Unity/player proof shows load/release, memory, and compact pressure behavior.
 - Runtime listening, memory, GC, mixer output, import, and Addressables readiness remain `PENDING VERIFICATION` until fresh proof exists.
 

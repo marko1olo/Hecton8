@@ -13,6 +13,13 @@
       "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
       "article_id": "applied_lore.site_home_longform_brief",
       "title_key": "applied_lore.site_home_longform_brief.title",
+      "metadata": {
+        "spoiler_tier": "0",
+        "source_voice_by_surface": {
+          "external_site": "Website Public",
+          "in_game_wiki": "Neutral Reference"
+        }
+      },
       "unlock": {
         "primary": "unlock.site_home_longform_brief",
         "poi_tags": [
@@ -168,6 +175,13 @@
       "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
       "article_id": "applied_lore.aegir_hard_scifi_longform_brief",
       "title_key": "applied_lore.aegir_hard_scifi_longform_brief.title",
+      "metadata": {
+        "spoiler_tier": "0",
+        "source_voice_by_surface": {
+          "external_site": "Website Public",
+          "in_game_wiki": "Neutral Reference"
+        }
+      },
       "unlock": {
         "primary": "unlock.aegir_hard_scifi_longform_brief",
         "poi_tags": [
@@ -323,6 +337,13 @@
       "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
       "article_id": "applied_lore.deep_reach_liability_longform_brief",
       "title_key": "applied_lore.deep_reach_liability_longform_brief.title",
+      "metadata": {
+        "spoiler_tier": "1",
+        "source_voice_by_surface": {
+          "external_site": "Website Public",
+          "in_game_wiki": "Neutral Reference"
+        }
+      },
       "unlock": {
         "primary": "unlock.deep_reach_liability_longform_brief",
         "poi_tags": [
@@ -478,6 +499,13 @@
       "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
       "article_id": "applied_lore.atlas_spoiler_longform_brief",
       "title_key": "applied_lore.atlas_spoiler_longform_brief.title",
+      "metadata": {
+        "spoiler_tier": "3",
+        "source_voice_by_surface": {
+          "external_site": "Website Archive",
+          "in_game_wiki": "Neutral Reference"
+        }
+      },
       "unlock": {
         "primary": "unlock.atlas_spoiler_longform_brief",
         "poi_tags": [
@@ -633,6 +661,13 @@
       "release_set_id": "RS092_PUBLIC_SITE_LONGFORM_ARTICLE_BRIEFS",
       "article_id": "applied_lore.blue_debt_resource_longform_brief",
       "title_key": "applied_lore.blue_debt_resource_longform_brief.title",
+      "metadata": {
+        "spoiler_tier": "1",
+        "source_voice_by_surface": {
+          "external_site": "Website Public",
+          "in_game_wiki": "Neutral Reference"
+        }
+      },
       "unlock": {
         "primary": "unlock.blue_debt_resource_longform_brief",
         "poi_tags": [

@@ -46,6 +46,7 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 | Need | Read |
 |---|---|
 | Agent task intake, no-loss rule routing, and tool-surface delegation | `Docs/AGENT_AUTHORITY_ROUTING.md` |
+| Gemini/Antigravity project entrypoint | `GEMINI.md` shim, then `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md` |
 | No-loss detail source for former monolithic `AGENTS.md` clauses | `Docs/AGENTS_RULE_DETAIL_LEDGER.md` |
 | Root bible routing and domain bible selection | `PROJECT_BIBLES.md` |
 | User product vision locks and ambiguity resolution | `VISION_LOCKS.md` |

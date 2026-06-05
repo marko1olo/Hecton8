@@ -62,10 +62,10 @@ Required status:
 
 Editor/offline debt:
 
-- `MARINE_712`
-- `MARINE_2005`
+- `MARINE_710`
+- `MARINE_1948`
 
-`Docs/AssetAudit/DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md` proves line `2005` is inside the editor CSV reader region. Do not perform runtime source repair against `MARINE_2005`; route it as editor/offline owner debt.
+`Docs/AssetAudit/DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md` preserves the historical audit JSON split, while current disk source readback moves the editor CSV reader allocation to `1948`. Do not perform runtime source repair against `MARINE_1948`; route it as editor/offline owner debt.
 
 ## Fault Dump Route
 
@@ -84,7 +84,7 @@ Classification: bounded fault-path risk, not steady-state native ownership debt.
 1. Do not bulk-migrate all NativeArray declarations.
 2. Preserve Biolum owner-local black-box decision unless fresh source/proof contradicts it.
 3. Preserve current MarineSnow DataVault rewrite; do not reintroduce runtime scratch fields.
-4. Route MarineSnow editor/offline scratch separately: `MARINE_712`, `MARINE_2005`.
+4. Route MarineSnow editor/offline scratch separately: `MARINE_710`, `MARINE_1948`.
 5. Review MarineSnow/PlasmaBeam fault payloads as bounded fault/export routes; address shared `NativeFaultDumpWriter` managed allocation risk only with an owner-correct background/preowned route.
 6. Rerun DataVault audit and unit tests.
 7. Only after source edits: compile, Unity Console, Play Mode, GC/profiler, and forced dump artifacts.

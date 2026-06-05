@@ -28,7 +28,7 @@ Reviewed static image artifacts:
 - The old turquoise `foam.png` remains rejected as final visible waterline or shoreline art.
 - Cleanup albedo and normal are useful source direction only. They need role-correct map authoring, tile proof, import proof, material readback, and route screenshots.
 - Cleanup MRAO/RGBA/contact channels remain too harsh, false-color, broad, or blocky for direct material binding.
-- Visor droplet and `unnormal.png` assets visible in the water/foam contact sheet are not water-contact material candidates without a separate owner route.
+- Visor droplet and `visor runoff normal.png` assets visible in the water/foam contact sheet are not water-contact material candidates without a separate owner route.
 
 ## Required Future Outputs
 

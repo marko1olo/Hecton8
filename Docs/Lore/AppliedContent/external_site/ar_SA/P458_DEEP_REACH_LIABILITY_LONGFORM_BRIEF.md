@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_liability_longform;poi.public_liability_chain_article
 biome_tags: biome.publication;biome.deep_reach
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "Deep Reach Liability Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

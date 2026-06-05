@@ -25,7 +25,12 @@ namespace Hecton8.Tools.ToolKinematics
         private const string EquipmentStatsFileName = "equipment_stats.csv";
 #endif
         private const int MaxBlackBoxDumpEntries = MaxToolCapacity * ToolKinematicsMath.BlackBoxCapacity;
+        private const uint BlackBoxDumpMagic = 0x42424B54u; // TKBB
+        private const uint BlackBoxDumpVersion = 1u;
+        private const int BlackBoxDumpHeaderBytes = 32;
         private const int BlackBoxDumpEntryBytes = 64;
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_TOOL_KINEMATICS.bin";
+        private const string DumpPayloadLabel = "ToolKinematicsTelemetryDumpPayload";
         private const int DumpStateIdle = 0;
         private const int DumpStateSnapshotting = 1;
         private const int DumpStatePending = 2;
@@ -678,11 +683,96 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private bool TryWriteQueuedBlackBoxDump()
+        private unsafe bool TryWriteQueuedBlackBoxDump()
         {
             int max = math.min(Volatile.Read(ref _blackBoxDumpEntryCount), MaxBlackBoxDumpEntries);
             int entrySize = UnsafeUtility.SizeOf<ToolKinematicsTelemetryEntry>();
-            return entrySize == BlackBoxDumpEntryBytes && max > 0;
+            if (entrySize != BlackBoxDumpEntryBytes || max <= 0)
+                return false;
+
+            int payloadBytes = max * entrySize;
+            int byteCount = BlackBoxDumpHeaderBytes + payloadBytes;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ToolKinematicsRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int cursor = 0;
+                WriteUInt32LittleEndian(destination, ref cursor, BlackBoxDumpMagic);
+                WriteUInt32LittleEndian(destination, ref cursor, BlackBoxDumpVersion);
+                WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)max));
+                WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)entrySize));
+                WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)_blackBoxDumpToolCapacity));
+                WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)_blackBoxDumpTelemetryCursor));
+                WriteUInt32LittleEndian(destination, ref cursor, _blackBoxDumpFrameIndex);
+                WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)payloadBytes));
+
+                for (int i = 0; i < max; i++)
+                {
+                    int rowEnd = cursor + entrySize;
+                    WriteTelemetryEntryLittleEndian(destination, ref cursor, _blackBoxDumpEntries[i]);
+                    if (cursor > rowEnd)
+                        return false;
+
+                    cursor = rowEnd;
+                }
+
+                return cursor == byteCount && NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, cursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ToolKinematicsRuntime),
+                    DumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteTelemetryEntryLittleEndian(byte* destination, ref int cursor, ToolKinematicsTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, entry.FrameIndex);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.ToolHash);
+            WriteFloatLittleEndian(destination, ref cursor, entry.ToolHeatLevel);
+            WriteFloatLittleEndian(destination, ref cursor, entry.EnergyRemaining);
+            WriteFloatLittleEndian(destination, ref cursor, entry.HitDistance);
+            WriteInt32LittleEndian(destination, ref cursor, entry.RaymarchStepCount);
+            WriteFloatLittleEndian(destination, ref cursor, entry.IkComputeTimeMicroseconds);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.ToolLocalPosition);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.HitPoint);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.MaterialHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry._pad0);
+        }
+
+        private static unsafe void WriteFloat3LittleEndian(byte* destination, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(destination, ref cursor, value.x);
+            WriteFloatLittleEndian(destination, ref cursor, value.y);
+            WriteFloatLittleEndian(destination, ref cursor, value.z);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
         }
 
         private bool TryResolveAllBuffers(bool allowCreate, out ToolKinematicsBufferSet buffers)

@@ -7,6 +7,9 @@ poi_tags: poi.aegir_hard_scifi_longform;poi.moon_ladder_article_spine
 biome_tags: biome.publication;biome.aegir_system
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Transfer Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

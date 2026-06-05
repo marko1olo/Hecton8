@@ -30,17 +30,21 @@ Owned scope:
 
 Tasks:
 1. Confirm MusicDirector null mixer blockers: _musicMixerGroup and _stingerMixerGroup.
-2. Decide Unity-safe config repair or owned DSP/native bypass. Do not invent event strings.
-3. Classify Player.prefab direct refs: Underwater Ambient.wav and dive_splash.wav.
-4. Decide whether each direct ref becomes Addressables key, owned preload exception, or removed binding.
-5. Prepare hybrid audio import policy decision: duration default, player-loop exceptions, no generic streaming SFX.
-6. Prepare Addressables one-owner/one-key/one-proof matrix because Assets/AddressableAssetsData is currently empty.
-7. Do not import or mutate groups/settings while Unity gate is red.
-8. Later verify runtime profile entry/exit, crossfade, stinger, ducking, silence windows, memory, and 0 B/frame.
+2. Confirm SpatialAudioManagerRoot null SFX/interface/ambient/threat/bed/routing mixer blockers.
+3. Decide Unity-safe config repair or owned DSP/native bypass. Do not invent event strings.
+4. Classify Player.prefab direct refs: Underwater Ambient.wav and dive_splash.wav.
+5. Extend or replace the current residency validator because AudioImportDictator currently scans AudioSource.clip only and serialized AudioClip fields bypass it.
+6. Decide whether each direct ref becomes Addressables key, owned preload exception, or removed binding.
+7. Prepare hybrid audio import policy decision: duration default, player-loop exceptions, no generic streaming SFX.
+8. Prepare Addressables one-owner/one-key/one-proof matrix because Assets/AddressableAssetsData is currently empty.
+9. Do not import or mutate groups/settings while Unity gate is red.
+10. Later verify runtime profile entry/exit, crossfade, stinger, ducking, silence windows, memory, DSP underruns, and 0 B/frame.
 
 Acceptance:
 - MusicDirector routes are non-null or explicitly bypassed by owner route.
+- SpatialAudioManager routes are non-null or explicitly bypassed by owner route.
 - Player clip refs have owner/lifecycle/release proof.
+- Serialized AudioClip fields cannot bypass residency validation.
 - Addressables plan has group/key/profile/label schema and release ledger route.
 - Runtime listening, memory, and GC proof exist after Unity-safe execution.
 

@@ -40,8 +40,8 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 - Production `Player.prefab` has `HectonPlayerMovement`, `PlayerInteraction`, Rigidbody, camera, visor, and HUD bindings, but its GUID was not proven active in the targeted scene scan.
 - `HUD_Internal.prefab` keeps latent `forceScreenSpaceOverlay: 1`; interactive gameplay HUD acceptance requires approved diegetic/projection/world-space route proof, not a convenient overlay.
 - Current h8_1475 proof packet must include active player/HUD/product-face fields. A beauty shot without those fields is a false proof.
-- `H8VisualProofCapture1912.cs` has diagnostic capture paths that create or mutate editor-only visual state before capture. `CaptureSurfaceWaterRecoveryProbeAndExit()` emits `surface_water_recovery_probe_editor_only_unsaved`; `CaptureSurfaceCrestRecoveryProbeAndExit()` mutates OceanRenderer serialized fields through `ApplyModifiedPropertiesWithoutUndo()`. These methods are diagnostic probes, not canonical proof lanes.
-- The same editor capture script references deleted `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader` and `.meta`; the 1914 metadata records `H8_TEMP_SurfaceWaterReadabilityProbe_1428=MISSING`.
+- `H8VisualProofCapture1912.cs` has diagnostic capture paths that create or mutate editor-only visual state before capture. Current source contains `CaptureSurfaceCrestRecoveryProbeAndExit()`, which carries `surface_actual_terrain_crest_recovery_probe_editor_only_unsaved`, configures temp horizon haze, mutates MapMagic/Crest serialized fields through `ApplyModifiedPropertiesWithoutUndo()`, and creates `HideAndDontSave` temp materials. These methods are diagnostic probes, not canonical proof lanes.
+- The old 1914 water probe metadata records `H8_TEMP_SurfaceWaterReadabilityProbe_1428=MISSING`, but current `H8VisualProofCapture1912.cs` no longer references the deleted water-readability shader path. Do not assign a current source blocker from stale capture metadata.
 
 ## Anti-False-Proof Rules
 

@@ -15,6 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 GLOBAL_CODEX = Path.home() / ".codex" / "AGENTS.md"
+GLOBAL_GEMINI = Path.home() / ".gemini" / "GEMINI.md"
+GEMINI_UNITY_MCP = Path.home() / ".gemini" / "antigravity-ide" / "mcp" / "unityMCP" / "instructions.md"
 
 
 def read_text(path: Path) -> str:
@@ -52,6 +54,7 @@ def main() -> int:
     codex_agents = ROOT / ".codexrules" / "AGENTS.md"
     github_agents = ROOT / ".github" / "agents" / "AGENTS.md"
     agent_rules_agents = ROOT / ".agent" / "rules" / "AGENTS.md"
+    project_gemini = ROOT / "GEMINI.md"
     routing = ROOT / "Docs" / "AGENT_AUTHORITY_ROUTING.md"
     governance = ROOT / "Docs" / "DOC_GOVERNANCE.md"
     docs_readme = ROOT / "Docs" / "README.md"
@@ -60,6 +63,7 @@ def main() -> int:
     skills_readme = ROOT / ".agents-skills" / "README.md"
     ledger = ROOT / "Docs" / "AGENTS_RULE_DETAIL_LEDGER.md"
     persona = ROOT / ".github" / "agents" / "unity-anime-dev.agent.md"
+    historical_agent_rules_archive = ROOT / "Docs" / "DEPRECATED" / "AgentRulesHistorical_20260605"
 
     root_text = root_agents.read_bytes()
     for mirror in (codex_agents, github_agents):
@@ -68,6 +72,29 @@ def main() -> int:
 
     for path in (root_agents, routing, project_bibles):
         assert_contains(errors, path, "complete document")
+
+    for needle in (
+        "Ordinary runtime/gameplay implementation",
+        "QA/proof/verification",
+        "Technical report means",
+        "Reference image folder before design/implementation/review/proof",
+        "Docs/Lore/WriterScenarioAgentPrompt.md",
+    ):
+        assert_contains(errors, routing, needle)
+
+    for needle in (
+        "Technical report means",
+        "Before player-visible visual creation",
+        "## Delegation And Subagents",
+        "Any HECTON-8 agent may spawn/use subagents",
+        "Audio import defaults",
+        "Revert over hack for proven regressions",
+        "Prefab/scene consistency guard",
+        "COLD ALLOC",
+        "TryReserve",
+        "MCP/Unity proof",
+    ):
+        assert_contains(errors, root_agents, needle)
 
     for needle in (
         "AGENT LANE CONTRACTS",
@@ -90,13 +117,13 @@ def main() -> int:
         assert_contains(errors, orchestrator, needle)
 
     assert_contains(errors, root_agents, "lane contracts")
-    assert_contains(errors, root_agents, "## Delegation And Subagents")
-    assert_contains(errors, root_agents, "Any HECTON-8 agent may spawn/use subagents")
     assert_contains(errors, routing, "AGENT LANE CONTRACTS")
     assert_contains(errors, routing, "LOCAL SUBAGENT PROTOCOL")
     assert_contains(errors, routing, "Subagent use by an ordinary implementation")
     assert_contains(errors, project_bibles, "lane contracts")
     assert_contains(errors, project_bibles, "subagent rules")
+    assert_contains(errors, project_bibles, "C:\\Users\\danat\\.gemini\\GEMINI.md")
+    assert_contains(errors, project_bibles, "project `GEMINI.md`")
 
     assert_contains(errors, agent_rules_agents, "Authority delegates to `C:\\hades\\Hecton8\\AGENTS.md`")
     assert_contains(errors, agent_rules_agents, "Docs\\AGENT_AUTHORITY_ROUTING.md")
@@ -110,6 +137,15 @@ def main() -> int:
                 fail(errors, f"{rule_file}: historical rule must not keep active globs")
             if "HISTORICAL REFERENCE ONLY" not in text:
                 fail(errors, f"{rule_file}: missing historical-reference marker")
+            if "Docs/DEPRECATED/AgentRulesHistorical_20260605" not in text:
+                fail(errors, f"{rule_file}: missing archive pointer for old body")
+            if re.search(r"\b(Update|FixedUpdate|LateUpdate)\s*\(", text):
+                fail(errors, f"{rule_file}: active historical stub must not carry Unity lifecycle examples")
+            if re.search(r"\b(GetComponent|UnityEngine\.Pool)\b", text):
+                fail(errors, f"{rule_file}: active historical stub must not carry generic Unity examples")
+            archived = historical_agent_rules_archive / rule_file.name
+            if not archived.exists():
+                fail(errors, f"{archived}: missing archived body for historical agent rule")
 
     if GLOBAL_CODEX.exists():
         global_text = read_text(GLOBAL_CODEX)
@@ -123,6 +159,44 @@ def main() -> int:
                 fail(errors, f"{GLOBAL_CODEX}: global router missing {needle}")
         if "35 distilled" in global_text:
             fail(errors, f"{GLOBAL_CODEX}: stale mandate count 35 remains")
+
+    if GLOBAL_GEMINI.exists():
+        global_gemini_text = read_text(GLOBAL_GEMINI)
+        for needle in (
+            "[GLOBAL GEMINI / ANTIGRAVITY ROUTER]",
+            "C:\\hades\\Hecton8\\GEMINI.md",
+            "C:\\hades\\Hecton8\\AGENTS.md",
+            "C:\\hades\\Hecton8\\Docs\\AGENT_AUTHORITY_ROUTING.md",
+            "complete document",
+            "nested Antigravity workspaces",
+            "Subagents inherit HECTON-8 law",
+        ):
+            if needle not in global_gemini_text:
+                fail(errors, f"{GLOBAL_GEMINI}: global Gemini router missing {needle}")
+        if "35 distilled" in global_gemini_text:
+            fail(errors, f"{GLOBAL_GEMINI}: stale mandate count 35 remains")
+
+    if GEMINI_UNITY_MCP.exists():
+        gemini_mcp_text = read_text(GEMINI_UNITY_MCP)
+        for needle in (
+            "HECTON-8 guard",
+            "C:\\hades\\Hecton8\\GEMINI.md",
+            "C:\\hades\\Hecton8\\AGENTS.md",
+            "C:\\hades\\Hecton8\\Docs\\AGENT_AUTHORITY_ROUTING.md",
+            "root law overrides",
+            "current process gates",
+        ):
+            if needle not in gemini_mcp_text:
+                fail(errors, f"{GEMINI_UNITY_MCP}: Unity MCP instructions missing {needle}")
+
+    for needle in (
+        "Hecton8\\AGENTS.md",
+        "Docs\\AGENT_AUTHORITY_ROUTING.md",
+        "complete documents",
+        "Any HECTON-8 agent may spawn/use subagents",
+        "Antigravity brain",
+    ):
+        assert_contains(errors, project_gemini, needle)
 
     actual_mandates = len(list((ROOT / ".agents-skills").glob("*.txt")))
     skills_text = read_text(skills_readme)
@@ -152,6 +226,17 @@ def main() -> int:
         (governance, "Docs/AGENTS_RULE_DETAIL_LEDGER.md"),
         (docs_readme, "Docs/AGENTS_RULE_DETAIL_LEDGER.md"),
         (project_bibles, "Docs/AGENTS_RULE_DETAIL_LEDGER.md"),
+    ):
+        assert_contains(errors, path, needle)
+
+    for path, needle in (
+        (routing, "C:\\Users\\danat\\.gemini\\GEMINI.md"),
+        (routing, "C:\\Users\\danat\\.gemini\\antigravity-ide\\mcp\\unityMCP\\instructions.md"),
+        (routing, "Docs/DEPRECATED/AgentRulesHistorical_20260605/"),
+        (governance, "C:\\Users\\danat\\.gemini\\GEMINI.md"),
+        (governance, "project `GEMINI.md`"),
+        (governance, "Docs/DEPRECATED/AgentRulesHistorical_20260605/"),
+        (docs_readme, "Gemini/Antigravity project entrypoint"),
     ):
         assert_contains(errors, path, needle)
 

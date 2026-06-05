@@ -6113,8 +6113,8 @@ Integrated artifacts:
 
 Source-context correction:
 
-- Audit JSON already separates `HectonMarineSnowRenderer.cs:1347` as Runtime and `2005` as Editor.
-- Human summary and Owner 08 wording were corrected: runtime MarineSnow scratch debt is `_mockWakeScratch` / `_propwashEventScratch` through `EnsureRuntimeScratchBuffers()` at line `1347`; editor/offline wake-profile scratch is line `2005`.
+- Audit JSON already separated historical `HectonMarineSnowRenderer.cs:1347` as Runtime and `2005` as Editor for that snapshot.
+- Later current-disk source readback superseded this Cursor 78 repair wording: `_mockWakeScratch`, `_propwashEventScratch`, and `EnsureRuntimeScratchBuffers()` are absent; MarineSnow wake/propwash runtime paths appear DataVault-rewritten and must be preserved/proved.
 - Biolum black-box snapshot/write arrays remain runtime diagnostic mirror debt unless approved by route card or replaced with a bounded DataVault/shared dump payload route.
 - PlasmaBeam dump payload remains fault/export route review debt; do not turn it into a persistent owner-local field.
 
@@ -6421,7 +6421,7 @@ Validation:
 Current state:
 
 - VFX DataVault source-context correction is now reachable from the asset front entry points.
-- MarineSnow line `2005` remains editor/offline wake-profile scratch; latest VFX P0 synthesis says the runtime mock wake/propwash scratch appears DataVault-rewritten on disk and still needs scanner, compile, Unity, GC/profiler, and dump proof.
+- MarineSnow current disk source has editor/offline wake-profile scratch at `1948`; latest VFX P0 synthesis says the runtime mock wake/propwash scratch appears DataVault-rewritten on disk and still needs scanner, compile, Unity, GC/profiler, and dump proof.
 - Biolum black-box owner-local mirror has source decision fields present at `BiolumPulseSyncRuntime.cs:311-315`; compile, Unity, GC/profiler, scanner recheck, and deterministic dump artifact proof remain absent.
 - Visual hero source coverage remains `STATIC_IMAGE_QA_ONLY`; no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance exists.
 - Status remains `PENDING VERIFICATION`.
@@ -6603,4 +6603,91 @@ Current state:
 - Unity owner must not run while CPU gate is red.
 - Next Unity action, only when gate is green: no-mutation readback from `Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md` covering active player/HUD/tool, ocean/Crest, terrain/MapMagic, sky/Aegir, audio/Addressables, VFX/telemetry, dirty state, console, and proof packet prerequisites.
 - Flora/geology/coral placement remains blocked from scene production until surface and player proof gates pass.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Flora/Geology Placement Prep Cursor 86
+
+Current front:
+
+- Continued controller work after evidence refresh and pasted Unity-worker dialogue review.
+- Process gate remains red: fresh CPU sample `100`; active blockers include Unity Hub/licensing and Unity `dotnet`. No Unity readback, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime code mutation was performed.
+- Spawned independent static subagents for h8_1475 proof-tool integrity, player/HUD/movement authority, and audio/Addressables P0 route audit. Existing flora/geology subagent remains pending.
+
+Integrated artifact:
+
+- `Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`
+
+Current Owner08 facts:
+
+- `Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals` is the strongest static geology candidate: 49 prefabs, all with `LODGroup`, no primitive visual mesh refs, no `MeshCollider` in the current matrix. It remains `CANDIDATE_GEOMETRY_STATIC_ONLY`.
+- `Assets/_Project/Prefabs/Nature/Flora/Baked` has 89 `LODGroup` prefabs but is blocked by `WorldProceduralProxy` material proof.
+- BioForge shallows kelp and tube coral have 100 and 50 `LODGroup` prefabs respectively, but remain material-proof blocked.
+- BioForge PorousRock and `Nature/GOTOVYE_PREFABY_KAMNEY` are blocked by `MeshCollider` route proof. They are not compact fallback until visual mesh vs collider proxy ownership is proven.
+- `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, and primitive/product-face pools remain rejected for visible route placement.
+- Flora/geology/coral placement must not be used to mask broken surface water, black terrain, weak sky/Aegir, missing HUD, or absent player route proof.
+
+Validation pending:
+
+- New orchestration/index docs require replacement-character scan, question-run scan, and scoped `git diff --check`.
+
+Current state:
+
+- Next Unity action remains no-mutation readback only after process gate is green.
+- Owner08 is now prepared as a static candidate/rejection map; production scene placement remains blocked.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Proof Tool Integrity Cursor 87
+
+Current front:
+
+- Integrated Godel static proof-tool audit.
+- No Unity/build/import/Play/profiler/scene/prefab/material/runtime mutation was performed.
+
+Integrated artifact:
+
+- `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`
+
+Current h8_1475 proof-tool facts:
+
+- `H8VisualProofCapture1912.cs` writes raw MCP diagnostics under `Docs/Screenshots/MCP`, not canonical `Docs/Screenshots/HectonProofPackets/h8_1475_*` packets.
+- Current public paths emit `h8_1912`, `h8_1913`, and `h8_1914`; no current `h8_1475` output path exists.
+- `CaptureSurfaceCrestRecoveryProbeAndExit` is diagnostic rejection-only because it mutates Crest material/settings, MapMagic graph/generation, temp horizon haze, and scene object state before capture.
+- `QuarantineSurfaceRejectsAndExit` disables renderers, marks scene dirty, and saves `02_HECTON_WORLD.unity`; it is not proof tooling.
+- Current source no longer references the old deleted water-readability shader. Current diagnostic haze path is `H8_SurfaceHorizonHaze_1428.shader`; stale old-shader references are historical artifact context only.
+- Canonical h8_1475 acceptance requires a new no-mutation proof harness, ProofGate manifest/checksum/log/six-view packet, active player/HUD/tool route predicates, dirty-state audit, and 60 clean post-capture seconds.
+
+Current state:
+
+- `H8VisualProofCapture1912` remains useful only to reject failures. It cannot promote visual acceptance.
+- Owner 04 packet updated with this hard blocker.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-05 Audio/Addressables Static Reaudit Cursor 88
+
+Current front:
+
+- Integrated Einstein static audio/Addressables reaudit.
+- Process gate remained red during controller work: CPU samples were ~99.6, ~99.8, and 100; active blockers included Unity Hub/licensing and Unity Roslyn `dotnet`/`VBCSCompiler`.
+- No Unity, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source, or raw YAML mutation was performed.
+
+Integrated artifacts:
+
+- `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`
+- `taskslocal/night_controller_20260605/NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt`
+- `taskslocal/night_controller_20260605/BATCH_INDEX.txt`
+
+Current Owner06 facts:
+
+- Addressables package exists, but `Assets/AddressableAssetsData` has no settings/groups/schemas/entries. Audio residency route is absent.
+- `MusicDirectorConfig_Global.asset` still has null music/stinger mixer refs.
+- `PFB_HectonMusicDirectorRoot.prefab` still has null output mixer groups on music/stinger sources.
+- `PFB_SpatialAudioManagerRoot.prefab` also has null SFX/interface/ambient/threat/bed/routing mixer refs.
+- `Player.prefab` still has direct `Underwater Ambient.wav` and `dive_splash.wav` refs.
+- Current audio residency gate scans `AudioSource.clip` only; serialized `AudioClip` fields can bypass it.
+- `DynamicMusicGranularSynthesizer.OnAudioFilterRead` is statically transfer-only, but release still needs DSP profiler, underrun, no-blocking, no-GC, and listening proof.
+
+Current state:
+
+- Owner06 remains `P0 BLOCKED / STATIC ONLY`.
+- Next Unity-safe action remains no-mutation readback after process gate is green.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.

@@ -45,7 +45,7 @@ Existing source-gate state:
 - `Docs/Screenshots/HectonProofPackets/` proof root: missing or not yet populated by accepted `h8_1475` session.
 - `Docs/Screenshots/MCP/*.png`: diagnostic only. Raw MCP PNGs are explicitly rejected as acceptance proof.
 - `H8VisualProofCapture1912.cs` contains diagnostic/editor-mutating capture paths. Any method that carries `editor_only_unsaved`, creates temp water/haze state, mutates Crest/OceanRenderer serialized fields, disables scene renderers, or saves the scene is rejected as canonical h8_1475 proof tooling.
-- `H8VisualProofCapture1912.cs` references the deleted `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader`. A missing diagnostic shader path is a proof-tool blocker and cannot be hidden by accepting the produced screenshot.
+- Current `H8VisualProofCapture1912.cs` no longer references the old deleted water-readability shader path. The remaining proof-tool blocker is stronger: current diagnostic paths still create temporary haze/material state, mutate MapMagic/Crest serialized fields, carry `editor_only_unsaved` metadata, and include a separate scene-save quarantine path. Any future stale or missing `Assets/...` path in proof tooling remains a blocker.
 
 Known blockers to verify through Unity readback, not mutate:
 

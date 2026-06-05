@@ -17,6 +17,8 @@ This queue separates usable Batch31 albedo/normal source candidates from blocked
 - `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png`
 - `Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.md/.csv/.json`
 - `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_static_QA.json`
+- `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/ANTIGRAVITY_MASTERLIT_PROMOTION_GUARD.md`
+- `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/ANTIGRAVITY_MASK_CONTRACT_SCOUT.md`
 - the three per-package `*_PROMOTION_MANIFEST.md/.json` files.
 
 This artifact is not permission to import textures into Unity. It is an owner decision queue for terrain/geology, shoreline, ocean-contact, and material-route owners.
@@ -33,8 +35,8 @@ This artifact is not permission to import textures into Unity. It is an owner de
 
 Before Unity promotion, the owner must choose one route:
 
-- `ARM_REPACK`: repack to production ARM `R=AO G=Roughness B=Metallic` and prove the target material/shader layout, including serialized layout fields where required.
-- `MRAO_TARGET`: deliberately bind to a shader route that decodes MRAO and prove that route with material readback.
+- `ARM_REPACK`: repack to production ARM `R=AO G=Roughness B=Metallic` and prove the target material/shader layout, including serialized `_MasterShadowParams.w = 3` for `Hecton_Master_Lit`.
+- `MRAO_TARGET`: deliberately bind to a shader route that decodes MRAO and prove that route with material readback, including serialized `_MasterShadowParams.w = 0` when using `Hecton_Master_Lit`.
 
 Importing any `MRAOSource`, `PROMO_MRAO_Candidate`, or `_MaskMap` by filename alone is rejected.
 

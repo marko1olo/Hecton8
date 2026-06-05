@@ -10,18 +10,18 @@ CSV companion: `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`.
 
 ## P0 Order
 
-1. h8_1475 proof-tool integrity: `H8VisualProofCapture1912` has editor-mutating diagnostic probe paths and a deleted `H8_SurfaceWaterReadability_1428.shader` reference. Start with `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`, `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`, `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`, and `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`.
-2. Water/foam contact: rejected foam is active-route reachable. Start with `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`, `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`, and `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
-3. Proxy flora/coral/kelp: `WorldProceduralProxy` material contamination reaches active world evidence. Start with texture blocker detail, visual/mesh taxonomy, and mesh prefab queue.
+1. h8_1475 proof-tool integrity: `H8VisualProofCapture1912` has editor-mutating diagnostic probe paths, temp material/haze generation, MapMagic/Crest serialized mutation, and `editor_only_unsaved` metadata. Start with `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`, `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`, `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`, `ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`, and `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`.
+2. Water/foam contact: rejected foam is active-route reachable. Start with `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`, `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`, `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`, and `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
+3. Proxy flora/coral/kelp: `WorldProceduralProxy` material contamination reaches active world evidence. Start with texture blocker detail, visual/mesh taxonomy, mesh prefab queue, and `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`.
 4. MusicDirector routing: null music/stinger mixer refs block route-level audio judgment. Start with `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`.
 5. Player prefab audio direct refs: 28 direct refs need owner/release/playback route. Start with `AUDIO_DIRECT_REF_DETAIL_20260605.csv`.
 6. Import/Addressables authority: audio import policy and Addressables groups remain planning only. Start with exception/group plan CSVs and do not mutate settings.
 
 ## P1 Order
 
-1. Sky/Aegir/cloud: route sources are reachable, but hero slot, material response, and bright surface screenshot proof are absent.
-2. Terrain/geology: usable source pools exist, but clean PBR, tile, slot, screenshot, and memory proof are absent.
-3. UI oxygen: detailed `ui/OXYGEN.png` is only a source candidate; HUD binding/atlas/readability proof is absent.
+1. Sky/Aegir/cloud: route sources are reachable, but hero slot, material response, and bright surface screenshot proof are absent. Start with `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`.
+2. Terrain/geology: usable source pools exist, but clean PBR, tile, slot, screenshot, and memory proof are absent. Start with `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`.
+3. UI oxygen: detailed `ui/OXYGEN.png` is only a source candidate; HUD binding/atlas/readability proof is absent. Start with `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`.
 4. Audio long beds/stingers: repeated stingers and dense long beds need listening, cadence, and priority proof.
 5. Authoring tools: existing tools must be reused through owner packets; tool presence is not product proof.
 

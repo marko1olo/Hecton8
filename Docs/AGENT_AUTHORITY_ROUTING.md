@@ -28,23 +28,27 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip th
 
 Authority files, route bibles, mandate files, and important task documents must be read as complete documents before meaning is evaluated. Text search is a navigation and audit tool only.
 
+Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
+
 Subagent use by an ordinary implementation, content, QA, or docs agent is governed by root `AGENTS.md` `Delegation And Subagents`. It does not require `HECTON8_ORCHESTRATOR.md` unless the agent is acting as a local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager.
 
 ## Task Classes
 
 | Task class | Mandatory authority beyond `AGENTS.md` |
 |---|---|
-| Player-visible water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome | Reference image folder, `PROJECT_BIBLES.md`, `TASTE.md`, matching route bibles, matching visual/performance mandates |
+| Ordinary runtime/gameplay implementation | `PROJECT_BIBLES.md`, `quality.md`, matching route bible, owner source/call sites, `.agents-skills/README.md`, exactly `2-8` matching mandates; `VISION_LOCKS.md` only when product ambiguity changes behavior |
+| Player-visible water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome | Reference image folder before design/implementation/review/proof, `PROJECT_BIBLES.md`, `TASTE.md`, matching route bibles, matching visual/performance mandates |
 | Product vision, taste ambiguity, route priority, feature interpretation | `VISION_LOCKS.md`, `PROJECT_BIBLES.md`, `TASTE.md`, matching route bible |
 | Runtime architecture, bootstrap, global authority, signal/data ownership | `PROJECT_BIBLES.md`, `systems.md`, `data.md`, `performance.md`, global-authority architecture docs, matching `ARCH_*`, `DATA_*`, `OPT_*` mandates |
 | Hot-path code, Burst, jobs, memory, GPU upload, DTOs | `performance.md`, `data.md` or `compute.md` as applicable, `.agents-skills/README.md`, matching `OPT_*`, `DATA_*`, `GPU_*`, `MATH_*` mandates |
 | Physics, vehicle, collision, pressure, flooding, tethers | `physics.md`, related gameplay/vehicle/survival bible, matching `PHYS_*`, `MATH_*`, `OPT_*` mandates |
 | UI, menus, HUD, terminals, localization, settings | `ui.md`, `UI_MENU_SCREEN_STANDARDS.md` or `UI_DIEGETIC_HUD_STANDARDS.md`, `settings.md` or `localization.md` if touched, matching `UI_*` mandates |
-| Narrative, codex, diaries, in-world prose | `writing.md`, `narrative.md`, `localization.md` when localized |
+| Narrative, codex, diaries, in-world prose | `VISION_LOCKS.md`, `writing.md`, `narrative.md`, `localization.md` for all in-world content, `Docs/Lore/WriterScenarioAgentPrompt.md` for dedicated writer/content agents, canon source list and content owner |
 | Public copy, store/social/creator text | `textes.md`, product proof gates for readiness claims |
-| Batch-agent run with supplied ID | Matching prompt block only, `AGENTS.md`, task-relevant bibles/mandates, active Status/Rationale/LOG files for that ID |
+| QA/proof/verification | `quality.md` for proof language, `Docs/QUALITY_GATES.md` for executable gates, matching route bible, `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`, current source/assets/proof artifacts; do not mine archives/logs unless named by the task or active ID |
+| Batch-agent run with supplied ID | Matching prompt block only, `AGENTS.md`, task-relevant bibles/mandates, active Status/Rationale/LOG files for that ID. If a master batch path is not supplied, do not search neighboring prompts or `CURRENT_BATCH.md`; treat the user message as a batch assignment only when it directly asks for a batch-agent run |
 | Orchestrator/controller work | `HECTON8_ORCHESTRATOR.md` including `LOCAL SUBAGENT PROTOCOL` and `AGENT LANE CONTRACTS`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, active orchestration evidence, then task-relevant bibles/mandates |
-| Documentation/rule routing work | `AGENTS.md`, this file, `PROJECT_BIBLES.md`, `.agents-skills/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/README.md`, live rule sources and generators |
+| Documentation/rule routing work | `AGENTS.md`, this file, `PROJECT_BIBLES.md`, `.agents-skills/README.md`, `quality.md` for acceptance/proof language, `Docs/QUALITY_GATES.md` when executable gates or proof labels change, `Docs/DOC_GOVERNANCE.md`, `Docs/README.md`, live rule sources and generators. Use exactly `2-8` mandates only for technical policy/report work, not typo-only edits |
 
 ## Authority Receipt
 
@@ -75,9 +79,12 @@ Delegated or generated surfaces:
 - `.codexrules/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
 - `.github/agents/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
 - `.agent/rules/AGENTS.md` delegates to root `AGENTS.md`.
+- `C:\Users\danat\.gemini\GEMINI.md` is a global Gemini/Antigravity router only. It must route HECTON-8 work to project `GEMINI.md`, root `AGENTS.md`, and this file, and must not carry a divergent HECTON-8 law copy.
+- `GEMINI.md` is a project Gemini/Antigravity shim only. It must route to root `AGENTS.md` and this file, and must not duplicate divergent project law.
+- `C:\Users\danat\.gemini\antigravity-ide\mcp\unityMCP\instructions.md` is generic Unity MCP guidance with a HECTON-8 guard. It cannot override root process gates or proof requirements.
 - `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` is generated by `Tools/Docs/BuildProjectRootBiblesCombined.py`; update live source files, then regenerate.
 
-Historical or generic rule files under `.agent/rules/*.md` are not HECTON-8 authority unless root `AGENTS.md`, this document, or a current route bible explicitly imports them. If they conflict with HECTON-8 law, HECTON-8 law wins.
+Historical or generic rule files under `.agent/rules/*.md` are not HECTON-8 authority unless root `AGENTS.md`, this document, or a current route bible explicitly imports them. Their former full bodies are preserved under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`. If they conflict with HECTON-8 law, HECTON-8 law wins.
 
 ## No-Loss Split Protocol
 

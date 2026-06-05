@@ -21,9 +21,11 @@ Fresh controller evidence:
 - Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
 - Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
 - Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md
+- Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md
 - Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md
 - Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md
 - Docs/Orchestration/VFX_DATAVAULT_P0_SYNTHESIS_20260605.md
+- Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md
 - Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png
 - Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.txt
 - Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md
@@ -46,5 +48,8 @@ Execution order:
 - Owners 02 and 03 may do static/source prep while Unity is blocked, but any Unity mutation waits for owner 01 evidence.
 - Owners 05, 06, 07, and 08 can run static/source-side work in parallel.
 - Owner 08 must not place decorative rocks/flora/coral into production routes until owner 02 proves the water/shore/terrain/sky base is not broken.
+- Owner 08 static synthesis now exists at `Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`; it is a candidate/rejection map only, not scene placement approval.
+- Owner 04 static proof-tool synthesis now exists at `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`; `H8VisualProofCapture1912` is diagnostic rejection-only, not canonical h8_1475 acceptance tooling.
+- Owner 06 static reaudit is integrated into `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`; audio/Addressables remain P0 blocked by empty Addressables settings, null mixer refs, direct Player AudioClip refs, and serialized AudioClip fields bypassing the current `AudioSource.clip` residency scan.
 
 Final controller status: PENDING VERIFICATION.

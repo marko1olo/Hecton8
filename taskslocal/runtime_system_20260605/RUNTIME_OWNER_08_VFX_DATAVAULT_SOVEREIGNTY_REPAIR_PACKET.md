@@ -41,10 +41,10 @@ This packet did not mutate Unity assets, scenes, prefabs, materials, project set
    - Required handling: do not blind-migrate Biolum mirrors. Remaining proof is compile, Unity, GC/profiler, scanner recheck, and deterministic dump artifact.
 
 2. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs`
-   - Runtime persistent direct constructor: `1347`.
-   - Runtime forbidden persistent declarations: `673`, `674`.
-   - Context: `_mockWakeScratch` and `_propwashEventScratch` are allocated through `EnsureRuntimeScratchBuffers()` and used for runtime vault/GPU upload paths.
-   - Correction: source-context review shows line `2005` is editor-only wake-profile CSV parse scratch inside `#if UNITY_EDITOR`; do not use it as the runtime constructor anchor.
+   - Current source rewrite anchors: DataVault handles at `429`, `432`, and `436`; mock wake write-lock path at `2560`; propwash write-lock path at `2763`; wake-source bridge at `2984-3021`.
+   - Historical audit anchors: old JSON/source-context rows recorded `673`, `674`, `1347`, and `2005`; those are not the current disk route for runtime wake/propwash scratch.
+   - Context: `_mockWakeScratch`, `_propwashEventScratch`, and `EnsureRuntimeScratchBuffers()` are absent in current source readback. Mock wake, propwash, and procedural wake-source paths now route through DataVault handles/write buffers.
+   - Required handling: preserve the DataVault rewrite. Do not reintroduce runtime scratch fields. Remaining proof is scanner rerun, compile, Unity, GC/profiler, and VFX route exercise.
 
 3. `Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs`
    - Runtime direct constructor: `1483`.
@@ -56,9 +56,9 @@ This packet did not mutate Unity assets, scenes, prefabs, materials, project set
    - Editor/offline persistent CSV staging inside an `#if UNITY_EDITOR` block.
    - Required handling: move under an Editor-only surface or document an editor/offline owner route. Do not migrate this as gameplay runtime state.
 
-2. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs:2005`
+2. `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs:1948`
    - Editor/offline wake-profile CSV parse scratch inside `#if UNITY_EDITOR`.
-   - Source-context review corrected earlier routing: `1347` is runtime scratch via `EnsureRuntimeScratchBuffers()`, not editor/offline-only scratch.
+   - Source-context review corrected earlier routing: old audit JSON rows are historical for current disk source; current runtime wake/propwash scratch appears rewritten through DataVault.
    - Required handling: move under an Editor-only surface or document an editor/offline owner route. Do not count it as runtime VFX gameplay debt.
 
 ## Required Repair Shape

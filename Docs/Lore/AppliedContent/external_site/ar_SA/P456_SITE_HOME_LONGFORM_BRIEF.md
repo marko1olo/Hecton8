@@ -7,6 +7,9 @@ poi_tags: poi.site_home_longform;poi.public_home_pressure_route
 biome_tags: biome.publication;biome.site_home
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HECTON-8: Pressure Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

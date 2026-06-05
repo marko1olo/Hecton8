@@ -47,6 +47,26 @@ class ValidateVisualProofCaptureGuardrailsTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 validator.validate_required_terms({path: ("H8VisualProofCapture1912", "editor_only_unsaved")})
 
+    def test_asset_reference_scan_rejects_missing_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = 'private const string ShaderPath = "Assets/_Project/Art/Shaders/Missing.shader";'
+
+            references = validator.find_asset_references(source, root=root)
+
+            self.assertEqual(1, len(references))
+            self.assertFalse(references[0].exists)
+            with self.assertRaises(SystemExit):
+                validator.validate_asset_references(references)
+
+    def test_stale_source_term_rejects_docs_when_absent_from_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "guardrail.md"
+            path.write_text("SurfaceWaterReadabilityShaderPath\n", encoding="utf-8")
+
+            with self.assertRaises(SystemExit):
+                validator.validate_no_stale_source_terms("SurfaceHorizonHazeShaderPath", {path: ()})
+
     def test_current_guardrail_docs_route_current_source_risks(self) -> None:
         risks = validator.validate_guardrails()
 

@@ -331,17 +331,14 @@ namespace MapMagic.Nodes.MatrixGenerators
                         enableThermalSlumping ? thermalIterations : 0,
                         canyonWallStrength > 0f && canyonWallMaxLift01 > 0f);
                     int dropletsPerSlice = ResolveDropletsPerSlice(maxOperationsPerSlice, currentOperations);
-                    heightDeltas = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - queued erosion deltas between Burst slice and apply job; cold MapMagic generation cannot pre-warm unknown tile sizes - owner: HectonHydraulicErosionMapMagicNode
-                    RegisterTempJobQueue(heightDeltas, ResolveHeightDeltaQueueCapacity(dropletsPerSlice, maxLifetime));
-                    heightDeltaBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                    RegisterTempJobBudget(heightDeltaBudget);
-                    handle = HydraulicErosionScheduler.ScheduleFourPhaseSlicedWithDeltaApply(
+                    // COLD SYNC JOB: MapMagic worker threads must return fully owned NativeArray state.
+                    // The queued delta-apply path currently exposes a safety handle that can outlive the
+                    // returned dependency in editor generation; direct four-phase scheduling keeps the
+                    // published handle as the single owner of all height writes.
+                    handle = HydraulicErosionScheduler.ScheduleFourPhaseSliced(
                         ref erosionJob,
                         dropletsPerSlice,
                         1,
-                        heightDeltas,
-                        heightDeltaBudget,
-                        ResolveHeightDeltaApplyBudget(dropletsPerSlice, maxLifetime),
                         default);
                     handleScheduled = true;
                 }

@@ -185,11 +185,45 @@ def frontmatter_localization_state(markdown: str) -> tuple[str, str]:
     return status, flags
 
 
+def resolve_source_voice(packet: dict, surface_key: str) -> str:
+    metadata = packet.get("metadata", {})
+    if isinstance(metadata, dict):
+        by_surface = metadata.get("source_voice_by_surface", {})
+        if isinstance(by_surface, dict):
+            surface_voice = safe_text(by_surface.get(surface_key))
+            if surface_voice:
+                return surface_voice
+    packet_by_surface = packet.get("source_voice_by_surface", {})
+    if isinstance(packet_by_surface, dict):
+        surface_voice = safe_text(packet_by_surface.get(surface_key))
+        if surface_voice:
+            return surface_voice
+    if isinstance(metadata, dict) and "source_voice" in metadata:
+        return safe_text(metadata["source_voice"])
+    explicit = safe_text(packet.get("source_voice"))
+    if explicit:
+        return explicit
+    if surface_key == "external_site":
+        return "Website Public"
+    return "Neutral Reference"
+
+def resolve_spoiler_tier(packet: dict, cluster_spoiler_tiers: dict) -> str:
+    packet_id = safe_text(packet.get("packet_id"))
+    metadata = packet.get("metadata", {})
+    if isinstance(metadata, dict) and "spoiler_tier" in metadata:
+        return safe_text(metadata["spoiler_tier"])
+    explicit = safe_text(packet.get("spoiler_tier"))
+    if explicit:
+        return explicit
+    if packet_id in cluster_spoiler_tiers:
+        return cluster_spoiler_tiers[packet_id]
+    return "0"
+
 def localization_frontmatter_matches(existing: str, rendered: str) -> bool:
     return frontmatter_localization_state(existing) == frontmatter_localization_state(rendered)
 
 
-def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface_title: str) -> str:
+def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface_title: str, cluster_spoiler_tiers: dict) -> str:
     packet_id = safe_text(packet.get("packet_id"))
     release_set_id = safe_text(packet.get("release_set_id"))
     article_id = safe_text(packet.get("article_id"))
@@ -210,6 +244,8 @@ def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface
     terminal = clean_text(localized.get("terminal"))
     audio = clean_text(localized.get("audio"))
     field_note = clean_text(localized.get("field_note"))
+    source_voice = resolve_source_voice(packet, surface_key)
+    spoiler_tier = resolve_spoiler_tier(packet, cluster_spoiler_tiers)
 
     lines: list[str] = [
         "---",
@@ -221,17 +257,26 @@ def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface
         f"biome_tags: {biome_tags}",
         f"locale: {locale}",
         f"surface: {surface_key}",
+        f"source_voice: {source_voice}",
+        f"spoiler_tier: {spoiler_tier}",
+        f"title: \"{title}\"",
         "source: AppliedContent packet JSON",
         "runtime_reads_markdown: false",
         f"direction: {direction}",
         f"localization_status: {status}",
         f"localization_flags: {flags}",
+    ]
+
+    if surface_key == "external_site" and str(spoiler_tier).isdigit() and int(spoiler_tier) >= 3:
+        lines.append("spoiler_warning: archive_spoilers")
+
+    lines.extend([
         "---",
         "",
         f"# {title}",
         "",
         body,
-    ]
+    ])
 
     if not has_publication_article:
         lines.extend((
@@ -490,7 +535,8 @@ def remove_generated_disabled_page(path: Path, packet_id: str, surface_key: str)
     return True
 
 
-def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int, int]:
+def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[int, int, int, int]:
+    import fnmatch
     packets = collect_packets(root)
     base = root / "Docs" / "Lore" / "AppliedContent"
     written = 0
@@ -498,8 +544,28 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int, int]:
     removed_disabled = 0
     indexes_written = 0
 
+    cluster_spoiler_tiers = {}
+    try:
+        cluster_graph = navigation_cluster_graph_rows(base)
+        for cluster in cluster_graph:
+            pid = safe_text(cluster.get("packet_id"))
+            if pid:
+                cluster_spoiler_tiers[pid] = safe_text(cluster.get("spoiler_tier"))
+    except Exception:
+        pass
+
     for packet in packets:
         packet_id = safe_text(packet.get("packet_id"))
+
+        if packet_glob and packet_id:
+            matched = False
+            for glob in packet_glob.split(','):
+                if fnmatch.fnmatch(packet_id, glob.strip()):
+                    matched = True
+                    break
+            if not matched:
+                continue
+
         localized_by_locale = packet.get("localized", {})
         if not isinstance(localized_by_locale, dict):
             raise ValueError(f"Packet localized must be object: {packet_id}")
@@ -517,7 +583,7 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int, int]:
                     continue
 
                 if path.exists() and not overwrite:
-                    rendered = render_page(base, packet, locale, surface_key, surface_title)
+                    rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
                     existing = path.read_text(encoding="utf-8")
                     if not localization_frontmatter_matches(existing, rendered):
                         path.write_text(rendered, encoding="utf-8", newline="\n")
@@ -528,7 +594,7 @@ def export_pages(root: Path, overwrite: bool) -> tuple[int, int, int, int]:
                     continue
 
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(render_page(base, packet, locale, surface_key, surface_title), encoding="utf-8", newline="\n")
+                path.write_text(render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers), encoding="utf-8", newline="\n")
                 written += 1
 
     for locale in TARGET_LOCALES:
@@ -549,8 +615,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing localized markdown pages.")
+    parser.add_argument("--packet-glob", default="", help="Glob to filter packets to export")
     args = parser.parse_args()
-    written, skipped, removed_disabled, indexes_written = export_pages(Path(args.root).resolve(), args.overwrite)
+    written, skipped, removed_disabled, indexes_written = export_pages(Path(args.root).resolve(), args.overwrite, args.packet_glob)
     print(
         f"applied_lore_pages_written={written} skipped_existing={skipped} "
         f"removed_disabled={removed_disabled} index_pages_written={indexes_written}"

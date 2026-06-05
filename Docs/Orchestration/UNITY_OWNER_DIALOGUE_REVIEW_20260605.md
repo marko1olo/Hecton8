@@ -72,10 +72,21 @@ ProbeB/ProbeC repeat:
 
 - `Docs/Reports/UnityCaptureSurfaceCrestActualTerrainProbeB_20260605_232055.log` and `Docs/Reports/UnityCaptureSurfaceCrestActualTerrainProbeC_20260605_232834.log` repeat the same diagnostic runner path.
 - Both write the same `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.*` filenames, overwriting prior evidence.
-- Latest PNG hash: `9AE99C3DAA35D23BCF61057AC669A87F37FEF300C44A323117AA41E2E3FF4115`.
-- Latest metadata hash: `6034F65E0C9DF9A8A7085ABBD498DDC40012E6D6DBB72849984236B9D138DB45`.
+- Later overwritten PNG hash after the newest observed `00:39` artifact: `3BB21F415E0499393FB9DD5445ECDE01AFEB9A33CCD00C3CE409BF3C1BA12DCC`.
+- Later overwritten metadata hash after the newest observed `00:39` artifact: `D3ED28BE2D128835524076F3FEED76B581EBC48718A3D5F1D79E8B8835FDEBB7`.
 - The latest image adds a visible rectangular terrain/material patch in the lower right. This is a stronger rejection, not progress.
 - Metadata shows active MapMagic `Main Terrain` with flat `size=(15000.00, 0.00, 15000.00)` plus first-party terrain shell and temporary haze. The worker is still proving a mixed diagnostic setup, not an authoritative route.
+
+## Added Dialogue Critique
+
+The useful lesson from the pasted Unity-worker dialogue is not that one color choice failed. The worker repeatedly treated the surface failure as a local material/color/haze problem and kept running temporary cards, green overlays, and screenshot probes while the real route was still unproven.
+
+Controller classification:
+
+- `surface_clean_ab6`, green haze, temporary water-skin cards, and any `h8_1914_*` capture are diagnostic rejects, not progress markers.
+- The current visual failure is systemic: missing readable water body, black/undercut terrain, rectangular slab/patch artifacts, weak shoreline contact, unstable proof tooling, and no active player/HUD/tool proof.
+- Future Unity lane must start from authoritative route readback: MapMagic terrain state, Crest ocean renderer/material/source asset, sky/Aegir/cloud route, active player, active HUD/projection, active input/camera/tool, dirty-state audit, and console.
+- If the owner cannot prove the active route, the correct action is not another color pass. It is recovery/replacement of the owner route with no-mutation proof and reference-matched acceptance criteria.
 
 ## Rejected Directions
 

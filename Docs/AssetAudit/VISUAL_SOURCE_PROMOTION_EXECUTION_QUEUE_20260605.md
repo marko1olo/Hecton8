@@ -33,16 +33,16 @@ Inputs used:
 
 | Queue | Priority | Route | Owner route |
 |---|---|---|---|
-| VSPQ-01 | P0 | Surface sky/Aegir/coast | `ASSET_OWNER_14`; `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_36` |
-| VSPQ-02 | P0 | Waterline foam/contact | `ASSET_OWNER_11`; `ASSET_OWNER_20`; `ASSET_OWNER_36` |
-| VSPQ-03 | P0 | Photic terrain PBR | `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_36` |
-| VSPQ-04 | P0 | Visible proxy placeholder purge | `ASSET_OWNER_12`; `ASSET_OWNER_22`; `ASSET_OWNER_36` |
-| VSPQ-05 | P1 | Kelp/coral density | `ASSET_OWNER_12`; `ASSET_OWNER_22`; `ASSET_OWNER_27`; `ASSET_OWNER_36` |
-| VSPQ-06 | P1 | HUD oxygen and cockpit/product-face readability | `ASSET_OWNER_17`; `ASSET_OWNER_24`; `ASSET_OWNER_25`; `ASSET_OWNER_36` |
-| VSPQ-07 | P1 | Deep bioluminescent route | `ASSET_OWNER_12`; `ASSET_OWNER_16`; `ASSET_OWNER_27`; `ASSET_OWNER_36` |
-| VSPQ-08 | P1 | Capsule/base medium-depth product route | `ASSET_OWNER_24`; `ASSET_OWNER_25`; `ASSET_OWNER_27`; `ASSET_OWNER_36` |
-| VSPQ-09 | P1 | Water ceiling shimmer and receiver response | `ASSET_OWNER_20`; `ASSET_OWNER_16`; `ASSET_OWNER_36` |
-| VSPQ-10 | P2 | Generated source-pack boundary | `ASSET_OWNER_02`; `ASSET_OWNER_09`; `ASSET_OWNER_15`; `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_36` |
+| VSPQ-01 | P0 | Surface sky/Aegir/coast | `ASSET_OWNER_14`; `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-02 | P0 | Waterline foam/contact | `ASSET_OWNER_11`; `ASSET_OWNER_20`; `ASSET_OWNER_27`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-03 | P0 | Photic terrain PBR | `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-04 | P0 | Visible proxy placeholder purge | `ASSET_OWNER_12`; `ASSET_OWNER_22`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-05 | P1 | Kelp/coral density | `ASSET_OWNER_12`; `ASSET_OWNER_22`; `ASSET_OWNER_27`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-06 | P1 | HUD oxygen and cockpit/product-face readability | `ASSET_OWNER_17`; `ASSET_OWNER_24`; `ASSET_OWNER_25`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-07 | P1 | Deep bioluminescent route | `ASSET_OWNER_12`; `ASSET_OWNER_16`; `ASSET_OWNER_27`; `ASSET_OWNER_36`; `ASSET_OWNER_37` plus `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.*` as source-context proof input |
+| VSPQ-08 | P1 | Capsule/base medium-depth product route | `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_24`; `ASSET_OWNER_25`; `ASSET_OWNER_27`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-09 | P1 | Water ceiling shimmer and receiver response | `ASSET_OWNER_20`; `ASSET_OWNER_16`; `ASSET_OWNER_27`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
+| VSPQ-10 | P2 | Generated source-pack boundary | `ASSET_OWNER_02`; `ASSET_OWNER_09`; `ASSET_OWNER_15`; `ASSET_OWNER_16`; `ASSET_OWNER_20`; `ASSET_OWNER_36`; `ASSET_OWNER_37` |
 
 ## Hard Rejection Gates
 

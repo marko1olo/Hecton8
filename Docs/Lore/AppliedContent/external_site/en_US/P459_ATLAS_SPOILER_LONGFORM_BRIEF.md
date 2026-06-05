@@ -7,11 +7,15 @@ poi_tags: poi.atlas_spoiler_longform;poi.factory_temple_article_spine
 biome_tags: biome.publication;biome.spoiler_gate
 locale: en_US
 surface: external_site
+source_voice: Website Archive
+spoiler_tier: 3
+title: "Atlas Repair Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+spoiler_warning: archive_spoilers
 ---
 
 # Atlas Repair Ecology

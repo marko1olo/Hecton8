@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +24,13 @@ class SourceRisk:
     line_number: int
 
 
+@dataclass(frozen=True)
+class SourceAssetReference:
+    path: str
+    line_number: int
+    exists: bool
+
+
 SOURCE_RISK_TOKENS = (
     ("EditorSceneManager.SaveScene", "scene_save"),
     ("EditorSceneManager.MarkSceneDirty", "scene_dirty_mark"),
@@ -32,18 +40,24 @@ SOURCE_RISK_TOKENS = (
     ("editor_only_unsaved", "diagnostic_unsaved_capture"),
 )
 
+ASSET_PATH_PATTERN = re.compile(r'"(Assets/[^"]+)"')
+STALE_SOURCE_TERMS = (
+    "SurfaceWaterReadabilityShaderPath",
+    "H8_SurfaceWaterReadability_1428.shader",
+)
+
 REQUIRED_DOC_TERMS = {
     RISK_REVIEW_PATH: (
         "H8VisualProofCapture1912.cs",
         "EditorSceneManager.SaveScene",
         "ApplyModifiedPropertiesWithoutUndo",
         "editor_only_unsaved",
-        "SurfaceWaterReadabilityShaderPath",
+        "SurfaceHorizonHazeShaderPath",
     ),
     NEXT_ACTION_PATH: (
         "h8_1475_proof_tool_integrity",
         "editor_only_unsaved",
-        "missing shader path",
+        "stale or missing asset path",
     ),
     OWNER_36_PATH: (
         "H8VisualProofCapture1912",
@@ -84,12 +98,47 @@ def find_source_risks(source: str) -> list[SourceRisk]:
     return risks
 
 
+def find_asset_references(source: str, root: Path = ROOT) -> list[SourceAssetReference]:
+    references: list[SourceAssetReference] = []
+    for line_number, line in enumerate(source.splitlines(), start=1):
+        for match in ASSET_PATH_PATTERN.finditer(line):
+            asset_path = match.group(1)
+            references.append(
+                SourceAssetReference(
+                    path=asset_path,
+                    line_number=line_number,
+                    exists=(root / asset_path).exists(),
+                )
+            )
+    return references
+
+
+def validate_asset_references(references: list[SourceAssetReference]) -> None:
+    missing = [reference for reference in references if not reference.exists]
+    if missing:
+        details = ", ".join(f"{reference.path}@{reference.line_number}" for reference in missing)
+        raise SystemExit(f"FAIL: missing capture-tool asset path(s): {details}")
+
+
 def validate_required_terms(required_terms: dict[Path, tuple[str, ...]]) -> None:
     for path, terms in required_terms.items():
         text = load_text(path)
         for term in terms:
             if term not in text:
                 raise SystemExit(f"FAIL: {display_path(path)} missing guardrail term: {term}")
+
+
+def validate_no_stale_source_terms(source: str, required_terms: dict[Path, tuple[str, ...]]) -> None:
+    for stale_term in STALE_SOURCE_TERMS:
+        if stale_term in source:
+            continue
+
+        for path in required_terms:
+            text = load_text(path)
+            if stale_term in text:
+                raise SystemExit(
+                    f"FAIL: {display_path(path)} still cites stale source term absent from current source: {stale_term}"
+                )
 
 
 def validate_guardrails(
@@ -100,16 +149,20 @@ def validate_guardrails(
     risks = find_source_risks(source)
     if not risks:
         raise SystemExit("FAIL: source risk scan found no proof-tool risks; validator may be pointed at wrong file")
+    asset_references = find_asset_references(source)
+    validate_asset_references(asset_references)
     validate_required_terms(required_terms)
+    validate_no_stale_source_terms(source, required_terms)
     return risks
 
 
 def main() -> None:
     risks = validate_guardrails()
+    asset_references = find_asset_references(load_text(SOURCE_PATH))
     categories = sorted({risk.category for risk in risks})
     print(
         "VISUAL_PROOF_CAPTURE_GUARDRAILS_OK "
-        f"risks={len(risks)} categories={','.join(categories)}"
+        f"risks={len(risks)} asset_refs={len(asset_references)} categories={','.join(categories)}"
     )
 
 

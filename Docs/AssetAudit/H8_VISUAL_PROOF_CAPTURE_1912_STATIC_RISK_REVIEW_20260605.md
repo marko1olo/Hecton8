@@ -10,20 +10,20 @@ No Unity run, Play Mode, scene save, prefab save, material save, import, profile
 
 ## Static Findings
 
-1. `CaptureSurfaceWaterRecoveryProbeAndExit()`
-   - Emits `h8_1914_surface_water_recovery_probe`.
-   - Metadata truth string: `surface_water_recovery_probe_editor_only_unsaved`.
-   - Calls `ApplySurfaceWaterRecoveryProbe(mainCamera)`.
-   - Creates or enables temporary probe state such as `H8_TEMP_SurfaceWaterReadabilityProbe_1428` and `SURFACE_HORIZON_SALT_HAZE_1428`.
-   - References `SurfaceWaterReadabilityShaderPath` / `Assets/_Project/Art/Shaders/H8_SurfaceWaterReadability_1428.shader`; the shader and `.meta` are deleted in the current worktree.
-   - Resulting screenshot is diagnostic-only. It cannot be accepted as saved scene state or canonical h8_1475 proof.
+1. Current source no longer contains `CaptureSurfaceWaterRecoveryProbeAndExit()` or the old water-readability shader path.
+   - The old `h8_1914_surface_water_recovery_probe` text capture still records `surface_water_recovery_probe_editor_only_unsaved` and `H8_TEMP_SurfaceWaterReadabilityProbe_1428=MISSING`.
+   - That old artifact remains diagnostic rejection evidence only.
+   - It is no longer valid to report a current `H8VisualProofCapture1912.cs` reference to the deleted water-readability shader unless a fresh source scan proves the reference returned.
 
 2. `CaptureSurfaceCrestRecoveryProbeAndExit()`
    - Emits `h8_1914_surface_crest_recovery_probe`.
-   - Metadata truth string: `surface_crest_recovery_probe_editor_only_unsaved`.
+   - Metadata truth string: `surface_actual_terrain_crest_recovery_probe_editor_only_unsaved`.
    - Calls `ApplySurfaceCrestRecoveryProbe()`.
+   - Calls `ConfigureSurfaceHorizonHazeProbe()` and references `SurfaceHorizonHazeShaderPath` / `Assets/_Project/Art/Shaders/H8_SurfaceHorizonHaze_1428.shader`.
+   - Calls `ConfigureActualTerrainMapMagicProbe(camera)` and mutates MapMagic graph/range generation state through `SerializedObject` and direct property writes.
    - Mutates the scene OceanRenderer through `SerializedObject` and `ApplyModifiedPropertiesWithoutUndo()`.
-   - Changes include `_material`, `_extentsSizeMultiplier`, `_minScale`, `_maxScale`, `_lodDataResolution`, `_geometryDownSampleFactor`, and `_lodCount`.
+   - Changes include `_material`, `_waterBodyCulling`, `_extentsSizeMultiplier`, `_minScale`, `_maxScale`, `_lodDataResolution`, `_geometryDownSampleFactor`, `_lodCount`, `_createSeaFloorDepthData`, `_createFoamSim`, and `_createShadowData`.
+   - Creates `HideAndDontSave` temporary probe materials through `new Material(...)`.
    - No matching restore path is visible in the method.
    - Resulting screenshot, if generated, must be treated as an edited diagnostic probe, not product proof.
 
@@ -46,7 +46,7 @@ Status: `PROOF_TOOL_RISK / DIAGNOSTIC_ONLY`.
 - Diagnostic probe filenames and metadata must retain `editor_only_unsaved` or equivalent rejection-proof wording.
 - Any method that mutates scene state must be isolated from proof acceptance routes and must require explicit owner authorization.
 - Future proof packet must include dirty-state audit before and after capture.
-- Capture scripts must not reference missing shader/material paths. A missing diagnostic shader is a proof-tool blocker, not an excuse to accept the fallback screenshot.
+- Capture scripts must not reference stale or missing shader/material/scene/graph paths. A missing diagnostic asset path is a proof-tool blocker, not an excuse to accept the fallback screenshot.
 
 ## Rejection Rules
 
