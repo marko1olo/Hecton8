@@ -6421,7 +6421,7 @@ Validation:
 Current state:
 
 - VFX DataVault source-context correction is now reachable from the asset front entry points.
-- MarineSnow line `1347` remains runtime scratch debt; MarineSnow line `2005` remains editor/offline wake-profile scratch.
+- MarineSnow line `2005` remains editor/offline wake-profile scratch; latest VFX P0 synthesis says the runtime mock wake/propwash scratch appears DataVault-rewritten on disk and still needs scanner, compile, Unity, GC/profiler, and dump proof.
 - Biolum black-box owner-local mirror has source decision fields present at `BiolumPulseSyncRuntime.cs:311-315`; compile, Unity, GC/profiler, scanner recheck, and deterministic dump artifact proof remain absent.
 - Visual hero source coverage remains `STATIC_IMAGE_QA_ONLY`; no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance exists.
 - Status remains `PENDING VERIFICATION`.
@@ -6505,7 +6505,7 @@ Current state:
 
 - Biolum owner-local black-box mirrors are no longer classified as source-comment repair pending; source decision fields are present by static source readback.
 - Remaining Biolum blockers: scanner recheck, compile, Unity, GC/profiler, deterministic runtime dump artifact proof.
-- MarineSnow runtime scratch debt and PlasmaBeam fault-route review debt remain open.
+- MarineSnow current DataVault rewrite must be preserved and proved; PlasmaBeam fault-route review debt remains open.
 - Status remains `PENDING VERIFICATION`.
 
 ## 2026-06-05 Orchestrator P0 Synthesis Integration Cursor 85

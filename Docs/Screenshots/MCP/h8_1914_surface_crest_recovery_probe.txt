@@ -25,12 +25,27 @@ H8_WORLD_TERRAIN_SHELL_1428=activeSelf=True activeHierarchy=True layer=Default t
 
 mapMagicSummary=
   enabled=True activeSelf=True activeHierarchy=True graph=Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset gridCount=1 pinnedCount=1 progress=1.000 isGenerating=False generateRange=1 mainRange=1
-  tile[0] name=Tile -1,0 coord=Den.Tools.Coord x:-1 z:0 distance=0.00 activeTerrain=Main Terrain mainReady=True draftReady=True
+  tile[0] name=Tile -1,0 coord=Den.Tools.Coord x:-1 z:0 distance=0.00 activeTerrain=Main Terrain mainReady=True draftReady=True mainGenerateReady=True mainApplyReady=True mainFinalizeMarks=0 mainApplyMarks=0 mainProducts=70 mainHeightOutputs=0 mainAllOutputsReady=True draftGenerateReady=True draftApplyReady=True draftFinalizeMarks=0 draftApplyMarks=0 draftProducts=70 draftHeightOutputs=0 draftAllOutputsReady=True
+
+actualTerrainGraphSummary=
+  graphPath=Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset generatorCount=113 linkCount=150
+  heightOutput=type=MapMagic.Nodes.MatrixGenerators.HeightOutput200 enabled=True id=12395288260639719426 version=13
+  link heightOutput.in=sourceType=MapMagic.Nodes.Placeholders+InletOutletPlaceholder sourceId=9077947330430238722 sourceVersion=6 outletId=9077949529453494276 storedLinkedOutletId=9077949529453494276
+  tectonic=MISSING
+  link tectonic.in=MISSING_INLET
+  erosion=MISSING
+  link erosion.heightIn=MISSING_INLET
+  splat=MISSING
+  link splat.heightIn=MISSING_INLET
+  link splat.sedimentIn=MISSING_INLET
+  anomaly=MISSING
+  link anomaly.heightIn=MISSING_INLET
+  import[0] enabled=True id=12389088114570690561 version=29 scale=17.000 offset=(-9000.000, -9000.000) matrixAsset=Assets/MapMagic/Map_Graph/New Gen/USE IT.asset matrixRect=Den.Tools.CoordRect: offsetX:0 offsetZ:0 sizeX:4096 sizeZ:4096 matrixCount=16777216 finiteCount=16777216 min=0.00000 max=1.00000 avg=0.34283
 
 terrainSummary=
-  H8_WORLD_TERRAIN_SHELL_1428 activeSelf=True activeHierarchy=True enabled=True inFrustum=True position=(-60.00, -8.00, -4.00) size=(120.00, 6.00, 88.00) pixelError=6.00 basemapDistance=260.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428
   Draft Terrain activeSelf=False activeHierarchy=False enabled=True inFrustum=True position=(-15018.00, -2.80, 42.00) size=(15000.00, 0.00, 15000.00) pixelError=3.00 basemapDistance=2400.0 drawInstanced=True material=Universal Render Pipeline/Terrain/Lit
   Main Terrain activeSelf=True activeHierarchy=True enabled=True inFrustum=True position=(-15018.00, -2.80, 42.00) size=(15000.00, 0.00, 15000.00) pixelError=3.00 basemapDistance=2400.0 drawInstanced=True material=Universal Render Pipeline/Terrain/Lit
+  H8_WORLD_TERRAIN_SHELL_1428 activeSelf=True activeHierarchy=True enabled=True inFrustum=True position=(-60.00, -8.00, -4.00) size=(120.00, 6.00, 88.00) pixelError=6.00 basemapDistance=260.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428
 
 materialSnapshot Assets/Crest/Crest/Materials/Ocean.mat=name=Ocean shader=Crest/Ocean URP _Diffuse=RGBA(0.026, 0.120, 0.200, 1.000) _DiffuseGrazing=RGBA(0.290, 0.560, 0.720, 1.000) _SubSurfaceShallowCol=RGBA(0.340, 0.680, 0.820, 1.000) _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=0.920
 materialSnapshot Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat=name=MAT_H8_SurfaceCrestOcean_1428 shader=Crest/Ocean URP _Diffuse=RGBA(0.035, 0.145, 0.245, 1.000) _DiffuseGrazing=RGBA(0.360, 0.640, 0.820, 1.000) _SubSurfaceShallowCol=RGBA(0.480, 0.780, 0.940, 1.000) _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=1.650
@@ -40,10 +55,10 @@ materialSnapshot Assets/_Project/Art/Materials/World/Photic1469/MAT_H8_Shoreline
 
 visibleRendererSummary=
   SURFACE_HORIZON_SALT_HAZE_1428 material=H8_TEMP_SurfaceHorizonHazeProbe_1428 shader=HECTON/World/H8_SurfaceHorizonHaze_1428 center=(16.00, 13.67, 38.96) size=(438.94, 8.61, 15.54)
-  H8_SURFACE_CLOUD_DECK_HIGH_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(167.00, 190.65, -429.00) size=(860.00, 215.00, 0.00)
   H8_SURFACE_COASTAL_ISLAND_1428 material=MAT_H8_WetBasaltDetail_1464 shader=Universal Render Pipeline/Lit center=(25.00, 18.38, 58.00) size=(115.58, 11.13, 76.43)
   H8_ORGANIC_SHORELINE_FOAM_FINE_1469 material=MAT_H8_ShorelineFoamFine_1469 shader=HECTON/World/H8_ShorelineFoamRibbon_1428 center=(24.00, 14.18, 91.50) size=(100.00, 0.00, 7.12)
-  Sphere material=MAT_SurfaceCloudPanorama_1428 shader=HECTON/Sky/H8_SurfaceCloudPanorama_1428 center=(-18.00, 18.65, 126.00) size=(8000.00, 8000.00, 8000.00)
-  H8_ORGANIC_SHORELINE_BREAKUP_1469 material=MAT_H8SurfaceWetBasaltReal_1428 shader=Universal Render Pipeline/Lit center=(22.36, 14.87, 90.54) size=(97.84, 4.46, 15.13)
+  H8_SURFACE_CLOUD_DECK_HIGH_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(167.00, 190.65, -429.00) size=(860.00, 215.00, 0.00)
   H8_SURFACE_CLOUD_DECK_LOW_1428 material=MAT_H8SurfaceCloudDeck_1428 shader=HECTON/Sky/Hecton_SurfaceCloudDeck_1428 center=(-60.00, 140.65, -304.00) size=(1420.00, 285.00, 0.00)
+  H8_ORGANIC_SHORELINE_BREAKUP_1469 material=MAT_H8SurfaceWetBasaltReal_1428 shader=Universal Render Pipeline/Lit center=(22.36, 14.87, 90.54) size=(97.84, 4.46, 15.13)
   H8_SURFACE_AEGIR_GAS_GIANT_REAL_1428 material=MAT_AegirGasGiant_Impostor_1428 shader=HECTON/Celestial/H8_AegirGasGiantImpostor_1428 center=(1624.85, 6707.97, -49397.27) size=(34586.31, 34586.31, 34586.31)
+  Sphere material=MAT_SurfaceCloudPanorama_1428 shader=HECTON/Sky/H8_SurfaceCloudPanorama_1428 center=(-18.00, 18.65, 126.00) size=(8000.00, 8000.00, 8000.00)

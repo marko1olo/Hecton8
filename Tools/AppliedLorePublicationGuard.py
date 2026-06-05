@@ -6,10 +6,14 @@ import re
 import sys
 from pathlib import Path
 
-TARGET_LOCALES = (
-    "en_US", "ru_RU", "ja_JP", "zh_CN", "fr_FR", "es_ES", "de_DE",
-    "pl_PL", "uk_UA", "ar_SA", "id_ID", "ko_KR", "he_IL", "pt_BR", "nl_NL"
-)
+try:
+    from AppliedLoreImporter import TARGET_LOCALES as IMPORTED_TARGET_LOCALES
+except ModuleNotFoundError:
+    from Tools.AppliedLoreImporter import TARGET_LOCALES as IMPORTED_TARGET_LOCALES
+
+
+TARGET_LOCALES = tuple(IMPORTED_TARGET_LOCALES)
+INDEX_PAGE_NAMES = {"INDEX.md"}
 
 REQUIRED_KEYS = [
     "packet_id", "release_set_id", "article_id", "unlock_id",
@@ -66,9 +70,27 @@ def extract_frontmatter(content: str) -> tuple[dict, str]:
             fm[k.strip()] = v.strip().strip("'\"")
     return fm, body
 
+def parse_packet_globs(packet_glob: str) -> tuple[str, ...]:
+    return tuple(part.strip() for part in packet_glob.split(",") if part.strip())
+
+def matches_packet_glob(path: Path, packet_id: str, patterns: tuple[str, ...]) -> bool:
+    if not patterns:
+        return True
+
+    candidates = [packet_id, path.stem]
+    for pattern in patterns:
+        for candidate in candidates:
+            if candidate and fnmatch.fnmatch(candidate, pattern):
+                return True
+    return False
+
+def strip_generated_comments(text: str) -> str:
+    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL).strip()
+
 def run_guard(root: Path, packet_glob: str, json_output: bool):
     counters = Counters()
     messages = []
+    packet_globs = parse_packet_globs(packet_glob)
     
     def log_fail(msg, counter_attr=None):
         if counter_attr:
@@ -90,8 +112,12 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
         files.extend(list(site_path.rglob("*.md")))
         
     packets = {}
+    packet_surface_locales = {}
     
     for f in files:
+        if f.name in INDEX_PAGE_NAMES:
+            continue
+
         rel = f.relative_to(root)
         try:
             content = f.read_text(encoding="utf-8")
@@ -102,14 +128,8 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
         fm, body = extract_frontmatter(content)
         packet_id = fm.get("packet_id", "")
         
-        if packet_glob and packet_id:
-            matched = False
-            for glob in packet_glob.split(','):
-                if fnmatch.fnmatch(packet_id, glob.strip()):
-                    matched = True
-                    break
-            if not matched:
-                continue
+        if not matches_packet_glob(f, packet_id, packet_globs):
+            continue
             
         counters.files += 1
         
@@ -142,12 +162,14 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
         surface = "external_site" if "external_site" in str(rel) else "in_game_wiki"
         if packet_id:
             packets.setdefault(packet_id, {}).setdefault(locale, {})[surface] = (fm, body, rel)
+            packet_surface_locales.setdefault(packet_id, {}).setdefault(surface, set()).add(locale)
 
-    for packet_id, locales_map in packets.items():
-        if "en_US" in locales_map:
-            missing_locales = [l for l in TARGET_LOCALES if l not in locales_map]
-            if missing_locales:
-                log_fail(f"Packet {packet_id}: Missing TARGET_LOCALES: {missing_locales}", "locale_gaps")
+    for packet_id, surface_map in packet_surface_locales.items():
+        for surface, locales in surface_map.items():
+            if "en_US" in locales:
+                missing_locales = [l for l in TARGET_LOCALES if l not in locales]
+                if missing_locales:
+                    log_fail(f"Packet {packet_id} surface {surface}: Missing TARGET_LOCALES: {missing_locales}", "locale_gaps")
 
     for packet_id, locales_map in packets.items():
         for locale, surfaces in locales_map.items():
@@ -155,7 +177,9 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
                 site_fm, site_body, site_rel = surfaces["external_site"]
                 wiki_fm, wiki_body, wiki_rel = surfaces["in_game_wiki"]
                 
-                if site_body and site_body == wiki_body:
+                site_body_norm = strip_generated_comments(site_body)
+                wiki_body_norm = strip_generated_comments(wiki_body)
+                if site_body_norm and site_body_norm == wiki_body_norm:
                     is_draft = ("draft" in site_fm.get("localization_status", "").lower() or 
                                 "draft" in wiki_fm.get("localization_status", "").lower())
                     if is_draft:

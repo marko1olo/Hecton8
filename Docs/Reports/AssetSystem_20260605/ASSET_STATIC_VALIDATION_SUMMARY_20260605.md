@@ -91,6 +91,7 @@ The direct `Docs/AssetAudit` root currently contains `58` CSV files; `53` direct
 ## Static Hygiene Result
 
 - CSV parse hygiene: 62 files parse with zero empty cells.
+- Summary validator hygiene: `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14646`; `python -m unittest Tools/test_validate_asset_static_summary.py` ran 4 tests OK. This is static summary consistency only.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.

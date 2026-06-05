@@ -238,6 +238,8 @@ Static only:
 - `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv` parses as 11 rows; repair anchor map only, no runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` parses as 4 rows; source decision/readback only, no compile proof, Unity proof, GC/profiler proof, or runtime dump artifact acceptance.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` parses as 10 rows; source coverage matrix only, no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
+- `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv` parses as 10 rows; execution queue only, no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returns `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14646`; `python -m unittest Tools/test_validate_asset_static_summary.py` runs 4 tests OK. This proves static summary consistency only, not Unity/runtime readiness.
 - `audio_preview_waveform_stats_20260605.csv` parses as 11 rows; waveform proof-adjacent stats only, no listening proof.
 - `audio_asset_ledger.csv` parses as 138 rows; static audio ledger only, no import/runtime/Addressables proof.
 - `audio_remediation_matrix_20260605.csv` parses as 58 rows; remediation queue only, no runtime mix proof.

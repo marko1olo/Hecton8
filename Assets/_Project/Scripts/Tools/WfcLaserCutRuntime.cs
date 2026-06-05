@@ -24,6 +24,7 @@ namespace Hecton8.Tools
         private const int BlackBoxDumpHeaderBytes = 32;
         private const int WfcTelemetryEntrySizeBytes = 96;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_225.bin";
+        private const string DumpPayloadLabel = "WfcLaserCutTelemetryDumpPayload";
         private const uint SourceHash = 0x544C5352u; // TLSR
         private const uint SparkSpeciesHash = 0x4C53504Bu; // LSPK
         private const byte TelemetryFlagCompleted = 1 << 0;
@@ -620,7 +621,11 @@ namespace Hecton8.Tools
             NativeArray<byte> payload = default;
             try
             {
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(WfcLaserCutRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 WriteUInt32LittleEndian(destination, ref writeCursor, BlackBoxDumpMagic);
@@ -650,8 +655,10 @@ namespace Hecton8.Tools
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WfcLaserCutRuntime),
+                    DumpPayloadLabel);
             }
         }
 

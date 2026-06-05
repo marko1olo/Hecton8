@@ -22,6 +22,7 @@ namespace Hecton8.Tools
         private const int BlackBoxDumpHeaderBytes = 32;
         private const int LaserCutTelemetryEntrySizeBytes = 128;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_225.bin";
+        private const string DumpPayloadLabel = "LaserCutterDodTelemetryDumpPayload";
         private const uint LaserGlowDecalDamageType = global::Hecton8.Visor.DynamicDecalMaterialHashes.Burn;
 
         private static IDataVault _dataVault;
@@ -1377,7 +1378,10 @@ namespace Hecton8.Tools
                 WriteUIntLittleEndian(header.Slice(28, 4), (uint)payloadBytes);
 
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(LaserCutterDodRuntime),
+                    DumpPayloadLabel);
                 try
                 {
                     for (int i = 0; i < header.Length; i++)
@@ -1392,7 +1396,10 @@ namespace Hecton8.Tools
                 }
                 finally
                 {
-                    payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(LaserCutterDodRuntime),
+                        DumpPayloadLabel);
                 }
             }
             catch (IOException)
