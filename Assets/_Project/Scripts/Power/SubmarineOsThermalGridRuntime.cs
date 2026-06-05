@@ -1690,9 +1690,16 @@ namespace Hecton8.Power
             if (totalBytes < DumpHeaderBytes || totalBytes > int.MaxValue)
                 return;
 
-            NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            const string dumpPayloadLabel = "thermalGridBlackBoxDumpPayload";
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    (int)totalBytes,
+                    nameof(SubmarineOsThermalGridRuntime),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+
                 WriteUInt32LittleEndian(payload, 0, DumpMagic);
                 WriteUInt32LittleEndian(payload, 4, DumpVersion);
                 WriteUInt32LittleEndian(payload, 8, _frame);
@@ -1712,7 +1719,10 @@ namespace Hecton8.Power
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SubmarineOsThermalGridRuntime),
+                    dumpPayloadLabel);
             }
         }
 

@@ -52,10 +52,10 @@ namespace Hecton8.Editor
 
             graph.Link(sourceOutlet, tectonicNode);
             graph.Link(tectonicNode, erosionNode.heightIn);
-            graph.Link(erosionNode.erodedHeightOut, splatNode.heightIn);
-            graph.Link(erosionNode.sedimentMaskOut, splatNode.sedimentIn);
-            graph.Link(erosionNode.erodedHeightOut, anomalyNode.heightIn);
-            graph.Link(erosionNode.erodedHeightOut, heightOutput);
+            graph.Link(tectonicNode, splatNode.heightIn);
+            graph.Link(null, splatNode.sedimentIn);
+            graph.Link(tectonicNode, anomalyNode.heightIn);
+            graph.Link(tectonicNode, heightOutput);
 
             int rockLinks = 0;
             int sandLinks = 0;
@@ -151,6 +151,7 @@ namespace Hecton8.Editor
         {
             if (erosionNode != null)
             {
+                erosionNode.enabled = false;
                 erosionNode.dropletCount = Math.Max(1, Math.Min(erosionNode.dropletCount, 32000));
                 erosionNode.maxLifetime = Math.Max(1, Math.Min(erosionNode.maxLifetime, 32));
                 erosionNode.maxOperationsPerSlice = Math.Max(128, Math.Min(erosionNode.maxOperationsPerSlice, 768));

@@ -50,6 +50,9 @@ Static evidence used:
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
 - `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.md`
 - `Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`
 - `Docs/AssetAudit/MODEL_FILE_IMPORT_RISK_MATRIX_20260605.md`
@@ -191,7 +194,6 @@ Required artifacts:
 
 Valid proof states:
 
-- `STATIC_STRUCTURE_REVIEWED` for static task structure only.
 - `PENDING VERIFICATION` when any editor, runtime, visual, profiler, memory, or player-capture artifact is absent.
 - Editor, Play Mode, profiler, and player-capture proof states only when the matching artifacts exist.
 

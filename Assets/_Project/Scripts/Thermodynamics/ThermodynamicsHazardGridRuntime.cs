@@ -1310,6 +1310,7 @@ namespace Hecton8.Thermodynamics
             if (!HasHandle(in _telemetryRing))
                 return;
 
+            const string dumpPayloadLabel = "thermodynamicsHazardGridDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
@@ -1319,7 +1320,11 @@ namespace Hecton8.Thermodynamics
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", fileName));
                 int stride = UnsafeUtility.SizeOf<ThermodynamicsHazardTelemetryEntry>();
                 int totalBytes = 20 + TelemetryCapacity * stride;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ThermodynamicsHazardGridRuntime),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 Span<byte> header = new Span<byte>(payloadPtr, 20);
@@ -1343,8 +1348,10 @@ namespace Hecton8.Thermodynamics
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ThermodynamicsHazardGridRuntime),
+                    dumpPayloadLabel);
             }
         }
 

@@ -136,6 +136,16 @@ Reject the change immediately when any item is true:
 
 - `GlobalDataVault` lacks BufferID/SystemID/generation/stale-handle behavior
 
+- `GlobalDataVault` write locks, mutation guards, or writable aliases lack
+
+  same-phase `try/finally ReleaseWriteLock` or equivalent scoped-dispose proof
+
+- `GlobalDataVault` write locks are held across a frame boundary, `await`,
+
+  worker sleep, UI callback, or unrelated work instead of releasing after the
+
+  owned mutation/copy/staging/schedule point
+
 - `GlobalDataVault.TryGetLatestCreated()` is used by domain runtime code as a
 
   normal fallback instead of injected `IDataVault` or a documented core fallback
@@ -250,7 +260,9 @@ or replay/crash-visible native state. A reviewer must see BufferID, SystemID,
 
 owner, capacity, generation, stale-handle behavior, disposal, defrag/release
 
-behavior, and black-box fields.
+behavior, write-lock acquire/release phase, job dependency/fence behavior, and
+
+black-box fields.
 
 Reject if it becomes:
 

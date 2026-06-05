@@ -12,6 +12,8 @@ Use this template for the future file:
 
 This template does not prove any visual state. It only fixes the required comparison shape for the no-mutation `h8_1475` proof packet.
 
+ProofGate boundary: `Tools/ProofGate/validate_proof_packet.py --strict` requires six exact production screenshots under `screenshots/`: `01_surface_coast_aegir_ui_off.png`, `02_shoreline_close_1m.png`, `03_underwater_0_5m.png`, `04_underwater_20_50m_route.png`, `05_aegir_celestial_long.png`, and `06_regression_low_oblique.png`. The `h8_1475_*` filenames in this template are visual-comparison support artifacts and cannot substitute for those six ProofGate views.
+
 ## Required Inputs
 
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
@@ -21,12 +23,12 @@ This template does not prove any visual state. It only fixes the required compar
 - `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`
 - `manifest.json`
 - `manifest.sha256`
-- `UnityLog.txt`
+- `UnityEditor_h8_1475_<session>.log`
 - `console_export.txt`
 - `no_mutation_readback_report.md`
 - `dirty_state_audit.md`
 - `frame_debugger_stats.md`
-- canonical `h8_1475_*.png` captures or exact `ABORTED_<view>.md` notes
+- six exact ProofGate PNG captures plus optional `h8_1475_*.png` visual-comparison support captures or exact `ABORTED_<view>.md` notes
 
 If any required input is missing, write `PENDING_VERIFICATION` for the affected row. Do not infer a pass from memory, stale MCP PNGs, controller notes, or static reports.
 

@@ -33,6 +33,12 @@ def assert_contains(errors: list[str], path: Path, needle: str) -> None:
         fail(errors, f"{path}: missing required text: {needle}")
 
 
+def assert_not_contains(errors: list[str], path: Path, needle: str) -> None:
+    text = read_text(path)
+    if needle in text:
+        fail(errors, f"{path}: forbidden inbound third-party shim reference remains: {needle}")
+
+
 def assert_order(errors: list[str], path: Path, first: str, second: str) -> None:
     text = read_text(path)
     first_index = text.find(first)
@@ -54,16 +60,33 @@ def main() -> int:
     codex_agents = ROOT / ".codexrules" / "AGENTS.md"
     github_agents = ROOT / ".github" / "agents" / "AGENTS.md"
     agent_rules_agents = ROOT / ".agent" / "rules" / "AGENTS.md"
+    vscode_agents = ROOT / ".vscode" / "AGENTS.md"
+    cursor_agents = ROOT / ".cursor" / "rules" / "AGENTS.md"
     project_gemini = ROOT / "GEMINI.md"
     routing = ROOT / "Docs" / "AGENT_AUTHORITY_ROUTING.md"
     governance = ROOT / "Docs" / "DOC_GOVERNANCE.md"
+    quality_gates = ROOT / "Docs" / "QUALITY_GATES.md"
     docs_readme = ROOT / "Docs" / "README.md"
     project_bibles = ROOT / "PROJECT_BIBLES.md"
     orchestrator = ROOT / "HECTON8_ORCHESTRATOR.md"
     skills_readme = ROOT / ".agents-skills" / "README.md"
     ledger = ROOT / "Docs" / "AGENTS_RULE_DETAIL_LEDGER.md"
+    data_bible = ROOT / "data.md"
+    physics_bible = ROOT / "physics.md"
+    voxels_bible = ROOT / "voxels.md"
+    streaming_bible = ROOT / "streaming.md"
+    performance_bible = ROOT / "performance.md"
+    bootstrap_bible = ROOT / "bootstrap.md"
+    persistence_bible = ROOT / "persistence.md"
+    rendering_bible = ROOT / "rendering.md"
+    settings_bible = ROOT / "settings.md"
+    save_paging_protocol = ROOT / "Docs" / "ARCHITECTURE" / "SAVE_PAGING_PROTOCOL.md"
+    route_card_template = ROOT / "Docs" / "ARCHITECTURE" / "GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md"
+    route_review_checklist = ROOT / "Docs" / "ARCHITECTURE" / "GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md"
     persona = ROOT / ".github" / "agents" / "unity-anime-dev.agent.md"
     historical_agent_rules_archive = ROOT / "Docs" / "DEPRECATED" / "AgentRulesHistorical_20260605"
+    visual_reference_folder = ROOT / "Docs" / "mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)"
+    historical_agent_shims_archive = ROOT / "Docs" / "DEPRECATED" / "AgentShimsHistorical_20260606"
 
     root_text = root_agents.read_bytes()
     for mirror in (codex_agents, github_agents):
@@ -77,7 +100,8 @@ def main() -> int:
         "Ordinary runtime/gameplay implementation",
         "QA/proof/verification",
         "Technical report means",
-        "Reference image folder before design/implementation/review/proof",
+        "before design/implementation/review/proof",
+        "Docs\\mandatory if you work on systems that user sees",
         "Docs/Lore/WriterScenarioAgentPrompt.md",
     ):
         assert_contains(errors, routing, needle)
@@ -86,13 +110,17 @@ def main() -> int:
         "Technical report means",
         "Before player-visible visual creation",
         "## Delegation And Subagents",
-        "Any HECTON-8 agent may spawn/use subagents",
+        "Work as much as possible means",
+        "Do not conserve effort by simplifying the user's meaning",
+        "Subagents are a primary HECTON-8 work tool",
         "Audio import defaults",
         "Revert over hack for proven regressions",
         "Prefab/scene consistency guard",
         "COLD ALLOC",
         "TryReserve",
         "MCP/Unity proof",
+        "Do not read `HECTON8_ORCHESTRATOR.md`",
+        "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict",
     ):
         assert_contains(errors, root_agents, needle)
 
@@ -111,22 +139,89 @@ def main() -> int:
         "INVALID_COMPLETION",
         "KILL_SWITCH",
         "EVIDENCE_BUDGET",
-        "LOCAL SUBAGENT PROTOCOL",
-        "Subagents inherit HECTON-8 law",
+        "CONTROLLER SIDE-DELEGATION NOTE",
+        "Ordinary internal subagent spawning is governed by root `AGENTS.md`",
+        "9-10 top-level agents are allowed",
+        "Internal side-delegation does not count against the top-level batch size",
+        "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict",
     ):
         assert_contains(errors, orchestrator, needle)
 
     assert_contains(errors, root_agents, "lane contracts")
     assert_contains(errors, routing, "AGENT LANE CONTRACTS")
-    assert_contains(errors, routing, "LOCAL SUBAGENT PROTOCOL")
     assert_contains(errors, routing, "Subagent use by an ordinary implementation")
+    assert_contains(errors, routing, "Internal subagent spawning")
+    assert_contains(errors, routing, "does not require `HECTON8_ORCHESTRATOR.md`")
     assert_contains(errors, project_bibles, "lane contracts")
     assert_contains(errors, project_bibles, "subagent rules")
-    assert_contains(errors, project_bibles, "C:\\Users\\danat\\.gemini\\GEMINI.md")
-    assert_contains(errors, project_bibles, "project `GEMINI.md`")
+    assert_contains(errors, project_bibles, "ordinary subagent rules")
+    assert_contains(errors, project_bibles, "without pulling GUI/process orchestration")
+    assert_contains(errors, project_bibles, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+    assert_contains(errors, governance, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+    assert_contains(errors, quality_gates, "Tasklocal Lane Contract Gate")
+    assert_contains(errors, quality_gates, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+
+    if not visual_reference_folder.exists():
+        fail(errors, f"{visual_reference_folder}: missing mandatory visual reference folder")
+    else:
+        image_count = sum(1 for p in visual_reference_folder.iterdir() if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"})
+        if image_count < 10:
+            fail(errors, f"{visual_reference_folder}: expected at least 10 image references, found {image_count}")
+
+    for path, needle in (
+        (data_bible, "DataVault Write-Lock And Fencing Law"),
+        (data_bible, "try/finally ReleaseWriteLock"),
+        (route_card_template, "DataVault write-lock scope"),
+        (route_review_checklist, "same-phase `try/finally ReleaseWriteLock`"),
+        (quality_gates, "DataVault write-lock/fence proof"),
+        (physics_bible, "Character and vehicle environment collision route"),
+        (physics_bible, "must not run synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains"),
+        (voxels_bible, "SDF Collision Read Model"),
+        (voxels_bible, "baked voxel/terrain colliders or an approved SDF read model"),
+        (streaming_bible, "`used/total > 0.90`"),
+        (performance_bible, "`used/total > 0.90`"),
+        (bootstrap_bible, "Texture Memory"),
+        (bootstrap_bible, "Total Reserved Memory"),
+        (quality_gates, "Required scene-load memory proof"),
+        (persistence_bible, "Load application bands"),
+        (persistence_bible, "0-10`: Core"),
+        (save_paging_protocol, "Save Operation Bands And Cadence"),
+        (save_paging_protocol, "Autosave minimum cadence: 30 seconds"),
+        (rendering_bible, "Current URP quality defaults"),
+        (rendering_bible, "URP_Medium (PC_RPAsset).asset"),
+        (settings_bible, "Current graphics quality defaults"),
+        (settings_bible, "URP_Low (PC_RPAsset).asset"),
+    ):
+        assert_contains(errors, path, needle)
 
     assert_contains(errors, agent_rules_agents, "Authority delegates to `C:\\hades\\Hecton8\\AGENTS.md`")
     assert_contains(errors, agent_rules_agents, "Docs\\AGENT_AUTHORITY_ROUTING.md")
+
+    for path, archive_name in (
+        (vscode_agents, "vscode_AGENTS.md"),
+        (cursor_agents, "cursor_rules_AGENTS.md"),
+    ):
+        for needle in (
+            "THIN_ROUTER / NOT_PROJECT_LAW",
+            "C:\\hades\\Hecton8\\AGENTS.md",
+            "C:\\hades\\Hecton8\\Docs\\AGENT_AUTHORITY_ROUTING.md",
+            "complete document",
+            f"Docs/DEPRECATED/AgentShimsHistorical_20260606/{archive_name}",
+        ):
+            assert_contains(errors, path, needle)
+        text = read_text(path)
+        for forbidden in (
+            "## PROJECT ARCHITECTURE",
+            "### Key Interfaces",
+            "GlobalRegistry (Service Locator Pattern)",
+            "Renderer: PC_Renderer",
+            "NOT a creative director",
+        ):
+            if forbidden in text:
+                fail(errors, f"{path}: stale full AGENTS body remains: {forbidden}")
+        archived = historical_agent_shims_archive / archive_name
+        if not archived.exists():
+            fail(errors, f"{archived}: missing archived shim body")
 
     for rule_file in (ROOT / ".agent" / "rules").glob("*.md"):
         text = read_text(rule_file)
@@ -137,10 +232,14 @@ def main() -> int:
                 fail(errors, f"{rule_file}: historical rule must not keep active globs")
             if "HISTORICAL REFERENCE ONLY" not in text:
                 fail(errors, f"{rule_file}: missing historical-reference marker")
-            if "HECTON-8 Authority Override" not in text:
-                fail(errors, f"{rule_file}: missing HECTON-8 override header")
-            if "not active HECTON-8 law" not in text:
+            if "not active HECTON-8 authority" not in text:
                 fail(errors, f"{rule_file}: missing non-authority warning")
+            if "Docs/DEPRECATED/AgentRulesHistorical_20260605" not in text:
+                fail(errors, f"{rule_file}: missing archive pointer for old body")
+            if re.search(r"\b(Update|FixedUpdate|LateUpdate)\s*\(", text):
+                fail(errors, f"{rule_file}: active historical stub must not carry Unity lifecycle examples")
+            if re.search(r"\b(GetComponent|UnityEngine\.Pool|Instantiate|Debug\.Log)\b", text):
+                fail(errors, f"{rule_file}: active historical stub must not carry generic Unity examples")
             archived = historical_agent_rules_archive / rule_file.name
             if not archived.exists():
                 fail(errors, f"{archived}: missing archived body for historical agent rule")
@@ -152,6 +251,8 @@ def main() -> int:
             "C:\\hades\\Hecton8\\AGENTS.md",
             "C:\\hades\\Hecton8\\Docs\\AGENT_AUTHORITY_ROUTING.md",
             "complete document",
+            "[HECTON-8 SUBAGENTS]",
+            "not subagent rules",
         ):
             if needle not in global_text:
                 fail(errors, f"{GLOBAL_CODEX}: global router missing {needle}")
@@ -188,10 +289,14 @@ def main() -> int:
                 fail(errors, f"{GEMINI_UNITY_MCP}: Unity MCP instructions missing {needle}")
 
     for needle in (
+        "THIRD-PARTY TOOL SHIM / NOT PROJECT LAW",
+        "one-way adapter",
+        "If this file conflicts with project authority",
         "Hecton8\\AGENTS.md",
         "Docs\\AGENT_AUTHORITY_ROUTING.md",
-        "complete documents",
-        "Any HECTON-8 agent may spawn/use subagents",
+        "exactly `2-8`",
+        "LANE_CLASS",
+        "Do not launch or trigger Unity",
         "Antigravity brain",
     ):
         assert_contains(errors, project_gemini, needle)
@@ -227,21 +332,34 @@ def main() -> int:
     ):
         assert_contains(errors, path, needle)
 
-    for path, needle in (
-        (routing, "C:\\Users\\danat\\.gemini\\GEMINI.md"),
-        (routing, "C:\\Users\\danat\\.gemini\\antigravity-ide\\mcp\\unityMCP\\instructions.md"),
-        (governance, "C:\\Users\\danat\\.gemini\\GEMINI.md"),
-        (governance, "project `GEMINI.md`"),
-        (docs_readme, "Gemini/Antigravity project entrypoint"),
-    ):
-        assert_contains(errors, path, needle)
+    for authority_doc in (routing, governance, docs_readme, project_bibles):
+        for needle in ("GEMINI.md", ".gemini", "Gemini/Antigravity"):
+            assert_not_contains(errors, authority_doc, needle)
 
     assert_order(errors, governance, "../PROJECT_BIBLES.md", "../.agents-skills/README.md")
     assert_order(errors, docs_readme, "PROJECT_BIBLES.md", ".agents-skills/README.md")
 
     persona_text = read_text(persona)
-    if "DEPRECATED HISTORICAL AGENT" not in persona_text or "non-binding" not in persona_text:
-        fail(errors, f"{persona}: persona agent must remain deprecated/non-binding")
+    for needle in (
+        "DEPRECATED HISTORICAL AGENT",
+        "user-invocable: false",
+        "DEPRECATED_STUB / NOT_USER_INVOCABLE / NOT_PROJECT_LAW",
+        "C:\\hades\\Hecton8\\AGENTS.md",
+        "C:\\hades\\Hecton8\\Docs\\AGENT_AUTHORITY_ROUTING.md",
+        "Docs/DEPRECATED/AgentShimsHistorical_20260606/github_unity-anime-dev.agent.md",
+    ):
+        if needle not in persona_text:
+            fail(errors, f"{persona}: persona deprecated stub missing {needle}")
+    for forbidden in (
+        "You are Chad",
+        "alpha male",
+        "victory statement",
+        "user-invocable: true",
+    ):
+        if forbidden in persona_text:
+            fail(errors, f"{persona}: deprecated persona body remains: {forbidden}")
+    if not (historical_agent_shims_archive / "github_unity-anime-dev.agent.md").exists():
+        fail(errors, f"{historical_agent_shims_archive / 'github_unity-anime-dev.agent.md'}: missing archived persona body")
 
     if errors:
         print("AGENT_RULE_ROUTING_CHECK=FAIL")

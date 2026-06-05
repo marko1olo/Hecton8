@@ -24,12 +24,17 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 - `water.md`
 - `rendering.md`
 - `.agents-skills/OPT_Premium_Approximation_Protocol.txt`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
 - `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`
 - `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`
+- `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`
+- `Tools/ProofGate/README.md`
+- `Tools/ProofGate/validate_proof_packet.py`
 - `taskslocal/runtime_system_20260605/RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md`
 - `taskslocal/runtime_system_20260605/RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`
 
@@ -45,7 +50,9 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 
 ## Anti-False-Proof Rules
 
-- Proof packet must exist under `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` with `manifest.json`, `manifest.sha256`, copied Unity log, console summary, and named canonical screenshots.
+- Proof packet must exist under `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/` with `manifest.json`, `manifest.sha256`, `UnityEditor_h8_1475_{session}.log`, console/readback support artifacts, and the six exact ProofGate production screenshots: `01_surface_coast_aegir_ui_off.png`, `02_shoreline_close_1m.png`, `03_underwater_0_5m.png`, `04_underwater_20_50m_route.png`, `05_aegir_celestial_long.png`, and `06_regression_low_oblique.png`.
+- Proof packet must satisfy the current ProofGate six-view production screenshot contract before it can proceed to human visual review.
+- Visual source promotion rows from VSPQ are required route inputs. They do not count as import, material, screenshot, Frame Debugger, memory, or runtime acceptance.
 - Active production player proof is mandatory. A shell camera, scene-local debug player, or unbound `Main Camera` shot is rejected.
 - HUD/visor/cockpit proof is mandatory. Interactive `ScreenSpaceOverlay` is rejected unless a documented approved bridge proves why it is gameplay-correct and not a shortcut.
 - Foreground/tool/product-face proof is mandatory. Landscape-only screenshots cannot prove first-person route readiness.
@@ -65,13 +72,13 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 - HUD route: `Suit_HUD_Canvas`, `HUD_Internal`, `SuitHUDScreenCompositor`, `SuitHUDV4CanvasOverlay`, `VisorHUDController`, render mode, active binding, render texture, oxygen/power/hull/depth interaction prompt.
 - Foreground/tool route: held tool mesh/material, tool animation/pose, readable silhouette, no blockout material, no built-in primitive visible as product face.
 - Visual route: surface water, shoreline contact, terrain material, Aegir/cloud/moon, photic shallows, medium-depth route, route landmarks, flora/coral/geology, UI/cockpit readability.
-- Technical proof: Unity console, Frame Debugger/Stats where applicable, GCMonitor/profiler, memory/VRAM, screenshots, manifest/checksum.
+- Technical proof: Unity console, Frame Debugger/Stats where applicable, GCMonitor/profiler, memory/VRAM, ProofGate six screenshots, manifest/checksum, and static ProofGate output.
 
 ## Numbered Tasks
 
 1. Read the latest `ORCHESTRATOR_NIGHT_20260605.md` tail and confirm current process gate, latest visual rejection, and current h8_1475 blocker state.
 2. Read `RUNTIME_OWNER_05_MCP_GATE_AND_READBACK_RECOVERY_PACKET.md`. If process/MCP/editor gate is not green, stop before h8_1475 capture.
-3. Confirm proof folder path, session id, manifest schema, screenshot names, Unity log copy path, and checksum path before opening Unity proof tools.
+3. Confirm proof folder path, session id, ProofGate manifest schema, six exact screenshot names, Unity log copy path `UnityEditor_h8_1475_{session}.log`, and checksum path before opening Unity proof tools.
 4. Read active player source through Unity. If the active player is scene-local shell, duplicate authority, null, or unknown, stop with `H8_1475_REJECT_PLAYER_AUTHORITY`.
 5. Read production `Player.prefab` relation. It must be active or explicitly bound by bootstrap runtime context; static prefab existence is not enough.
 6. Checkpoint 0: write player-authority verdict. No screenshots can be accepted before this checkpoint passes.
@@ -85,7 +92,7 @@ First-20 route blocker targeted for removal: current diagnostic screenshots can 
 14. For every shot, compare against VREF requirements: water volume, shoreline contact, terrain geology, Aegir/clouds, route density, UI/cockpit readability, and negative-space navigation.
 15. Reject shots with rectangular slabs, acid water, black/noisy terrain, disconnected chunks, smear-only Aegir, empty underwater routes, or post-process camouflage.
 16. Collect Unity console, Stats/Frame Debugger, GCMonitor/profiler, memory/VRAM, and dirty-state before/after evidence.
-17. Build manifest/checksum and copied log. If any listed artifact is missing, classify packet as `INCOMPLETE_PROOF_PACKET`.
+17. Build manifest/checksum and copied log, then run `Tools/ProofGate/validate_proof_packet.py --strict`. If any listed artifact is missing or ProofGate rejects the packet, classify packet as `INCOMPLETE_PROOF_PACKET` or `REJECTED_PROOFGATE`.
 18. Checkpoint 2: final h8_1475 disposition. Allowed labels: `REJECTED`, `INCOMPLETE_PROOF_PACKET`, `BLOCKED_BY_RUNTIME_AUTHORITY`, `BLOCKED_BY_VISUAL_FLOOR`, or `PENDING_HUMAN_REVIEW`. Do not write `ACCEPTED` without all evidence and user approval.
 
 ## Low / Middle / High / Ultra Consequences

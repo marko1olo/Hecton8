@@ -40,6 +40,7 @@ namespace Hecton8.World
         private const int TelemetryDumpHeaderBytes = 24;
         private const string PrimaryTelemetryDumpFile = "Docs/AgentLogs/Dump_SHINOBU_153.bin";
         private const string PromptTelemetryDumpFile = "Docs/AgentLogs/Dump_GEOLOGY_ARCHITECT.bin";
+        private const string TelemetryDumpPayloadLabel = "ProceduralOreTelemetryDumpPayload";
         private const int CopperBiomeId = 4;
         private const float SlopeRejectNormalY = 0.5f;
         private const int OreTypeBasaltIron = WorldOreTypeIds.BasaltIron;
@@ -3378,7 +3379,11 @@ namespace Hecton8.World
                 return;
 
             int byteCount = TelemetryDumpHeaderBytes + count * entrySize;
-            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                OwnerName,
+                TelemetryDumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
             try
             {
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -3409,7 +3414,10 @@ namespace Hecton8.World
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    OwnerName,
+                    TelemetryDumpPayloadLabel);
             }
         }
 

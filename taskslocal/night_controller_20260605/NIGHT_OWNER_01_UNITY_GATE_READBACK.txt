@@ -2,6 +2,13 @@ NIGHT_OWNER_01_UNITY_GATE_READBACK
 Role: Unity process/MCP/readback gate owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: QA_PROOF
+VALID_COMPLETION: green process/MCP/editor readback packet or exact process/MCP/Unity blocker with no mutation.
+INVALID_COMPLETION: Unity mutation, stale MCP claim, stale log proof, or "green" without current player/HUD/input/camera readback.
+KILL_SWITCH: any unsafe CPU/compiler/import/editor/dirty state stops the lane with BLOCKED_BY_EXACT_EXTERNAL_GATE.
+EVIDENCE_BUDGET: 3 CPU samples plus one no-mutation Unity/MCP readback attempt.
+
 Objective:
 Recover a trustworthy no-mutation Unity readback lane. This removes the blocker that prevents active player/HUD/tool route proof and h8_1475 proof.
 

@@ -43,6 +43,18 @@ No binary low/ultra split. Quality must use continuous `GlobalQualityWeight` and
 
 Graphics options may expose presets, but internal systems still consume continuous weights, budgets, and feature caps. A setting may reduce presentation density, cadence, resolution, or optional diagnostics. It must not change gameplay truth, save identity, network authority, DTO layout, or item rules.
 
+Current graphics quality defaults to preserve unless current ProjectSettings/URP assets prove a deliberate migration:
+
+- default Standalone quality: Surface/Medium;
+- medium PC RP asset: `Assets/_Project/Data/URP_Medium (PC_RPAsset).asset`;
+- low/compact RP asset: `Assets/_Project/Data/URP_Low (PC_RPAsset).asset`;
+- compact/low renderer: `Assets/_Project/Data/Mobile_Renderer.asset`;
+- medium presentation: HDR on, MSAA off, FXAA, render scale `1.0`;
+- low/compact presentation: HDR on, MSAA off, FXAA, render scale about `0.85`;
+- higher lanes may use richer renderers/assets only through hardware detection and continuous `GlobalQualityWeight`.
+
+Settings UI may expose presets, but it must not mutate these assets directly at runtime or create binary low/high branches. Any default change requires rendering proof, settings persistence/clamp proof, and compact readability proof.
+
 ## Runtime Law
 
 Required:

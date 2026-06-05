@@ -3072,12 +3072,17 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(path))
                 return;
 
+            const string dumpPayloadLabel = "VRSomaticProvider.BlackBoxDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
                 int count = math.clamp(Volatile.Read(ref _blackBoxDumpSnapshotCount), 0, BlackBoxFrameCapacity);
                 int byteCount = BlackBoxDumpHeaderSizeBytes + count * BlackBoxDumpEntrySizeBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(VRSomaticProvider),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 Span<byte> bytes = new Span<byte>(target, byteCount);
@@ -3115,8 +3120,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VRSomaticProvider),
+                    dumpPayloadLabel);
             }
         }
 

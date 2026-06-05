@@ -81,6 +81,20 @@ Required:
 - LOD synchronization;
 - AUP/floating-origin safety.
 
+## SDF Collision Read Model
+
+Voxel owns environment SDF truth and collider bake admission for voxel caves, carved terrain, tunnels, and large geology. Player movement, vehicles, AI, tools, and physics systems consume voxel-owned read models, baked colliders, or generation-checked DataVault snapshots; they do not run their own terrain/voxel truth.
+
+Rules:
+
+- traversal collision for character and vehicle movement must prefer baked voxel/terrain colliders or an approved SDF read model over synchronous cast chains;
+- physics interaction remains disabled until collider bake or SDF read-model readiness is proven for the touched chunk;
+- unified tool/interaction ray routes may query the voxel read model or a bounded cast bridge, but the bridge must name owner, cadence, buffer, and migration/fallback;
+- stale SDF handles, missing chunk bake, non-finite density, and seam arbitration failure must be black-boxed and surfaced to physics/tool owners;
+- `GlobalQualityWeight` may scale SDF resolution, extraction distance, diagnostic depth, and rebuild cadence, but it must not change collision truth, carve permission, or save delta identity.
+
+A movement route that depends on hot synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains for terrain/voxel environment collision is migration debt unless a current physics/voxel route card proves why the SDF/collider route cannot serve it.
+
 ## 2026-06-05 Static Source Anchors
 
 Evidence class: STATIC_SOURCE only. Compile, Unity import, voxel carve replay, profiler, GC, save/load, and player-build proof remain PENDING VERIFICATION.

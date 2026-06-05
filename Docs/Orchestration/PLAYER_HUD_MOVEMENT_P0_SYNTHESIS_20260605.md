@@ -2,6 +2,7 @@
 
 Status: `STATIC_SYNTHESIS / PENDING UNITY READBACK`
 Evidence class: `SUBAGENT_STATIC_AUDIT + STATIC_SOURCE + STATIC_SCENE_YAML + STATIC_PREFAB_YAML`
+Subagent source: Chandrasekhar and Russell static audits.
 
 No Unity, build, import, Play Mode, profiler, scene save, prefab save, material save, or raw YAML edit was performed by this synthesis.
 
@@ -26,6 +27,12 @@ Any scenic capture without active production player, HUD, tool, movement, and in
 11. `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab:2390-2426` is `ScreenSpaceOverlay`, has `SuitHUDV4CanvasOverlay`, null `projectionCamera`, null `survival`, null `playerMovement`, and null `underwaterVisuals`. It can be a bridge candidate only, not a proven diegetic HUD.
 12. `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab` binds `Hecton8.Interaction.InteractionUI`, while `Assets/_Project/Scripts/UI/InteractionUI.cs` also exists. Prompt ownership needs readback.
 13. `Assets/_Project/Scripts/Interaction/PlayerInteraction.cs` has fallback prompt `"OPEN HATCH"` in static subagent readback. If a target does not provide text, prompt semantics leak wrong diegetic instruction.
+14. Russell static audit confirmed the route-critical HUD/PDA/pause/save code has several correct zero-GC text pieces, but they remain source-candidate only because scene-active proof is absent.
+15. `Assets/_Project/Prefabs/Player.prefab:1589-1601` has `PlayerPDA` panel/group/tab refs null, so the PDA source can refuse to open if those refs are not injected elsewhere.
+16. `Assets/_Project/Prefabs/HUD_Internal.prefab:42-53` has compositor disabled/null-bound and `forceScreenSpaceOverlay: 1`.
+17. `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab:2390-2428` is overlay-mode and null-bound for projection camera, survival, movement, and underwater visuals.
+18. Pause/save source exists through `Assets/_Project/Scripts/UI/PauseMenuController.cs` and `Assets/_Project/Scripts/SaveManager.cs`, but no active `PauseMenuController`, save UI, save artifact, or runtime save/load proof exists.
+19. Tool suppression is incomplete by static proof: `PlayerFlashlight` direct toggle guard exists, but static audit found a route where `StepFromEquipmentOwner` calls `IsGameplayInputBlockedByMenu()` and ignores the result. Tool-wide menu suppression needs source/readback proof.
 
 ## Required Unity Readback
 
@@ -39,6 +46,16 @@ Any scenic capture without active production player, HUD, tool, movement, and in
 - camera/HUD: active main camera owner, shell camera write status, prefab camera status, HUD render camera, render textures, overlay vs world/projection mode, `forceScreenSpaceOverlay`, raycast/interactivity, player refs;
 - interaction/prompt: `PlayerInteraction.interactableMask`, player camera, active target, prompt hash, prompt source text, active prompt class, prompt container/label, render carrier, look target signal, interact input consumption, PDA/pause suppression;
 - telemetry/proof: 300-frame rings for input/movement/HUD/focus plus GC 0 B/frame profiler proof.
+- PDA panel/group/tabs, `controlsRebindUI`, active `PauseMenuController`, `SaveManager.IsInitialized`, `SaveManager.IsBusy`, save slot button count/interactable state, save artifact path, and input block mask while PDA/pause/save UI is open.
+
+## Static UI Pieces That Are Not Enough
+
+- `TMP_Text.SetCharArray` usage exists in route-critical PDA/pause/save/interaction candidates.
+- `InputDispatcher` supports UI/player map switching and block masks.
+- `PauseMenuController` can build pause/save UI at runtime.
+- `SaveManager` has temp/primary/backup commit source.
+
+These are implementation candidates, not runtime readiness. Acceptance still requires active scene wiring, no-mutation readback, Play Mode/profiler proof, and save/load artifacts.
 
 ## Low / Middle / High / Ultra
 

@@ -5759,7 +5759,12 @@ namespace Hecton8.Inventory
             NativeArray<byte> payload = default;
             try
             {
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PlayerInventory),
+                    "SalinityCorrosionBlackBoxDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 WriteUInt32LittleEndian(destination, ref writeCursor, SalinityCorrosionBlackBoxDumpMagic);
@@ -5789,8 +5794,10 @@ namespace Hecton8.Inventory
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PlayerInventory),
+                    "SalinityCorrosionBlackBoxDumpPayload");
             }
         }
 
@@ -5951,7 +5958,12 @@ namespace Hecton8.Inventory
             NativeArray<byte> payload = default;
             try
             {
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PlayerInventory),
+                    "InventoryBlackBoxDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 WriteUInt32LittleEndian(destination, ref writeCursor, InventoryBlackBoxDumpMagic);
@@ -5981,8 +5993,10 @@ namespace Hecton8.Inventory
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PlayerInventory),
+                    "InventoryBlackBoxDumpPayload");
             }
         }
 

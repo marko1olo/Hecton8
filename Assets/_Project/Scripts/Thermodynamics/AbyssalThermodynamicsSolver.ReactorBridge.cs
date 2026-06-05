@@ -957,16 +957,26 @@ namespace Hecton8.Thermodynamics
             }
 
             int byteCount = (int)bytes;
-            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            const string dumpPayloadLabel = "nuclearReactorBlackBoxDumpPayload";
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AbyssalThermodynamicsSolver),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+
                 void* target = NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 UnsafeUtility.MemCpy(target, ring, byteCount);
                 NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AbyssalThermodynamicsSolver),
+                    dumpPayloadLabel);
             }
         }
 

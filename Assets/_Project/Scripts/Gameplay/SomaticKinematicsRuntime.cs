@@ -2493,6 +2493,7 @@ namespace Hecton8.Gameplay
             if (_dumpWritten || !TryResolveBlackBoxDumpHeader(out SomaticBlackBoxDumpHeader header, out int entryCount))
                 return;
 
+            const string dumpPayloadLabel = "SomaticKinematicsRuntime.BlackBoxDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
@@ -2500,7 +2501,11 @@ namespace Hecton8.Gameplay
                 int headerBytes = UnsafeUtility.SizeOf<SomaticBlackBoxDumpHeader>();
                 int entryBytes = UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>();
                 int byteCount = headerBytes + entryCount * entryBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(SomaticKinematicsRuntime),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 UnsafeUtility.MemCpy(target, &header, headerBytes);
 
@@ -2545,8 +2550,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SomaticKinematicsRuntime),
+                    dumpPayloadLabel);
             }
         }
 

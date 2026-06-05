@@ -3,8 +3,10 @@ description: "HISTORICAL REFERENCE ONLY - superseded by HECTON-8 AGENTS.md"
 alwaysApply: false
 ---
 
-# HECTON-8 Authority Override
+# Historical Reference Only
 
-This file is historical/generic Unity guidance. It is not active HECTON-8 law unless root `C:\hades\Hecton8\AGENTS.md`, `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md`, or a current route bible explicitly imports a rule from it.
+This former generic Unity architecture file is not active HECTON-8 authority.
 
-If this file conflicts with HECTON-8 architecture, use HECTON-8 authority.
+Use `C:\hades\Hecton8\AGENTS.md` and `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md`.
+
+The previous full body is preserved at `Docs/DEPRECATED/AgentRulesHistorical_20260605/unity-architecture.md`.

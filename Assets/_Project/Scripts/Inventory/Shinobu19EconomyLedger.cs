@@ -1582,9 +1582,15 @@ namespace Hecton8.Inventory
 
             int count = math.min(telemetry.Length, BlackBoxCapacity);
             int byteCount = EconomyDumpHeaderBytes + count * EconomyTelemetryEntrySizeBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(Shinobu19EconomyLedger),
+                    "EconomyTelemetryBlackBoxDumpPayload",
+                    NativeArrayOptions.UninitializedMemory);
+
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int offset = 0;
                 if (!TryWriteUInt32LittleEndian(destination, byteCount, ref offset, EconomyDumpMagic) ||
@@ -1607,7 +1613,10 @@ namespace Hecton8.Inventory
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(Shinobu19EconomyLedger),
+                    "EconomyTelemetryBlackBoxDumpPayload");
             }
         }
 
@@ -1621,9 +1630,15 @@ namespace Hecton8.Inventory
 
             int count = math.min(telemetry.Length, BlackBoxCapacity);
             int byteCount = EconomyOrderedDumpHeaderBytes + count * EconomyTelemetryEntrySizeBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(Shinobu19EconomyLedger),
+                    "EconomyTelemetryOrderedBlackBoxDumpPayload",
+                    NativeArrayOptions.UninitializedMemory);
+
                 int cursor = NormalizeRingCursor(latestCursor, count);
                 int first = (cursor + 1) % count;
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
@@ -1652,7 +1667,10 @@ namespace Hecton8.Inventory
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(Shinobu19EconomyLedger),
+                    "EconomyTelemetryOrderedBlackBoxDumpPayload");
             }
         }
 

@@ -27,6 +27,8 @@ Read before execution:
 - `Docs/AssetAudit/VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.csv`
 - `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
@@ -35,12 +37,16 @@ Read before execution:
 - `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
 - `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`
 - `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`
+- `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`
+- `Tools/ProofGate/README.md`
+- `Tools/ProofGate/validate_proof_packet.py`
 
 Existing source-gate state:
 
 - Product-face material/texture gate: `FAILED`.
 - Product-face prefab quality gate: `FAILED`.
 - Sky/ocean source primitive gate: `FAILED`.
+- Visual source promotion gate: static source candidates only; VSPQ rows must be consumed as owner routes, not treated as import/material/screenshot acceptance.
 - `h8_1475` proof packet: absent.
 - `Docs/Screenshots/HectonProofPackets/` proof root: missing or not yet populated by accepted `h8_1475` session.
 - `Docs/Screenshots/MCP/*.png`: diagnostic only. Raw MCP PNGs are explicitly rejected as acceptance proof.
@@ -101,43 +107,57 @@ If a future controller assigns a different execution owner ID, keep the same pro
 
 Every execution session must create exactly one session root:
 
-`Docs/Screenshots/HectonProofPackets/h8_1475_<YYYYMMDD_HHMMSS>/`
+`Docs/Screenshots/HectonProofPackets/h8_1475_<session>/`
 
-Minimum required files:
+ProofGate minimum required files:
 
 - `manifest.json`
 - `manifest.sha256`
-- `UnityLog.txt`
+- `UnityEditor_h8_1475_<session>.log`
+- `screenshots/01_surface_coast_aegir_ui_off.png`
+- `screenshots/02_shoreline_close_1m.png`
+- `screenshots/03_underwater_0_5m.png`
+- `screenshots/04_underwater_20_50m_route.png`
+- `screenshots/05_aegir_celestial_long.png`
+- `screenshots/06_regression_low_oblique.png`
+
+Extended support artifacts, not substitutes for the ProofGate six:
+
+- `UnityLog.txt` only if it is an extra copy; `manifest.log_path` must point to the ProofGate log path.
 - `console_export.txt`
 - `no_mutation_readback_report.md`
 - `dirty_state_audit.md`
 - `frame_debugger_stats.md`
-- canonical screenshots listed below, or matching `ABORTED_<view>.md` notes.
+- visual-reference comparison screenshots listed below, or matching `ABORTED_<view>.md` notes.
 
 `manifest.json` must include:
 
-- session id;
-- Unity editor version;
-- active scene sequence and scene context per runtime row;
-- process gate command outputs and interpretation;
-- Unity/editor state before readback;
-- artifact list with relative paths;
-- screenshot filenames, source camera/view, and capture reason;
-- Unity log path;
-- console export path;
-- no-mutation readback report path;
-- dirty-state audit path;
-- Frame Debugger/Stats path;
-- GCMonitor/profiler artifact paths if collected;
-- visual reference comparison path;
-- mutation result: `NO_MUTATION` or `ABORTED_BEFORE_MUTATION`;
-- acceptance state: `PENDING_VERIFICATION` only.
+- ProofGate required fields from `validate_proof_packet.py`: `schema_name`, `schema_version`, `harness_name`, `harness_version`, `packet_id`, `session_id`, `created_utc`, `created_local`, `active_scene`, `evidence_class`, `final_disposition`, `may_submit_as_runtime_proof`, `global_quality_weight`, `global_quality_label`, `route_owner_name`, `route_session_id`, `camera_source`, `ui_policy`, `log_path`, `post_capture_clean_seconds`, and `screenshots`.
+- ProofGate required derived checks: `all_required_views_present`, `all_required_views_unique`, `all_required_views_have_sha256`, `all_production_views_ui_policy_pass`, `all_depth_predicates_pass`, `all_route_predicates_pass`, `quality_weight_is_continuous_float`, `post_capture_log_window_clean`, `manifest_written_after_final_screenshot`, `log_last_write_after_final_screenshot`, `screenshots_outside_assets_folder`, and `no_asset_import_dependency`.
+- Support fields: Unity editor version, active scene sequence, process gate outputs, Unity/editor state before readback, artifact list, console export path, no-mutation readback report path, dirty-state audit path, Frame Debugger/Stats path, GCMonitor/profiler artifact paths if collected, visual reference comparison path, and mutation result.
+- `global_quality_label` must be `qNNN`, not `low`, `medium`, `high`, or `ultra`.
+- Static ProofGate output never verifies player capture truth. Do not add player-capture claim fields except absent/null/false.
 
 `manifest.sha256` must be the actual SHA-256 of `manifest.json`. Do not invent hashes.
 
-## Canonical Screenshot Set
+## ProofGate Production View Set
 
-Required screenshots:
+These six PNGs are the only required production screenshots for `Tools/ProofGate/validate_proof_packet.py --strict`:
+
+| Index | view_id | file_name | hard predicate |
+|---:|---|---|---|
+| 1 | `surface_coast_aegir_ui_off` | `01_surface_coast_aegir_ui_off.png` | `ui_visible: false`; production view; route/depth predicates pass. |
+| 2 | `shoreline_close_1m` | `02_shoreline_close_1m.png` | non-empty `route_anchor_id`; production view; route/depth predicates pass. |
+| 3 | `underwater_0_5m` | `03_underwater_0_5m.png` | depth `0.25-5.0`; `underwater_active: true`. |
+| 4 | `underwater_20_50m_route` | `04_underwater_20_50m_route.png` | depth `20.0-50.0`; `underwater_active: true`. |
+| 5 | `aegir_celestial_long` | `05_aegir_celestial_long.png` | non-empty `route_anchor_id`; production view. |
+| 6 | `regression_low_oblique` | `06_regression_low_oblique.png` | non-empty `route_anchor_id`; production view. |
+
+Every screenshot record must include the full required field set from ProofGate: index/id, production/diagnostic flags, path/name/hash/size/dimensions/timestamps, camera fields, route predicates, depth predicates, quality weight/label, render scale, post stack hash, UI visibility, and log offset/timestamp.
+
+## Extended Visual Comparison Artifact Set
+
+These files are useful support artifacts for `h8_1475_visual_reference_comparison.md`. They do not satisfy the six ProofGate production view requirements unless also represented by the exact ProofGate filenames above.
 
 - `h8_1475_surface_sky_aegir_ocean_hud_game.png`
 - `h8_1475_surface_shoreline_waterline_game.png`
@@ -220,7 +240,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
 
 10. Read active HUD, visor, PDA, interaction, quickbar, notification, oxygen/pressure canvases, render modes, world-space projection state, `HUD_Internal` instantiation/enabled state, `SuitHUDScreenCompositor.forceScreenSpaceOverlay`, `GraphicRaycaster` enabled count, and interaction UI namespace state. Acceptance proof: `h8_1475_player_hud_binding_scene_selected.png` and rows in report. Reject interactive gameplay HUD as `ScreenSpaceOverlay` unless explicit projection proof exists. A disabled prefab flag is not runtime proof; classify it as latent until Unity readback proves absence or noninteractive/debug-only use.
 
-11. Capture Game View surface/HUD proof: `h8_1475_surface_sky_aegir_ocean_hud_game.png`. Acceptance proof: first-person world view with HUD visible and readable. Reject flat overlay posing as cockpit/diegetic proof.
+11. Capture Game View surface/HUD support proof: `h8_1475_surface_sky_aegir_ocean_hud_game.png`. This is an extended visual-comparison artifact, not ProofGate view 1. Also capture ProofGate view `01_surface_coast_aegir_ui_off.png` with `ui_visible: false` for the static gate. Reject flat overlay posing as cockpit/diegetic proof.
 
 12. Checkpoint 2 - export Console state and update dirty-state audit. Acceptance proof: `console_export.txt` exists and `dirty_state_audit.md` records no dirty scene/prefab/material/project state. Fallback: abort on any Console error after scene handoff, dirty object, save prompt, or mutation risk.
 
@@ -253,7 +273,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
 
 17. Read `SargassumMicroFaunaBoids.boidMesh`. Acceptance proof: mesh path/name and `UNITY_BUILTIN_PRIMITIVE_MESH` or authored/generated classification. Reject visible product-face micro-fauna route if it remains Unity built-in `Plane`.
 
-18. Capture shoreline/waterline proof: `h8_1475_surface_shoreline_waterline_game.png`. Acceptance proof: readable shoreline contact, foam/contact breakup route, wet terrain edge, and waterline material truth. Reject black terrain edge, repeated `foam.png` as final contact art, fog cover, or flat green/teal sheet.
+18. Capture shoreline/waterline proof. ProofGate production view is `screenshots/02_shoreline_close_1m.png`; optional support artifact is `h8_1475_surface_shoreline_waterline_game.png`. Acceptance proof: readable shoreline contact, foam/contact breakup route, wet terrain edge, and waterline material truth. Reject black terrain edge, repeated `foam.png` as final contact art, fog cover, or flat green/teal sheet.
 
 19. Checkpoint 3 - collect Frame Debugger or Stats route proof for sky/Aegir/ocean/foam/contact. Acceptance proof: `frame_debugger_stats.md` includes skybox and visible Aegir/cloud/moon passes, ocean/foam/contact draws, material instance count, SetPass and batches if available. Fallback: if Frame Debugger/Stats cannot be opened without mutation or process contention, write `ABORTED_frame_debugger_stats.md`; no render-route acceptance.
 
@@ -267,9 +287,9 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
    - MapMagic relation only if visible without mutation.
    Acceptance proof: `h8_1475_terrain_material_slots_inspector.png`. Reject active route using stale unresolved terrain materials.
 
-21. Capture photic terrain proof: `h8_1475_photic_terrain_route_game.png`. Acceptance proof: route-readable photic terrain with material truth, scale, and no dark/noisy/flat hide. Reject random noise, crushed silhouettes, primitive blobs, blurry material, or post/fog cover.
+21. Capture photic terrain support proof: `h8_1475_photic_terrain_route_game.png`. This supports visual comparison and route triage, but does not replace ProofGate underwater views `03_underwater_0_5m.png` and `04_underwater_20_50m_route.png`. Acceptance proof: route-readable photic terrain with material truth, scale, and no dark/noisy/flat hide. Reject random noise, crushed silhouettes, primitive blobs, blurry material, or post/fog cover.
 
-22. Capture shallow underwater proof: `h8_1475_underwater_0_5m_route_game.png` if Play Mode/readback is already active and safe. Acceptance proof: readable water volume, ceiling/surface interaction, seabed visibility, route cues, and non-flat water color. Fallback: write `ABORTED_underwater_0_5m_route_game.md` if unsafe. Reject full-screen haze, green slab water, black water, or route-empty view.
+22. Capture underwater ProofGate views if Play Mode/readback is already active and safe: `screenshots/03_underwater_0_5m.png` and `screenshots/04_underwater_20_50m_route.png`. Optional support artifact: `h8_1475_underwater_0_5m_route_game.png`. Acceptance proof: readable water volume, ceiling/surface interaction, seabed visibility, route cues, medium-depth layering, and non-flat water color. Fallback: write `ABORTED_underwater_0_5m.md` or `ABORTED_underwater_20_50m_route.md` if unsafe. Reject full-screen haze, green slab water, black water, or route-empty view.
 
 23. Read route-wide product-face blockers:
    - `Assets/_Project/Prefabs/Player.prefab`
@@ -295,7 +315,7 @@ If Unity exposes a dirty scene, prefab, material, importer, Addressables asset, 
 
 28. Finalize dirty-state audit. Acceptance proof: `dirty_state_audit.md` states no scene, prefab, material, importer, Addressables, package, or project settings dirty state after readback, or `ABORTED_BEFORE_MUTATION` with exact dirty object path. Fallback: if Unity is dirty, do not save; abort.
 
-29. Finalize `manifest.json`, compute actual `manifest.sha256`, copy the Unity session log to `UnityLog.txt`, and verify every listed artifact exists under the session root. Acceptance proof: no orphan claims in manifest. Fallback: missing artifact keeps acceptance state `PENDING_VERIFICATION`.
+29. Finalize `manifest.json`, compute actual `manifest.sha256`, copy the Unity session log to `UnityEditor_h8_1475_<session>.log`, and verify every listed ProofGate artifact exists under the session root. Optional `UnityLog.txt` may exist only as a duplicate support artifact. Acceptance proof: no orphan claims in manifest. Fallback: missing artifact keeps acceptance state `PENDING_VERIFICATION`.
 
 30. Checkpoint 5 - write final controller report under `Docs/Reports/AssetSystem_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_<YYYYMMDD_HHMMSS>.md`. Acceptance proof: report states what was wrong, what was read, in-game/editor result, what was verified, what remains rejected, runtime/profiler/GC/memory proof class, and exact blocker triage. Do not use `ACCEPTED`, `COMPLETE`, `READY`, `AAA`, `OPTIMIZED`, or `0 B/frame` unless matching artifacts exist.
 

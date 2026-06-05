@@ -15,6 +15,8 @@ First-20 route moment: bright surface exit, ocean contact, shoreline/waterline r
 - `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md` / `.csv` rows `VSPQ-02`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
 
 ## Exact Blocker
 

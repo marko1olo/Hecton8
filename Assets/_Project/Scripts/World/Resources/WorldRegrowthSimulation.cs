@@ -456,6 +456,7 @@ namespace Hecton8.World
         private const uint BlackBoxDumpMagic = 0x57524738u; // 8GRW
         private const uint BlackBoxDumpVersion = 1u;
         private const int BlackBoxDumpHeaderBytes = 24;
+        private const string BlackBoxDumpPayloadLabel = "WorldRegrowthBlackBoxDumpPayload";
         private const int MaxSafePermille = 1000;
         private const int MaxSafeBaseGrowthQ = 255;
 
@@ -628,7 +629,11 @@ namespace Hecton8.World
             {
                 int entrySize = UnsafeUtility.SizeOf<WorldRegrowthTelemetryEntry>();
                 int byteCount = BlackBoxDumpHeaderBytes + memory.BlackBox.Length * entrySize;
-                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(WorldRegrowthSimulation),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 try
                 {
                     byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -651,7 +656,10 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(WorldRegrowthSimulation),
+                        BlackBoxDumpPayloadLabel);
                 }
             }
             catch (IOException)

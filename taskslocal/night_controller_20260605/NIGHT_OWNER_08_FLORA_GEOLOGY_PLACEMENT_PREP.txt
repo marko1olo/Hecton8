@@ -2,6 +2,13 @@ NIGHT_OWNER_08_FLORA_GEOLOGY_PLACEMENT_PREP
 Role: Flora/geology placement preparation owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: ASSET_PIPELINE
+VALID_COMPLETION: exact flora/geology candidate and placement packet with asset paths, rejection gates, proof gaps, and rollback plan.
+INVALID_COMPLETION: decorative scene dressing that hides broken water/shore/terrain/sky, proxy assets accepted as final, or production placement without base-route proof.
+KILL_SWITCH: rejected base water/shore/terrain/sky route blocks production placement and converts this lane to candidate packet only.
+EVIDENCE_BUDGET: one asset inventory pass plus one placement packet; no production placement while base route is red.
+
 Objective:
 Prepare premium rocks/flora/coral/geology placement candidates and rejection rules, but do not use them to hide broken water/shore/terrain/sky base.
 

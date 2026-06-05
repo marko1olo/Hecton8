@@ -132,6 +132,16 @@ Scene unload behavior:
 
 Stale-handle behavior:
 
+DataVault write-lock scope, if applicable:
+
+  [ ] Lock acquired immediately before owned mutation/copy/staging/schedule
+
+  [ ] Lock released in `finally` or equivalent scoped disposal in same owner phase
+
+  [ ] Lock is not held across frame boundary, await, worker sleep, UI callback, or unrelated work
+
+  [ ] Job dependency/fence is named when scheduled work touches Vault-backed memory
+
 Rejected alternatives:
 
   [ ] owner-local field

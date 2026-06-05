@@ -25,7 +25,7 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 |---:|---|---|---|---|
 | 01 | process_gate_preflight | `ASSET_OWNER_36` | `process_gate.md` | CPU high, busy Unity/import/compiler/build process, or ambiguous state. |
 | 02 | static_input_pack | `ASSET_OWNER_36` | `manifest.json` static input list | Missing named input without `MISSING_STATIC_INPUT` note. |
-| 03 | proof_root_and_manifest | `ASSET_OWNER_36` | `h8_1475_<session>/manifest.json` | Missing proof root, fake hash, or orphan artifact list. |
+| 03 | proof_root_and_manifest | `ASSET_OWNER_36` | `h8_1475_<session>/manifest.json` plus `manifest.sha256` | Missing proof root, fake hash, missing ProofGate fields, or orphan artifact list. |
 | 04 | no_mutation_guard | `ASSET_OWNER_26` | `dirty_state_audit.md` | Any dirty scene, prefab, material, importer, package, or project state. |
 | 05 | player_hud_binding_readback | `ASSET_OWNER_36` | player/HUD screenshot, active scene conflict reconciliation, and readback rows | Missing production player binding, unresolved active shell authority, active interactive `ScreenSpaceOverlay` HUD route, or flat nondecision HUD. |
 | 06 | sky_aegir_cloud_slot_readback | `ASSET_OWNER_14` | sky/Aegir slot inspector screenshot | Stale/null/ignored slots, orbit-only proof, muddy or smeared Aegir. |
@@ -34,18 +34,18 @@ This graph is not Unity proof, visual acceptance, runtime mix proof, profiler pr
 | 09 | product_face_prefab_blocker_readback | `ASSET_OWNER_25` | primitive target inspector screenshot | Visible primitive, blockout, null/package-default/proxy material, or missing LOD. |
 | 10 | product_face_material_blocker_readback | `ASSET_OWNER_24` | material blocker readback rows | `foam.png` final use, proxy material, null slot, missing PBR role, or package default. |
 | 11 | audio_p0_route_readback | `ASSET_OWNER_28` | audio route rows plus console export | Null MusicDirector mixer or direct Player AudioClip route without owner/release proof. |
-| 12 | canonical_screenshot_capture | `ASSET_OWNER_36` | required `h8_1475_*.png` set | Missing canonical screenshot or raw MCP PNG substitution. |
+| 12 | canonical_screenshot_capture | `ASSET_OWNER_36` | ProofGate six PNG set: `01_surface_coast_aegir_ui_off.png` through `06_regression_low_oblique.png` | Missing ProofGate screenshot, old `h8_1475_*.png` support shot used as substitute, diagnostic substitution, or raw MCP PNG substitution. |
 | 13 | frame_stats_profiler_boundary | `ASSET_OWNER_36` | `frame_debugger_stats.md` | Missing render-route artifact without abort note or fake runtime numbers. |
-| 14 | final_packet_triage | `ASSET_OWNER_36` | final proof execution report plus `h8_1475_visual_reference_comparison.md` | Acceptance claim without artifacts, missing template-based comparison, or any dirty mutation risk. |
+| 14 | final_packet_triage | `ASSET_OWNER_36` | final proof execution report, `h8_1475_visual_reference_comparison.md`, and strict ProofGate report | Acceptance claim without artifacts, missing template-based comparison, ProofGate rejection, or any dirty mutation risk. |
 
 ## Rules
 
 - If row 01 fails, stop. Do not launch Unity or run readback.
 - If row 04 fails, stop. Do not save or repair the dirty object.
 - Rows 05-11 are readback and triage only. They do not authorize material assignment, prefab apply, texture import, Addressables changes, or audio import edits.
-- Row 12 must use canonical packet screenshots. Raw `Docs/Screenshots/MCP/*.png` files are rejected as acceptance proof.
+- Row 12 must use the six exact ProofGate production screenshots. Old `h8_1475_*.png` shots are support/comparison artifacts only. Raw `Docs/Screenshots/MCP/*.png` files are rejected as acceptance proof.
 - Row 13 can only prove render-route evidence. It cannot prove `0 B/frame`, runtime memory, save/load, platform readiness, or build health.
-- Row 14 must include `h8_1475_visual_reference_comparison.md` based on `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`. Missing comparison keeps the packet `PENDING_VERIFICATION`.
+- Row 14 must include `h8_1475_visual_reference_comparison.md` based on `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` and a strict ProofGate report from `Tools/ProofGate/validate_proof_packet.py`. Missing comparison or ProofGate rejection keeps the packet `PENDING_VERIFICATION` or `REJECTED`.
 - Row 14 may end as `PENDING_VERIFICATION` or `REJECTED`. It may not claim final readiness without matching Unity, Console, visual, profiler, GC, and memory artifacts.
 
 ## Regression Model

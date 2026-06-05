@@ -46,6 +46,17 @@ Forbidden:
 - material instantiation in render sync;
 - post stacks with no gameplay/readability value.
 
+Current URP quality defaults:
+
+- default Standalone quality profile is Surface/Medium unless current project settings prove a newer owner-approved default;
+- medium PC RP asset path: `Assets/_Project/Data/URP_Medium (PC_RPAsset).asset`;
+- low/compact RP asset path: `Assets/_Project/Data/URP_Low (PC_RPAsset).asset`;
+- compact/low renderer path: `Assets/_Project/Data/Mobile_Renderer.asset`;
+- medium defaults: HDR on, MSAA off, FXAA path, render scale `1.0`;
+- low/compact defaults: HDR on, MSAA off, FXAA path, render scale about `0.85` unless hardware detector/settings owner overrides continuously through `GlobalQualityWeight`.
+
+Do not change Quality, URP assets, renderers, HDR/MSAA/AA mode, or render scale defaults without reading `settings.md`, current ProjectSettings/URP assets, and providing Frame Debugger/profiler/screenshot proof. These defaults are route facts, not proof that current Unity quality settings are correctly bound.
+
 ## Live Source Anchors - 2026-06-05
 
 Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unity import, Frame Debugger, RenderGraph Viewer, profiler, GC, visual quality, or player-build readiness.

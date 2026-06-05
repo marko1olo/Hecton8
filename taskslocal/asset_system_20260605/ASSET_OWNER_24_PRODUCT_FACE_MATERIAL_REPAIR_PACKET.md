@@ -21,6 +21,8 @@ Route blocker removed: current product-face source gates failed and current visu
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`: current visual state rejected; `h8_1475` proof packet absent; raw MCP screenshots are diagnostic only.
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`: mandatory image-read digest for user-visible water, terrain, sky/Aegir, flora/coral, UI/cockpit, shoreline, and medium-depth reference signals.
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`: current VREF-to-owner routing for material owners.
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md` / `.csv` rows `VSPQ-06` and `VSPQ-08`: source-promotion route inputs only, not import/material/screenshot proof.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`: anti-false-proof gate before any h8_1475 product-face acceptance.
 - `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md`: `392` material files scanned; `290` have no static texture GUIDs; `314` have empty texture slot tokens; `41` include `WorldProceduralProxy`; `42` include proxy/placeholder tokens; `260` unresolved shader GUIDs by static map.
 - `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md`: active route blocker rows include `45` P0 rows, `44` P1 rows, and `20` P2 rows. Key families: terrain/geology `51`, flora/coral/fauna `48`, sky/Aegir/cloud `8`, water foam rejected support `1`, water/caustic support `1`.
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`: foam/contact, Aegir/sky, wet basalt/shell sand, and UI oxygen route recipes are source-only until cleanup, PBR role separation, import readback, material binding, screenshots, and proof exist.
@@ -53,6 +55,9 @@ Read before execution:
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
 - `Docs/AssetAudit/MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md`
 - `Docs/AssetAudit/TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.md`
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`
@@ -156,7 +161,7 @@ Required acceptance proof:
 - `h8_1475` proof packet: `manifest.json`, `manifest.sha256`, copied Unity log, canonical screenshots, and evidence list.
 - Frame Debugger or RenderGraph/Stats evidence for material assets, shader names, keywords, SetPass, batches, material instance count, and Crest visible slot use.
 - Memory/VRAM proof for texture residency and compact texture budget risk.
-- Explicit proof label from `quality.md`, with static text-only work limited to `STATIC_STRUCTURE_REVIEWED` or `PENDING VERIFICATION`; runtime/editor/player/profiler labels require matching artifacts.
+- Explicit proof label from `quality.md`, with this static text-only task staying `PENDING VERIFICATION` until matching editor/runtime/player/profiler artifacts exist.
 
 Static docs may only support structure review. Product-face visual acceptance requires player-capture proof plus matching readback/render/memory evidence.
 

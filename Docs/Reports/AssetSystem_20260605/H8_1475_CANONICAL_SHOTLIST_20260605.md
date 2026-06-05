@@ -14,7 +14,7 @@ CSV companion:
 
 ## Purpose
 
-This file defines the mandatory `h8_1475` screenshot set and rejection rubric for the future Unity proof owner.
+This file defines the visual-reference support shotlist and rejection rubric for the future Unity proof owner. The static ProofGate canonical production view set is stricter and uses six exact filenames from `Tools/ProofGate/validate_proof_packet.py`: `01_surface_coast_aegir_ui_off.png`, `02_shoreline_close_1m.png`, `03_underwater_0_5m.png`, `04_underwater_20_50m_route.png`, `05_aegir_celestial_long.png`, and `06_regression_low_oblique.png`. The `h8_1475_*` names below are support/comparison artifacts unless they are separately represented by the exact six ProofGate views in `manifest.json`.
 
 It removes one first-20-minutes route blocker: proof ambiguity for the bright semi-open first exit with readable surface, sky/Aegir, ocean, shoreline, photic terrain, underwater route density, player/HUD binding, and product-face assets.
 
@@ -103,20 +103,26 @@ Minimum packet contents:
 
 - `manifest.json`
 - `manifest.sha256`
-- `UnityLog.txt`
+- `UnityEditor_h8_1475_<session>.log`
+- `screenshots/01_surface_coast_aegir_ui_off.png`
+- `screenshots/02_shoreline_close_1m.png`
+- `screenshots/03_underwater_0_5m.png`
+- `screenshots/04_underwater_20_50m_route.png`
+- `screenshots/05_aegir_celestial_long.png`
+- `screenshots/06_regression_low_oblique.png`
 - `console_export.txt`
 - `no_mutation_readback_report.md`
 - `dirty_state_audit.md`
 - `frame_debugger_stats.md`
 - `h8_1475_visual_reference_comparison.md` based on `Docs/Reports/AssetSystem_20260605/H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md`
-- canonical `h8_1475_*.png` screenshots or exact `ABORTED_<view>.md` notes
+- visual-comparison `h8_1475_*.png` support screenshots or exact `ABORTED_<view>.md` notes
 - final contact sheet or manifest row mapping every screenshot to its readback
 
-Acceptance state in `manifest.json` must remain `PENDING_VERIFICATION` until a reviewer applies the visual checklist and separate runtime/profiler gates.
+The packet must run `Tools/ProofGate/validate_proof_packet.py --strict`; a passing static gate only permits human/runtime review and does not prove visual acceptance. Product acceptance remains `PENDING_VERIFICATION` until a reviewer applies the visual checklist and separate runtime/profiler gates.
 
 `H8_1475_SHOT_06` has one extra blocker from the runtime conflict map: the packet must prove whether the active scene player is the production `Player.prefab` route or the scene-local `HectonWorldShellController1428` shell. If the shell owns movement/input/camera authority, the player/HUD shot is `REJECTED_PRODUCT_FACE_SOURCE` or `BLOCKED_READBACK`; it cannot be accepted as production player proof. If an active gameplay HUD uses `HUD_Internal` with `forceScreenSpaceOverlay: 1` or any interactive `ScreenSpaceOverlay` route, the HUD proof is rejected unless classified as an explicit noninteractive/debug bridge.
 
-## Canonical Shotlist
+## Visual Comparison Support Shotlist
 
 | ShotId | ViewName | Required subject | Camera intent | Required companion readback | Status |
 |---|---|---|---|---|---|
@@ -137,7 +143,7 @@ Acceptance state in `manifest.json` must remain `PENDING_VERIFICATION` until a r
 Reject the packet immediately if any of these are true:
 
 - raw `Docs/Screenshots/MCP/*.png` files are used as acceptance proof;
-- screenshot name does not match the canonical `h8_1475` set or lacks a manifest row;
+- screenshot name does not match the ProofGate six-view set when used for the static gate, or lacks a manifest row when used as a support artifact;
 - missing `manifest.json`, `manifest.sha256`, Unity log, console export, dirty-state audit, readback report, or frame stats without an exact abort note;
 - screenshot is a beauty angle that hides missing water, terrain, sky, HUD, product-face mesh, or material truth;
 - surface, sky, Aegir, shoreline, ocean surface, photic shallows, or medium-depth hero route are darkened, fogged, vignetted, bloomed, blurred, or cropped to hide weak art;

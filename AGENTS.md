@@ -53,6 +53,8 @@ Technical report means an audit, policy review, architecture review, proof revie
 
 [RULE] Product-first execution: ordinary work must improve the requested player route, visible result, gameplay value, stability, or concrete blocker first. Do not create audit/status/rationale/route-card bureaucracy unless the user explicitly requests batch/logging/orchestration or the changed artifact genuinely needs a concise decision record.
 
+[REQ] Work as much as possible means: carry the current front until it is genuinely handled. Do not conserve effort by simplifying the user's meaning, reducing the requested task, stopping after the first narrow success, or waiting for the user to point out obvious next steps. If a follow-up source/asset/proof/rule fix is required to make the current change correct, do it. If the follow-up is unrelated, speculative, destructive, blocked by process gates, or mostly paperwork, stop and report the exact boundary.
+
 [RULE] Verification work has a budget. One scoped static scan and one scoped triage pass may route the next action. Repeating checks over unchanged source, unchanged assets, or unchanged proof is bureaucracy theater.
 
 [REQ] After a check finds `PENDING VERIFICATION`, the next useful step must be one of: run the missing proof gate, fix the source/asset/root route that blocks proof, or report a concrete blocker. Do not create another board, CSV, status file, rationale, or "validation summary" that restates the same missing proof.
@@ -276,7 +278,7 @@ Examples:
 - Physics/vehicles/collision: `PROJECT_BIBLES.md` -> `physics.md`, `vehicles.md`/`player.md` as applicable -> matching `PHYS_*`, `MATH_*`, `OPT_*` mandates.
 - Generated assets: `PROJECT_BIBLES.md` -> `PROCEDURAL_ASSET_PIPELINE.md`, `3dmodel.md`, relevant asset family bible, texture/material playbooks -> matching `TOOL_*`, `REND_*`, `OPT_*` mandates.
 - Writing/narrative/public copy: `writing.md`, `narrative.md`, `localization.md`, or `textes.md` as routed by `PROJECT_BIBLES.md`.
-- Orchestrator/controller work: this file -> `HECTON8_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` and active orchestration evidence.
+- Standalone batch/controller/external-agent process work: this file -> `HECTON8_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` only when real GUI/process control is involved -> active orchestration evidence.
 
 ## Code And Ownership Discipline
 
@@ -328,21 +330,55 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 ## Delegation And Subagents
 
-[REQ] Any HECTON-8 agent may spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis.
+[REQ] Subagents are a primary HECTON-8 work tool, not an orchestrator-only feature. Any HECTON-8 agent may and should spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis. This includes:
+- source/proof inspection for a narrow route;
+- report synthesis across already named artifacts;
+- alternative design review for a risky owner boundary;
+- static checks that do not require Unity ownership;
+- lane-specific critique before dispatching a serious batch.
 
-[REQ] Give each subagent the maximum relevant authority context, exact task scope, expected output, and evidence requirements. The subagent inherits HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation.
+[REQ] Every subagent assignment must state:
+- role;
+- reason it is delegated;
+- exact authority docs already routed for the parent task;
+- owned read/edit scope;
+- forbidden scope;
+- expected output format;
+- evidence standard;
+- whether file edits are allowed.
 
-[REQ] The primary agent remains responsible for reading the controlling docs, integrating results, resolving conflicts, verifying final claims, and reporting only evidence-backed conclusions.
+[REQ] Subagents inherit HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation, but they do not become authority. The primary agent remains responsible for:
+- selecting the subagent scope;
+- giving enough context to avoid shallow guesses;
+- merging only evidence-backed findings;
+- rejecting conflicts against root docs, route bibles, lane contracts, or live source;
+- verifying final claims before reporting to the user.
 
-[FORBID] Do not use subagents to avoid reading required authority files, launder guesses, fabricate proof, create hidden dependencies, overwrite unrelated work, or spray broad unrelated audits. Subagent output is evidence input, not authority.
+[FORBID] Subagents are useful for parallelism, not for evasion. Do not suppress subagents just because a top-level batch is large. Internal subagents do not count against the top-level batch size unless exported as standalone taskslocal agent files. Do not use them to:
+- skip complete reading of controlling authority docs;
+- outsource the primary decision without review;
+- launder guesses or fabricate proof;
+- create hidden same-wave dependencies;
+- overwrite unrelated work or run broad unrelated audits;
+- produce another paper-success loop after a blocker is already known.
+
+[REQ] If a subagent finds a blocker, the primary route becomes one of:
+- fix the source/asset/rule gate;
+- execute the missing proof;
+- rewrite the downstream task;
+- report `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
 
 ## Orchestration
 
-[REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager, read `HECTON8_ORCHESTRATOR.md`.
+[REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, external-agent process operator, or explicit standalone multi-agent wave controller, read `HECTON8_ORCHESTRATOR.md`.
 
-[REQ] Explicit multi-agent, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging agents.
+[FORBID] Do not read `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because you spawn internal subagents. Internal subagents are ordinary delegation and are governed by `Delegation And Subagents`.
 
-[REQ] For local controller/orchestrator work, use and maintain `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`. Prefer `C:\hades\.codex_ops\AgentGuiOps.ps1` and `C:\hades\.codex_ops\ProbeAgents.ps1` before slow manual clicking.
+[REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging standalone agents.
+
+[REQ] New or materially rewritten serious `taskslocal` batches must pass `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` before distribution. Historical batches may be inspected with `--allow-legacy`; do not make old task folders a standing red gate unless they are reissued.
+
+[REQ] For real local GUI/process controller work, use and maintain `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`. Prefer `C:\hades\.codex_ops\AgentGuiOps.ps1` and `C:\hades\.codex_ops\ProbeAgents.ps1` before slow manual clicking.
 
 [FORBID] Ordinary implementation/content agents must not read orchestrator docs unless explicitly assigned orchestration work.
 

@@ -14,6 +14,8 @@ No Unity run, import edit, material edit, prefab edit, scene save, build, Play M
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`
 - `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`
 - `Docs/AssetAudit/VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.md`
+- `Docs/AssetAudit/VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md` / `.csv` rows `VSPQ-01`, `VSPQ-03`, `VSPQ-07`, `VSPQ-08`, `VSPQ-09`, and `VSPQ-10`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
 
 ## Route Blocker
 

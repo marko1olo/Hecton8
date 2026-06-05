@@ -2279,9 +2279,16 @@ namespace Hecton8.Physics
             if (totalBytes < headerBytes || totalBytes > int.MaxValue)
                 return;
 
-            NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            const string dumpPayloadLabel = "physicsCullingBlackBoxDumpPayload";
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    (int)totalBytes,
+                    nameof(GlobalPhysicsStateManager),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+
                 unsafe
                 {
                     byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -2310,7 +2317,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(GlobalPhysicsStateManager),
+                    dumpPayloadLabel);
             }
         }
 

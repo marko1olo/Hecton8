@@ -52,8 +52,9 @@ Rule and bible updates must:
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
 - keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
-- keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit multi-agent, batch, controller, and task-file work;
-- keep subagent rules available in root `AGENTS.md` and `HECTON8_ORCHESTRATOR.md` so delegation improves evidence quality without weakening primary responsibility;
+- keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit standalone multi-agent waves, batch, controller, external GUI/process control, and task-file work;
+- keep ordinary subagent rules available in root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md` so delegation is a primary evidence/implementation tool without pulling GUI/process orchestration into normal work;
+- keep new or materially rewritten serious `taskslocal` batches strict-checked with `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`; historical batches are not a standing failure surface unless explicitly reissued;
 - keep `.agent/rules/*.md` as short historical stubs with previous bodies preserved under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`;
 - sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
 - keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;

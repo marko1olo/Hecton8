@@ -53,6 +53,7 @@ Purpose: acceptance gates. This file defines what proof is required; it is not p
 | no duplicate central `BufferID` values | `Tools\BufferIDSovereigntyAudit.py --fail-on-duplicates` | Yes |
 | no local numeric `BufferID` casts at final migration | `Tools\BufferIDSovereigntyAudit.py --fail-on-local-casts` | Yes when declared complete |
 | native owner proof | owner, allocator, lifetime, disposal, phase, failure mode | Yes |
+| DataVault write-lock/fence proof | same-phase `try/finally ReleaseWriteLock` or equivalent scoped-dispose proof; no lock held across frame/await/worker/UI lifetime; job fence named | Yes |
 
 Rules:
 
@@ -107,6 +108,12 @@ Root `AGENTS.md` guardrails are the target standard: main thread `<= 12ms`, GC `
 | Total memory target | `<= 4096MB` | Yes above target without memory owner proof | Memory Profiler / platform counter |
 | Native persistent memory | flat over 10 min idle | Yes | NativeMemorySentinel / Memory Profiler |
 
+Required scene-load memory proof:
+
+- after boot or scene load and before gameplay release, record Texture Memory and Total Reserved Memory;
+- when rendering/streaming participated, also record render target/depth budget and loaded handle count where available;
+- `used/total > 0.90` on an owned memory/residency budget triggers mip/residency downgrade or equivalent load-shed response and blocks a healthy-memory claim until fresh evidence shows recovery.
+
 Load shed:
 
 - VRAM above guard: request mip downgrade, drain release queue, reduce non-primary render targets.
@@ -151,6 +158,17 @@ Scatter:
 | proof package | route claims require runtime, profiler, GC, memory, save/load, screenshot/clip proof | Yes |
 | breadth control | net-new systems not needed by the route are parked | Yes |
 | marketing send | no public send-ready state without real screenshot/clip/demo proof | Yes |
+
+## Tasklocal Lane Contract Gate
+
+Run only for new or materially rewritten serious `taskslocal` batches before user distribution or controller dispatch. Do not run strict mode across all historical `taskslocal` folders by default.
+
+| Gate | Command / proof | Blocks dispatch |
+|---|---|---|
+| lane contract strict check | `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` | Yes |
+| legacy inspection | `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --allow-legacy` | No, unless the batch is being reissued |
+| exported subagent task | strict check applies if a subagent becomes a standalone task file | Yes |
+| internal bounded subagent | governed by root subagent rules; no separate batch roster required | No |
 
 ## Signoff Rule
 

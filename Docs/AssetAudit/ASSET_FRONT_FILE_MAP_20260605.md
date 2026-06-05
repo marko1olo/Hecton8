@@ -62,7 +62,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | h8 visual proof capture risk review | `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` |
 | VFX DataVault/source context | `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.*`, `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.*`, `DATAVAULT_AUDIT_EXECUTION_SURFACE_RECHECK_20260605.md`, `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.*`, `VFX_DATAVAULT_SOVEREIGNTY_STATIC_REVIEW_20260605.md`, `VFX_DATAVAULT_SOVEREIGNTY_AUDIT_20260605.json` |
 | visual hero source coverage | `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.*`, `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.*`, `VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.*` |
-| visual source promotion queue | `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.*`, `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.*`, `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.*`, `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.*` |
+| visual source promotion queue | `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.*`, `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.*`, `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.*`, `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.*`, `Tools/ValidateVisualSourcePromotionQueue.py`, `Tools/test_validate_visual_source_promotion_queue.py` |
 | audio mix-priority decision queue | `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.*` |
 | audio critical cue coverage matrix | `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.*` |
 | visual reference critique | `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.*` |
@@ -74,7 +74,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | h8_1475 proof dependency graph | `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.*` |
 | product-face execution refinement | `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.*` |
 | target tables | `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.*`, `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.*`, `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.*`, `H8_1475_READBACK_FIELD_MANIFEST_20260605.*`, `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.*`, `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.*` |
-| owner packet index | `ASSET_OWNER_PACKET_INDEX_20260605.*` |
+| owner packet index | `ASSET_OWNER_PACKET_INDEX_20260605.*`, `Tools/ValidateAssetOwnerPacketIndex.py`, `Tools/test_validate_asset_owner_packet_index.py` |
 | early owner packets | `ASSET_OWNER_01_UNITY_MATERIAL_READBACK.md`, `ASSET_OWNER_02_TEXTURE_AUTHORING.md`, `ASSET_OWNER_03_AUDIO_LEDGER_LISTENING.md`, `ASSET_OWNER_04_MESH_PREFAB_PROMOTION.md`, `ASSET_OWNER_05_UI_SPRITE_ROUTE.md` |
 | tools/execution | `ASSET_AUTHORING_TOOL_INVENTORY_20260605.*`, `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`, `ASSET_OWNER_07_TOOL_AND_ROUTE_EXECUTION_PACKET.md` |
 | audio owner packets | `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`, `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md` |
@@ -102,6 +102,10 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | visual proof capture guardrail validator | `Tools/ValidateVisualProofCaptureGuardrails.py`, `Tools/test_validate_visual_proof_capture_guardrails.py` |
 | asset static summary validator | `Tools/ValidateAssetStaticSummary.py`, `Tools/test_validate_asset_static_summary.py` |
 | foam contact decision queue validator | `Tools/ValidateFoamContactDecisionQueue.py`, `Tools/test_validate_foam_contact_decision_queue.py` |
+| mesh prefab review queue validator | `Tools/ValidateMeshPrefabReviewQueue.py`, `Tools/test_validate_mesh_prefab_review_queue.py` |
+| visual source promotion queue validator | `Tools/ValidateVisualSourcePromotionQueue.py`, `Tools/test_validate_visual_source_promotion_queue.py` |
+| audio route decision matrix validator | `Tools/ValidateAudioRouteDecisionMatrices.py`, `Tools/test_validate_audio_route_decision_matrices.py` |
+| asset owner packet index validator | `Tools/ValidateAssetOwnerPacketIndex.py`, `Tools/test_validate_asset_owner_packet_index.py` |
 
 ## Rule
 

@@ -41,7 +41,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 141 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 149 | 7 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
@@ -73,7 +73,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` | 4 | 15 | 0 |
 | `Docs/AssetAudit/VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` | 10 | 15 | 0 |
 
-Total current rows: `14648`.
+Total current rows: `14656`.
 
 ## Excluded Older/Sidecar CSV Boundary
 
@@ -91,11 +91,16 @@ The direct `Docs/AssetAudit` root currently contains `58` CSV files; `53` direct
 ## Static Hygiene Result
 
 - CSV parse hygiene: 62 files parse with zero empty cells.
-- Summary validator hygiene: `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14648`; `python -m unittest Tools/test_validate_asset_static_summary.py` ran 4 tests OK. This is static summary consistency only.
+- Summary validator hygiene: `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14656`; `python -m unittest Tools/test_validate_asset_static_summary.py` ran 4 tests OK. This is static summary consistency only.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.
 - Visual reference digest link hygiene: mandatory image-read digest and fixed h8_1475 visual comparison template are now linked from the h8_1475 shotlist, visual critique checklist, visual rejection report, future h8_1475 execution packet, file map, and local asset-system README. This is routing evidence only, not visual acceptance.
+- Foam/contact queue hygiene: `python Tools/ValidateFoamContactDecisionQueue.py` returned `FOAM_CONTACT_DECISION_QUEUE_OK rows=8 p0=3 source_paths=8`; `python -m unittest Tools/test_validate_foam_contact_decision_queue.py` ran 4 tests OK. This is source-role queue consistency only.
+- Mesh/prefab queue hygiene: `python Tools/ValidateMeshPrefabReviewQueue.py` returned `MESH_PREFAB_REVIEW_QUEUE_OK baked=89 baked_proxy_refs=89 proxy=88 placeholders=30 construction=10`; `python -m unittest Tools/test_validate_mesh_prefab_review_queue.py` ran 4 tests OK. This is static queue/source GUID consistency only.
+- Visual source promotion queue hygiene: `python Tools/ValidateVisualSourcePromotionQueue.py` returned `VISUAL_SOURCE_PROMOTION_QUEUE_OK rows=10 p0=4 p1=5 p2=1 vhsc_links=6`; `python -m unittest Tools/test_validate_visual_source_promotion_queue.py` ran 5 tests OK. This is static VREF/VHSC/source-gate consistency only.
+- Audio matrix hygiene: `python Tools/ValidateAudioRouteDecisionMatrices.py` returned `AUDIO_ROUTE_DECISION_MATRICES_OK audio_route_owner_requirement_matrix=13:p0=5 audio_mix_priority_decision_queue=10:p0=5 audio_critical_cue_coverage_matrix=12:p0=8`; `python -m unittest Tools/test_validate_audio_route_decision_matrices.py` ran 5 tests OK. This is static route/mix/cue matrix consistency only.
+- Asset owner packet index hygiene: `python Tools/ValidateAssetOwnerPacketIndex.py` returned `ASSET_OWNER_PACKET_INDEX_OK rows=37 present=32 output_only=5`; `python -m unittest Tools/test_validate_asset_owner_packet_index.py` ran 5 tests OK. This is static owner-packet index consistency only.
 - Premium approximation rename hygiene: current stale references to the deleted cinematic-cheat mandate are mapped in `PREMIUM_APPROXIMATION_RENAME_TRIAGE_20260605.csv`; active non-triage references were patched to the premium approximation mandate/ledger. This is routing hygiene only, not authority approval.
 
 ## Current Process Gate
@@ -116,6 +121,6 @@ Unity readback, import, Addressables build, Play Mode, project-setting work, sce
 - GC: no runtime code changed; no GC claim.
 - Memory/VRAM: no residency proof; current data only improves owner routing.
 - Cadence: no runtime cadence changed.
-- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, unreferenced cleanup-review triage, compact P0 target-table routing synthesis, asset owner packet index through owner 37, current VREF-to-owner requirement matrix, visual-reference current rejection matrix, visual source promotion execution queue, h8_1475 proof dependency graph, h8_1475 proof-tool integrity blocker routing, visual proof capture guardrail validation, foam-contact decision queue validation, row-level audio P0 execution refinement, audio route owner matrix, audio mix-priority decision queue, audio critical cue coverage matrix, Batch31 channel-semantics decision queue, foam-contact source role decision queue, VFX DataVault source-context correction, Biolum black-box route decision, and visual hero source coverage matrix; product acceptance remains blocked by Unity/runtime proof. Batch31 import intent remains sidecar/sparse until channel semantics and Unity import proof exist.
+- Correctness: future asset owners now have parse-clean route documents, a static GUID reference graph, compact active-route GUID triage, unreferenced cleanup-review triage, compact P0 target-table routing synthesis, asset owner packet index validation through owner 37, current VREF-to-owner requirement matrix, visual-reference current rejection matrix, visual source promotion execution queue validation, h8_1475 proof dependency graph, h8_1475 proof-tool integrity blocker routing, visual proof capture guardrail validation, foam-contact decision queue validation, mesh-prefab review queue validation, row-level audio P0 execution refinement, audio route owner matrix, audio mix-priority decision queue, audio critical cue coverage matrix, Batch31 channel-semantics decision queue, foam-contact source role decision queue, VFX DataVault source-context correction, Biolum black-box route decision, and visual hero source coverage matrix; product acceptance remains blocked by Unity/runtime proof. Batch31 import intent remains sidecar/sparse until channel semantics and Unity import proof exist.
 
 Final status: `PENDING VERIFICATION`.

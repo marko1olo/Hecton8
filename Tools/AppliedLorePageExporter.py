@@ -38,6 +38,11 @@ PUBLICATION_INDEX_HEADERS = (
     "biome_tags",
     "page_path",
     "title",
+    "source_voice",
+    "spoiler_tier",
+    "spoiler_warning",
+    "packet_json_path",
+    "status_bucket",
 )
 PUBLICATION_CLUSTER_INDEX_HEADERS = (
     "surface",
@@ -142,6 +147,20 @@ def localization_status_from_flags(flags: int, locale: str) -> str:
         return SOURCE_AUTHORITY_STATUS
 
     return DRAFT_MACHINE_OR_LLM_STATUS
+
+
+def status_bucket_from_status(status: str) -> str:
+    value = status.lower().replace(" ", "_").replace("-", "_")
+    if not value:
+        return "missing"
+    if "blocked" in value:
+        return "blocked"
+    if "draft" in value or "pending" in value or "machine_or_llm" in value:
+        return "draft"
+    ready_terms = ("ready", "reviewed", "approved", "passed", "baked", "locked", "authority", "applied", "pilot")
+    if any(term in value for term in ready_terms):
+        return "ready"
+    return "other"
 
 
 def read_article_body(base: Path, article_path: object) -> str:
@@ -393,6 +412,16 @@ def write_localization_status_index(base: Path, packets: list[dict]) -> None:
 
 def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
+    cluster_spoiler_tiers = {}
+    try:
+        cluster_graph = navigation_cluster_graph_rows(base)
+        for cluster in cluster_graph:
+            pid = safe_text(cluster.get("packet_id"))
+            if pid:
+                cluster_spoiler_tiers[pid] = safe_text(cluster.get("spoiler_tier"))
+    except Exception:
+        pass
+
     for folder, surface_key, _surface_title in SURFACES:
         for locale in TARGET_LOCALES:
             direction = "rtl" if locale in RTL_LOCALES else "ltr"
@@ -410,6 +439,17 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
                 localized = packet.get("localized", {}).get(locale, {})
                 flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
                 page_path = base / folder / locale / f"{packet_id}.md"
+                
+                status = localization_status_from_flags(flags, locale)
+                source_voice = resolve_source_voice(packet, surface_key)
+                spoiler_tier = resolve_spoiler_tier(packet, cluster_spoiler_tiers)
+                spoiler_warning = "archive_spoilers" if surface_key == "external_site" and str(spoiler_tier).isdigit() and int(spoiler_tier) >= 3 else ""
+                
+                try:
+                    packet_json_path = Path(packet.get("_source_path", "")).relative_to(base).as_posix()
+                except Exception:
+                    packet_json_path = ""
+
                 rows.append(
                     {
                         "surface": surface_key,
@@ -419,12 +459,17 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
                         "release_set_id": release_set_id,
                         "article_id": article_id,
                         "unlock_id": safe_text(unlock.get("primary")),
-                        "localization_status": localization_status_from_flags(flags, locale),
+                        "localization_status": status,
                         "localization_flags": str(flags),
                         "poi_tags": metadata_list(unlock.get("poi_tags")),
                         "biome_tags": metadata_list(unlock.get("biome_tags")),
                         "page_path": page_path.relative_to(base).as_posix(),
                         "title": clean_text(localized.get("title")) if isinstance(localized, dict) else packet_id,
+                        "source_voice": source_voice,
+                        "spoiler_tier": spoiler_tier,
+                        "spoiler_warning": spoiler_warning,
+                        "packet_json_path": packet_json_path,
+                        "status_bucket": status_bucket_from_status(status),
                     }
                 )
     return rows

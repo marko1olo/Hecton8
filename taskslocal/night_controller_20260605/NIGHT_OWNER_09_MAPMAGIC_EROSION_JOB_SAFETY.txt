@@ -1,0 +1,61 @@
+NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY
+Role: Terrain generation job-lifetime and MapMagic hydraulic erosion safety owner.
+Status: PENDING EXECUTION
+
+Lane contract:
+LANE_CLASS: RUNTIME_SYSTEM
+VALID_COMPLETION: current MapMagic erosion source either compiles and proves no delta-apply writer-fence/TempJob leak, or produces an exact blocker with source line and log evidence.
+INVALID_COMPLETION: source-comment-only fix claim, hidden Complete(), safety suppression, or proof run while Unity/dotnet/compiler gate is red.
+KILL_SWITCH: repeated `HydraulicErosionDeltaApplyJob` writer-fence or TempJob leak after the same source route becomes BLOCKED_BY_EXACT_DEPENDENCY.
+EVIDENCE_BUDGET: one static source/log audit plus one Unity-safe compile/proof pass when the process gate is green.
+
+Objective:
+Remove or prove gone the `HydraulicErosionDeltaApplyJob` writer-fence/sentinel cleanup blocker so surface terrain proof is not poisoned by NativeArray safety exceptions and TempJob leaks.
+
+Authority:
+- AGENTS.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- PROJECT_BIBLES.md
+- terrain.md, systems.md, performance.md, rendering.md, quality.md
+- .agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+
+Evidence basis:
+- Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log
+- Assets/_Project/Scripts/Plugins/MapMagic/HectonHydraulicErosionMapMagicNode.cs
+- Assets/_Project/Scripts/World/HydraulicErosionJob.cs
+- Assets/_Project/Scripts/Editor/ErosionTestHarness.cs
+- Assets/_Project/Scripts/Core/NativeMemorySentinel.cs
+- Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs
+
+Owned scope:
+- Static/code audit while Unity gate is red.
+- Future code patch only when Unity/import/compiler/dotnet gate is green or Unity is not watching the project.
+- No Unity readback, import, build, Play Mode, profiler, or screenshot while CPU/process gate is red.
+
+Tasks:
+1. Confirm current source no longer schedules `ScheduleFourPhaseSlicedWithDeltaApply` from the MapMagic node.
+2. Remove unused queued-delta leftovers from `HectonHydraulicErosionMapMagicNode.cs` if present and safe.
+3. Harden pointer-based sentinel cleanup by using stable registration ids where arrays may have active safety handles.
+4. Apply same hardening or explicit quarantine to `ErosionTestHarness.cs`, which still calls queued delta apply.
+5. Add comments documenting why queued delta apply is disabled for MapMagic until writer-fence proof exists.
+6. When gate is green, compile and run the exact terrain/capture route to prove no `HydraulicErosionDeltaApplyJob` safety exception and no TempJob leak.
+
+Acceptance:
+- Current MapMagic node cannot accidentally use queued delta apply.
+- Cleanup does not call `NativeMemorySentinel.UnregisterNativeArray(array)` on arrays that may still have protected safety handles.
+- Unity log after proof has no `HydraulicErosionDeltaApplyJob`, `InvalidOperationException`, or TempJob leak warning.
+- Surface proof owner sees terrain generation as clean or explicitly blocked by another named issue.
+
+Rejection:
+- Claiming fixed from source comments only.
+- Calling `Complete()` mid-frame or hiding dependency errors.
+- Running proof while Unity/dotnet/compiler gate is red.
+- Treating h8_1914 diagnostic screenshot as visual acceptance.
+
+Low/Middle/High/Ultra:
+Low keeps direct sliced erosion with reduced budget. Middle keeps direct four-phase erosion. High/Ultra may raise detail only after dependency-chain, cleanup, and profiler proof. No tier may use queued delta apply without fence proof.

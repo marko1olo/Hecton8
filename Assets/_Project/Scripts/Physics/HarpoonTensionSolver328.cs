@@ -1400,6 +1400,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         private static bool WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry> ring, uint reasonFlags)
         {
+            const string dumpPayloadLabel = "harpoonTensionBlackBoxDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
@@ -1407,7 +1408,11 @@ namespace Hecton8.Physics
                 int entryBytes = UnsafeUtility.SizeOf<TetherTelemetryEntry>();
                 int count = math.min(ring.IsCreated ? ring.Length : 0, HarpoonTensionSolver328Constants.TelemetryCapacity);
                 int byteCount = headerBytes + count * entryBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HarpoonTensionSolver328),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -1432,8 +1437,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HarpoonTensionSolver328),
+                    dumpPayloadLabel);
             }
         }
 #endif

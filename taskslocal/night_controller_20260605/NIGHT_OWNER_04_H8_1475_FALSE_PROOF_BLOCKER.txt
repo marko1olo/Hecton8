@@ -2,6 +2,13 @@ NIGHT_OWNER_04_H8_1475_FALSE_PROOF_BLOCKER
 Role: h8_1475 proof packet and anti-false-proof owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: QA_PROOF
+VALID_COMPLETION: complete canonical h8_1475 proof packet or exact anti-false-proof rejection label with artifact paths.
+INVALID_COMPLETION: raw MCP PNG, scenic screenshot, landscape-only packet, or ACCEPTED without active player/HUD/tool/process proof and user approval.
+KILL_SWITCH: missing player/HUD/tool route, process gate, dirty-state, manifest, checksum, or ProofGate artifact blocks acceptance.
+EVIDENCE_BUDGET: one canonical packet attempt after NIGHT_OWNER_01 and NIGHT_OWNER_03 gates are green.
+
 Objective:
 Prevent scenic fake proof. Produce or reject a canonical h8_1475 packet only after active player/HUD/tool route and no-mutation Unity readback are known.
 

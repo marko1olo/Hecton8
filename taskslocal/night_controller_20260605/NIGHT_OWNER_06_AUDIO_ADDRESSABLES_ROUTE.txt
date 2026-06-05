@@ -2,6 +2,13 @@ NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE
 Role: Audio routing, player clip lifecycle, and Addressables authority owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: ASSET_PIPELINE
+VALID_COMPLETION: mixer/clip/Addressables owner route with lifecycle/release proof plan or Unity-safe config repair plus validation.
+INVALID_COMPLETION: empty Addressables group mutation, invented event strings, unvalidated direct AudioClip refs, or runtime-ready claim without listening/memory/GC proof.
+KILL_SWITCH: Unity gate red blocks import/settings mutation; unresolved owner/release route stops at BLOCKED_BY_EXACT_EXTERNAL_GATE.
+EVIDENCE_BUDGET: one static route matrix plus one Unity-safe config/proof pass when gate allows.
+
 Objective:
 Turn current audio/Addressables blocker maps into owner-correct routes without import/settings mutation while Unity is blocked.
 

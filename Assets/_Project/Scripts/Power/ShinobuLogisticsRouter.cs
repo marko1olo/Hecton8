@@ -1744,9 +1744,16 @@ namespace Hecton8.Power
                 if (totalBytes < DumpHeaderBytes || totalBytes > int.MaxValue)
                     return;
 
-                NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                const string dumpPayloadLabel = "shinobuLogisticsBlackBoxDumpPayload";
+                NativeArray<byte> payload = default;
                 try
                 {
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        (int)totalBytes,
+                        nameof(ShinobuLogisticsRouter),
+                        dumpPayloadLabel,
+                        NativeArrayOptions.UninitializedMemory);
+
                     WriteUInt32LittleEndian(payload, 0, SourceHash);
                     WriteInt32LittleEndian(payload, 4, faultFlags | LogisticsGraphFaultFlags.DumpedBlackBox);
                     WriteInt32LittleEndian(payload, 8, _frameIndex);
@@ -1764,7 +1771,10 @@ namespace Hecton8.Power
                 }
                 finally
                 {
-                    payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(ShinobuLogisticsRouter),
+                        dumpPayloadLabel);
                 }
             }
             catch (Exception exception)

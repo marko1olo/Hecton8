@@ -53,6 +53,16 @@ Rules:
 - player/camera/UI transition waits for required world owners;
 - black-box keeps enough pre-fault evidence.
 
+After scene load and before gameplay control is released, bootstrap or the scene-load owner must capture and record at least:
+
+- Texture Memory;
+- Total Reserved Memory;
+- active render target/depth budget when available;
+- loaded Addressables/streaming handle count when streaming participated;
+- current `GlobalQualityWeight` and hardware lane.
+
+If this measurement is absent, scene-load memory status remains `PENDING VERIFICATION`. A loading screen cannot hide missing memory proof.
+
 ## Runtime Law
 
 Forbidden:

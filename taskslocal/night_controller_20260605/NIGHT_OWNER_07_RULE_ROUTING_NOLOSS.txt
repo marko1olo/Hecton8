@@ -1,6 +1,13 @@
 NIGHT_OWNER_07_RULE_ROUTING_NOLOSS
 Role: Rule routing and no-loss authority hygiene owner.
-Status: PENDING EXECUTION
+Status: STATIC_REPAIRED_PENDING_GENERATOR_CHECK
+
+Lane contract:
+LANE_CLASS: DOCS_RULES
+VALID_COMPLETION: no-loss rule audit or routed authority fix plus generated snapshot update and static routing checks.
+INVALID_COMPLETION: deleting detailed law, hand-editing generated snapshots, treating historical generic rules as authority, or mojibake guesswork without byte proof.
+KILL_SWITCH: if no-loss provenance cannot be proven, stop and preserve/source-route the old text before further edits.
+EVIDENCE_BUDGET: one rule-surface audit and one routing/generator check pass.
 
 Objective:
 Verify the AGENTS/routing split preserves meaning, routes agents correctly, and does not leave stale generic Unity rules in control.
@@ -13,6 +20,7 @@ Authority:
 - .agents-skills/README.md
 - Docs/AGENTS_RULE_DETAIL_LEDGER.md only for no-loss conflict review
 - Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md
+- Docs/DEPRECATED/AgentShimsHistorical_20260606/
 
 Owned scope:
 - Read-only audit unless explicitly assigned to edit rule files.
@@ -26,8 +34,8 @@ Tasks:
 5. Verify .agents-skills/README.md mandate count and examples.
 6. Verify PROJECT_BIBLES.md routes player-visible, runtime, UI, audio, water, rendering, VFX, and quality domains.
 7. Check whether Tools/Docs/TestAgentRuleRouting.py exists and what it validates.
-8. Produce exact repair plan. Do not edit unless assigned.
-9. Preserve the Popper static findings unless fresh evidence contradicts them: root/.codexrules/.github byte-match SHA256 9249FB9CC17DACDA0B373B86840A481C53A17EE09DF28084183B0FF1D92BA15A, routing tests passed, historical .agent/rules remain the prompt-poisoning risk.
+8. Preserve the active thin-router repair for `.vscode/AGENTS.md`, `.cursor/rules/AGENTS.md`, and `.github/agents/unity-anime-dev.agent.md`.
+9. Preserve the Popper static findings unless fresh evidence contradicts them: root/.codexrules/.github byte-match SHA256 9249FB9CC17DACDA0B373B86840A481C53A17EE09DF28084183B0FF1D92BA15A, routing tests passed, historical .agent/rules are archived/stubbed and remain non-authority.
 
 Acceptance:
 - One canonical law entry point.

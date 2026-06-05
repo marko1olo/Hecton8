@@ -83,6 +83,13 @@ Required:
 - interaction blockers separate from visual LODs;
 - physics bake state for voxel chunks before interaction is enabled.
 
+Character and vehicle environment collision route:
+
+- terrain, voxel cave, tunnel, and large geology traversal collision uses baked voxel/terrain colliders or an approved SDF read model/DataVault snapshot owned by the voxel/terrain route;
+- hot movement and vehicle loops must not run synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains as the primary environment collision truth;
+- `RaycastCommand.ScheduleBatch` or bounded `Physics.*NonAlloc` casts are allowed for tool contact, interaction probing, scanner/sonar utility, or strict one-off diagnostics only when the owner phase, cadence, static buffers, and profiler/GC proof are named;
+- if a temporary cast route is used while SDF/collider bake proof is missing, report it as `PENDING VERIFICATION` or explicit migration debt, not final collision architecture.
+
 ## Vehicle Force And Damage Source Anchors
 
 Evidence class: STATIC_SOURCE only.

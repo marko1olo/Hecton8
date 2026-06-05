@@ -33,6 +33,7 @@ namespace Hecton8.Networking
         private const string CsvProfileRelativePath = "netcode_input_profiles.csv";
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_278.bin";
+        private const string DumpPayloadLabel = "RollbackNetcodeBlackBoxPayload";
 #if UNITY_EDITOR
         private const uint CsvHashMaxRollbackFrames = 0x09632D65u;
         private const uint CsvHashMaxRollbackDepth = 0x5E49FC48u;
@@ -1547,7 +1548,11 @@ namespace Hecton8.Networking
                 header.EntrySizeBytes = (uint)UnsafeUtility.SizeOf<NetTelemetryEntry64>();
                 header.Version = RollbackNetcodeConstants.BlackBoxDumpVersion;
 
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonRollbackNetcodeRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 UnsafeUtility.MemCpy(target, UnsafeUtility.AddressOf(ref header), headerBytes);
                 int cursor = headerBytes;
@@ -1575,8 +1580,10 @@ namespace Hecton8.Networking
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonRollbackNetcodeRuntime),
+                    DumpPayloadLabel);
             }
         }
 

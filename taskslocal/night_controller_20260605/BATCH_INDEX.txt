@@ -4,6 +4,19 @@ Evidence class: STATIC_CONTROLLER_SYNTHESIS
 
 This wave is built from current controller evidence, subagent audits, and root authority. It is not Unity proof, runtime proof, visual acceptance, build proof, profiler proof, or approval to mutate scenes/materials while the process gate is red.
 
+Lane roster:
+| Agent | Role | LANE_CLASS | VALID_COMPLETION | INVALID_COMPLETION | KILL_SWITCH | EVIDENCE_BUDGET |
+|---|---|---|---|---|---|---|
+| NIGHT_OWNER_01 | Unity process/MCP/readback gate owner | QA_PROOF | Green/readback proof packet or exact process/MCP blocker | Unity mutation, stale MCP claim, or proof from stale logs | Any unsafe process/editor state stops the lane | 3 CPU samples plus one no-mutation readback attempt |
+| NIGHT_OWNER_02 | Surface water/coast/sky route repair owner | GAME_VISUAL | Owner-correct route repair plan or safe edit plus fresh visual/proof packet | Haze/card/diagnostic-shot masking or decorative camouflage | Same slab/dark/acid failure after comparable proof becomes root-cause rejection | One static route pass plus one Unity-safe repair/proof pass when gate allows |
+| NIGHT_OWNER_03 | Production player/HUD/movement route owner | RUNTIME_SYSTEM | Active player/HUD/input route proof or owner-correct repair with runtime evidence | Scene shell accepted as production, overlay shortcut, or docs-only movement claim | Unknown/duplicate player authority blocks runtime proof | One static owner map plus one Unity-safe runtime proof pass |
+| NIGHT_OWNER_04 | h8_1475 proof packet owner | QA_PROOF | Complete canonical proof packet or exact anti-false-proof rejection | Raw MCP/scenic screenshot treated as acceptance | Missing player/HUD/tool/process proof blocks capture acceptance | One canonical packet attempt after owner gates are green |
+| NIGHT_OWNER_05 | VFX DataVault repair owner | RUNTIME_SYSTEM | Owner-correct native/DataVault repair or exact classified blocker plus static/test proof | Bulk NativeArray migration, editor scratch treated as runtime debt, fake zero-GC | Repeated same scanner/source conflict stops for route classification | One static audit/test pass plus one source repair pass if safe |
+| NIGHT_OWNER_06 | Audio/Addressables route owner | ASSET_PIPELINE | Mixer/clip/Addressables owner route with lifecycle/release proof plan or safe repair | Empty group mutation, event-string invention, or unvalidated direct clip refs | Unity gate red blocks import/settings mutation | One static route matrix plus one Unity-safe config/proof pass |
+| NIGHT_OWNER_07 | Rule routing/no-loss owner | DOCS_RULES | No-loss rule audit or routed fix plus static routing checks | Deleting detailed law, hand-editing generated snapshots, or mojibake guesswork | Missing no-loss provenance stops edits | One rule-surface audit and one routing/generator check pass |
+| NIGHT_OWNER_08 | Flora/geology placement prep owner | ASSET_PIPELINE | Exact candidate/placement packet with rejection gates and proof gaps | Scene dressing used to hide broken base route | Base water/shore/terrain/sky still rejected blocks placement | One asset inventory pass plus one placement packet; no production placement while base is red |
+| NIGHT_OWNER_09 | MapMagic erosion job safety owner | RUNTIME_SYSTEM | Current erosion source proves no writer-fence/TempJob leak or reports exact blocker | Source-comment-only fix, hidden Complete, or proof while process gate is red | Repeated writer-fence/TempJob leak on same route becomes exact blocker | One static source/log audit plus one Unity-safe compile/proof pass |
+
 Prime constraints for all owners:
 - Do not use /goal or goal tools.
 - Read AGENTS.md and Docs/AGENT_AUTHORITY_ROUTING.md first.
@@ -19,6 +32,8 @@ Fresh controller evidence:
 - Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
 - Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
 - Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
+- Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md
+- Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md
 - Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
 - Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md
 - Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md
@@ -42,15 +57,20 @@ Owner files:
 6. NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt
 7. NIGHT_OWNER_07_RULE_ROUTING_NOLOSS.txt
 8. NIGHT_OWNER_08_FLORA_GEOLOGY_PLACEMENT_PREP.txt
+9. NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt
 
 Execution order:
 - Owners 01 and 04 are proof gates.
 - Owners 02 and 03 may do static/source prep while Unity is blocked, but any Unity mutation waits for owner 01 evidence.
 - Owners 05, 06, 07, and 08 can run static/source-side work in parallel.
+- Owner 09 can run static/source-side work in parallel but must not edit `.cs` while Unity/import/compiler/dotnet gate is red.
 - Owner 08 must not place decorative rocks/flora/coral into production routes until owner 02 proves the water/shore/terrain/sky base is not broken.
 - Owner 08 static synthesis now exists at `Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`; it is a candidate/rejection map only, not scene placement approval.
 - Owner 04 static proof-tool synthesis now exists at `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`; `H8VisualProofCapture1912` is diagnostic rejection-only, not canonical h8_1475 acceptance tooling.
 - Owner 06 static reaudit is integrated into `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`; audio/Addressables remain P0 blocked by empty Addressables settings, null mixer refs, direct Player AudioClip refs, and serialized AudioClip fields bypassing the current `AudioSource.clip` residency scan.
 - Owner 03 static reaudit is integrated into `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`; `02_HECTON_WORLD` statically lacks production `Player.prefab`, HUD prefabs, `HectonPlayerMovement`, and `PlayerInteraction` references. Full walking/swimming/UI route remains P0 blocked until Unity readback/runtime proof.
+- Owner 02 now has `SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md`; green haze/cards and h8_1914 probes are locked as diagnostic rejects. Latest ProbeF log also exposes a MapMagic/HydraulicErosion job safety and TempJob leak blocker.
+- Owner 07 static repair is integrated: `.vscode/AGENTS.md` and `.cursor/rules/AGENTS.md` are thin routers, `.github/agents/unity-anime-dev.agent.md` is non-invocable, old bodies are archived under `Docs/DEPRECATED/AgentShimsHistorical_20260606/`, and `Tools/Docs/TestAgentRuleRouting.py` now guards the route.
+- Owner 09 packet created from Mill static audit. The blocker is premature pointer-based sentinel unregister with incomplete `HydraulicErosionDeltaApplyJob` writer fence; current source may already route MapMagic away from queued delta apply, but Unity proof is absent and `ErosionTestHarness` still uses the risky path.
 
 Final controller status: PENDING VERIFICATION.

@@ -284,7 +284,7 @@ namespace Hecton8.Editor
             mapMagicObject.tiles.ChangeDists(coords);
             mapMagicObject.Refresh(clearAll: true);
             mapMagicObject.StartGenerate(main: true, draft: true);
-            PumpMapMagicGeneration(mapMagicObject, 18.0f);
+            PumpMapMagicGeneration(mapMagicObject, 90.0f);
         }
 
         private static void PumpMapMagicGeneration(MapMagic.Core.MapMagicObject mapMagicObject, double timeoutSeconds)

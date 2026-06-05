@@ -9,6 +9,8 @@ No Unity, build, import, Play Mode, profiler, scene save, prefab save, material 
 
 The current surface route is rejected. The h8_1914 captures are diagnostic editor probes, not product proof.
 
+Additional controller update after Unity-worker dialogue review: the failure is systemic, not a local hue/haze issue. Green overlays, temporary water cards, and repeated `h8_1914` screenshot probes are rejected as a direction. The next Unity pass must start from authoritative route readback and repair the saved water/terrain/shore/sky route, not from another color pass.
+
 ## Route Classification
 
 - `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.*`: `REJECTED / DIAGNOSTIC_ONLY`. Editor-only unsaved probe, not acceptance evidence.
@@ -23,6 +25,10 @@ The current surface route is rejected. The h8_1914 captures are diagnostic edito
 - `Mat_HectonSky.mat`: `ACTIVE_SKYBOX / READBACK_REQUIRED / CURRENT_QUALITY_REJECTED`. Several sky texture slots are null in static evidence.
 - Player/HUD/tool route: `MISSING_OR_UNPROVEN`. Landscape-only capture cannot pass first-20-minutes proof.
 
+Linked controller matrix:
+
+- `Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md`
+
 ## Current Visual Failure
 
 Direct image review of the latest h8_1914 PNG shows:
@@ -34,6 +40,10 @@ Direct image review of the latest h8_1914 PNG shows:
 - weak pasted Aegir;
 - thin foam/contact;
 - no player, HUD, tool, or route gameplay proof.
+
+Latest Unity log risk attached to this route:
+
+- `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log` contains `HydraulicErosionDeltaApplyJob` NativeArray safety exceptions from MapMagic/Hecton hydraulic erosion and TempJob leak warnings. This is not a visual acceptance blocker only; it is also a terrain-generation/job-lifetime blocker for future proof captures.
 
 ## Required No-Mutation Readback
 

@@ -119,6 +119,12 @@ Triggers:
 
 Response order must preserve gameplay truth and route readability. Drop decorative particles before instruments. Drop secondary shadows before route lights. Drop far creature polish before local threat telegraphs. Never drop the only readable hazard, return path, or survival warning.
 
+Memory pressure trigger:
+
+- `used/total > 0.90` on an owned RAM, VRAM, texture residency, or render-target budget is an immediate load-shed trigger;
+- first response is noncritical mip/residency downgrade, speculative load cancellation, release-queue drain, and non-primary render-target reduction;
+- do not claim success until Memory Profiler/platform counters show the pressure resolved and the route capture still preserves readability.
+
 ## GlobalQualityWeight Scaling
 
 `GlobalQualityWeight` scales cadence, capacity, LOD distance, optional diagnostics, presentation density, texture target, particle count, shadow quality, and update frequency.

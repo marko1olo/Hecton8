@@ -2,6 +2,13 @@ NIGHT_OWNER_03_PLAYER_HUD_MOVEMENT_ROUTE
 Role: Production player, HUD, input, movement proof/repair owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: RUNTIME_SYSTEM
+VALID_COMPLETION: active production player/HUD/input route proof or owner-correct repair with walking/swimming/camera/HUD runtime evidence.
+INVALID_COMPLETION: accepting scene-local shell as production, overlay shortcut, generic prompt leak, or docs-only movement/HUD claim.
+KILL_SWITCH: unknown, duplicate, or shell-only player authority blocks runtime proof until owner route is repaired.
+EVIDENCE_BUDGET: one static owner map plus one Unity-safe runtime proof pass after process gate is green.
+
 Objective:
 Prove and repair the actual first-20 player route: full walking, swimming, ascend/descend, camera, interaction prompt, HUD/visor, PDA/pause/save route, and zero-GC input/HUD paths.
 

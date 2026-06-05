@@ -472,6 +472,8 @@ namespace Hecton8.Modding
     {
         private const string DumpPath = "Docs/AgentLogs/Dump_QUARANTINE_SURGEON.bin";
         private const string KernelDumpPath = "Docs/AgentLogs/Dump_COMMAND_FORGE.bin";
+        private const string SandboxDumpPayloadLabel = "FutureCommandSandboxBlackBoxPayload";
+        private const string KernelDumpPayloadLabel = "FutureCommandKernelTelemetryPayload";
         private const int DefaultMemoryBytes = FutureCommandSandboxConstants.DefaultMaxModMemoryMb * 1024 * 1024;
         private const uint EnabledAllEmergencyOpcodes = 0xFFFu;
         private const uint RollbackRuntimeStateBufferId = 70752u;
@@ -2929,7 +2931,11 @@ namespace Hecton8.Modding
                 int entryBytes = UnsafeUtility.SizeOf<KernelExecutionTelemetryEntry>();
                 int entryCount = hasTelemetryRing ? telemetryRing.Length : 0;
                 int byteCount = headerBytes + entryCount * entryBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FutureCommandSandboxValidator),
+                    KernelDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -2954,8 +2960,10 @@ namespace Hecton8.Modding
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FutureCommandSandboxValidator),
+                    KernelDumpPayloadLabel);
             }
         }
 
@@ -2981,7 +2989,11 @@ namespace Hecton8.Modding
                 int entryBytes = UnsafeUtility.SizeOf<ModSandboxTelemetryEntry>();
                 int entryCount = hasTelemetryRing ? telemetryRing.Length : 0;
                 int byteCount = headerBytes + entryCount * entryBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FutureCommandSandboxValidator),
+                    SandboxDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -3008,8 +3020,10 @@ namespace Hecton8.Modding
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FutureCommandSandboxValidator),
+                    SandboxDumpPayloadLabel);
             }
         }
 

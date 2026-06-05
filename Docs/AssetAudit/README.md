@@ -96,7 +96,7 @@ Use these files before assigning or doing asset work:
 - Visual reference current rejection matrix: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_VS_CURRENT_REJECTION_MATRIX_20260605.md` and `.csv`.
 - H8 proof dependency graph: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md` and `.csv`.
 - P0 target-table routing synthesis: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.md` and `.csv`.
-- Asset owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.md` and `.csv`.
+- Asset owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.md` and `.csv`; run `Tools/ValidateAssetOwnerPacketIndex.py` after edits.
 - Consolidated next-action board: `ASSET_NEXT_ACTION_BOARD_20260605.md` and `.csv`.
 - Local authoring/tool inventory: `ASSET_AUTHORING_TOOL_INVENTORY_20260605.md` and `.csv`.
 - Audio taxonomy: `AUDIO_ASSET_TAXONOMY_20260605.md` and `.csv`.
@@ -131,6 +131,7 @@ Use these files before assigning or doing asset work:
 - Visual proof capture guardrail validator: `Tools/ValidateVisualProofCaptureGuardrails.py` and `Tools/test_validate_visual_proof_capture_guardrails.py` (`STATIC_SOURCE_TOOL`; validates risk-routing and capture-tool asset-path existence only, not no-mutation Unity proof).
 - Asset static summary validator: `Tools/ValidateAssetStaticSummary.py` and `Tools/test_validate_asset_static_summary.py` (`STATIC_SOURCE_TOOL`; validates curated CSV row/count hygiene only, not whole-folder or Unity proof).
 - Foam contact decision queue validator: `Tools/ValidateFoamContactDecisionQueue.py` and `Tools/test_validate_foam_contact_decision_queue.py` (`STATIC_SOURCE_TOOL`; validates source-role paths and rejection/proof gates only, not Unity material proof).
+- Mesh prefab review queue validator: `Tools/ValidateMeshPrefabReviewQueue.py` and `Tools/test_validate_mesh_prefab_review_queue.py` (`STATIC_SOURCE_TOOL`; validates queue counts and proxy-material GUID coverage only, not Unity prefab/material proof).
 - Batch31 local PBR promotion prep: `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` (`STATIC_IMAGE_PREP_ONLY`; preview/source artifacts only).
 - Material serialized risk matrix: `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.md` and `.csv`.
 - Audio direct-ref detail: `AUDIO_DIRECT_REF_DETAIL_20260605.md` and `.csv`.
@@ -193,6 +194,7 @@ If the gate is red, continue static/source documentation only.
 - Visual capture gap owner: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` before any product-face screenshot acceptance attempt.
 - Visual critique owner: `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` before any h8_1475 screenshot pass/fail category review.
 - Visual reference path owner: `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` before future reviewers cite mandatory reference images.
+- Visual source promotion owner: `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv` plus `Tools/ValidateVisualSourcePromotionQueue.py` before dispatching VREF/VHSC/source-pack promotion work.
 - H8 proof dependency owner: `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` before executing or triaging the canonical h8_1475 packet.
 - P0 target routing synthesis owner: `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` before choosing between material, prefab, audio, h8_1475, or visual-gap owner routes.
 - Owner packet index: `ASSET_OWNER_PACKET_INDEX_20260605.csv` before recreating, redistributing, or assuming missing asset owner packet IDs.

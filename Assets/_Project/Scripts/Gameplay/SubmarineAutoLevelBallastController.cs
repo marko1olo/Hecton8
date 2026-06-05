@@ -3098,12 +3098,17 @@ namespace Hecton8.Gameplay
         {
             const int HeaderBytes = 16;
             const int RowBytes = 126;
+            const string dumpPayloadLabel = "SubmarineAutoLevelBallastController.PidTelemetryDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
                 int totalBytes = HeaderBytes + telemetry.Length * RowBytes;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(SubmarineAutoLevelBallastController),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 Span<byte> header = new Span<byte>(payloadPtr, HeaderBytes);
@@ -3148,8 +3153,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SubmarineAutoLevelBallastController),
+                    dumpPayloadLabel);
             }
         }
 
@@ -3160,12 +3167,17 @@ namespace Hecton8.Gameplay
         {
             const int HeaderBytes = 12;
             const int RowBytes = 64;
+            const string dumpPayloadLabel = "SubmarineAutoLevelBallastController.BallastTelemetryDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
                 int totalBytes = HeaderBytes + telemetry.Length * RowBytes;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(SubmarineAutoLevelBallastController),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 Span<byte> header = new Span<byte>(payloadPtr, HeaderBytes);
@@ -3209,8 +3221,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SubmarineAutoLevelBallastController),
+                    dumpPayloadLabel);
             }
         }
 

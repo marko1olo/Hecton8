@@ -2364,7 +2364,12 @@ namespace Hecton8.Gameplay
                 int stride = UnsafeUtility.SizeOf<RadiationTelemetryEntry>();
                 int entryBytes = TelemetryCapacity * stride;
                 int totalBytes = headerBytes + entryBytes;
-                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                const string dumpPayloadLabel = "RadiationHazardGrid.BlackBoxDumpPayload";
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(RadiationHazardGrid),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 try
                 {
                     WriteUInt32LittleEndian(payload, 0, unchecked((uint)_telemetryWriteIndex));
@@ -2376,7 +2381,10 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(RadiationHazardGrid),
+                        dumpPayloadLabel);
                 }
             }
             catch (Exception)

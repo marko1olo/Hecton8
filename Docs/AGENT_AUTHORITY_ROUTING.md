@@ -30,14 +30,16 @@ Authority files, route bibles, mandate files, and important task documents must 
 
 Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
 
-Subagent use by an ordinary implementation, content, QA, or docs agent is governed by root `AGENTS.md` `Delegation And Subagents`. It does not require `HECTON8_ORCHESTRATOR.md` unless the agent is acting as a local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager.
+Subagent use by an ordinary implementation, content, QA, or docs agent is governed by root `AGENTS.md` `Delegation And Subagents`. It does not require `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1`.
+
+Read `HECTON8_ORCHESTRATOR.md` only when the agent is actually creating/judging standalone agent batches, writing `taskslocal` files, controlling external IDE/browser/GUI sessions, operating local external-agent processes, or acting as the explicit controller for a multi-agent wave. Internal subagent spawning for bounded review, evidence gathering, synthesis, or disjoint implementation remains ordinary delegation, not local orchestration.
 
 ## Task Classes
 
 | Task class | Mandatory authority beyond `AGENTS.md` |
 |---|---|
 | Ordinary runtime/gameplay implementation | `PROJECT_BIBLES.md`, `quality.md`, matching route bible, owner source/call sites, `.agents-skills/README.md`, exactly `2-8` matching mandates; `VISION_LOCKS.md` only when product ambiguity changes behavior |
-| Player-visible water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome | Reference image folder before design/implementation/review/proof, `PROJECT_BIBLES.md`, `TASTE.md`, matching route bibles, matching visual/performance mandates |
+| Player-visible water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome | Reference image folder `Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)` before design/implementation/review/proof, `PROJECT_BIBLES.md`, `TASTE.md`, matching route bibles, matching visual/performance mandates |
 | Product vision, taste ambiguity, route priority, feature interpretation | `VISION_LOCKS.md`, `PROJECT_BIBLES.md`, `TASTE.md`, matching route bible |
 | Runtime architecture, bootstrap, global authority, signal/data ownership | `PROJECT_BIBLES.md`, `systems.md`, `data.md`, `performance.md`, global-authority architecture docs, matching `ARCH_*`, `DATA_*`, `OPT_*` mandates |
 | Hot-path code, Burst, jobs, memory, GPU upload, DTOs | `performance.md`, `data.md` or `compute.md` as applicable, `.agents-skills/README.md`, matching `OPT_*`, `DATA_*`, `GPU_*`, `MATH_*` mandates |
@@ -47,7 +49,7 @@ Subagent use by an ordinary implementation, content, QA, or docs agent is govern
 | Public copy, store/social/creator text | `textes.md`, product proof gates for readiness claims |
 | QA/proof/verification | `quality.md` for proof language, `Docs/QUALITY_GATES.md` for executable gates, matching route bible, `.agents-skills/QA_Evidence_Text_Filter_Audit.txt`, current source/assets/proof artifacts; do not mine archives/logs unless named by the task or active ID |
 | Batch-agent run with supplied ID | Matching prompt block only, `AGENTS.md`, task-relevant bibles/mandates, active Status/Rationale/LOG files for that ID. If a master batch path is not supplied, do not search neighboring prompts or `CURRENT_BATCH.md`; treat the user message as a batch assignment only when it directly asks for a batch-agent run |
-| Orchestrator/controller work | `HECTON8_ORCHESTRATOR.md` including `LOCAL SUBAGENT PROTOCOL` and `AGENT LANE CONTRACTS`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, active orchestration evidence, then task-relevant bibles/mandates |
+| Orchestrator/controller work | `HECTON8_ORCHESTRATOR.md` including `AGENT LANE CONTRACTS`; use `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` and GUI/process tools only when controlling external IDE/browser/GUI sessions or local external-agent processes; then task-relevant bibles/mandates |
 | Documentation/rule routing work | `AGENTS.md`, this file, `PROJECT_BIBLES.md`, `.agents-skills/README.md`, `quality.md` for acceptance/proof language, `Docs/QUALITY_GATES.md` when executable gates or proof labels change, `Docs/DOC_GOVERNANCE.md`, `Docs/README.md`, live rule sources and generators. Use exactly `2-8` mandates only for technical policy/report work, not typo-only edits |
 
 ## Authority Receipt

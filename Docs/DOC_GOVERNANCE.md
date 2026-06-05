@@ -59,6 +59,7 @@ Stable distilled facts belong in `Docs/PROJECT_BASELINE.md` or `Docs/ARCHITECTUR
 - Keep local AGENTS derivatives delegated to or synchronized with root `AGENTS.md`; they are not independent law sources.
 - Use `Docs/AGENT_AUTHORITY_ROUTING.md` for rule-surface routing and the no-loss split protocol before shortening, splitting, or mirroring rule files.
 - Run `python -B Tools/Docs/TestAgentRuleRouting.py` after agent rule-surface edits.
+- Run `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` before dispatching any new or materially rewritten serious `taskslocal` batch; use `--allow-legacy` only for old-batch inspection.
 - Preserve unrelated dirty files and report real evidence conflicts instead of rewriting history or generated artifacts.
 - Do not claim Unity import, Console, Play Mode, profiler, GCMonitor, player build, save/load, scene wiring, shader import, or visual proof without a fresh artifact path.
 - Keep status updates concise and tied to source, command, artifact, or grep proof.

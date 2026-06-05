@@ -134,8 +134,11 @@ When one lane is blocked or occupied, especially Unity, the orchestrator must ke
 
 A single active Unity owner can be the primary blocker, but it must not consume the whole orchestration cycle unless all other useful independent fronts are genuinely exhausted.
 
-LOCAL SUBAGENT PROTOCOL
-Use subagents when they reduce risk or wall-clock time on bounded evidence work:
+CONTROLLER SIDE-DELEGATION NOTE
+This section applies only after `HECTON8_ORCHESTRATOR.md` was legitimately routed for explicit standalone batch, controller, task-file, external-agent process, or GUI/workstation control.
+Ordinary internal subagent spawning is governed by root `AGENTS.md` `Delegation And Subagents` and `Docs/AGENT_AUTHORITY_ROUTING.md`; it does not require this document.
+
+In controller mode, use side-delegation when it reduces risk or wall-clock time on bounded evidence work:
 - source/proof inspection for a narrow route;
 - report synthesis across already named artifacts;
 - alternative design review for a risky owner boundary;
@@ -152,7 +155,7 @@ Every subagent assignment must state:
 - evidence standard;
 - whether file edits are allowed.
 
-Subagents inherit HECTON-8 law, but they do not become authority.
+Side-delegated agents inherit HECTON-8 law, but they do not become authority.
 The primary agent remains responsible for:
 - selecting the subagent scope;
 - giving enough context to avoid shallow guesses;
@@ -160,7 +163,9 @@ The primary agent remains responsible for:
 - rejecting conflicts against root docs, route bibles, lane contracts, or live source;
 - verifying final claims before reporting to the user.
 
-Subagents are useful for parallelism, not for evasion.
+Side-delegation is useful for parallelism, not for evasion.
+Do not suppress bounded side-delegation just because a top-level batch is large. Bounded side-delegation is a valid way for primary agents to inspect evidence, challenge a route, or work on a disjoint scope faster.
+Internal side-delegation does not count against the top-level batch size unless the orchestrator exports it as standalone `taskslocal` agent files or separate user-distributed agents.
 Do not use them to:
 - skip complete reading of controlling authority docs;
 - outsource the primary decision without review;
@@ -174,8 +179,12 @@ If a subagent finds a blocker, the primary route becomes one of:
 - rewrite the downstream task;
 - report `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
 
+
+
 DEFAULT BATCH SIZE
 - 3-8 agents per batch.
+- 9-10 top-level agents are allowed when the user is manually distributing work or the lanes are demonstrably disjoint. This requires an explicit lane roster, no hidden same-wave dependencies, and no shared Unity/process/proof slot conflict.
+- More than 10 top-level agents requires an explicit user request or a staged-wave split.
 - 20-30 tasks per agent for serious HECTON-8 agent waves.
 - 6-12 tasks per agent only for narrow housekeeping, single-bug, or direct local follow-up work.
 - One objective per agent.
@@ -206,6 +215,11 @@ Every task file and XML prompt for serious agent work must include:
 - `INVALID_COMPLETION`: common fake-success shapes rejected for this lane;
 - `KILL_SWITCH`: when to stop the current route and report root cause;
 - `EVIDENCE_BUDGET`: maximum reasonable proof attempts before escalation.
+
+Before dispatching a new or materially rewritten serious `taskslocal` batch, run:
+`python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`
+
+Do not run strict lane validation across all historical `taskslocal` batches by default. Old batches can be inspected with `--allow-legacy`; new or rewritten batches must pass strict mode before distribution.
 
 Valid terminal labels:
 - `FIXED_WITH_PROOF`: changed the owned artifact and produced the required proof.

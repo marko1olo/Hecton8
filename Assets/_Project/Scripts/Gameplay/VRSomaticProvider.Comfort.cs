@@ -1168,6 +1168,7 @@ namespace Hecton8.Gameplay
             if (_somaticComfortTelemetryDumped)
                 return;
 
+            const string dumpPayloadLabel = "VRSomaticProvider.ComfortTelemetryDumpPayload";
             NativeArray<byte> payload = default;
             try
             {
@@ -1186,7 +1187,11 @@ namespace Hecton8.Gameplay
                 int byteCount = 40 +
                     (hasComfort ? comfortLength * ComfortTelemetryEntryBytes : 0) +
                     (hasHorizon ? horizonLength * SomaticTelemetryEntryBytes : 0);
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(VRSomaticProvider),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
 
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 Span<byte> bytes = new Span<byte>(target, byteCount);
@@ -1253,8 +1258,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VRSomaticProvider),
+                    dumpPayloadLabel);
             }
         }
 

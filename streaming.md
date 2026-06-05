@@ -87,6 +87,15 @@ Releasing handles before disabling/returning runtime objects is rejected.
 
 Memory pressure response is continuous. It may reduce mip residency, LOD distance, speculative slots, audio bank density, VFX pools, and texture quality. It must not remove gameplay truth, break UI readability, or unload the return route while the player depends on it.
 
+Pressure bands and hard actions:
+
+- `used/total > 0.90` for the owned texture/VRAM residency pool triggers mip downgrade or mip residency reduction on noncritical presentation content;
+- VRAM above the compact guard requests mip downgrade, drains the release queue, reduces non-primary render targets, and cuts speculative/distant residency before near survival assets;
+- pressure actions must preserve suit/HUD, scanner, held tool, near collision proxies, route silhouettes, warnings, and save/load-critical state;
+- every pressure response must write a residency ledger entry with trigger, owner, downgraded asset group, reclaimed estimate, and player-route risk.
+
+The `0.90` threshold is a trigger for load-shed behavior, not proof that memory is healthy. Recovery requires fresh memory/VRAM evidence and route readability proof.
+
 ## GlobalQualityWeight Scaling
 
 `GlobalQualityWeight` may scale prefetch distance, speculative load slots, HLOD residency radius, mip bias, decorative biome density, audio bank breadth, VFX support residency, and diagnostic ledger depth. It must not change save identity, gameplay truth, asset ownership, release order, collision truth, or required near-field survival assets.

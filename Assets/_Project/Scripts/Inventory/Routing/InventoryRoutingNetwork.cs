@@ -1078,9 +1078,15 @@ namespace Hecton8.Inventory
 
             int telemetryBytes = telemetry.Length * entrySize;
             int byteCount = TelemetryDumpHeaderBytes + telemetryBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(InventoryRoutingNetwork),
+                    "InventoryRoutingTelemetryBlackBoxDumpPayload",
+                    NativeArrayOptions.UninitializedMemory);
+
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int offset = 0;
                 long utcTicks = DateTime.UtcNow.Ticks;
@@ -1104,7 +1110,10 @@ namespace Hecton8.Inventory
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(InventoryRoutingNetwork),
+                    "InventoryRoutingTelemetryBlackBoxDumpPayload");
             }
         }
 

@@ -6651,6 +6651,33 @@ Current state:
 - Flora/geology/coral placement remains blocked from scene production until surface and player proof gates pass.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
+## 2026-06-06 Static Rule And Lane Contract Audit Cursor 94
+
+Current front:
+
+- Ran static rule/lane tooling after asset/audio routing changes.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Validation:
+
+- Overclaim scan over the touched asset/audio packets and new validator found only negative caveats, required future proof language, test rejection strings, or explicit `not proof` boundaries.
+- `python Tools/Docs/TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS` with `mandates=80` and `root_agents_lines=407`.
+- `python Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/asset_system_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=FAIL`.
+- `python Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/asset_system_20260605 --allow-legacy` returned `TASKLOCAL_LANE_CONTRACT_CHECK=WARN`.
+
+Lane-contract blocker:
+
+- `taskslocal/asset_system_20260605` lacks `BATCH_INDEX.txt`.
+- The 32 asset-system task files lack parseable `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET` fields expected by the new lane-contract gate.
+- This is a broad historical packet-format migration, not proof of asset/runtime failure.
+- Do not treat asset-system packets as strict-lane-contract clean until the controller authorizes or performs a scoped packet-format migration.
+
+Current state:
+
+- Rule routing is statically clean.
+- Asset-system lane-contract state is `WARN/LEGACY_ONLY` and strict mode is blocked.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
 ## 2026-06-05 Flora/Geology Placement Prep Cursor 86
 
 Current front:
@@ -6821,4 +6848,343 @@ Current state:
 
 - VFX DataVault proof remains static only.
 - Missing proof: scanner re-run, compile, Unity Console, Play Mode route exercise, GC/profiler, deterministic dump artifacts.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Static Asset Queue Validation Cursor 90
+
+Current front:
+
+- Resumed after context compaction with disk refresh, not chat memory.
+- Re-read active orchestration tail, Unity dialogue rejection, asset static summary, process state, and latest `h8_1914` screenshot.
+- Process gate remains red: CPU sample `76`; active blockers include `dotnet` PID `13992`, `Unity` PID `13864`, `UnityPackageManager`, and `UnityShaderCompiler`.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Visual evidence:
+
+- `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png` remains rejected evidence.
+- Visible blockers: rectangular slab water, black detached shoreline underside, rectangular checker/material patch, weak terrain material, weak Aegir/sky integration.
+- This is diagnostic evidence only, not product proof.
+
+Static validation:
+
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14648`.
+- `python -m unittest Tools/test_validate_asset_static_summary.py` ran 4 tests OK.
+- `python Tools/ValidateFoamContactDecisionQueue.py` returned `FOAM_CONTACT_DECISION_QUEUE_OK rows=8 p0=3 source_paths=8`.
+- `python -m unittest Tools/test_validate_foam_contact_decision_queue.py` ran 4 tests OK.
+- `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows, 15 columns, zero empty cells, zero width mismatches.
+- `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 12 rows, 11 columns, zero empty cells, zero width mismatches.
+- `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv`: 7 rows, 13 columns, zero empty cells, zero width mismatches.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 141 rows, 7 columns, zero empty cells, zero width mismatches.
+- Active entry stale-anchor scan for old `14646/139/61/57/52` style counts returned no hits.
+- Scoped `git diff --check` over touched static queue docs returned no whitespace errors.
+
+Current state:
+
+- Asset queue routing is static-consistent at `62` curated CSV files and `14648` rows.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+- Next safe lane while process gate is red: static owner-packet reachability and proof-tool integrity only.
+
+## 2026-06-06 ProofGate Static Integrity Cursor 91
+
+Current front:
+
+- Continued proof-tool integrity review while Unity/process gate stayed blocked.
+- Treated parallel edits to `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md` and `Tools/Docs/TestAgentRuleRouting.py` as user/parallel-agent work; no rollback.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Static proof-tool facts:
+
+- `H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md` now records the concrete ProofGate packet contract: required packet root, required files, manifest fields, derived checks, screenshot fields, hard validator rules, view predicates, and strict command.
+- `Tools/ProofGate/README.md` and `Tools/ProofGate/validate_proof_packet.py` state the same boundary: static gate never launches Unity, judges visual taste, verifies player capture truth, or upgrades a packet to runtime/visual acceptance.
+- Static ProofGate output keeps `mayClaimPlayerCaptureVerified` false and rejects overclaims through `PLAYER_CAPTURE_CLAIM_UNSUPPORTED`.
+
+Validation:
+
+- `python Tools/Docs/TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS`.
+- `python -m unittest discover -s Tools/ProofGate -p test_*.py` ran 26 tests OK.
+- Scoped replacement-character scan over `Tools/Docs/TestAgentRuleRouting.py`, `H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`, and this orchestration file returned `0`.
+- Scoped `git diff --check` over the same files returned CRLF normalization warnings only.
+- Proof-language scan over active asset/report/task scope returned no accepted runtime/visual substitution claims.
+
+Current state:
+
+- h8_1475 proof-tool route is stronger but remains static-only.
+- Missing proof: actual no-mutation Unity packet, clean Unity log window, player/HUD/tool route truth, profiler/GC, and human visual acceptance.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner36 Owner37 VSPQ Reachability Cursor 92
+
+Current front:
+
+- Tightened h8_1475 owner-packet reachability while Unity/process gate stayed blocked.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Changed static task packets:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
+  - Added `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md/.csv` to required evidence reads.
+  - Added explicit visual source promotion gate: VSPQ rows are owner-route inputs only, not import/material/screenshot acceptance.
+- `taskslocal/asset_system_20260605/ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md`
+  - Added VSPQ, ProofGate README, ProofGate validator, and proof-tool integrity synthesis to required source reads.
+  - Added hard rules that h8_1475 must satisfy the ProofGate six-view production screenshot contract and consume VSPQ rows without treating source candidates as proof.
+
+Updated indexes:
+
+- `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv`
+  - Owner36 line count updated to `418`.
+  - Owner37 line count updated to `114`.
+- `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`
+  - Owner36 scope updated to `418_lines`.
+  - Owner37 scope updated to `114_lines`.
+
+Validation:
+
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14648`.
+- `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 37 rows, 13 columns, zero empty cells, zero width mismatches.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 141 rows, 7 columns, zero empty cells, zero width mismatches.
+- Owner36 index count matched actual `418` lines; Owner37 index count matched actual `114` lines.
+- File-map owner36 and owner37 scopes matched actual line counts.
+- Stale `384/87` owner-line anchors returned no hits in active owner-index/file-map entry files.
+- Scoped replacement-character scan returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Future h8_1475 proof owners can no longer miss VSPQ/ProofGate from the owner36/37 packets.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Owner Reachability Audio Matrix Cursor 93
+
+Current front:
+
+- Continued static asset/audio owner routing while process gate stayed red.
+- Latest process sample: CPU `100`; no named Unity/dotnet process was returned in that sample, but CPU alone blocks Unity readback/import/build/Play Mode by project rule.
+- Working tree contains many parallel source/root-doc changes outside this lane. They were not reverted or claimed here.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed by this lane.
+
+Subagent result integrated:
+
+- Read-only reachability audit reported no direct VSPQ links in owners `11`, `12`, `14`, `16`, `17`, `20`, `24`, `25`, and `27`.
+- Patched those packets to reference `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md/.csv` with relevant rows and direct `ASSET_OWNER_37_H8_1475_ANTI_FALSE_PROOF_ALIGNMENT_PACKET.md` anti-false-proof gate.
+- Removed stale `STATIC_STRUCTURE_REVIEWED` label language from owners `24` and `25`; both now stay `PENDING VERIFICATION` until matching editor/runtime/player/profiler artifacts exist.
+
+Added static audio validator:
+
+- `Tools/ValidateAudioRouteDecisionMatrices.py`
+- `Tools/test_validate_audio_route_decision_matrices.py`
+
+Validation:
+
+- `python Tools/ValidateAudioRouteDecisionMatrices.py` returned `AUDIO_ROUTE_DECISION_MATRICES_OK audio_route_owner_requirement_matrix=13:p0=5 audio_mix_priority_decision_queue=10:p0=5 audio_critical_cue_coverage_matrix=12:p0=8`.
+- `python -m unittest Tools/test_validate_audio_route_decision_matrices.py` ran 5 tests OK.
+- `python Tools/ValidateVisualSourcePromotionQueue.py` returned `VISUAL_SOURCE_PROMOTION_QUEUE_OK rows=10 p0=4 p1=5 p2=1 vhsc_links=6`; unittest ran 5 tests OK.
+- `python Tools/ValidateMeshPrefabReviewQueue.py` returned `MESH_PREFAB_REVIEW_QUEUE_OK baked=89 baked_proxy_refs=89 proxy=88 placeholders=30 construction=10`; unittest ran 4 tests OK.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14654`; unittest ran 4 tests OK.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 147 rows, 7 columns, zero empty cells.
+- `ASSET_OWNER_PACKET_INDEX_20260605.csv`: 37 rows, 13 columns, zero empty cells; all present packet line counts match actual files.
+- File-map `_lines` scopes match actual files; byte-scope rows remain byte scopes.
+- Scoped replacement-character scan returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated static asset CSV set remains `62` files, `14654` rows, zero empty cells.
+- VSPQ, mesh-prefab queue, foam-contact queue, visual proof capture guardrails, ProofGate, and audio route/mix/cue matrices now have static validators or route gates.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 H8_1475 ProofGate Contract Extraction Cursor 93
+
+Current front:
+
+- Extracted exact static ProofGate contract from `Tools/ProofGate/validate_proof_packet.py` and `Tools/ProofGate/README.md`.
+- Updated `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md` with required packet root, files, manifest fields, derived checks, screenshot fields, hard validator rules, view predicates, and strict validation command.
+- No Unity, build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Current h8_1475 proof facts:
+
+- Canonical packet root is `Docs/Screenshots/HectonProofPackets/{packet_id}_{session_id}/`.
+- Required production screenshots are the six exact `01_...06_...png` files.
+- Manifest must use continuous `global_quality_weight` and `qNNN` quality labels; binary labels are rejected.
+- Static ProofGate never verifies player capture truth. `mayClaimPlayerCaptureVerified` remains false, and player-capture claim fields are rejected.
+- Log proof requires a clean post-capture window of at least 60 seconds and rejects compile/import/domain reload/ILPP/dirty log tokens.
+
+Validation:
+
+- `python -m unittest discover -s Tools\ProofGate -p test_*.py` returned `Ran 26 tests`, `OK`.
+- Replacement-character scan on the updated h8_1475 synthesis returned `0`.
+- Question-run scan on the updated h8_1475 synthesis returned `0`.
+- Scoped `git diff --check` returned CRLF normalization warning only.
+
+Current state:
+
+- ProofGate contract is documented for future no-mutation harness implementation.
+- No canonical h8_1475 packet exists from this static work.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Summary Count Revalidation Cursor 94
+
+Current front:
+
+- Revalidated asset static summary after `ASSET_FRONT_FILE_MAP_20260605.csv` grew to `143` rows.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, or runtime source mutation was performed.
+
+Static validation:
+
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14650`.
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` records `ASSET_FRONT_FILE_MAP_20260605.csv` as `143` rows and total current rows as `14650`.
+- `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md` static snapshot now matches the current `143` row fact for `ASSET_FRONT_FILE_MAP_20260605.csv`.
+
+Current state:
+
+- Asset queue routing is static-consistent at `62` curated CSV files and `14650` rows.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Night Controller Lane Contract Validation Cursor 95
+
+Current front:
+
+- Revalidated `taskslocal/night_controller_20260605` after parallel/static edits added lane contracts to the owner files.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, or task execution was performed.
+
+Static validation:
+
+- `python Tools/Docs/TestTaskLocalLaneContracts.py --self-test` returned `TASKLOCAL_LANE_CONTRACT_SELFTEST=PASS`.
+- `python Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS` for `8` task files.
+- Scoped replacement-character and question-run scans over `taskslocal/night_controller_20260605/*.txt` returned `0`.
+- Scoped `git diff --check` over `taskslocal/night_controller_20260605` and `Tools/Docs/TestTaskLocalLaneContracts.py` returned CRLF normalization warnings only.
+
+Current state:
+
+- Night controller owner files now have explicit `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET` contracts.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Controller Refresh After Compaction Cursor 96
+
+Current front:
+
+- Acting as orchestrator/controller after context compaction.
+- Process gate refreshed: Unity and Unity support processes were active; CPU samples were approximately 97-99 percent. Unity readback/import/build/Play/screenshot/mutation remains blocked.
+- Last rejected visual evidence remains `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png` plus metadata. It is diagnostic-only and visually rejected.
+- Latest relevant log `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log` contains `HydraulicErosionDeltaApplyJob` NativeArray safety exceptions and TempJob leak warnings.
+- Active owners integrated: Bacon proof-tool audit, Russell UI/PDA/pause/save audit, Meitner rule-routing audit.
+
+Controller actions:
+
+- Created `Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md`.
+- Updated `Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md`.
+- Updated `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`.
+- Updated `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`.
+- Updated `Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current verdict:
+
+- Surface route: P0 blocked. The issue is not hue/haze; it is missing authoritative readable water/terrain/shore/sky route proof.
+- h8_1475: P0 blocked. Current 1912 harness is diagnostic rejection-only and must not be extended for canonical acceptance.
+- Player/HUD/UI/movement: P0 blocked. Source candidates exist, but scene-active production route and runtime proof are absent.
+- Rule routing: active stale shim risk remains in `.vscode/AGENTS.md`, `.cursor/rules/AGENTS.md`, and deprecated GitHub persona file.
+
+Next action:
+
+- Continue independent static/code blocker work while Unity gate is red.
+- Integrate MapMagic erosion/job safety audit when Mill returns.
+- Do not place flora/geology/coral into production route until base water/shore/terrain/sky and player/HUD/tool proof cease being rejected.
+
+## 2026-06-06 MapMagic Erosion Job Blocker Integration Cursor 97
+
+Current front:
+
+- Mill static audit completed and was closed.
+- A separate Unity batch process was observed running `Hecton8.Editor.H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit` with log `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeI_20260606_011429.log`.
+- That active batch route is the same h8_1914 diagnostic line already rejected for acceptance. It must not be used as product proof.
+- CPU/process gate remained red: Unity, dotnet, ILPP, and package manager processes were active; CPU samples were 100 percent.
+
+Controller actions:
+
+- Created `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_BLOCKER_20260606.md`; this duplicate was later removed in favor of `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Created `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt` with Owner09.
+
+Current verdict:
+
+- ProbeF log proves a real terrain/job-lifetime blocker: `HydraulicErosionDeltaApplyJob` still owns `Heightmap` write access when `NativeMemorySentinel.UnregisterNativeArray` reads the pointer.
+- Current source appears modified after ProbeF and now routes MapMagic through `ScheduleFourPhaseSliced`, not queued delta apply, but this is static-only until fresh Unity proof exists.
+- `ErosionTestHarness` still uses `ScheduleFourPhaseSlicedWithDeltaApply` and pointer-based cleanup, so the risky path remains in the codebase.
+- No code patch was applied because Unity/import/compiler/dotnet gate was red.
+
+## 2026-06-06 Active h8_1914 Repeat Steer Cursor 98
+
+Current front:
+
+- Observed active Unity batch command targeting `Hecton8.Editor.H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit`.
+- Log path: `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeI_20260606_011429.log`.
+- Process gate remained red with Unity/dotnet/ILPP/PackageManager/ShaderCompiler activity and 100 percent CPU samples.
+- This batch is the same rejected h8_1914 diagnostic route, not a canonical no-mutation h8_1475 route.
+
+Controller action:
+
+- Created `Docs/Orchestration/UNITY_OWNER_STEER_20260606_0114_H8_1914_REPEAT_REJECT.md`.
+
+Current state:
+
+- Any output from this active batch must be treated as diagnostic rejection-only.
+- No further Unity process should be started while the gate is red.
+
+## 2026-06-06 MapMagic Hydraulic Erosion Job Safety Cursor 98
+
+Current front:
+
+- Classified the ProbeF `HydraulicErosionDeltaApplyJob` and TempJob leak blocker from static log/source evidence while the Unity/process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, or raw YAML edit was performed.
+
+Static facts:
+
+- `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log` records two `HydraulicErosionDeltaApplyJob` writer-safety exceptions and TempJob leak warnings.
+- Current `HectonHydraulicErosionMapMagicNode.cs` calls `HydraulicErosionScheduler.ScheduleFourPhaseSliced(...)` and no longer calls `ScheduleFourPhaseSlicedWithDeltaApply(...)`.
+- The queued delta-apply scheduler still exists in `HydraulicErosionJob.cs`; it remains safety-sensitive and must not be routed back into MapMagic without fresh proof.
+- `NativeMemorySentinel.UnregisterNativeArray<T>` reads a guarded pointer, so missed writer completion can throw before disposal and create leak fallout.
+
+Controller actions:
+
+- Created `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Added the review to `taskslocal/night_controller_20260605/NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt`.
+- Added the review to `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+- Added lane-contract fields and the static review evidence link to `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+
+Validation:
+
+- `python Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS` for `9` task files.
+- Scoped replacement-character and question-run scans over `taskslocal/night_controller_20260605/*.txt` returned `0`.
+- Scoped `git diff --check` over `taskslocal/night_controller_20260605` returned CRLF normalization warnings only.
+
+Current state:
+
+- The ProbeF log remains a blocker until current Unity import/re-run proves the source bypass is active and no `HydraulicErosionDeltaApplyJob` or TempJob leak remains.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Rule Routing Shim Repair Cursor 99
+
+Current front:
+
+- Repaired active IDE/tool rule shims while Unity/process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, root `AGENTS.md`, mirror `AGENTS.md`, generated bible, project-setting, or runtime source mutation was performed.
+
+Controller actions:
+
+- Archived old `.vscode/AGENTS.md`, `.cursor/rules/AGENTS.md`, and `.github/agents/unity-anime-dev.agent.md` bodies under `Docs/DEPRECATED/AgentShimsHistorical_20260606/`.
+- Replaced `.vscode/AGENTS.md` and `.cursor/rules/AGENTS.md` with thin routers to root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md`.
+- Replaced `.github/agents/unity-anime-dev.agent.md` with a deprecated non-invocable stub.
+- Extended `Tools/Docs/TestAgentRuleRouting.py` to reject stale full shim bodies and invocable deprecated persona content.
+- Updated `Docs/Orchestration/RULE_ROUTING_HISTORICAL_AGENT_RULES_SCAN_20260605.md`, `taskslocal/night_controller_20260605/BATCH_INDEX.txt`, and `NIGHT_OWNER_07_RULE_ROUTING_NOLOSS.txt`.
+
+Validation:
+
+- `python -B Tools/Docs/TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS`, `mandates=80`.
+- Scoped replacement-character and question-run scans over the active shim files and routing test returned `0`.
+- Old shim archive files exist: `vscode_AGENTS.md` `33701` bytes, `cursor_rules_AGENTS.md` `33701` bytes, `github_unity-anime-dev.agent.md` `2316` bytes.
+
+Current state:
+
+- Active stale shim risk for `.vscode`, `.cursor`, and deprecated GitHub persona is statically repaired.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.

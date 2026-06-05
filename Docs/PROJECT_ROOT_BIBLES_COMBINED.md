@@ -446,6 +446,21 @@ Required owner record:
 - disposal route;
 - black-box fields if critical.
 
+## DataVault Write-Lock And Fencing Law
+
+DataVault write locks, mutation guards, and writable native aliases are short owner-phase privileges, not state that can leak across frames.
+
+Rules:
+
+- acquire the write lock immediately before the owned mutation, copy, staging write, or job scheduling;
+- release the write lock in `finally` in the same owner method/phase;
+- after scheduling a job, release the DataVault write lock immediately unless a route card proves a narrow dispatcher-owned swap window that must hold it;
+- never hold a DataVault write lock across `await`, worker-loop sleep, UI callback lifetime, scene transition, frame boundary, or unrelated proof/logging work;
+- never expose a raw writable native reference outside the owner route; consumers receive handles, read-only snapshots, completed front buffers, or typed signals;
+- job dependencies, reader fences, and stale-handle generation checks are mandatory when scheduled work touches DataVault-backed memory.
+
+A route card or source rationale for DataVault mutation must name lock owner, acquisition phase, release phase, job dependency/fence, stale-handle behavior, and failure telemetry. Missing `try/finally ReleaseWriteLock` or equivalent scoped-dispose proof is a rejection gate.
+
 ## 2026-06-05 VaultMemoryContracts Source Anchor
 
 Evidence class: STATIC_SOURCE / STATIC_DOC. Runtime proof is not implied.
@@ -741,6 +756,23 @@ Forbidden:
 - saving presentation-only state as truth;
 - silent corruption recovery.
 
+Operational defaults:
+
+- manual slots are `slot_0`, `slot_1`, and `slot_2` unless current source proves a migrated slot table;
+- primary save writes use `.sav`, backup uses `.sav.bak`, and temp writes use `.sav.tmp` or the owner-specific temp sector/page extension documented by the save route;
+- autosave cadence must not be faster than 30 seconds unless a route bible/source owner proves an emergency black-box or checkpoint exception;
+- `SaveDataMigration` or its current source-backed successor owns schema migration; do not invent ad hoc load-time reinterpretation in callers.
+
+Load application bands:
+
+- `0-10`: Core/bootstrap/session identity;
+- `11-50`: World, terrain, voxel, streaming, and global route state;
+- `51-100`: Player, vehicle, tools, survival, and camera handoff state;
+- `101-200`: Inventory, construction, crafting, power, logistics, and economy;
+- `201+`: UI, presentation rebuild, optional diagnostics, and non-authoritative view state.
+
+Two `ISaveable` owners with the same `LoadPriority` are rejected when a dependency exists between them. `LoadFromSaveData` must check key/section presence and apply a documented default for missing optional data; missing data must not throw as normal flow.
+
 ## Quality Scaling
 
 `GlobalQualityWeight` may scale optional save diagnostics, checkpoint presentation, compression aggressiveness chosen during cold save windows, and black-box export verbosity. It must not change save identity, schema version, checksum meaning, gameplay truth, migration route, or whether a player decision is preserved.
@@ -883,6 +915,13 @@ Required:
 - collider layer assignment before prefab save;
 - interaction blockers separate from visual LODs;
 - physics bake state for voxel chunks before interaction is enabled.
+
+Character and vehicle environment collision route:
+
+- terrain, voxel cave, tunnel, and large geology traversal collision uses baked voxel/terrain colliders or an approved SDF read model/DataVault snapshot owned by the voxel/terrain route;
+- hot movement and vehicle loops must not run synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains as the primary environment collision truth;
+- `RaycastCommand.ScheduleBatch` or bounded `Physics.*NonAlloc` casts are allowed for tool contact, interaction probing, scanner/sonar utility, or strict one-off diagnostics only when the owner phase, cadence, static buffers, and profiler/GC proof are named;
+- if a temporary cast route is used while SDF/collider bake proof is missing, report it as `PENDING VERIFICATION` or explicit migration debt, not final collision architecture.
 
 ## Vehicle Force And Damage Source Anchors
 
@@ -1213,6 +1252,17 @@ Forbidden:
 - material instantiation in render sync;
 - post stacks with no gameplay/readability value.
 
+Current URP quality defaults:
+
+- default Standalone quality profile is Surface/Medium unless current project settings prove a newer owner-approved default;
+- medium PC RP asset path: `Assets/_Project/Data/URP_Medium (PC_RPAsset).asset`;
+- low/compact RP asset path: `Assets/_Project/Data/URP_Low (PC_RPAsset).asset`;
+- compact/low renderer path: `Assets/_Project/Data/Mobile_Renderer.asset`;
+- medium defaults: HDR on, MSAA off, FXAA path, render scale `1.0`;
+- low/compact defaults: HDR on, MSAA off, FXAA path, render scale about `0.85` unless hardware detector/settings owner overrides continuously through `GlobalQualityWeight`.
+
+Do not change Quality, URP assets, renderers, HDR/MSAA/AA mode, or render scale defaults without reading `settings.md`, current ProjectSettings/URP assets, and providing Frame Debugger/profiler/screenshot proof. These defaults are route facts, not proof that current Unity quality settings are correctly bound.
+
 ## Live Source Anchors - 2026-06-05
 
 Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unity import, Frame Debugger, RenderGraph Viewer, profiler, GC, visual quality, or player-build readiness.
@@ -1448,6 +1498,15 @@ Releasing handles before disabling/returning runtime objects is rejected.
 ## Memory Pressure
 
 Memory pressure response is continuous. It may reduce mip residency, LOD distance, speculative slots, audio bank density, VFX pools, and texture quality. It must not remove gameplay truth, break UI readability, or unload the return route while the player depends on it.
+
+Pressure bands and hard actions:
+
+- `used/total > 0.90` for the owned texture/VRAM residency pool triggers mip downgrade or mip residency reduction on noncritical presentation content;
+- VRAM above the compact guard requests mip downgrade, drains the release queue, reduces non-primary render targets, and cuts speculative/distant residency before near survival assets;
+- pressure actions must preserve suit/HUD, scanner, held tool, near collision proxies, route silhouettes, warnings, and save/load-critical state;
+- every pressure response must write a residency ledger entry with trigger, owner, downgraded asset group, reclaimed estimate, and player-route risk.
+
+The `0.90` threshold is a trigger for load-shed behavior, not proof that memory is healthy. Recovery requires fresh memory/VRAM evidence and route readability proof.
 
 ## GlobalQualityWeight Scaling
 
@@ -1870,6 +1929,20 @@ Required:
 - LOD synchronization;
 - AUP/floating-origin safety.
 
+## SDF Collision Read Model
+
+Voxel owns environment SDF truth and collider bake admission for voxel caves, carved terrain, tunnels, and large geology. Player movement, vehicles, AI, tools, and physics systems consume voxel-owned read models, baked colliders, or generation-checked DataVault snapshots; they do not run their own terrain/voxel truth.
+
+Rules:
+
+- traversal collision for character and vehicle movement must prefer baked voxel/terrain colliders or an approved SDF read model over synchronous cast chains;
+- physics interaction remains disabled until collider bake or SDF read-model readiness is proven for the touched chunk;
+- unified tool/interaction ray routes may query the voxel read model or a bounded cast bridge, but the bridge must name owner, cadence, buffer, and migration/fallback;
+- stale SDF handles, missing chunk bake, non-finite density, and seam arbitration failure must be black-boxed and surfaced to physics/tool owners;
+- `GlobalQualityWeight` may scale SDF resolution, extraction distance, diagnostic depth, and rebuild cadence, but it must not change collision truth, carve permission, or save delta identity.
+
+A movement route that depends on hot synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains for terrain/voxel environment collision is migration debt unless a current physics/voxel route card proves why the SDF/collider route cannot serve it.
+
 ## 2026-06-05 Static Source Anchors
 
 Evidence class: STATIC_SOURCE only. Compile, Unity import, voxel carve replay, profiler, GC, save/load, and player-build proof remain PENDING VERIFICATION.
@@ -1985,8 +2058,9 @@ Rule and bible updates must:
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
 - keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
-- keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit multi-agent, batch, controller, and task-file work;
-- keep subagent rules available in root `AGENTS.md` and `HECTON8_ORCHESTRATOR.md` so delegation improves evidence quality without weakening primary responsibility;
+- keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit standalone multi-agent waves, batch, controller, external GUI/process control, and task-file work;
+- keep ordinary subagent rules available in root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md` so delegation is a primary evidence/implementation tool without pulling GUI/process orchestration into normal work;
+- keep new or materially rewritten serious `taskslocal` batches strict-checked with `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`; historical batches are not a standing failure surface unless explicitly reissued;
 - keep `.agent/rules/*.md` as short historical stubs with previous bodies preserved under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`;
 - sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
 - keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
@@ -2258,6 +2332,16 @@ Rules:
 - save/session identity survives only through persistence owner;
 - player/camera/UI transition waits for required world owners;
 - black-box keeps enough pre-fault evidence.
+
+After scene load and before gameplay control is released, bootstrap or the scene-load owner must capture and record at least:
+
+- Texture Memory;
+- Total Reserved Memory;
+- active render target/depth budget when available;
+- loaded Addressables/streaming handle count when streaming participated;
+- current `GlobalQualityWeight` and hardware lane.
+
+If this measurement is absent, scene-load memory status remains `PENDING VERIFICATION`. A loading screen cannot hide missing memory proof.
 
 ## Runtime Law
 
@@ -2919,6 +3003,18 @@ Each setting must define:
 No binary low/ultra split. Quality must use continuous `GlobalQualityWeight` and domain-specific scalars.
 
 Graphics options may expose presets, but internal systems still consume continuous weights, budgets, and feature caps. A setting may reduce presentation density, cadence, resolution, or optional diagnostics. It must not change gameplay truth, save identity, network authority, DTO layout, or item rules.
+
+Current graphics quality defaults to preserve unless current ProjectSettings/URP assets prove a deliberate migration:
+
+- default Standalone quality: Surface/Medium;
+- medium PC RP asset: `Assets/_Project/Data/URP_Medium (PC_RPAsset).asset`;
+- low/compact RP asset: `Assets/_Project/Data/URP_Low (PC_RPAsset).asset`;
+- compact/low renderer: `Assets/_Project/Data/Mobile_Renderer.asset`;
+- medium presentation: HDR on, MSAA off, FXAA, render scale `1.0`;
+- low/compact presentation: HDR on, MSAA off, FXAA, render scale about `0.85`;
+- higher lanes may use richer renderers/assets only through hardware detection and continuous `GlobalQualityWeight`.
+
+Settings UI may expose presets, but it must not mutate these assets directly at runtime or create binary low/high branches. Any default change requires rendering proof, settings persistence/clamp proof, and compact readability proof.
 
 ## Runtime Law
 
@@ -5746,6 +5842,8 @@ Technical report means an audit, policy review, architecture review, proof revie
 
 [RULE] Product-first execution: ordinary work must improve the requested player route, visible result, gameplay value, stability, or concrete blocker first. Do not create audit/status/rationale/route-card bureaucracy unless the user explicitly requests batch/logging/orchestration or the changed artifact genuinely needs a concise decision record.
 
+[REQ] Work as much as possible means: carry the current front until it is genuinely handled. Do not conserve effort by simplifying the user's meaning, reducing the requested task, stopping after the first narrow success, or waiting for the user to point out obvious next steps. If a follow-up source/asset/proof/rule fix is required to make the current change correct, do it. If the follow-up is unrelated, speculative, destructive, blocked by process gates, or mostly paperwork, stop and report the exact boundary.
+
 [RULE] Verification work has a budget. One scoped static scan and one scoped triage pass may route the next action. Repeating checks over unchanged source, unchanged assets, or unchanged proof is bureaucracy theater.
 
 [REQ] After a check finds `PENDING VERIFICATION`, the next useful step must be one of: run the missing proof gate, fix the source/asset/root route that blocks proof, or report a concrete blocker. Do not create another board, CSV, status file, rationale, or "validation summary" that restates the same missing proof.
@@ -5969,7 +6067,7 @@ Examples:
 - Physics/vehicles/collision: `PROJECT_BIBLES.md` -> `physics.md`, `vehicles.md`/`player.md` as applicable -> matching `PHYS_*`, `MATH_*`, `OPT_*` mandates.
 - Generated assets: `PROJECT_BIBLES.md` -> `PROCEDURAL_ASSET_PIPELINE.md`, `3dmodel.md`, relevant asset family bible, texture/material playbooks -> matching `TOOL_*`, `REND_*`, `OPT_*` mandates.
 - Writing/narrative/public copy: `writing.md`, `narrative.md`, `localization.md`, or `textes.md` as routed by `PROJECT_BIBLES.md`.
-- Orchestrator/controller work: this file -> `HECTON8_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` and active orchestration evidence.
+- Standalone batch/controller/external-agent process work: this file -> `HECTON8_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` only when real GUI/process control is involved -> active orchestration evidence.
 
 ## Code And Ownership Discipline
 
@@ -6021,21 +6119,55 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 ## Delegation And Subagents
 
-[REQ] Any HECTON-8 agent may spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis.
+[REQ] Subagents are a primary HECTON-8 work tool, not an orchestrator-only feature. Any HECTON-8 agent may and should spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis. This includes:
+- source/proof inspection for a narrow route;
+- report synthesis across already named artifacts;
+- alternative design review for a risky owner boundary;
+- static checks that do not require Unity ownership;
+- lane-specific critique before dispatching a serious batch.
 
-[REQ] Give each subagent the maximum relevant authority context, exact task scope, expected output, and evidence requirements. The subagent inherits HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation.
+[REQ] Every subagent assignment must state:
+- role;
+- reason it is delegated;
+- exact authority docs already routed for the parent task;
+- owned read/edit scope;
+- forbidden scope;
+- expected output format;
+- evidence standard;
+- whether file edits are allowed.
 
-[REQ] The primary agent remains responsible for reading the controlling docs, integrating results, resolving conflicts, verifying final claims, and reporting only evidence-backed conclusions.
+[REQ] Subagents inherit HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation, but they do not become authority. The primary agent remains responsible for:
+- selecting the subagent scope;
+- giving enough context to avoid shallow guesses;
+- merging only evidence-backed findings;
+- rejecting conflicts against root docs, route bibles, lane contracts, or live source;
+- verifying final claims before reporting to the user.
 
-[FORBID] Do not use subagents to avoid reading required authority files, launder guesses, fabricate proof, create hidden dependencies, overwrite unrelated work, or spray broad unrelated audits. Subagent output is evidence input, not authority.
+[FORBID] Subagents are useful for parallelism, not for evasion. Do not suppress subagents just because a top-level batch is large. Internal subagents do not count against the top-level batch size unless exported as standalone taskslocal agent files. Do not use them to:
+- skip complete reading of controlling authority docs;
+- outsource the primary decision without review;
+- launder guesses or fabricate proof;
+- create hidden same-wave dependencies;
+- overwrite unrelated work or run broad unrelated audits;
+- produce another paper-success loop after a blocker is already known.
+
+[REQ] If a subagent finds a blocker, the primary route becomes one of:
+- fix the source/asset/rule gate;
+- execute the missing proof;
+- rewrite the downstream task;
+- report `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
 
 ## Orchestration
 
-[REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, or multi-agent manager, read `HECTON8_ORCHESTRATOR.md`.
+[REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, external-agent process operator, or explicit standalone multi-agent wave controller, read `HECTON8_ORCHESTRATOR.md`.
 
-[REQ] Explicit multi-agent, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging agents.
+[FORBID] Do not read `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because you spawn internal subagents. Internal subagents are ordinary delegation and are governed by `Delegation And Subagents`.
 
-[REQ] For local controller/orchestrator work, use and maintain `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`. Prefer `C:\hades\.codex_ops\AgentGuiOps.ps1` and `C:\hades\.codex_ops\ProbeAgents.ps1` before slow manual clicking.
+[REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging standalone agents.
+
+[REQ] New or materially rewritten serious `taskslocal` batches must pass `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` before distribution. Historical batches may be inspected with `--allow-legacy`; do not make old task folders a standing red gate unless they are reissued.
+
+[REQ] For real local GUI/process controller work, use and maintain `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`. Prefer `C:\hades\.codex_ops\AgentGuiOps.ps1` and `C:\hades\.codex_ops\ProbeAgents.ps1` before slow manual clicking.
 
 [FORBID] Ordinary implementation/content agents must not read orchestrator docs unless explicitly assigned orchestration work.
 
@@ -8061,6 +8193,12 @@ Triggers:
 - streaming backlog.
 
 Response order must preserve gameplay truth and route readability. Drop decorative particles before instruments. Drop secondary shadows before route lights. Drop far creature polish before local threat telegraphs. Never drop the only readable hazard, return path, or survival warning.
+
+Memory pressure trigger:
+
+- `used/total > 0.90` on an owned RAM, VRAM, texture residency, or render-target budget is an immediate load-shed trigger;
+- first response is noncritical mip/residency downgrade, speculative load cancellation, release-queue drain, and non-primary render-target reduction;
+- do not claim success until Memory Profiler/platform counters show the pressure resolved and the route capture still preserves readability.
 
 ## GlobalQualityWeight Scaling
 

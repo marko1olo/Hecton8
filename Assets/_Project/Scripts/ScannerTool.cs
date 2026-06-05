@@ -49,6 +49,7 @@ namespace Hecton8.Gameplay
         private const uint ScannerToolTuningHash = 0x53434E52u; // SCNR
         private const uint FallbackScannerBlueprintHash = 0x534F5648u; // SOVH
         private const string ScannerBlackBoxFileName = "Dump_SHINOBU_224_ScannerTool.bin";
+        private const string ScannerBlackBoxPayloadLabel = "ScannerToolBlackBoxDumpPayload";
         private static readonly Color PowerIndicatorOffEmission = new Color(0f, 0f, 0f, 1f);
         private static readonly Color PowerIndicatorLowBatteryEmission = new Color(1f, 0.3f, 0f, 1f);
         private static uint ResolveScannerFrame()
@@ -1386,9 +1387,15 @@ namespace Hecton8.Gameplay
             const int RowBytes = 96;
             int entryCount = scannerBlackBox.Length;
             int totalBytes = HeaderBytes + entryCount * RowBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = default;
             try
             {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ScannerTool),
+                    ScannerBlackBoxPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+
                 WriteUInt32LittleEndian(payload, 0, ScannerBlackBoxMagic);
                 WriteInt32LittleEndian(payload, 4, 1);
                 WriteInt32LittleEndian(payload, 8, ScannerBlackBoxCapacity);
@@ -1434,8 +1441,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ScannerTool),
+                    ScannerBlackBoxPayloadLabel);
             }
         }
 

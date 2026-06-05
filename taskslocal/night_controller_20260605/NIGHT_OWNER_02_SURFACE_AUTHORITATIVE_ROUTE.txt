@@ -2,6 +2,13 @@ NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE
 Role: Surface water / coast / sky route repair owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: GAME_VISUAL
+VALID_COMPLETION: owner-correct surface route repair plan or safe edit plus fresh capture/proof packet for water, shoreline, terrain, and sky.
+INVALID_COMPLETION: green haze, temp water cards, diagnostic MCP shots, decorative camouflage, or "acceptable" visuals without proof.
+KILL_SWITCH: the same slab water, dark horizon, acid terrain, or weak sky failure after comparable proof becomes REJECTED_WITH_ROOT_CAUSE.
+EVIDENCE_BUDGET: one static route classification pass plus one Unity-safe repair/proof pass when NIGHT_OWNER_01 is green.
+
 Objective:
 Stop symptom patching. Recover or replace the authoritative surface route so the first surface view has real ocean, waterline contact, terrain material truth, and Aegir/sky integration.
 
@@ -21,12 +28,15 @@ Evidence basis:
 - Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
 - Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
 - Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
+- Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md
+- Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md
 - Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png
 - Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.txt
 - Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_REJECTION_20260605.md
 - Docs/Reports/Batch31/3103_WATER_CREST_FOAM_CAUSTIC_OWNER.md
 - Docs/Reports/Batch30/3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT.md
 - Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log
 
 Owned scope:
 - Static/source audit while Unity gate is red.
@@ -42,8 +52,9 @@ Tasks:
 6. Identify foam/contact sources and rejected source rows. Do not reuse rejected foam.png visibly without cleanup/import/channel proof.
 7. Identify Aegir/sky/cloud active material route and stale candidates.
 8. Produce a repair plan with exact Unity readback fields and safe edit order.
-9. If Unity gate is green and controller allows, perform the smallest Unity-safe route repair. No raw YAML.
-10. Capture before/after screenshots and Frame Debugger/Stats where relevant.
+9. Treat `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log` as a current terrain/job blocker until current Unity import proves the MapMagic source bypass of `ScheduleFourPhaseSlicedWithDeltaApply(...)` and no `HydraulicErosionDeltaApplyJob` or TempJob leak remains.
+10. If Unity gate is green and controller allows, perform the smallest Unity-safe route repair. No raw YAML.
+11. Capture before/after screenshots and Frame Debugger/Stats where relevant.
 
 Acceptance:
 - No visible rectangular slab water or dark horizon band before haze/post.
@@ -56,6 +67,7 @@ Rejection:
 - Green haze as root fix.
 - Temporary water cards as product proof.
 - h8_1914 crest/water recovery probes as product proof; they are editor-only unsaved diagnostics.
+- Any continuation of the green overlay/card line as root fix.
 - Decorative rocks/flora/coral masking the broken base.
 
 Low/Middle/High/Ultra:

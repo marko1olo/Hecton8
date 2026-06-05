@@ -339,7 +339,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                         ref erosionJob,
                         dropletsPerSlice,
                         1,
-                        default);
+                        handle);
                     handleScheduled = true;
                 }
                 NativeArray<float> current = heightA;

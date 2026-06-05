@@ -39,16 +39,18 @@ Ordinary work:
 - report in chat;
 - do not create `Status_*`, `Rationale_*`, `LOG_*`, `Dump_*`, batch files, controller ledgers, route cards, or broad audit artifacts unless the user explicitly requested that mode.
 
-Explicit batch/controller work:
+Explicit standalone batch/controller work:
 - use the supplied ID or batch file only;
 - follow `HECTON8_ORCHESTRATOR.md`;
 - assign one `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging an agent.
 
 Subagents:
-- allowed when they materially improve correctness, parallel evidence gathering, bounded audits, implementation on a disjoint scope, alternative design review, or synthesis;
+- are a normal and encouraged HECTON-8 work tool for ordinary agents;
+- should be used when they materially improve correctness, parallel evidence gathering, bounded audits, implementation on a disjoint scope, alternative design review, or synthesis;
 - inherit HECTON-8 law;
 - are evidence input, not authority;
 - do not excuse the primary agent from reading controlling docs and verifying final claims.
+- do not require `HECTON8_ORCHESTRATOR.md` unless they are being exported as standalone task/batch agents or the user explicitly requested controller work.
 
 ## Unity And Proof
 

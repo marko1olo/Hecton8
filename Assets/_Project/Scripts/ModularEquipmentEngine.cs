@@ -71,6 +71,7 @@ namespace Hecton8.Tools
         private const uint EquipmentTelemetryDumpFaultHash = 0x45514446u; // EQDF
         private const uint UpgradeTelemetryDumpFaultHash = 0x55504446u; // UPDF
         private const string EquipmentFaultDumpPath = "Docs/AgentLogs/Dump_1416_ModularEquipment.bin";
+        private const string EquipmentFaultDumpPayloadLabel = "ModularEquipmentTelemetryDumpPayload";
         private const SystemID EquipmentVaultOwnerSystemId = SystemID.GameplayTools;
         private static readonly int FlashlightFailureStateShaderId = Shader.PropertyToID("_HectonFlashlightFailureState");
         private static readonly int FlashlightActiveShaderId = Shader.PropertyToID("_HectonFlashlightActive");
@@ -2990,7 +2991,11 @@ namespace Hecton8.Tools
                     : unchecked((uint)UnsafeUtility.SizeOf<EquipmentTelemetryEntry>());
                 int byteLength = checked((int)(rowCount * rowSize));
                 const int HeaderBytes = 16;
-                NativeArray<byte> payload = new NativeArray<byte>(HeaderBytes + byteLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    HeaderBytes + byteLength,
+                    nameof(ModularEquipmentEngine),
+                    EquipmentFaultDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 try
                 {
                     byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -3012,7 +3017,10 @@ namespace Hecton8.Tools
                 }
                 finally
                 {
-                    payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(ModularEquipmentEngine),
+                        EquipmentFaultDumpPayloadLabel);
                 }
             }
             catch (Exception)

@@ -93,6 +93,18 @@ Missing proof artifacts:
 - GC/profiler capture for enqueue, worker drain, direct read staging, and shutdown.
 - player save/load and platform file-system proof.
 
+## Save Operation Bands And Cadence
+
+Standing rule source: `persistence.md`. This section records the paging-specific copy so save/page agents do not lose the former monolithic defaults.
+
+- Manual slots: `slot_0`, `slot_1`, `slot_2` unless current source proves a migrated slot table.
+- File suffix defaults: primary `.sav`, backup `.sav.bak`, temp `.sav.tmp`; page/sector temp extensions may exist only through the save owner route.
+- Autosave minimum cadence: 30 seconds, except explicit emergency black-box/checkpoint routes.
+- Migration owner: `SaveDataMigration` or the current source-backed successor. Callers do not invent ad hoc migration during load.
+- LoadPriority bands: `0-10` Core; `11-50` World; `51-100` Player; `101-200` Inventory/construction/crafting/power/logistics; `201+` UI/presentation/diagnostics.
+- Duplicate `ISaveable.LoadPriority` values are rejected when a dependency exists.
+- Missing optional keys/sections default through owner-approved values; they do not throw as normal load flow.
+
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
 - Missing historical manifest path: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`; not current proof.

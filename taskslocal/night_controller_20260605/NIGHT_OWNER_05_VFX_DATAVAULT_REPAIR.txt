@@ -2,6 +2,13 @@ NIGHT_OWNER_05_VFX_DATAVAULT_REPAIR
 Role: VFX native ownership / DataVault repair owner.
 Status: PENDING EXECUTION
 
+Lane contract:
+LANE_CLASS: RUNTIME_SYSTEM
+VALID_COMPLETION: owner-correct native/DataVault classification or repair plus static/test proof and explicit runtime proof boundary.
+INVALID_COMPLETION: bulk NativeArray migration, editor/offline scratch treated as runtime debt, fake zero-GC, or hidden Complete/global polling.
+KILL_SWITCH: repeated scanner/source conflict over the same rows stops for exact route classification before more edits.
+EVIDENCE_BUDGET: one static audit/test pass plus one source repair pass if process/build gates allow.
+
 Objective:
 Classify current VFX native ownership state without blind migration, preserve owner-correct DataVault rewrites, and prove zero-GC/black-box routes.
 

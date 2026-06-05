@@ -145,6 +145,23 @@ Forbidden:
 - saving presentation-only state as truth;
 - silent corruption recovery.
 
+Operational defaults:
+
+- manual slots are `slot_0`, `slot_1`, and `slot_2` unless current source proves a migrated slot table;
+- primary save writes use `.sav`, backup uses `.sav.bak`, and temp writes use `.sav.tmp` or the owner-specific temp sector/page extension documented by the save route;
+- autosave cadence must not be faster than 30 seconds unless a route bible/source owner proves an emergency black-box or checkpoint exception;
+- `SaveDataMigration` or its current source-backed successor owns schema migration; do not invent ad hoc load-time reinterpretation in callers.
+
+Load application bands:
+
+- `0-10`: Core/bootstrap/session identity;
+- `11-50`: World, terrain, voxel, streaming, and global route state;
+- `51-100`: Player, vehicle, tools, survival, and camera handoff state;
+- `101-200`: Inventory, construction, crafting, power, logistics, and economy;
+- `201+`: UI, presentation rebuild, optional diagnostics, and non-authoritative view state.
+
+Two `ISaveable` owners with the same `LoadPriority` are rejected when a dependency exists between them. `LoadFromSaveData` must check key/section presence and apply a documented default for missing optional data; missing data must not throw as normal flow.
+
 ## Quality Scaling
 
 `GlobalQualityWeight` may scale optional save diagnostics, checkpoint presentation, compression aggressiveness chosen during cold save windows, and black-box export verbosity. It must not change save identity, schema version, checksum meaning, gameplay truth, migration route, or whether a player decision is preserved.

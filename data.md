@@ -49,6 +49,21 @@ Required owner record:
 - disposal route;
 - black-box fields if critical.
 
+## DataVault Write-Lock And Fencing Law
+
+DataVault write locks, mutation guards, and writable native aliases are short owner-phase privileges, not state that can leak across frames.
+
+Rules:
+
+- acquire the write lock immediately before the owned mutation, copy, staging write, or job scheduling;
+- release the write lock in `finally` in the same owner method/phase;
+- after scheduling a job, release the DataVault write lock immediately unless a route card proves a narrow dispatcher-owned swap window that must hold it;
+- never hold a DataVault write lock across `await`, worker-loop sleep, UI callback lifetime, scene transition, frame boundary, or unrelated proof/logging work;
+- never expose a raw writable native reference outside the owner route; consumers receive handles, read-only snapshots, completed front buffers, or typed signals;
+- job dependencies, reader fences, and stale-handle generation checks are mandatory when scheduled work touches DataVault-backed memory.
+
+A route card or source rationale for DataVault mutation must name lock owner, acquisition phase, release phase, job dependency/fence, stale-handle behavior, and failure telemetry. Missing `try/finally ReleaseWriteLock` or equivalent scoped-dispose proof is a rejection gate.
+
 ## 2026-06-05 VaultMemoryContracts Source Anchor
 
 Evidence class: STATIC_SOURCE / STATIC_DOC. Runtime proof is not implied.
