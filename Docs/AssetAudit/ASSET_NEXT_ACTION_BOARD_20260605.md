@@ -49,6 +49,7 @@ New target tables:
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md/.csv`: 124 P0 rows, all `PENDING UNITY READBACK`.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md/.csv`: 39 P0 rows, all `PENDING UNITY PREFAB READBACK`.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md/.csv`: 6 P0 rows.
+- `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv`: 6 row-level audio P0 execution refinements; not runtime mix or listening proof.
 - `H8_1475_READBACK_FIELD_MANIFEST_20260605.md/.csv`: 120 readback/proof rows.
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md/.csv`: 7 gap rows; `Docs/Screenshots/HectonProofPackets/` absent.
 - `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv`: 7 mandatory-reference critique rows for future h8_1475 screenshot rejection/pass review; not visual acceptance.
