@@ -42,13 +42,18 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
             "title": "Title"
         }
 
-    def populate_all_locales(self, packet_id="P123", base_body="body"):
+    def populate_surface_all_locales(self, surface, packet_id="P123", base_body="body", fm_overrides=None):
         for loc in guard.TARGET_LOCALES:
             fm = self.get_valid_fm(packet_id)
             if loc != "en_US":
                 fm["localization_status"] = "native_reviewed"
                 fm["proof_marker"] = "proof"
-            self.create_page("wiki", loc, f"{packet_id}.md", fm, base_body + loc)
+            if fm_overrides:
+                fm.update(fm_overrides)
+            self.create_page(surface, loc, f"{packet_id}.md", fm, base_body + loc)
+
+    def populate_all_locales(self, packet_id="P123", base_body="body"):
+        self.populate_surface_all_locales("wiki", packet_id, base_body)
 
     def test_pass(self):
         self.populate_all_locales()
@@ -96,6 +101,7 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
 
     def test_clone_fail(self):
         self.populate_all_locales(base_body="Identical body")
+        self.populate_surface_all_locales("site", base_body="External body")
         fm = self.get_valid_fm()
         self.create_page("site", "en_US", "P123.md", fm, "Identical bodyen_US")
         
@@ -106,6 +112,7 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
 
     def test_draft_clone_warning(self):
         self.populate_all_locales(base_body="Identical body")
+        self.populate_surface_all_locales("site", base_body="External body", fm_overrides={"localization_status": "draft"})
         fm = self.get_valid_fm()
         fm["localization_status"] = "draft"
         self.create_page("wiki", "en_US", "P123.md", fm, "Identical bodyen_US")
@@ -118,6 +125,10 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
 
     def test_spoiler_marker_pass(self):
         self.populate_all_locales()
+        self.populate_surface_all_locales(
+            "site",
+            base_body="External page [SPOILER] ",
+            fm_overrides={"spoiler_tier": "3"})
         fm = self.get_valid_fm()
         fm["spoiler_tier"] = "3"
         self.create_page("site", "en_US", "P123.md", fm, "Body with [SPOILER]")
@@ -128,6 +139,10 @@ class TestAppliedLorePublicationGuard(unittest.TestCase):
 
     def test_spoiler_marker_fail(self):
         self.populate_all_locales()
+        self.populate_surface_all_locales(
+            "site",
+            base_body="External page [SPOILER] ",
+            fm_overrides={"spoiler_tier": "3"})
         fm = self.get_valid_fm()
         fm["spoiler_tier"] = "3"
         self.create_page("site", "en_US", "P123.md", fm, "Body without marker")
