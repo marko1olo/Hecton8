@@ -3225,6 +3225,27 @@ Next valid orchestration move:
 
 - Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner. Source CSV, route-card, generated-page, h8bin, Unity, runtime, native localization, and publication claims remain forbidden from static bundles alone.
 
+## 2026-06-05 Lore System Continuation 52
+
+Current front:
+
+- Active scope remains lore-system AppliedContent surface-routing metadata.
+- Active owner: controller-local.
+
+Integrated:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_PUBLIC_WIKI_SURFACE_MAP_P500_P520_20260605.md`.
+- Registered the map in `Docs/Reports/Batch32/BATCH32_LORE_SYSTEM_LIVE_BOARD.md`.
+- Corrected the RS106 report filename in the live board to `CONTROLLER_RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_20260605.md`.
+
+Boundary:
+
+- Surface map only. No source CSV admission, route-card wiring, generated-page export, h8bin bake, DataMonolith payload, Unity placement, runtime string-pool extraction, native localization review, public website publication, wiki publication, or player-build proof.
+
+Next valid orchestration move:
+
+- Create another isolated STATIC_DOC packet wave, or plan source admission only under a clean process gate with explicit source/bake owner.
+
 ## 2026-06-05 Lore System Continuation 51
 
 Current front:
@@ -3250,7 +3271,7 @@ Integrated:
 Validation:
 
 - P518-P520: 15 exact locale headings each; 1 source_authority row each; 14 draft_machine_or_llm rows each.
-- P518-P520 byte/codepoint recheck PASS: UTF-8 BOM absent, U+FFFD=0, C1 mojibake codepoint hits=0, placeholder `????` rows absent, and RTL/CJK/Cyrillic codepoint ranges present where expected.
+- P518-P520 byte/codepoint recheck PASS: UTF-8 BOM absent, U+FFFD=0, C1 mojibake codepoint hits=0, four-question-mark placeholder rows absent, and RTL/CJK/Cyrillic codepoint ranges present where expected.
 - RS106 strict JSON parse PASS.
 - Manifest packet count 3.
 - Bundle packet count 3.

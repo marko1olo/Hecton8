@@ -66,6 +66,6 @@ Ultra: add dense provenance browsing, confidence-family timelines, escalation-bo
 - UTF-8 without BOM.
 - No U+FFFD.
 - No C1 control-code mojibake markers.
-- No placeholder `????` locale rows.
+- No four-question-mark placeholder locale rows.
 - No beyond-scope packet content.
 - No positive readiness claims for runtime, native localization, DataMonolith, h8bin, Unity placement, generated pages, public website, or wiki publication.

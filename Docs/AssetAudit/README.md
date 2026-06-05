@@ -53,6 +53,7 @@ This directory is the current asset-front control surface. It is not Unity accep
 34. `taskslocal/asset_system_20260605/ASSET_OWNER_36_H8_1475_PROOF_EXECUTION_PACKET.md`
 35. `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md`
 36. `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md`
+37. `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md`
 
 ## Current P0 Blockers
 
@@ -79,6 +80,7 @@ Use these files before assigning or doing asset work:
 - Product-face material P0 table: `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.md` and `.csv`.
 - Product-face prefab P0 table: `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.md` and `.csv`.
 - Audio P0 remediation table: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.md` and `.csv`.
+- Audio P0 static execution refinement: `Docs/Reports/AssetSystem_20260605/AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.md` and `.csv`.
 - No-mutation Unity readback field manifest: `H8_1475_READBACK_FIELD_MANIFEST_20260605.md` and `.csv`.
 - Visual reference capture gap table: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.md` and `.csv`.
 - Visual reference critique checklist: `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md` and `.csv`.
@@ -154,6 +156,7 @@ If the gate is red, continue static/source documentation only.
 - Product-face material P0 target owner: `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_24` repair execution.
 - Product-face prefab P0 target owner: `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_25` primitive replacement execution.
 - Audio P0 remediation target owner: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` before `ASSET_OWNER_28` audio remediation execution.
+- Audio P0 execution refinement owner: `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv` before row-level MusicDirector or Player direct-ref audio P0 execution.
 - Unity readback field owner: `H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` before `ASSET_OWNER_26` no-mutation readback execution.
 - Visual capture gap owner: `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` before any product-face screenshot acceptance attempt.
 - Visual critique owner: `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` before any h8_1475 screenshot pass/fail category review.

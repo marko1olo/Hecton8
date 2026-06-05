@@ -178,6 +178,8 @@ Latest controller plan:
 - Boundary: P461-P495 packet shape and RS094-RS097 source-candidate counts only; no source/runtime/page/native/h8bin readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PUBLIC_EVIDENCE_SURFACE_MAP_P496_P499_20260605.md`
 - Boundary: P496-P499 public evidence/audit/index surface roles only; no source/runtime/page/native/h8bin readiness.
+- `Docs/Reports/Batch32/CONTROLLER_PUBLIC_WIKI_SURFACE_MAP_P500_P520_20260605.md`
+- Boundary: P500-P520 public/wiki/PDA/scanner/terminal surface roles only; no source/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_PUBLIC_EVIDENCE_GOVERNANCE_EXTENSION_P500_P502_RS099_20260605.md`
 - Boundary: P500-P502 static packet output plus RS099 source-candidate output only; no source CSV/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_RS100_PUBLIC_EVIDENCE_CLEANUP_CONFLICT_20260605.md`

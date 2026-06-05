@@ -28,7 +28,7 @@ Rechecked RS106 source-candidate artifacts:
 - UTF-8 BOM absent.
 - U+FFFD count: 0.
 - C1 control-code count: 0.
-- Placeholder `????` count: 0.
+- Four-question-mark placeholder count: 0.
 - Positive runtime/native/DataMonolith/h8bin/Unity/generated-page/publication readiness flags: 0.
 - Scoped `git diff --check`: pass.
 
