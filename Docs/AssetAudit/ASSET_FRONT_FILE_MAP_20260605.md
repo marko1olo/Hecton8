@@ -23,6 +23,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md` | Long-form asset system index and dispositions. |
 | `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md` | Controller-level synthesis and parsed static row counts. |
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.md/.csv` | Mandatory-reference critique gates for future h8_1475 screenshots. |
+| `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.md/.csv` | Canonical h8_1475 screenshot shotlist and rejection rubric. |
 | `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.md/.csv` | Dependency order for future no-mutation h8_1475 proof execution and triage. |
 | `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.md/.csv` | Large texture/audio source owner-review buckets before cleanup, import, or retention decisions. |
 | `Docs/Reports/AssetSystem_20260605/PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.md/.csv` | Product-face material/prefab P0 execution refinement before repair owners mutate anything. |
@@ -41,6 +42,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | proof artifacts | `ASSET_PROOF_ARTIFACT_INDEX_20260605.*`, `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.*`, contact sheets, waveform sheets, generated source manifests |
 | large source review | `LARGE_SOURCE_OWNER_REVIEW_20260605.*` |
 | visual reference critique | `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.*` |
+| h8_1475 canonical shotlist | `H8_1475_CANONICAL_SHOTLIST_20260605.*` |
 | visual reference path continuity | `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.*` |
 | h8_1475 proof dependency graph | `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.*` |
 | product-face execution refinement | `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.*` |

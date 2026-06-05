@@ -41,7 +41,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 99 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 101 | 7 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
@@ -55,11 +55,12 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` | 5 | 14 | 0 |
 | `Docs/AssetAudit/ASSET_OWNER_PACKET_INDEX_20260605.csv` | 36 | 13 | 0 |
 | `Docs/Reports/AssetSystem_20260605/VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` | 7 | 7 | 0 |
+| `Docs/Reports/AssetSystem_20260605/H8_1475_CANONICAL_SHOTLIST_20260605.csv` | 11 | 8 | 0 |
 | `Docs/AssetAudit/H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` | 14 | 10 | 0 |
 | `Docs/AssetAudit/LARGE_SOURCE_OWNER_REVIEW_20260605.csv` | 5 | 10 | 0 |
 | `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` | 15 | 7 | 0 |
 
-Total current rows: `14454`.
+Total current rows: `14467`.
 
 ## Excluded Older/Sidecar CSV Boundary
 
@@ -75,7 +76,7 @@ The whole `Docs/AssetAudit/*.csv` folder currently contains `46` CSV files; `42`
 
 ## Static Hygiene Result
 
-- CSV parse hygiene: 48 files parse with zero empty cells.
+- CSV parse hygiene: 49 files parse with zero empty cells.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.

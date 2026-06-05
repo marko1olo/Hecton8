@@ -175,6 +175,7 @@ Static only:
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` parses as 5 rows; dispatch crosswalk only, no Unity or runtime acceptance.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv` parses as 36 rows; owner packet lookup only, no execution completion.
 - `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` parses as 7 rows; visual rejection checklist only, no visual acceptance.
+- `H8_1475_CANONICAL_SHOTLIST_20260605.csv` parses as 11 rows; canonical shotlist and rejection rubric only, no screenshot existence or visual acceptance.
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` parses as 14 rows; dependency order only, no Unity proof or visual acceptance.
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.csv` parses as 5 rows; large texture/audio source owner buckets only, no deletion, import, or residency proof.
 - `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv` parses as 14 rows; product-face material/prefab execution refinement only, no Unity proof or visual acceptance.
