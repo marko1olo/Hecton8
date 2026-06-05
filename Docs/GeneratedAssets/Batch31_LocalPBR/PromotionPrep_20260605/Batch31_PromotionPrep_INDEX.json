@@ -24,11 +24,12 @@
         "channel_debug": "630032f6c6694ee2d2e42208c2cc1beedf5836a4ac6cfa2594b85f7e6bb00599",
         "albedo_2x2": "0e216af5d60240a83fa1a85e56de8803e6359bd9258ef57c6bc855725ceff03a",
         "normal_2x2": "bc401653383c2fbb356207f04a6da15327dd08f366ba7563c34bbc3ef4773c06",
-        "mrao_2x2": "532447a020758ea4fc4b37ff1abca3a04189c47a17b1efc497756a777d6a7721"
+        "mrao_2x2": "90455a50bb1c7138c1df23579df8be75cf50f64b3ed239ed6f4d35912e64adf0"
       },
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
-      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import."
+      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+      "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
     },
     {
       "id": "TX_B31_PhoticSeabedSubstrate_2102",
@@ -50,11 +51,12 @@
         "channel_debug": "8968f0b7b0fc7fcc30bed5c6814121be244ea2cf22da7b1204872ee1deebaa93",
         "albedo_2x2": "70efbdd245f3bd0a28cd72366cddb8e88cf58a1a877a1fec831739c5570a4949",
         "normal_2x2": "9af5bb5189ea4a12a051661034395966eb080501e2cc690763bfd3ec753b1802",
-        "mrao_2x2": "f292cd851e6e2a4cfca9400b254aa2be925465a71df659819b8812292197deea"
+        "mrao_2x2": "9bfcae4abc1bfec7e3f4d7afc1c698ed5a404bd57ecbb91c21b899ffce208144"
       },
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
-      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import."
+      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+      "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
     },
     {
       "id": "TX_B31_PhoticShellSandSubstrate_2102",
@@ -76,14 +78,17 @@
         "channel_debug": "1295928556b9deee6adbc39f7bcdbe67610e7b773e175ae2d06759932937ab8f",
         "albedo_2x2": "c922e7ab065b0a47a27bb8ee6690f3b9d1223eb2eff092e07c90f918ad05e938",
         "normal_2x2": "0f9bdade30cd0b57b69d666627eaa9f7877978a811e38c961a3ddcc334f80185",
-        "mrao_2x2": "15f459eda29c7b3c1f5f094dd8fc4cfc790fed7dedd58628f010081f1c492a63"
+        "mrao_2x2": "f49a7b1e1d296f4f91daa1fb9ac2f27183ba0c13a5d1c2d56a98c5633c402597"
       },
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
-      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import."
+      "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+      "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
     }
   ],
   "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
   "promotion_ready": false,
-  "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import."
+  "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
+  "contact_sheet_sha256": "5fff767bb43bce4fff3df1e6858a165a78efea6c507edbda7e220b2598348e49",
+  "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
 }

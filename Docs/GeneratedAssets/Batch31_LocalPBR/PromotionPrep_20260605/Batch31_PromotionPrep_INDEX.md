@@ -8,6 +8,9 @@
 
 This index lists all prepped packages in Batch 31 Promotion Prep (`PromotionPrep_20260605`).
 
+## MRAO Preview Note
+The contact sheet and MRAO 2x2 previews are RGB inspection views that ignore alpha so packed channels are visible. The candidate texture alpha remains emission data and does not prove Unity import readiness.
+
 ## Channel Semantics Block
 Batch31 source masks remain blocked because current project documents disagree between MRAO and ARM/_MaskMap channel conventions. The generated MRAO candidate files are inspection artifacts only, not import-ready material inputs.
 

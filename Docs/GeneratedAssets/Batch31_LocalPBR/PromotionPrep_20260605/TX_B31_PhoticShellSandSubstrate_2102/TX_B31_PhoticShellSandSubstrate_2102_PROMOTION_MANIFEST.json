@@ -24,7 +24,7 @@
     "channel_debug": "1295928556b9deee6adbc39f7bcdbe67610e7b773e175ae2d06759932937ab8f",
     "albedo_2x2": "c922e7ab065b0a47a27bb8ee6690f3b9d1223eb2eff092e07c90f918ad05e938",
     "normal_2x2": "0f9bdade30cd0b57b69d666627eaa9f7877978a811e38c961a3ddcc334f80185",
-    "mrao_2x2": "15f459eda29c7b3c1f5f094dd8fc4cfc790fed7dedd58628f010081f1c492a63"
+    "mrao_2x2": "f49a7b1e1d296f4f91daa1fb9ac2f27183ba0c13a5d1c2d56a98c5633c402597"
   },
   "channel_stats": {
     "metallic": {
@@ -74,7 +74,8 @@
       "semantic_status": "BLOCKED_CHANNEL_SEMANTICS",
       "promotion_ready": false,
       "do_not_import_until_owner_decision": true,
-      "channel_contract": "Candidate only: R=Metallic(0), G=CandidateAO, B=CandidateSmoothness, A=Emission(0). Source G/B labels are unverified."
+      "channel_contract": "Candidate only: R=Metallic(0), G=CandidateAO, B=CandidateSmoothness, A=Emission(0). Source G/B labels are unverified.",
+      "preview_alpha_handling": "Candidate alpha remains data; preview files ignore alpha for visible RGB inspection."
     }
   },
   "consequences": {
@@ -87,5 +88,6 @@
   "promotion_ready": false,
   "channel_semantics_blocker": "Source packed-mask channel semantics are not proven. Candidate PNGs exist for inspection only; shader/material owner must choose target contract or repack channels before Unity import.",
   "source_channel_contract_risk": "Batch31 source names map MRAO, while project docs disagree: playbook MRAO R=Metallic/G=Roughness-or-Smoothness/B=AO; ARM pipeline _MaskMap R=AO/G=Roughness/B=Metallic/A=Emission.",
-  "required_owner_decision": "Resolve shader/material mask contract and repack or relabel channels before Unity import."
+  "required_owner_decision": "Resolve shader/material mask contract and repack or relabel channels before Unity import.",
+  "mrao_preview_note": "MRAO Candidate PNG preserves alpha as emission data. MRAO_2x2 and contact sheet are RGB inspection previews that ignore alpha so channels remain visible."
 }

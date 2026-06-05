@@ -5233,3 +5233,116 @@ Current state:
 Next valid controller action:
 
 - Continue static/controller work only while process gate remains red.
+
+## 2026-06-05 Controller Cursor 65
+
+Current front:
+
+- Runtime/player/HUD, world placement staging, visual rejection matrix, and Unity/tooling gate remain active.
+- Unity readback/import/build/Play Mode remains blocked.
+- No `Assets` mutation, Unity API mutation, scene save, prefab save, material save, project-setting edit, Addressables mutation, or raw YAML edit was performed by this controller pass.
+
+Latest integrated runtime artifacts:
+
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.csv`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_STATIC_SCAN_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_STATIC_SCAN_20260605.csv`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.md`
+- `Docs/Reports/RuntimeSystem_20260605/FORBIDDEN_RUNTIME_API_ROUTE_TRIAGE_20260605.csv`
+- `taskslocal/runtime_system_20260605/RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md`
+- `taskslocal/runtime_system_20260605/README.md`
+
+Runtime validation:
+
+- Active player conflict map: 13 rows, 8 columns, zero empty cells.
+- Forbidden API static scan: 11 rows, 7 columns, zero empty cells.
+- Forbidden API route triage: 6 rows, 7 columns, zero empty cells.
+- Runtime packet 04: 24 numbered tasks, checkpoints after tasks 6/12/18/24, zero replacement characters, zero four-question-mark placeholder hits.
+- Scoped `git diff --check` for touched runtime files passed with CRLF warnings only.
+
+Runtime current blocker facts:
+
+- `02_HECTON_WORLD.unity` static scene YAML contains one active scene-local `Player` with enabled `HectonWorldShellController1428`.
+- Production `Player.prefab` has `HectonPlayerMovement`, `PlayerInteraction`, Rigidbody, prefab camera, visor, and HUD candidate bindings, but its GUID is not found in targeted `02_HECTON_WORLD` scene scan.
+- `HectonWorldShellController1428` remains P0 if active: source reads `Keyboard.current`, `Mouse.current`, `Input.GetKey`, `Input.GetMouseButton`, and `Input.GetAxisRaw`.
+- `HUD_Internal.prefab` keeps latent `forceScreenSpaceOverlay: 1`; `SuitHUDScreenCompositor` / HUD overlay routes remain P0 proof blockers if active for interactive gameplay HUD.
+- `ThermalDynamicResolutionAdapter` coroutine repair route is P1 static defect; Scavenging cleanup and editor `OnGUI` hits were narrowed as non-player-runtime blockers by source context.
+
+Latest integrated world artifacts:
+
+- `taskslocal/world_system_20260605/WORLD_OWNER_01_FIRST20_ROUTE_PLACEMENT_STAGING_PACKET.md`
+- `taskslocal/world_system_20260605/README.md`
+
+World validation:
+
+- First-20 placement supplement: 30 numbered tasks, checkpoints after tasks 6/12/18/24/30, zero replacement characters, zero four-question-mark placeholder hits.
+- Existing `WORLD_OWNER_01_ROCK_FLORA_CORAL_PLACEMENT_STAGING_PACKET.md` was preserved.
+- Scoped `git diff --check` for touched world task files passed with CRLF warnings only.
+
+World current blocker facts:
+
+- Placement remains deferred until base route proof passes: active production player/HUD, water/ocean, sky/Aegir/moons, terrain/material route, product-face readback, h8_1475 shotlist, and compact/high screenshots.
+- Rocks/flora/corals/wreck traces are last-stage route amplifiers, not camouflage for bad base water/sky/terrain/materials.
+- `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, primitive visible meshes, proxy/default/null materials, random scatter, coral carpets, smoothed blobs, flat cards, dense alpha-blended flora on compact, and darkness/fog/bloom camouflage remain rejected.
+- Gemini watermark/source-art contamination is source-art debt, not automatic texture deletion authorization.
+
+Latest asset/controller count correction:
+
+- `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` now matches actual curated CSVs: 49 files, 14470 rows, zero empty cells.
+- `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md` now states the same 49/14470/0 anchor.
+- `Docs/AssetAudit/H8_1475_READBACK_FIELD_MANIFEST_20260605.csv` now parses as 123 rows, 7 columns, zero empty cells.
+- New readback manifest rows include active player object path/source, active player conflict reconciliation, and `HUD_Internal_forceScreenSpaceOverlay_and_compositor_state`.
+
+Latest process/tooling gate:
+
+- CPU sample `82`.
+- Active blockers: `Unity`, `Unity.ILPP.Runner`, `UnityPackageManager`, multiple `UnityShaderCompiler`.
+- Previous MCP resource check returned empty.
+- Unity readback/import/build/Play Mode/h8_1475 capture remains blocked.
+
+Agent state:
+
+- Erdos `019e98a3-d116-7691-92f9-cebfe60e67d0`: completed conflict map and was closed.
+- Helmholtz `019e98b7-6811-7120-b3df-1d2da1e87a87`: completed world first-20 placement supplement and was closed.
+- Maxwell `019e98b6-f0e4-73e1-b7a1-bacb1722de32`: completed runtime packet 04 and was closed.
+- Newton `019e98b7-e382-7163-b40c-03a5d9d13821`: visual reference/current rejection matrix still active at the time of this cursor.
+
+Next valid controller action:
+
+- Integrate Newton output when complete.
+- Continue static/controller fronts while Unity gate is red.
+- Do not run Unity proof, build, import mutation, prefab/material save, Addressables changes, h8_1475 capture, or runtime repair until process gate is clean and MCP/tooling state is available.
+
+## 2026-06-05 Terrain Flora UI VFX Packet Reference Alignment Cursor 68
+
+Current front:
+
+- Remaining user-visible asset-system packets for flora, terrain/geology, oxygen UI, and underwater VFX were aligned with the mandatory visual-reference image-read digest.
+- No Unity, import, material, shader, scene, prefab, SpriteAtlas, Addressables, code, build, Play Mode, screenshot, profiler, or `Assets` mutation was performed.
+
+Integrated artifacts:
+
+- `taskslocal/asset_system_20260605/ASSET_OWNER_12_FLORA_PROXY_MATERIAL_REPLACEMENT_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_16_TERRAIN_GEOLOGY_PBR_AUTHORING_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md`
+- `taskslocal/asset_system_20260605/ASSET_OWNER_27_UNDERWATER_VFX_SOURCE_PACKET.md`
+
+Latest changes:
+
+- Added `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md` to all four packets.
+- Flora/coral/kelp packet now requires comparison against dense photic and medium-depth references and rejects sparse, flat, proxy-colored, card-like, or aquarium-toy results.
+- Terrain/geology packet now requires `BEST ILLUST`, previous cliff/water development, shallow, and medium-depth comparison notes before route promotion.
+- Oxygen UI packet now requires bright surface/photic and medium/deep reference-context captures, with diegetic visor/cockpit readability and no flat sticker or black icon slot.
+- Underwater VFX source packet now maps fish cards, marine snow, foam/contact, shallow beams/caustics, and medium/deep masks to mandatory reference signals.
+
+Validation:
+
+- Asset-system scoped scan found zero exact stale static-proof labels.
+- Touched flora/terrain/UI/VFX packet mojibake/replacement scan found zero hits.
+- Scoped `git diff --check` passed with line-ending warnings only.
+
+Current state:
+
+- Static packet alignment only.
+- All four routes remain `PENDING_VERIFICATION` until source generation/import where applicable, Unity readback, route screenshots, Frame Debugger/Stats, memory/VRAM, GC/profiler, console, and visual reference comparison evidence exist.
