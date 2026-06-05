@@ -113,6 +113,7 @@ Active packet writers:
 Latest packet output:
 - Controller-local: completed `P513_ARCHIVE_RESOLUTION_HOLD_PROMPT_BRIDGE.production.md` and `P514_PDA_NEXT_PROOF_CHECKLIST_BRIDGE.production.md`; validation PASS.
 - Controller-local: completed RS104 source-candidate bundle for P512-P514 only; validation PASS.
+- Controller-local: completed RS105 source-candidate bundle for P515-P517 only; validation PASS.
 - Worker/controller integrated: completed `P509_PUBLIC_ARCHIVE_CUSTODY_DIVERGENCE_BRIDGE.production.md`, `P510_SCANNER_CONFIDENCE_DOWNGRADE_REASON_BRIDGE.production.md`, and `P511_PDA_EVIDENCE_FAMILY_REVIEW_PROMPT_BRIDGE.production.md`; controller validation PASS.
 - Controller-local: completed `P512_PUBLIC_ARCHIVE_DISPUTE_REASON_CODE_BRIDGE.production.md`; validation PASS; not included in RS103.
 - Controller-local: completed `P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.production.md`, `P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.production.md`, and `P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.production.md`; controller byte/codepoint validation PASS. Console rendering can display RTL/CJK text incorrectly and is not file evidence.
@@ -185,7 +186,9 @@ Latest controller plan:
 - `Docs/Reports/Batch32/CONTROLLER_RS104_DISPUTE_HOLD_CHECKLIST_20260605.md`
 - Boundary: P512-P514 static packets plus RS104 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
 - `Docs/Reports/Batch32/CONTROLLER_P515_P517_STATIC_PACKET_RECHECK_20260605.md`
-- Boundary: P515-P517 static packets only; no RS105/source-candidate/source CSV/runtime/page/native/h8bin/publication readiness.
+- Boundary: P515-P517 static packets only; no source CSV/runtime/page/native/h8bin/publication readiness.
+- `Docs/Reports/Batch32/CONTROLLER_RS105_CONTRADICTION_REDACTION_ALIAS_20260605.md`
+- Boundary: P515-P517 static packets plus RS105 source-candidate bundle only; no source CSV/runtime/page/native/h8bin/publication readiness.
 
 Active source-prep owners:
 - none
@@ -209,9 +212,9 @@ Latest source-prep output:
 - Controller-local: completed RS104 canonical packet JSON candidate for P512-P514 only.
 - Evidence: strict JSON parses, packet count 3, locale count 15 per packet, required localized surface keys present, UTF-8 BOM absent, U+FFFD=0, explicit mojibake marker/codepoint hits=0, readiness flags false, forbidden manifest keys absent.
 - Boundary: no importer, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
-- Controller-local: accepted P515-P517 as STATIC_DOC packets only.
-- Evidence: each packet has 15 locale headings, 1 source_authority row, 14 draft_machine_or_llm rows, UTF-8 BOM absent, U+FFFD=0, C1 mojibake codepoint hits=0, proof boundary present, and first-20 route boundary present.
-- Boundary: no RS105 manifest/bundle, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
+- Controller-local: completed RS105 canonical packet JSON candidate for P515-P517 only.
+- Evidence: strict JSON parses, packet count 3, locale count 15 per packet, required localized surface keys present, UTF-8 BOM absent, U+FFFD=0, explicit mojibake marker/codepoint hits=0, readiness flags false, forbidden manifest keys absent.
+- Boundary: no importer, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
 - 3248 Bernoulli `019e957a-b3c2-7b11-a814-942ec16a43da`: completed RS098 canonical packet JSON candidate for P492-P495 only; controller removed UTF-8 BOM and regenerated bundle after mojibake marker failure.
 - Evidence: strict JSON parses, packet count 4, locale count 15 per packet, required localized surface keys present, U+FFFD=0, explicit mojibake marker/codepoint hits=0, P496-P499 absent, readiness flags false, forbidden manifest keys absent.
 - Boundary: no importer, source CSV, route-card, generated hash, generated page, h8bin, Unity, runtime, native localization, publication, or player-build readiness claimed.
@@ -230,4 +233,4 @@ Latest source-prep output:
 
 ## Current Rule
 
-Do not admit P465-P517 into source CSV, route cards, generated pages, or h8bin until a separate source/bake owner is assigned and the process gate is clean. P496-P499 are covered by RS099 as STATIC_SOURCE candidate only. P500-P502 are covered by RS100 as STATIC_SOURCE candidate only. P503-P505 are covered by RS101 as STATIC_SOURCE candidate only. P506-P508 are covered by RS102 as STATIC_SOURCE candidate only. P509-P511 are covered by RS103 as STATIC_SOURCE candidate only. P512-P514 are covered by RS104 as STATIC_SOURCE candidate only. P515-P517 are STATIC_DOC accepted only.
+Do not admit P465-P517 into source CSV, route cards, generated pages, or h8bin until a separate source/bake owner is assigned and the process gate is clean. P496-P499 are covered by RS099 as STATIC_SOURCE candidate only. P500-P502 are covered by RS100 as STATIC_SOURCE candidate only. P503-P505 are covered by RS101 as STATIC_SOURCE candidate only. P506-P508 are covered by RS102 as STATIC_SOURCE candidate only. P509-P511 are covered by RS103 as STATIC_SOURCE candidate only. P512-P514 are covered by RS104 as STATIC_SOURCE candidate only. P515-P517 are covered by RS105 as STATIC_SOURCE candidate only.

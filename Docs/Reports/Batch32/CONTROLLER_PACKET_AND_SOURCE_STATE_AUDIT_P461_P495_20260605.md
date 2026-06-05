@@ -39,12 +39,12 @@ Every audited packet has:
 | RS102 Proof Order Relation Receipt Bridge | 3 | 3 | P506-P508 |
 | RS103 Custody Downgrade Review Bridge | 3 | 3 | P509-P511 |
 | RS104 Dispute Hold Checklist Bridge | 3 | 3 | P512-P514 |
+| RS105 Contradiction Redaction Alias Bridge | 3 | 3 | P515-P517 |
 
 ## Current Admission State
 
 - P461-P464: source-admitted static-audited rows.
-- P465-P514: covered by STATIC_SOURCE candidates RS094-RS104.
-- P515-P517: STATIC_DOC accepted only; no RS105/source-candidate bundle exists yet.
+- P465-P517: covered by STATIC_SOURCE candidates RS094-RS105.
 
 ## Boundary
 
